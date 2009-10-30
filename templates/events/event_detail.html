@@ -1,0 +1,8 @@
+<h1>{{ object.name }}</h1>
+<ul>
+    <li>Tags: {{object.tags}}</li>
+{% for tag in object.tags_set.all %}
+    <li>{{ tag.name }}</li>
+{% endfor %}
+</ul>
+

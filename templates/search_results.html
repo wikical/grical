@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block column1 %}
+<h3> {% trans "Search result for" %}: {{ query }}</h3>
+<ul>
+{% for event in events %}
+    <li>{{ event.pk }}</li>
+{% endfor %}
+</ul>
+{% endblock %}
+
