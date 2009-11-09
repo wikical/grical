@@ -1,4 +1,4 @@
-# Django settings for cloudcalendar project.
+# Django settings for gridcalendar project.
 import os
 
 dirname = os.path.dirname(globals()["__file__"])
@@ -17,8 +17,8 @@ MANAGERS = ADMINS
 SEND_BROKEN_LINK_EMAILS = True
 
 DATABASE_ENGINE = 'postgresql_psycopg2'     # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'cloudcalendar'             # DB Name (or path to database file if using sqlite3)
-DATABASE_USER = 'cloudcalendar'             # Not used with sqlite3.
+DATABASE_NAME = 'gridcalendar'             # DB Name (or path to database file if using sqlite3)
+DATABASE_USER = 'gridcalendar'             # Not used with sqlite3.
 # !!!!!! replace with the DB password !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DATABASE_PASSWORD = 'the_password'          # Not used with sqlite3.
 DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
@@ -33,7 +33,7 @@ TEMPLATE_CONTEXT_PROCESSORS = ("django.core.context_processors.auth",
     "django.core.context_processors.debug",
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
-    "cloudcalendar.context_processors.global_template_vars",)
+    "gridcalendar.context_processors.global_template_vars",)
 
 # for tagging application
 # see http://django-tagging.googlecode.com/svn/trunk/docs/overview.txt
@@ -60,13 +60,13 @@ SITE_ID = 1
 USE_I18N = True
 
 # Absolute path to the directory that holds media.
-#MEDIA_ROOT = '/usr/local/django-projects/cloudcalendar/'
+#MEDIA_ROOT = '/usr/local/django-projects/gridcalendar/'
 MEDIA_ROOT = os.path.join(dirname, "media")
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-#MEDIA_URL = 'http://cloudcalendar.net/media/'
+#MEDIA_URL = 'http://gridcalendar.net/media/'
 # MEDIA_URL = 'http://localhost:8000/media/'
 MEDIA_URL = '/media/'
 
@@ -89,7 +89,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 
-ROOT_URLCONF = 'cloudcalendar.urls'
+ROOT_URLCONF = 'gridcalendar.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -99,8 +99,8 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-    'cloudcalendar.events',
-    'cloudcalendar.groups',
+    'gridcalendar.events',
+    'gridcalendar.groups',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.humanize',
@@ -108,7 +108,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    'cloudcalendar.tagging',
-    'cloudcalendar.registration',
+    'gridcalendar.tagging',
+    'gridcalendar.registration',
     'django.contrib.comments',
 )

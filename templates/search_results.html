@@ -4,7 +4,11 @@
 <h3> {% trans "Search result for" %}: {{ query }}</h3>
 <ul>
 {% for event in events %}
-    <li>{{ event.pk }}</li>
+    <li>
+<a href="/events/edit/{{ event.pk }}/">
+    {{ event.title }}
+</a>
+    </li>
 {% endfor %}
 </ul>
 {% endblock %}

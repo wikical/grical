@@ -14,15 +14,19 @@
         <table>
             {{ form.as_table }}
         </table>
-        <input type="submit" value={% trans "Submit" %}>
+        <table>
+            {{ formset_url.as_table }}
+        </table>
+        <table>
+            {{ formset_timechunk.as_table }}
+        </table>
+        <table>
+            {{ formset_deadline.as_table }}
+        </table>
+        <input type="submit" value={% trans "Save" %}>
     </form>
 </div>
-{% if user.username %}
-<p>TODO: events interesting for user according to its preferences and its previous behaviour, e.g.
-which previous events (location, tags) he clicked on</p>
-{% else %}
-<p>TODO: events in location of user according to ip or other data from browser like language</p>
-{% endif %}
+        <a href="/events/edit_astext/{{ event_id }}/"><span class="field_title"> edit this event as text </span></a>
 {% endblock %}
 
 {% block column2 %}
@@ -46,9 +50,4 @@ which previous events (location, tags) he clicked on</p>
 {% endblock %}
 
 {% block column3 %}
-{% if user.username %}
-<p>TODO interesting events for logged user</p>
-{% else %}
-<p>TODO: tag cloud</p>
-{% endif %}
 {% endblock %}
