@@ -4,15 +4,15 @@
 from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
-from cloudcalendar.tagging.models import Tag
-from cloudcalendar.tagging.fields import TagField
-from cloudcalendar.tagging import register
+from gridcalendar.tagging.models import Tag
+from gridcalendar.tagging.fields import TagField
+from gridcalendar.tagging import register
 from django.utils.translation import ugettext_lazy as _
 
 
 COUNTRIES = (
     ('AF', _('Afghanistan')),
-    ('AX', _('Aland Islands')),
+#    ('AX', _('Åland Islands')),
     ('AL', _('Albania')),
     ('DZ', _('Algeria')),
     ('AS', _('American Samoa')),
@@ -37,7 +37,7 @@ COUNTRIES = (
     ('BJ', _('Benin')),
     ('BM', _('Bermuda')),
     ('BT', _('Bhutan')),
-    ('BO', _('Bolivia')),
+    ('BO', _('Bolivia, Plurinational State of')),
     ('BA', _('Bosnia and Herzegovina')),
     ('BW', _('Botswana')),
     ('BV', _('Bouvet Island')),
@@ -61,10 +61,10 @@ COUNTRIES = (
     ('CO', _('Colombia')),
     ('KM', _('Comoros')),
     ('CG', _('Congo')),
-    ('CD', _('Congo, The Democratic Republic of the')),
+    ('CD', _('Congo, the Democratic Republic of the')),
     ('CK', _('Cook Islands')),
     ('CR', _('Costa Rica')),
-    ('CI', _('Cote D\'Ivoire')),
+#    ('CI', _('Côte d\'Ivoire')),
     ('HR', _('Croatia')),
     ('CU', _('Cuba')),
     ('CY', _('Cyprus')),
@@ -140,7 +140,7 @@ COUNTRIES = (
     ('LT', _('Lithuania')),
     ('LU', _('Luxembourg')),
     ('MO', _('Macao')),
-    ('MK', _('Macedonia, FYROM')),
+    ('MK', _('Macedonia, the former Yugoslav Republic of')),
     ('MG', _('Madagascar')),
     ('MW', _('Malawi')),
     ('MY', _('Malaysia')),
@@ -165,8 +165,8 @@ COUNTRIES = (
     ('NA', _('Namibia')),
     ('NR', _('Nauru')),
     ('NP', _('Nepal')),
-    ('AN', _('Netherlands Antilles')),
     ('NL', _('Netherlands')),
+    ('AN', _('Netherlands Antilles')),
     ('NC', _('New Caledonia')),
     ('NZ', _('New Zealand')),
     ('NI', _('Nicaragua')),
@@ -190,9 +190,42 @@ COUNTRIES = (
     ('PT', _('Portugal')),
     ('PR', _('Puerto Rico')),
     ('QA', _('Qatar')),
-    ('RE', _('Reunion')),
+#    ('RE', _('Réunion')),
     ('RO', _('Romania')),
+    ('RU', _('Russian Federation')),
+    ('RW', _('Rwanda')),
+#    ('BL', _('Saint Barthélemy')),
+    ('SH', _('Saint Helena')),
+    ('KN', _('Saint Kitts and Nevis')),
+    ('LC', _('Saint Lucia')),
+    ('MF', _('Saint Martin (French part)')),
+    ('PM', _('Saint Pierre and Miquelon')),
+    ('VC', _('Saint Vincent and the Grenadines')),
+    ('WS', _('Samoa')),
+    ('SM', _('San Marino')),
+    ('ST', _('Sao Tome and Principe')),
+    ('SA', _('Saudi Arabia')),
+    ('SN', _('Senegal')),
+    ('RS', _('Serbia')),
+    ('SC', _('Seychelles')),
+    ('SL', _('Sierra Leone')),
+    ('SG', _('Singapore')),
+    ('SK', _('Slovakia')),
+    ('SI', _('Slovenia')),
+    ('SB', _('Solomon Islands')),
+    ('SO', _('Somalia')),
+    ('ZA', _('South Africa')),
+    ('GS', _('South Georgia and the South Sandwich Islands')),
+    ('ES', _('Spain')),
+    ('LK', _('Sri Lanka')),
+    ('SD', _('Sudan')),
+    ('SR', _('Suriname')),
+    ('SJ', _('Svalbard and Jan Mayen')),
+    ('SZ', _('Swaziland')),
+    ('SE', _('Sweden')),
     ('CH', _('Switzerland')),
+    ('SY', _('Syrian Arab Republic')),
+    ('TW', _('Taiwan, Province of China')),
     ('TJ', _('Tajikistan')),
     ('TZ', _('Tanzania, United Republic of')),
     ('TH', _('Thailand')),
@@ -210,16 +243,16 @@ COUNTRIES = (
     ('UA', _('Ukraine')),
     ('AE', _('United Arab Emirates')),
     ('GB', _('United Kingdom')),
-    ('UM', _('United States Minor Outlying Islands')),
     ('US', _('United States')),
+    ('UM', _('United States Minor Outlying Islands')),
     ('UY', _('Uruguay')),
     ('UZ', _('Uzbekistan')),
     ('VU', _('Vanuatu')),
-    ('VE', _('Venezuela')),
+    ('VE', _('Venezuela, Bolivarian Republic of')),
     ('VN', _('Viet Nam')),
     ('VG', _('Virgin Islands, British')),
     ('VI', _('Virgin Islands, U.S.')),
-    ('WF', _('Wallis And Futuna')),
+    ('WF', _('Wallis and Futuna')),
     ('EH', _('Western Sahara')),
     ('YE', _('Yemen')),
     ('ZM', _('Zambia')),
@@ -230,26 +263,37 @@ class Event(models.Model):
 	# related_name avoids the errors:
 	# events.event: Accessor for field 'user' clashes with related m2m field 'User.event_set'. Add a related_name argument to the definition for 'user'.
 	# events.event: Accessor for m2m field 'users' clashes with related field 'User.event_set'. Add a related_name argument to the definition for 'users'.
-    # 
-    # AnonymousUser is not a user in the table User. For events posted by non-logged-in-users, this
-    # field will be null
-    user = models.ForeignKey(User, editable=False, related_name="owner", blank=True, null=True,
-            verbose_name=_('User'))
+    #
+    # AnonymousUser is not a user in the table User. For events posted by non-logged-in-users, this field will be null
+    user = models.ForeignKey(User, editable=False, related_name="owner", blank=True, null=True, verbose_name=_('User'))
     # time stamp for event creation
     creation_time = models.DateTimeField(_('Creation time'), editable=False, auto_now_add=True)
     modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
+    ##############################################################
+    acro = models.CharField(_('Acronym'), max_length=20, blank=True, null=True, help_text=_('Example: 26C3'))
+    #
     title = models.CharField(_('Title'), max_length=200, blank=False, help_text=_('Example: Demostration in Munich against software patents organised by the German association FFII e.V.'))
+    #
     start = models.DateField(_('Start'), blank=False, help_text=_("Examples of valid dates: '2006-10-25' '10/25/2006' '10/25/06' 'Oct 25 2006' 'Oct 25, 2006' '25 Oct 2006' '25 Oct, 2006' 'October 25 2006' 'October 25, 2006' '25 October 2006' '25 October, 2006'"))
     end = models.DateField(_('End'), null=True, blank=True)
-    public = models.BooleanField(_('Public'), default=True, help_text=_("A public entry can be seen by anyone, a private one only by the selected persons and groups"))
+    #
     tags = TagField(_('Tags'), blank=True, null=True, help_text=_("Example for adding multiple tags: demonstration, ffii, munich, ip, \"software patents\", germany, deutschland"))
-    url = models.URLField(_('URL'), blank=True, null=True)
-    city = models.CharField(_('City'), blank=True, null=True, max_length=50)
+    #
+    public = models.BooleanField(_('Public'), default=True, help_text=_("A public entry can be seen by anyone, a private one only by the selected persons and groups"))
+    #
     country = models.CharField(_('Country'), blank=True, null=True, max_length=2, choices=COUNTRIES)
+    city = models.CharField(_('City'), blank=True, null=True, max_length=50)
+    postcode = models.CharField(_('Postcode'), blank=True, null=True, max_length=16)
+    address = models.CharField(_('Street address'), blank=True, null=True, max_length=100)
+    latitude = models.FloatField(_('Latitude'), blank=True, null=True, help_text=_("Please type decimal degrees, not degrees/minutes/seconds. Prefix with \"-\" for South, no sign for North."))
+    longitude = models.FloatField(_('Longitude'), blank=True, null=True, help_text=_("Please type decimal degrees, not degrees/minutes/seconds. Prefix with \"-\" for West, no sign for East."))
+    timezone = models.SmallIntegerField(_('Timezone'), blank=True, null=True, help_text=_("Minutes relative to UTC. Examples: UTC+1 = 60, UTC-3 = -180"))
+    #
     description = models.TextField(_('Description'), blank=True, null=True)
+    ##############################################################
     # groups = models.ManyToManyField(Group, blank=True, null=True, help_text=_("Groups to be notified and allowed to see it if not public"))
     def get_tags(self):
-        return Tag.objects.get_for_object(self)      
+        return Tag.objects.get_for_object(self)
     def __unicode__(self):
 		return self.start.isoformat() + " : " + self.title
     class Meta:
@@ -257,13 +301,36 @@ class Event(models.Model):
         verbose_name = _('Event')
         verbose_name_plural = _('Events')
 
+class EventUrl(models.Model):
+    event = models.ForeignKey(Event, related_name='event_of_url')
+    url_name = models.CharField(_('URL Name'), blank=True, null=True, max_length=80, help_text=_("Example: information about accomodation"))
+    url = models.URLField(_('URL'), blank=False, null=False)
+    def __unicode__(self):
+        return self.url
+
+class EventTimechunk(models.Model):
+    event = models.ForeignKey(Event, related_name='event_of_timechunk')
+    timechunk_name = models.CharField(_('Timechunk name'), blank=True, null=True, max_length=80, help_text=_("Example: day 2 of the conference"))
+    timechunk_date = models.DateField(_('Timechunk day'), blank=False, null=False)
+    timechunk_starttime = models.TimeField(_('Timechunk start time'), blank=False, null=False)
+    timechunk_endtime = models.TimeField(_('Timechunk end time'), blank=False, null=False)
+    def __unicode__(self):
+        return self.timechunk_name
+
+class EventDeadline(models.Model):
+    event = models.ForeignKey(Event, related_name='event_of_deadline')
+    deadline_name = models.CharField(_('Deadline name'), blank=True, null=True, max_length=80, help_text=_("Example: call for papers deadline"))
+    deadline = models.DateField(_('Deadline'), blank=False, null=False)
+    def __unicode__(self):
+        return self.deadline_name
+
 # TODO: add setting info to users. See the auth documentation because there is a method for adding
 # fields to User. E.g.
 #   - interesting locations
 #   - interesting tags
 #   - hidden: location and tags clicked before
 
-#TODO: events comment model. Check for already available django comment modul
+#TODO: events comment model. Check for already available django comment module
 
 class Interest(models.Model):
     user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
@@ -278,3 +345,5 @@ class Interest(models.Model):
         ordering = ['modification_time']
         verbose_name = _('Interest')
         verbose_name_plural = _('Interests')
+
+

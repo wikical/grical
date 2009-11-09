@@ -1,6 +1,6 @@
 import datetime
 from django.http import HttpResponse
-from cloudcalendar.events.models import Event
+from gridcalendar.events.models import Event
 from tagging.models import TaggedItem
 from tagging.models import Tag
 from django.shortcuts import render_to_response, get_object_or_404
@@ -13,7 +13,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponseRedirect
 
-from cloudcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
 

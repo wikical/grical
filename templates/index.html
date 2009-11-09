@@ -19,14 +19,18 @@
 </div>
 <br />
 <br />
+
+<!--
 {% if user.username %}
 <p class="info">{% trans "Change what is displayed here in:" %}
     <a href="/settings#filters">{% trans "filters" %}</a></p>
 {% endif %}
+-->
+
 {% for event in coming_events %}
     <br />
     <div class="field">
-        
+
         <a href="{{ event.url }}"><span class="field_title"> {{ event.title }} </span></a><br />
         <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
         </span> 
@@ -46,9 +50,50 @@
             <span class="tag"><a href="/events/tags/{{ tag }}">{{ tag }}</a>, </span>
         {% endfor %}
         {% endif %}
+        <br />
+        <a href="/events/edit/{{ event.id }}/"><span class="field_title"> edit this event </span></a>
+        &nbsp;
+        <a href="/events/edit_astext/{{ event.id }}/"><span class="field_title"> edit this event as text </span></a>
 
     </div>
 {% endfor %}
+
+<hr size="3">
+<p>
+Past events:
+</p>
+
+{% for event in past_events %}
+    <br />
+    <div class="field">
+
+        <a href="{{ event.url }}"><span class="field_title"> {{ event.title }} </span></a><br />
+        <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
+        </span> 
+        {% if event.city %}
+            <br /><span class="field_city">
+            <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">
+                {{ event.city|capfirst }}</a></span>
+        {% endif %}
+        {% if event.country %}
+        <span class="field_country">
+            (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
+        </span>
+        {% endif %}
+        {% if event.get_tags %}
+        <br /><span class="tags">
+        {% for tag in event.get_tags %}
+            <span class="tag"><a href="/events/tags/{{ tag }}">{{ tag }}</a>, </span>
+        {% endfor %}
+        {% endif %}
+        <br />
+        <a href="/events/edit/{{ event.id }}/"><span class="field_title"> edit this event </span></a>
+        &nbsp;
+        <a href="/events/edit_astext/{{ event.id }}/"><span class="field_title"> edit this event as text </span></a>
+
+    </div>
+{% endfor %}
+
 {% if user.username %}
 <!--
 <p>TODO: events interesting for user according to its preferences and its previous behaviour, e.g.

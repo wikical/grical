@@ -1,7 +1,7 @@
 {% if object_list %}
     <ul>
         {% for event in object_list %}
-            <li><a href="/event_id/{{event.pk}}">{{event.name}}</a></li>
+            <li><a href="/event_id/{{event.pk}}">{{event.title}}</a></li>
         {% endfor %}
     </ul>
 {% else %}

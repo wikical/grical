@@ -34,6 +34,7 @@
         <div id="userlinks">
             {% if user.username %}
             {% trans "Welcome" %} <b>{{ user.username }}</b>
+                | <a href="/events/my/">My events</a>
                 | <a href="/settings/">{% trans "settings" %}</a>
                 | <a href="/accounts/logout/">{% trans "logout" %}</a>
             {% else %}

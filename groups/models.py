@@ -6,8 +6,8 @@ import random
 import re
 import sha
 
-from cloudcalendar.tagging import register
-from cloudcalendar.events.models import Event
+from gridcalendar.tagging import register
+from gridcalendar.events.models import Event
 
 from django.db import models
 from django.contrib import admin
