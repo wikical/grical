@@ -1,1 +1,1 @@
-[cloca.net] Activation email
+[{{site.domain}}] Activation email

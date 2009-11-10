@@ -17,6 +17,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 
+from django.contrib.sites.models import Site
+
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
@@ -122,6 +124,34 @@ def StringToBool(s):
         return s
     s = str(s).strip().lower()
     return not s in ['false','f','n','0','']
+
+def view_astext(request, event_id):
+    try:
+        event = Event.objects.get(pk=event_id)
+    except Event.DoesNotExist:
+        return render_to_response('index.html',
+                    {'form': getEventForm(request.user),
+                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
+                    context_instance=RequestContext(request))
+    if (not event.public) and (event.user.id != request.user.id):
+        return render_to_response('index.html',
+                {'form': getEventForm(request.user),
+                'message_col1': _("You are not allowed to edit the event with the following number") +
+                ": " + str(event_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+    else:
+        if request.method == 'POST':
+            return render_to_response('index.html',
+                {'form': getEventForm(request.user),
+                'message_col1': _("You are not allowed to edit the event with the following number") +
+                ": " + str(event_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+        else:
+            event_textarea = generate_event_textarea(event)
+            templates = { 'event_textarea': event_textarea, 'event_id': event_id }
+            return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
 
 def edit_astext(request, event_id):
     try:

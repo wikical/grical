@@ -1,6 +1,8 @@
 # Django settings for gridcalendar project.
 import os
 
+DOMAIN = 'dev.cloca.net'
+
 dirname = os.path.dirname(globals()["__file__"])
 
 DEBUG = True
@@ -16,13 +18,13 @@ MANAGERS = ADMINS
 # see http://docs.djangoproject.com/en/dev/howto/error-reporting/
 SEND_BROKEN_LINK_EMAILS = True
 
-DATABASE_ENGINE = 'postgresql_psycopg2'     # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'gridcalendar'             # DB Name (or path to database file if using sqlite3)
-DATABASE_USER = 'gridcalendar'             # Not used with sqlite3.
+DATABASE_ENGINE   = 'postgresql_psycopg2'  # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME     = 'gridcalendar'         # DB Name (or path to database file if using sqlite3)
+DATABASE_USER     = 'gridcalendar'         # Not used with sqlite3
 # !!!!!! replace with the DB password !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-DATABASE_PASSWORD = 'the_password'          # Not used with sqlite3.
-DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+DATABASE_PASSWORD = 'the_password'         # Not used with sqlite3.
+DATABASE_HOST     = 'localhost'            # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_PORT     = ''                     # Set to empty string for default. Not used with sqlite3.
 
 # !!!!!! replace !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DEFAULT_FROM_EMAIL = 'noreply@example.com'
@@ -53,6 +55,9 @@ TIME_ZONE = 'Europe/Berlin'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
+# This is used by the django.contrib.sites, which is needed by for instance the registration code we
+# are using from a Debian package (upstream is:
+# http://bitbucket.org/ubernostrum/django-registration/wiki/Home )
 SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
@@ -67,7 +72,6 @@ MEDIA_ROOT = os.path.join(dirname, "media")
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 #MEDIA_URL = 'http://gridcalendar.net/media/'
-# MEDIA_URL = 'http://localhost:8000/media/'
 MEDIA_URL = '/media/'
 
 ADMIN_MEDIA_PREFIX = '/media/admin/'
@@ -107,6 +111,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+    'django.contrib.databrowse',
     'django.contrib.admindocs',
     'gridcalendar.tagging',
     'gridcalendar.registration',
