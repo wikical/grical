@@ -10,6 +10,7 @@ info_dict = {
 urlpatterns = patterns('',
     (r'^edit/(?P<event_id>\d+)/$', 'gridcalendar.events.views.edit'),
     (r'^edit_astext/(?P<event_id>\d+)/$', 'gridcalendar.events.views.edit_astext'),
+    (r'^view_astext/(?P<event_id>\d+)/$', 'gridcalendar.events.views.view_astext'),
     (r'^(?P<object_id>\d+)/$', 'django.views.generic.list_detail.object_detail', info_dict),
     (r'^search/', 'events.views.search'),
     (r'^u/(?P<username>\w+)/', 'events.views.search_byuser'),

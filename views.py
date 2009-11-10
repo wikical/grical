@@ -15,20 +15,22 @@ from django.shortcuts import render_to_response
 
 from django.template import RequestContext
 
+from django.db.models import Q
+
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
 
 def index(request):
     if request.user.is_authenticated():
         ev = SimplifiedEventForm()
 # show all events
-        coming_events = Event.objects.filter(start__gte=datetime.now())[:2000]
-        past_events = Event.objects.filter(start__lt=datetime.now())[:2000]
+        coming_events = Event.objects.filter(     Q(start__gt=datetime.now())  &  ( Q(public=True) | Q(user=request.user))    )[:2000]
+        past_events = Event.objects.filter(     Q(start__lt=datetime.now())  &  ( Q(public=True) | Q(user=request.user))    )[:2000]
 # show only events of this user
 #        coming_events = Event.objects.filter(user=request.user).filter(start__gte=datetime.now())[:5]
     else:
         ev = SimplifiedEventFormAnonymous()
-        coming_events = Event.objects.filter(start__gte=datetime.now())[:2000]
-        past_events = Event.objects.filter(start__lt=datetime.now())[:2000]
+        coming_events = Event.objects.filter(start__gte=datetime.now()).exclude(public=False)[:2000]
+        past_events = Event.objects.filter(start__lt=datetime.now()).exclude(public=False)[:2000]
     # coming_events = Event.objects.all()
     return render_to_response('index.html', {'form': ev, 'coming_events': coming_events, 'past_events': past_events}, context_instance=RequestContext(request))
 
