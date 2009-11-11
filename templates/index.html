@@ -47,7 +47,7 @@
         {% if event.get_tags %}
         <br /><span class="tags">
         {% for tag in event.get_tags %}
-            <span class="tag"><a href="/events/tags/{{ tag }}">{{ tag }}</a>, </span>
+            <span class="tag"><a href="/events/list/tags/{{ tag }}">{{ tag }}</a>, </span>
 <!--
             <span class="tag">{{ tag }}, </span>
 -->
@@ -86,7 +86,7 @@ Past events:
         {% if event.get_tags %}
         <br /><span class="tags">
         {% for tag in event.get_tags %}
-            <span class="tag"><a href="/events/tags/{{ tag }}">{{ tag }}</a>, </span>
+            <span class="tag"><a href="/events/list/tags/{{ tag }}">{{ tag }}</a>, </span>
 <!--
             <span class="tag">{{ tag }}, </span>
 -->
