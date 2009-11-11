@@ -1,25 +1,47 @@
 import datetime
-import csv
-from django.http import HttpResponse
-from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
-from tagging.models import TaggedItem
-from tagging.models import Tag
+# import csv
+
+from django import forms
+from django.forms.models import inlineformset_factory
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
-from django.forms.models import inlineformset_factory
-
-from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
-
 from django.contrib.sites.models import Site
 
+from tagging.models import Tag, TaggedItem
+
+from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
+
+def simplified_submission(request):
+    if request.method == 'POST':
+        if request.user.is_authenticated():
+            sef = SimplifiedEventForm(request.POST)
+        else:
+            sef = SimplifiedEventFormAnonymous(request.POST)
+
+        if sef.is_valid():
+            cd = sef.cleaned_data
+            # create a new entry and saves the data
+            if request.user.is_authenticated():
+                public_value = public=cd['public']
+            else:
+                public_value = True
+            e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
+                        tags=cd['tags'], public=public_value)
+            e.save()
+            return HttpResponseRedirect('/events/edit/' + str(e.id)) ;
+            # TODO: look in a thread for all users who wants to receive an email notification and send it
+        else:
+            return render_to_response('index.html', {'form': sef}, context_instance=RequestContext(request))
+    else:
+        return HttpResponseRedirect(request.get_host())
 
 def getEventForm(user):
     """returns a simplied event form with or without the public field"""
@@ -76,10 +98,7 @@ def edit(request, event_id):
             templates = {'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
             return render_to_response('events/edit.html', templates, context_instance=RequestContext(request))
 
-
-
 def generate_event_textarea(event):
-
     try:
          ee = event.end.strftime("%Y-%m-%d")
     except Exception:
@@ -92,7 +111,6 @@ def generate_event_textarea(event):
     t = t + 'endd: ' + ee + '\n'
     t = t + 'tags: ' + unicode(event.tags) + '\n'
     t = t + 'publ: ' + str(event.public) + '\n'
-
     t = t + 'city: ' + unicode(event.city) + '\n'
     t = t + 'addr: ' + unicode(event.address) + '\n'
     t = t + 'code: ' + unicode(event.postcode) + '\n'
@@ -116,40 +134,11 @@ def generate_event_textarea(event):
     t = t + 'desc: ' + unicode(event.description) + '\n'
     return t
 
-
 def StringToBool(s):
     if s is True or s is False:
         return s
     s = str(s).strip().lower()
     return not s in ['false','f','n','0','']
-
-def view_astext(request, event_id):
-    try:
-        event = Event.objects.get(pk=event_id)
-    except Event.DoesNotExist:
-        return render_to_response('index.html',
-                    {'form': getEventForm(request.user),
-                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-                    context_instance=RequestContext(request))
-    if (not event.public) and (event.user.id != request.user.id):
-        return render_to_response('index.html',
-                {'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
-    else:
-        if request.method == 'POST':
-            return render_to_response('index.html',
-                {'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
-        else:
-            event_textarea = generate_event_textarea(event)
-            templates = { 'event_textarea': event_textarea, 'event_id': event_id }
-            return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
 
 def edit_astext(request, event_id):
     try:
@@ -168,20 +157,15 @@ def edit_astext(request, event_id):
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
-###############################################################################
         if request.method == 'POST':
             if request.user.is_authenticated():
-#------------------------------------------------------------------------------
                 if 'event_astext' in request.POST:
                     try:
-
                         t = request.POST['event_astext'].replace(": ", ":")
                         event_attr_list = t.splitlines()
                         event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
-
                         event.acro        = event_attr_dict['acro']
                         event.title       = event_attr_dict['titl']
-#                        event.start       = strptime(event_attr_dict['date'])
                         event.start       = event_attr_dict['date']
                         event.end         = event_attr_dict['endd']
                         event.tags        = event_attr_dict['tags']
@@ -218,7 +202,6 @@ def edit_astext(request, event_id):
                 else:
                     message = _("You submitted an empty form.")
                     return HttpResponse(message)
-#------------------------------------------------------------------------------
             else:
                 return render_to_response('index.html',
                     {'form': getEventForm(request.user),
@@ -226,42 +209,47 @@ def edit_astext(request, event_id):
                     ": " + str(event_id) + ". " +
                     _("Maybe it is because you are not logged in with the right account") + "."},
                     context_instance=RequestContext(request))
-###############################################################################
         else:
-###############################################################################
             event_textarea = generate_event_textarea(event)
             templates = { 'event_textarea': event_textarea, 'event_id': event_id }
             return render_to_response('events/edit_astext.html', templates, context_instance=RequestContext(request))
-###############################################################################
 
-def simplified_submission(request):
-    if request.method == 'POST':
-        if request.user.is_authenticated():
-            sef = SimplifiedEventForm(request.POST)
-        else:
-            sef = SimplifiedEventFormAnonymous(request.POST)
-
-        if sef.is_valid():
-            cd = sef.cleaned_data
-            # create a new entry and saves the data
-            if request.user.is_authenticated():
-                public_value = public=cd['public']
-            else:
-                public_value = True
-            e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
-                        tags=cd['tags'], public=public_value)
-            e.save()
-            return HttpResponseRedirect('/events/edit/' + str(e.id)) ;
-            # TODO: look in a thread for all users who wants to receive an email notification and send it
-        else:
-            return render_to_response('index.html', {'form': sef}, context_instance=RequestContext(request))
+def view_astext(request, event_id):
+    try:
+        event = Event.objects.get(pk=event_id)
+    except Event.DoesNotExist:
+        return render_to_response('index.html',
+                    {'form': getEventForm(request.user),
+                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
+                    context_instance=RequestContext(request))
+    if (not event.public) and (event.user.id != request.user.id):
+        return render_to_response('index.html',
+                {'form': getEventForm(request.user),
+                'message_col1': _("You are not allowed to edit the event with the following number") +
+                ": " + str(event_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
     else:
-        return HttpResponseRedirect(request.get_host())
+        if request.method == 'POST':
+            return render_to_response('index.html',
+                {'form': getEventForm(request.user),
+                'message_col1': _("You are not allowed to edit the event with the following number") +
+                ": " + str(event_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+        else:
+            event_textarea = generate_event_textarea(event)
+            templates = { 'event_textarea': event_textarea, 'event_id': event_id }
+            return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
 
-def id(request, event_id):
-    e = get_object_or_404(Event, pk=event_id)
-    return render_to_response('events/event.html', {'event': e})
-    #return HttpResponse("You're looking at id %s." % id)
+
+#def id(request, event_id):
+#    e = get_object_or_404(Event, pk=event_id)
+#    return render_to_response('events/event.html', {'event': e})
+#    #return HttpResponse("You're looking at id %s." % id)
+
+
+##### views below present lists of events #####
 
 def search(request):
     if 'q' in request.GET and request.GET['q']:
@@ -336,18 +324,17 @@ def search_thisuser(request):
                 {'events': events},
                 context_instance=RequestContext(request))
 
-def tag(request, tag_name):
+def events_for_tag(request, tag_name):
+    events_with_tag = TaggedItem.objects.get_by_model(Event, tag_name)
+    return render_to_response('events/events.html', {'events_list': events_with_tag})
+
+#def tag(request, tag_name):
 #    try:
 #        tag_by_name = Tag.objects.get(name=tag_name)
 #    except:
 #        return HttpResponse("There is no tag '%s'." % tag_name)
-    t = get_object_or_404(Tag, name=tag_name)
-    events_with_tag = TaggedItem.objects.get_by_model(Event, t)
-    return render_to_response('events/events.html', {'events_list': events_with_tag})
-    #return HttpResponse("Number of objects tagged with %s : %d." % (tag_name, len(retrieved)))
-
-def events_for_tag(request, tag_name):
-    events_with_tag = TaggedItem.objects.get_by_model(Event, tag_name)
-    return render_to_response('events/events.html', {'events_list': events_with_tag})
-#    return render_to_response('index.html', {'events_with_this_tag': events_with_tag}, context_instance=RequestContext(request))
+#    t = get_object_or_404(Tag, name=tag_name)
+#    events_with_tag = TaggedItem.objects.get_by_model(Event, t)
+#    return render_to_response('events/events.html', {'events_list': events_with_tag})
+#    #return HttpResponse("Number of objects tagged with %s : %d." % (tag_name, len(retrieved)))
 
