@@ -7,8 +7,6 @@ from tagging.models import Tag
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
-from tagging.models import TaggedItem
-from tagging.models import Tag
 
 from django.forms.models import inlineformset_factory
 

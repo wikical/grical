@@ -1,8 +1,6 @@
 # Django settings for gridcalendar project.
 import os
 
-DOMAIN = 'dev.cloca.net'
-
 dirname = os.path.dirname(globals()["__file__"])
 
 DEBUG = True
@@ -20,7 +18,7 @@ SEND_BROKEN_LINK_EMAILS = True
 
 DATABASE_ENGINE   = 'postgresql_psycopg2'  # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME     = 'gridcalendar'         # DB Name (or path to database file if using sqlite3)
-DATABASE_USER     = 'gridcalendar'         # Not used with sqlite3
+DATABASE_USER     = 'gridcalendar'         # Not used with sqlite3.
 # !!!!!! replace with the DB password !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DATABASE_PASSWORD = 'the_password'         # Not used with sqlite3.
 DATABASE_HOST     = 'localhost'            # Set to empty string for localhost. Not used with sqlite3.
