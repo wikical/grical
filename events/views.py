@@ -251,7 +251,7 @@ def view_astext(request, event_id):
 
 ##### views below present lists of events #####
 
-def search(request):
+def list_search(request):
     if 'q' in request.GET and request.GET['q']:
         q = request.GET['q']
         events = Event.objects.filter(title__icontains=q)
@@ -260,15 +260,17 @@ def search(request):
                 {'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
         else:
-            return render_to_response('search_results.html',
+#------------------------------------------------------------------------------
+            return render_to_response('events/list_search.html',
                 {'events': events, 'query': q},
                 context_instance=RequestContext(request))
+#------------------------------------------------------------------------------
     else:
         return render_to_response('index.html',
             {'message_col1': _("You have submitted a search with no content") + "."},
             context_instance=RequestContext(request))
 
-def search_byuser(request, username):
+def list_user(request, username):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         try:
             u = User.objects.get(username__exact=username)
@@ -281,9 +283,11 @@ def search_byuser(request, username):
                     {'message_col1': _("Your search didn't get any result") + "."},
                     context_instance=RequestContext(request))
             else:
-                return render_to_response('events_of_user.html',
+#------------------------------------------------------------------------------
+                return render_to_response('events/list_user.html',
                     {'events': events, 'username': username},
                     context_instance=RequestContext(request))
+#------------------------------------------------------------------------------
         except User.DoesNotExist:
             return render_to_response('index.html',
                 {'message_col1': _("User does not exist") + "."},
@@ -299,15 +303,17 @@ def search_byuser(request, username):
                     {'message_col1': _("Your search didn't get any result") + "."},
                     context_instance=RequestContext(request))
             else:
-                return render_to_response('events_of_user.html',
+#------------------------------------------------------------------------------
+                return render_to_response('events/list_user.html',
                     {'events': events, 'username': username},
                     context_instance=RequestContext(request))
+#------------------------------------------------------------------------------
         except User.DoesNotExist:
             return render_to_response('index.html',
                 {'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
 
-def search_thisuser(request):
+def list_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('index.html',
                 {'message_col1': _("Your search didn't get any result") + "."},
@@ -320,13 +326,19 @@ def search_thisuser(request):
                 {'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
         else:
-            return render_to_response('my_events.html',
+#------------------------------------------------------------------------------
+            return render_to_response('events/list_my.html',
                 {'events': events},
                 context_instance=RequestContext(request))
+#------------------------------------------------------------------------------
 
-def events_for_tag(request, tag_name):
+def list_tag(request, tag_name):
     events_with_tag = TaggedItem.objects.get_by_model(Event, tag_name)
-    return render_to_response('events/events.html', {'events_list': events_with_tag})
+#------------------------------------------------------------------------------
+    return render_to_response('events/list_tag.html',
+        {'events_list': events_with_tag},
+        context_instance=RequestContext(request))
+#------------------------------------------------------------------------------
 
 #def tag(request, tag_name):
 #    try:

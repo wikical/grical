@@ -34,14 +34,14 @@
         <div id="userlinks">
             {% if user.username %}
             {% trans "Welcome" %} <b>{{ user.username }}</b>
-                | <a href="/events/my/">My events</a>
+                | <a href="/events/list/my/">My events</a>
                 | <a href="/settings/">{% trans "settings" %}</a>
                 | <a href="/accounts/logout/">{% trans "logout" %}</a>
             {% else %}
             <a href="/accounts/register">{% trans "Sign up" %}</a> | <a href="/accounts/login/">{% trans "log in" %}</a>
             {% endif %}
         </div>
-        <form action="/events/search/" method="get">
+        <form action="/events/list/search/" method="get">
             <input type="text" size="50" name="q">
             <input type="submit" value="{% trans "Search" %}">
         </form>
