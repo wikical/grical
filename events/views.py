@@ -258,16 +258,6 @@ def simplified_submission(request):
     else:
         return HttpResponseRedirect(request.get_host())
 
-def tag(request, tag_name):
-#    try:
-#        tag_by_name = Tag.objects.get(name=tag_name)
-#    except:
-#        return HttpResponse("There is no tag '%s'." % tag_name)
-    t = get_object_or_404(Tag, name=tag_name)
-    retrieved = TaggedItem.objects.get_by_model(Event, t)
-    return render_to_response('events/events.html', {'events_list': retrieved})
-    #return HttpResponse("Number of objects tagged with %s : %d." % (tag_name, len(retrieved)))
-
 def id(request, event_id):
     e = get_object_or_404(Event, pk=event_id)
     return render_to_response('events/event.html', {'event': e})
@@ -345,4 +335,19 @@ def search_thisuser(request):
             return render_to_response('my_events.html',
                 {'events': events},
                 context_instance=RequestContext(request))
+
+def tag(request, tag_name):
+#    try:
+#        tag_by_name = Tag.objects.get(name=tag_name)
+#    except:
+#        return HttpResponse("There is no tag '%s'." % tag_name)
+    t = get_object_or_404(Tag, name=tag_name)
+    events_with_tag = TaggedItem.objects.get_by_model(Event, t)
+    return render_to_response('events/events.html', {'events_list': events_with_tag})
+    #return HttpResponse("Number of objects tagged with %s : %d." % (tag_name, len(retrieved)))
+
+def events_for_tag(request, tag_name):
+    events_with_tag = TaggedItem.objects.get_by_model(Event, tag_name)
+    return render_to_response('events/events.html', {'events_list': events_with_tag})
+#    return render_to_response('index.html', {'events_with_this_tag': events_with_tag}, context_instance=RequestContext(request))
 
