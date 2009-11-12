@@ -332,12 +332,14 @@ def list_my(request):
                 context_instance=RequestContext(request))
 #------------------------------------------------------------------------------
 
-def list_tag(request, tag_name):
-    events_with_tag = TaggedItem.objects.get_by_model(Event, tag_name)
+def list_tag(request, tag):
+    from re import sub
+    query_tag = Tag.objects.get(name=tag)
+    events = TaggedItem.objects.get_by_model(Event, query_tag)
+    events = events.order_by('-start')
 #------------------------------------------------------------------------------
-    return render_to_response('events/list_tag.html',
-        {'events': events_with_tag, 'tag_name': tag_name},
-        context_instance=RequestContext(request))
+    return render_to_response('events/list_tag.html', dict(tag=tag, events=events), context_instance=RequestContext(request))
+#   return render_to_response('events/list_tag.html', {'events': events, 'tag': tag}, context_instance=RequestContext(request))
 #------------------------------------------------------------------------------
 
 #def tag(request, tag_name):
