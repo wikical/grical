@@ -1,0 +1,8 @@
+If you want to do developement, you can clone your main database:
+
+createdb -U gridcalendar -O gridcalendar gridcalendar-dev
+pg_dump -U gridcalendar gridcalendar | psql -U gridcalendar gridcalendar-dev
+
+postgres@cloca:~$ psql -U gridcalendar gridcalendar-dev -c "UPDATE django_site SET domain = 'dev.cloca.net' WHERE id = 1"
+UPDATE 1
+postgres@cloca:~$
