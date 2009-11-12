@@ -2,3 +2,4 @@ syntax: glob
 *.pyc
 syntax: regexp
 settings.py
+apache/django.wsgi

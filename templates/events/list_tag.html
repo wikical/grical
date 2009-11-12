@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block column1 %}
-<h3> {% trans "Events with tag" %}: {{ tag_name }}</h3>
+<h3> {% trans "Events with tag" %}: {{ tag.name }}</h3>
 {% include "events/list_wrapper.html" %}
 {% endblock %}
 
