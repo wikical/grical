@@ -336,7 +336,7 @@ def list_tag(request, tag_name):
     events_with_tag = TaggedItem.objects.get_by_model(Event, tag_name)
 #------------------------------------------------------------------------------
     return render_to_response('events/list_tag.html',
-        {'events_list': events_with_tag},
+        {'events': events_with_tag, 'tag_name': tag_name},
         context_instance=RequestContext(request))
 #------------------------------------------------------------------------------
 
