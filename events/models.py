@@ -293,6 +293,8 @@ class Event(models.Model):
     description = models.TextField(_('Description'), blank=True, null=True)
     ##############################################################
     # groups = models.ManyToManyField(Group, blank=True, null=True, help_text=_("Groups to be notified and allowed to see it if not public"))
+    def set_tags(self, tags):
+        Tag.objects.update_tags(self, tags)
     def get_tags(self):
         return Tag.objects.get_for_object(self)
     def __unicode__(self):
