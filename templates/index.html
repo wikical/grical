@@ -7,7 +7,7 @@
 <div id="event_form">
     {% if form.errors %}
         <p style="color: red;">
-            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}
+            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
         </p>
     {% endif %}
     <form action="/events/simplified_submission/" method="post">
@@ -27,11 +27,16 @@
 {% endif %}
 -->
 
+{% if coming_events %}
+
 {% for event in coming_events %}
     <br />
 {% include "events/list_expanded.html" %}
 {% endfor %}
 
+{% endif %}
+
+{% if past_events %}
 <hr size="3">
 <p>
 Past events:
@@ -41,6 +46,8 @@ Past events:
     <br />
 {% include "events/list_expanded.html" %}
 {% endfor %}
+
+{% endif %}
 
 {% if user.username %}
 <!--
