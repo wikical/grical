@@ -158,7 +158,6 @@ def edit_astext(request, event_id):
                 context_instance=RequestContext(request))
     else:
         if request.method == 'POST':
-            if request.user.is_authenticated():
                 if 'event_astext' in request.POST:
                     try:
                         t = request.POST['event_astext'].replace(": ", ":")
@@ -202,13 +201,6 @@ def edit_astext(request, event_id):
                 else:
                     message = _("You submitted an empty form.")
                     return HttpResponse(message)
-            else:
-                return render_to_response('error.html',
-                    {'form': getEventForm(request.user),
-                    'message_col1': _('You are not allowed to edit the event with the following number') +
-                    ": " + str(event_id) + ". " +
-                    _("Maybe it is because you are not logged in with the right account") + "."},
-                    context_instance=RequestContext(request))
         else:
             event_textarea = generate_event_textarea(event)
             templates = { 'event_textarea': event_textarea, 'event_id': event_id }
