@@ -1,0 +1,149 @@
+================
+Django Countries
+================
+
+Nice little application for `Django`_ projects providing fixtures and models 
+for a "complete" list of world countries and US states. 
+Also throwing in a small template tag for getting country flags by 
+ISO 3166-1 alpha-2 country code.
+
+.. _`Django`: http://www.djangoproject.com
+
+
+Installation
+============
+
+Check out the latest source:
+
+    svn checkout http://django-countries.googlecode.com/svn/trunk/ django-countries
+
+
+Using django-countries in your project
+--------------------------------------
+
+Once you got the source copy ``countries`` into your django site directory.
+Add `countries` to the list of installed apps and run `syncdb` 
+and you're good to go.
+
+Note: 
+    The models are fixed to the ``country`` and ``usstate`` tables, 
+    se models.py for details
+
+
+And for the flags hed over to 
+   http://www.famfamfam.com/lab/icons/flags/
+and download the ISO 3166-1 alpha-2 country code flag package. 
+And add a flags director to your media root and copy the .gif flags there. 
+
+An alternative flag resource is 
+   http://www.ip2location.com/flagsoftheworld.aspx ip2location
+
+
+Settings
+========
+
+Optional settings.
+
+COUNTRIES_FLAG_PATH
+-------------------
+
+Add this line:
+
+    ``COUNTRIES_FLAG_PATH = '<path relative to media root>flags/%s.png'``
+
+to django settings if you want to have the flags in an alternative 
+location or use .png instead of the default .gif 
+( .gif is just a tiny bit smaller ;)
+
+Default: ``'flags/%s.png'``
+
+
+Utilities
+=========
+
+Template-related utility functions are defined in the ``countries.utils``
+module:
+
+iso_flag(iso, flag_path=u'')
+----------------------------
+
+Returns a full path to the ISO 3166-1 alpha-2 country code flag image.
+
+``flag_path`` is given in the form
+   ``'<path relative to media root>/%s.gif'``
+and is appended to ``settings.MEDIA_URL`` 
+
+if a valid flag_path is not given trys to use 
+   ``settings.COUNTRIES_FLAG_PATH``
+defaults to ``'flags/%s.gif'``
+
+
+Template filters
+================
+
+The ``countries.templatetags.countries_tags`` module
+defines a filter for getting the media path to flag images
+
+Tag reference
+-------------
+
+iso_flag
+~~~~~~~~
+
+Returns a full path to the ISO 3166-1 alpha-2 country code flag image.
+
+If the flag path can allso be specified by a extra argument in the form: 
+``<path relative to media root>/%s.gif``
+
+Example usage::
+
+    {{ user_profile.country.iso|iso_flag }}
+
+    {{ user_profile.country.iso|iso_flag:"appmedia/flags/%s.png" }}
+
+
+Source of information
+=====================
+
+Country list
+------------
+
+The list of world countries is based on the list of ISO 3166 codes 
+for countries in existence at the time of last update. 
+The tricky part is getting the list complete with iso-2 code, iso-3 code, 
+number and official printable name se models.py for more details.
+
+Therefore this country list is a merge from these two resources:
+
+    - http://www.iso.ch/iso/en/prods-services/iso3166ma/02iso-3166-code-lists/index.html
+    - http://unstats.un.org/unsd/methods/m49/m49alpha.htm
+
+The official list is constantly receiving updates, 
+so the list might not be 100% accurate.
+
+Country list last updated: *2007-08-20* - 244 countries.
+
+US States list
+--------------
+
+The US states list is a plain list of name and abbreviation. 
+Making the list more complete are the additional six military "states" 
+all according to the usps list at the time of last update:
+
+    - http://www.usps.com/ncsc/lookups/usps_abbreviations.html
+
+US States list last updated: *2007-08-20* - 59+6=65 states
+
+Disclaimer
+----------
+
+As a disclaimer I'll cite the Unite Nations list of county names at 
+http://unstats.un.org/unsd/methods/m49/m49alpha.htm 
+
+    "The designations employed and the presentation of country or area
+    names in this list do not imply the expression of any opinion whatsoever on
+    the part of the ..." *author* "...concerning 
+    the legal status of any country, territory, city or area or of its 
+    authorities, or concerning the delimitation of its frontiers or boundaries."
+
+

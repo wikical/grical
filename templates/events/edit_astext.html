@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Edit the event" %}:</p>
+<div id="event_textarea_form">
+
+    <form action="" method="post">
+        <table>
+            <TEXTAREA Name="event_astext" rows="25" cols="80">{{ event_textarea }}</TEXTAREA>
+        <input type="submit" value={% trans "Save" %}>
+        </table>
+    </form>
+
+</div>
+        <a href="/events/edit/{{ event_id }}/"><span class="field_title"> edit this event with webforms </span></a>
+
+<p>
+
+Example of filling the form:
+<pre>
+acro: 26C3
+titl: 26. Chaos Communication Congress
+date: 2009-12-27
+endd: 2009-12-30
+tags: berlin,linux
+publ: True
+city: Berlin
+addr: Alexanderstr. 11
+code: 10178
+land: DE
+tizo: 60
+lati: 52.5207232
+long: 13.4164308
+url: main|http://events.ccc.de/congress/2009/wiki/index.php/Welcome
+url: Travel|http://events.ccc.de/congress/2009/wiki/index.php/Travel
+time: Day 1 of the conference|2009-12-27|09:00:00|18:00:00
+time: Day 2 of the conference|2009-12-28|09:00:00|18:00:00
+time: Day 3 of the conference|2009-12-29|09:00:00|18:00:00
+time: Day 4 of the conference|2009-12-30|09:00:00|18:00:00
+dl: call for papers|2009-10-30
+dl: deadline|2009-12-27
+desc: Test description
+</pre>
+
+
+</p>
+
+
+
+{% endblock %}
+
+{% block column2 %}
+{% if user.username %}
+<p>TODO If user has groups: Latest events in his groups:</p>
+<ul>
+    <li>group A</li>
+    <ul>
+        <li>event A.1</li>
+        <li>event A.2</li>
+    </ul>
+    <li>group B</li>
+    <ul>
+        <li>event B.1</li>
+        <li>event B.2</li>
+    </ul>
+</ul>
+{% else %}
+<p>TODO: Instructions how this site works]</p>
+{% endif %}
+{% endblock %}
+
+{% block column3 %}
+{% endblock %}

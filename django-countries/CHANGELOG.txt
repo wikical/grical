@@ -1,0 +1,20 @@
+==========================
+Django Countries Changelog
+==========================
+
+
+Country list
+------------
+Last updated: 2007-08-20 - 244 countries.
+
+
+US States
+---------
+List last updated: 2007-08-20 - 59+6=65 states
+
+
+Version 0.1-r3, 22 Aug 2007:
+----------------------------
+
+First packaged versioon from svn revision 3.
+http://django-countries.googlecode.com/files/django_countries_0.1-r3.zip

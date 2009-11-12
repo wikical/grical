@@ -1,0 +1,32 @@
+Django Countries
+   World Countries and US States for Django projects 
+
+
+To install it copy 'countries' into your django site directory.
+Add 'countries' to the list of installed apps and run syncdb 
+and you're good to go.
+
+Note: 
+   The models are fixed to the country and usstate tables.
+   Se models.py for details.
+
+
+And for the flags hed over to:
+   http://www.famfamfam.com/lab/icons/flags/
+
+and download the ISO 3166-1 alpha-2 country code flag package. 
+Add a 'flags' director to your media root and copy the .gif flags there. 
+
+An alternative flag resource is: 
+   http://www.ip2location.com/flagsoftheworld.aspx
+
+Optionally add:
+   COUNTRIES_FLAG_PATH = '<path relative to media root>flags/%s.png'
+
+to django settings if you want to have the flags in an alternative location 
+or use .png instead of the default .gif ( .gif is just a tiny bit smaller ;) 
+
+
+Note that this application requires Python 2.4 or later, and Django SVN.
+You can obtain Python from http://www.python.org/ and
+Django from http://www.djangoproject.com/.

@@ -1,0 +1,59 @@
+1. As root edit your vim /etc/postgresql/*/main/pg_hba.conf file to include:
+
+local   all         gridcalendar                      md5
+
+2. Reload the configuration:
+
+killall -HUP postgres
+
+3. Create the gridcalendar postgres user with password:
+
+$ su
+# su postgres
+postgres$ createuser --pwprompt gridcalendar
+Enter password for new role:
+Enter it again:
+Shall the new role be a superuser? (y/n) n
+Shall the new role be allowed to create databases? (y/n) y
+Shall the new role be allowed to create more new roles? (y/n) n
+postgres$
+
+4. Create the gridcalendar database:
+
+postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
+Password:
+postgres$
+
+5. Install the Django tables:
+
+$ cd ???.???/gridcalendar/
+$ python manage.py syncdb
+Creating table auth_permission
+Creating table auth_group
+Creating table auth_user
+Creating table auth_message
+Creating table django_content_type
+Creating table django_session
+Creating table django_site
+Creating table django_admin_log
+Creating table tagging_tag
+Creating table tagging_taggeditem
+Creating table registration_registrationprofile
+Creating table django_comments
+Creating table django_comment_flags
+
+You just installed Django's auth system, which means you don't have any superusers defined.
+Would you like to create one now? (yes/no): yes
+Username (Leave blank to use 'miernik'):
+E-mail address: django@miernik.name
+Password:
+Password (again):
+Superuser created successfully.
+Installing index for auth.Permission model
+Installing index for auth.Message model
+Installing index for admin.LogEntry model
+Installing index for tagging.TaggedItem model
+Installing index for comments.Comment model
+Installing index for comments.CommentFlag model
+$
+
