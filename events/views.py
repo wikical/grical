@@ -53,13 +53,13 @@ def edit(request, event_id):
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                     {'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
     if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                 {'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to edit the event with the following number') +
                 ": " + str(event_id) + ". " +
@@ -144,13 +144,13 @@ def edit_astext(request, event_id):
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                     {'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
     if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                 {'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
                 ": " + str(event_id) + ". " +
@@ -203,7 +203,7 @@ def edit_astext(request, event_id):
                     message = _("You submitted an empty form.")
                     return HttpResponse(message)
             else:
-                return render_to_response('index.html',
+                return render_to_response('error.html',
                     {'form': getEventForm(request.user),
                     'message_col1': _('You are not allowed to edit the event with the following number') +
                     ": " + str(event_id) + ". " +
@@ -218,12 +218,12 @@ def view_astext(request, event_id):
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                     {'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     if (not event.public) and (event.user.id != request.user.id):
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                 {'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
                 ": " + str(event_id) + ". " +
@@ -231,7 +231,7 @@ def view_astext(request, event_id):
                 context_instance=RequestContext(request))
     else:
         if request.method == 'POST':
-            return render_to_response('index.html',
+            return render_to_response('error.html',
                 {'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
                 ": " + str(event_id) + ". " +
@@ -256,7 +256,7 @@ def list_search(request):
         q = request.GET['q']
         events = Event.objects.filter(title__icontains=q)
         if len(events) == 0:
-            return render_to_response('index.html',
+            return render_to_response('error.html',
                 {'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
         else:
@@ -266,7 +266,7 @@ def list_search(request):
                 context_instance=RequestContext(request))
 #------------------------------------------------------------------------------
     else:
-        return render_to_response('index.html',
+        return render_to_response('error.html',
             {'message_col1': _("You have submitted a search with no content") + "."},
             context_instance=RequestContext(request))
 
@@ -279,7 +279,7 @@ def list_user(request, username):
             events = Event.objects.filter(user=useridtmp)
             events = Event.objects.filter(public=True)
             if len(events) == 0:
-                return render_to_response('index.html',
+                return render_to_response('error.html',
                     {'message_col1': _("Your search didn't get any result") + "."},
                     context_instance=RequestContext(request))
             else:
@@ -289,7 +289,7 @@ def list_user(request, username):
                     context_instance=RequestContext(request))
 #------------------------------------------------------------------------------
         except User.DoesNotExist:
-            return render_to_response('index.html',
+            return render_to_response('error.html',
                 {'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
     else:
@@ -299,7 +299,7 @@ def list_user(request, username):
             events = Event.objects.all()
             events = Event.objects.filter(user=useridtmp)
             if len(events) == 0:
-                return render_to_response('index.html',
+                return render_to_response('error.html',
                     {'message_col1': _("Your search didn't get any result") + "."},
                     context_instance=RequestContext(request))
             else:
@@ -309,20 +309,20 @@ def list_user(request, username):
                     context_instance=RequestContext(request))
 #------------------------------------------------------------------------------
         except User.DoesNotExist:
-            return render_to_response('index.html',
+            return render_to_response('error.html',
                 {'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
 
 def list_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
-        return render_to_response('index.html',
+        return render_to_response('error.html',
                 {'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
     else:
         events = Event.objects.all()
         events = Event.objects.filter(user=request.user)
         if len(events) == 0:
-            return render_to_response('index.html',
+            return render_to_response('error.html',
                 {'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
         else:
