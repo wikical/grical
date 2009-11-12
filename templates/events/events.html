@@ -1,9 +1,0 @@
-{% if events_list %}
-    <ul>
-        {% for event in events_list %}
-            <li><a href="/events/view_astext/{{event.pk}}/">{{event.title}}</a></li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No events available</p>
-{% endif %}
