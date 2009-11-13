@@ -1,7 +1,7 @@
 import datetime
-# import csv
 
 from django import forms
+from django.db.models import Q
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
@@ -246,7 +246,19 @@ def view_astext(request, event_id):
 def list_search(request):
     if 'q' in request.GET and request.GET['q']:
         q = request.GET['q']
-        events = Event.objects.filter(title__icontains=q)
+
+        qqq = Q()
+
+        for qpart in q.split(" "):
+            qqq |= Q(title__icontains=qpart)
+            qqq |= Q(description__icontains=qpart)
+            qqq |= Q(acro__icontains=qpart)
+            qqq |= Q(country__icontains=qpart)
+            qqq |= Q(city__icontains=qpart)
+            qqq |= Q(tags__icontains=qpart)
+
+        events = Event.objects.filter( qqq )
+
         if len(events) == 0:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
