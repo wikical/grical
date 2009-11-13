@@ -39,7 +39,7 @@ def simplified_submission(request):
             return HttpResponseRedirect('/events/edit/' + str(e.id)) ;
             # TODO: look in a thread for all users who wants to receive an email notification and send it
         else:
-            return render_to_response('index.html', {'form': sef}, context_instance=RequestContext(request))
+            return render_to_response('index.html', {'title': 'edit step 1', 'form': sef}, context_instance=RequestContext(request))
     else:
         return HttpResponseRedirect(request.get_host())
 
@@ -54,13 +54,13 @@ def edit(request, event_id):
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
         return render_to_response('error.html',
-                    {'form': getEventForm(request.user),
+                    {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
     if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
         return render_to_response('error.html',
-                {'form': getEventForm(request.user),
+                {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to edit the event with the following number') +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
@@ -85,7 +85,7 @@ def edit(request, event_id):
                 # TODO: look in a thread for all users who wants to receive an email notification and send it
                 return HttpResponseRedirect('/')
             else:
-                templates = {'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
+                templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
                 return render_to_response('events/edit.html', templates, context_instance=RequestContext(request))
         else:
             if request.user.is_authenticated():
@@ -95,7 +95,7 @@ def edit(request, event_id):
             ef_url = EventUrlInlineFormSet(instance=event)
             ef_timechunk = EventTimechunkInlineFormSet(instance=event)
             ef_deadline = EventDeadlineInlineFormSet(instance=event)
-            templates = {'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
+            templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
             return render_to_response('events/edit.html', templates, context_instance=RequestContext(request))
 
 def generate_event_textarea(event):
@@ -145,13 +145,13 @@ def edit_astext(request, event_id):
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
         return render_to_response('error.html',
-                    {'form': getEventForm(request.user),
+                    {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
     if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
         return render_to_response('error.html',
-                {'form': getEventForm(request.user),
+                {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
@@ -196,14 +196,14 @@ def edit_astext(request, event_id):
                         event.save()
                         return HttpResponseRedirect('/')
                     except Exception:
-                        return render_to_response('error.html', {'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")},
+                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")},
                     context_instance=RequestContext(request))
                 else:
                     message = _("You submitted an empty form.")
                     return HttpResponse(message)
         else:
             event_textarea = generate_event_textarea(event)
-            templates = { 'event_textarea': event_textarea, 'event_id': event_id }
+            templates = {'title': 'edit event as text', 'event_textarea': event_textarea, 'event_id': event_id }
             return render_to_response('events/edit_astext.html', templates, context_instance=RequestContext(request))
 
 def view_astext(request, event_id):
@@ -211,12 +211,12 @@ def view_astext(request, event_id):
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
         return render_to_response('error.html',
-                    {'form': getEventForm(request.user),
+                    {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     if (not event.public) and (event.user.id != request.user.id):
         return render_to_response('error.html',
-                {'form': getEventForm(request.user),
+                {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
@@ -224,14 +224,14 @@ def view_astext(request, event_id):
     else:
         if request.method == 'POST':
             return render_to_response('error.html',
-                {'form': getEventForm(request.user),
+                {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
         else:
             event_textarea = generate_event_textarea(event)
-            templates = { 'event_textarea': event_textarea, 'event_id': event_id }
+            templates = {'title': 'view as text', 'event_textarea': event_textarea, 'event_id': event_id }
             return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
 
 
@@ -249,17 +249,15 @@ def list_search(request):
         events = Event.objects.filter(title__icontains=q)
         if len(events) == 0:
             return render_to_response('error.html',
-                {'message_col1': _("Your search didn't get any result") + "."},
+                {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
         else:
-#------------------------------------------------------------------------------
             return render_to_response('events/list_search.html',
-                {'events': events, 'query': q},
+                {'title': 'search results', 'events': events, 'query': q},
                 context_instance=RequestContext(request))
-#------------------------------------------------------------------------------
     else:
         return render_to_response('error.html',
-            {'message_col1': _("You have submitted a search with no content") + "."},
+            {'title': 'error', 'message_col1': _("You have submitted a search with no content") + "."},
             context_instance=RequestContext(request))
 
 def list_user(request, username):
@@ -272,17 +270,15 @@ def list_user(request, username):
             events = Event.objects.filter(public=True)
             if len(events) == 0:
                 return render_to_response('error.html',
-                    {'message_col1': _("Your search didn't get any result") + "."},
+                    {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                     context_instance=RequestContext(request))
             else:
-#------------------------------------------------------------------------------
                 return render_to_response('events/list_user.html',
                     {'events': events, 'username': username},
                     context_instance=RequestContext(request))
-#------------------------------------------------------------------------------
         except User.DoesNotExist:
             return render_to_response('error.html',
-                {'message_col1': _("User does not exist") + "."},
+                {'title': 'error', 'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
     else:
         try:
@@ -292,47 +288,41 @@ def list_user(request, username):
             events = Event.objects.filter(user=useridtmp)
             if len(events) == 0:
                 return render_to_response('error.html',
-                    {'message_col1': _("Your search didn't get any result") + "."},
+                    {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                     context_instance=RequestContext(request))
             else:
-#------------------------------------------------------------------------------
                 return render_to_response('events/list_user.html',
                     {'events': events, 'username': username},
                     context_instance=RequestContext(request))
-#------------------------------------------------------------------------------
         except User.DoesNotExist:
             return render_to_response('error.html',
-                {'message_col1': _("User does not exist") + "."},
+                {'title': 'error', 'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
 
 def list_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
-                {'message_col1': _("Your search didn't get any result") + "."},
+                {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
     else:
         events = Event.objects.all()
         events = Event.objects.filter(user=request.user)
         if len(events) == 0:
             return render_to_response('error.html',
-                {'message_col1': _("Your search didn't get any result") + "."},
+                {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
         else:
-#------------------------------------------------------------------------------
             return render_to_response('events/list_my.html',
-                {'events': events},
+                {'title': 'list my events', 'events': events},
                 context_instance=RequestContext(request))
-#------------------------------------------------------------------------------
 
 def list_tag(request, tag):
     from re import sub
     query_tag = Tag.objects.get(name=tag)
     events = TaggedItem.objects.get_by_model(Event, query_tag)
     events = events.order_by('-start')
-#------------------------------------------------------------------------------
-    return render_to_response('events/list_tag.html', dict(tag=tag, events=events), context_instance=RequestContext(request))
-#   return render_to_response('events/list_tag.html', {'events': events, 'tag': tag}, context_instance=RequestContext(request))
-#------------------------------------------------------------------------------
+#   return render_to_response('events/list_tag.html', dict(tag=tag, events=events), context_instance=RequestContext(request))
+    return render_to_response('events/list_tag.html', {'title': 'list by tag', 'events': events, 'tag': tag}, context_instance=RequestContext(request))
 
 #def tag(request, tag_name):
 #    try:

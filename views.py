@@ -32,11 +32,11 @@ def index(request):
         coming_events = Event.objects.filter(start__gte=datetime.now()).exclude(public=False)[:100]
         past_events   = Event.objects.filter(start__lt=datetime.now()).exclude(public=False)[:100]
       # coming_events = Event.objects.all()
-    return render_to_response('index.html', {'form': ev, 'coming_events': coming_events, 'past_events': past_events}, context_instance=RequestContext(request))
+    return render_to_response('index.html', {'title': 'home', 'form': ev, 'coming_events': coming_events, 'past_events': past_events}, context_instance=RequestContext(request))
 
 # for this decorator, see
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator
 @login_required
 def settings(request):
     # user is logged in
-    return render_to_response('settings.html', {}, context_instance=RequestContext(request))
+    return render_to_response('settings.html', {'title': 'settings'}, context_instance=RequestContext(request))
