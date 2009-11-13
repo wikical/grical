@@ -13,12 +13,12 @@
                 {% endif %}
                 {% block column1 %}{% endblock %}
 			</div>
+<!--
 			<div class="col2">
                 {% block column2 %}
                 {% if user.username %}
                 <p align="right"><a href="/groups/create">{% trans "Create a new group" %}</a></p>
                 <h2 align="center">{% trans "Groups" %}</h2>
-                <!--
                 <p>TODO If user has groups: Latest events in his groups:</p>
                 <ul>
                     <li>group A</li>
@@ -32,7 +32,6 @@
                         <li>event B.2</li>
                     </ul>
                 </ul>
-                -->
                 {% else %}
                 <h2>{% trans "What is CLOCA.net?" %}</h2>
                 <p>
@@ -48,16 +47,14 @@
             {% if user.username %}
             <p class="info">{% trans "This column may contain advertisements" %}</p>
             <h2>Interesting events</h2>
-            <!--
             <p>TODO interesting events for logged user</p>
-            -->
             {% else %}
-            <!--
             <p>TODO: tag cloud</p>
-            -->
             {% endif %}
             {% endblock %}
             </div>
+-->
+
         </div>
     </div>
 </div>
