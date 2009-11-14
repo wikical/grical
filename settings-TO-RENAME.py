@@ -29,11 +29,13 @@ DEFAULT_FROM_EMAIL = 'noreply@example.com'
 
 LOGIN_REDIRECT_URL = '/'
 
-TEMPLATE_CONTEXT_PROCESSORS = ("django.core.context_processors.auth",
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.core.context_processors.auth",
     "django.core.context_processors.debug",
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
-    "gridcalendar.context_processors.global_template_vars",)
+    "gridcalendar.context_processors.global_template_vars",
+)
 
 # for tagging application
 # see http://django-tagging.googlecode.com/svn/trunk/docs/overview.txt

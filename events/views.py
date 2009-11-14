@@ -252,12 +252,14 @@ def list_search(request):
         for qpart in q.split(" "):
             qqq |= Q(title__icontains=qpart)
             qqq |= Q(description__icontains=qpart)
-            qqq |= Q(acro__icontains=qpart)
-            qqq |= Q(country__icontains=qpart)
-            qqq |= Q(city__icontains=qpart)
-            qqq |= Q(tags__icontains=qpart)
+            qqq |= Q(acro__iexact=qpart)
+            qqq |= Q(country__iexact=qpart)
+            qqq |= Q(city__iexact=qpart)
 
-        events = Event.objects.filter( qqq )
+        events_q = Event.objects.filter( qqq )
+        events_t = TaggedItem.objects.get_union_by_model(Event, q.split(" "))
+
+        events = events_q | events_t
 
         if len(events) == 0:
             return render_to_response('error.html',
