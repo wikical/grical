@@ -1,5 +1,7 @@
 import datetime
+from time import strftime
 
+import re
 from django import forms
 from django.db.models import Q
 from django.forms.models import inlineformset_factory
@@ -234,13 +236,6 @@ def view_astext(request, event_id):
             templates = {'title': 'view as text', 'event_textarea': event_textarea, 'event_id': event_id }
             return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
 
-
-#def id(request, event_id):
-#    e = get_object_or_404(Event, pk=event_id)
-#    return render_to_response('events/event.html', {'event': e})
-#    #return HttpResponse("You're looking at id %s." % id)
-
-
 ##### views below present lists of events #####
 
 def list_search(request):
@@ -248,7 +243,6 @@ def list_search(request):
         q = request.GET['q'].lower()
 
         qqq = Q()
-
         for qpart in q.split(" "):
             qqq |= Q(title__icontains=qpart)
             qqq |= Q(description__icontains=qpart)
@@ -261,17 +255,83 @@ def list_search(request):
 
         events = events_q | events_t
 
+        if 't' in request.GET and request.GET['t']:
+            t = request.GET['t'].lower()
+            ttt = Q()
+            for tpart in t.split(" "):
+                tpart_list = tpart.split(":")
+#------------------------------------------------------------------------------
+                if len(tpart_list)==1:
+                    tpart_from = tpart_list[0]
+                    tpart_to = tpart_list[0]
+                if len(tpart_list)==2:
+                    tpart_from = tpart_list[0]
+                    tpart_to = tpart_list[1]
+                if len(tpart_list)>2:
+                    return render_to_response('error.html',
+                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - one of your time ranges contain more then 2 elements") + ".", 'query': q, 'timequery': t},
+                        context_instance=RequestContext(request))
+
+                tpart_from_p_list = re.split('[+]', tpart_from)
+                if len(tpart_from_p_list) == 1:
+                    tpart_from_date = tpart_from_p_list[0]
+                    tpart_from_diff = 0
+                if len(tpart_from_p_list) == 2:
+                    tpart_from_date = tpart_from_p_list[0]
+                    tpart_from_diff = int(tpart_from_p_list[1])
+                if len(tpart_from_p_list) > 2:
+                    return render_to_response('error.html',
+                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date") + ".", 'query': q, 'timequery': t},
+                        context_instance=RequestContext(request))
+
+                tpart_to_p_list = re.split('[+]', tpart_to)
+                if len(tpart_to_p_list) == 1:
+                    tpart_to_date = tpart_to_p_list[0]
+                    tpart_to_diff = 0
+                if len(tpart_to_p_list) == 2:
+                    tpart_to_date = tpart_to_p_list[0]
+                    tpart_to_diff = int(tpart_to_p_list[1])
+                if len(tpart_to_p_list) > 2:
+                    return render_to_response('error.html',
+                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from the 'to' date") + ".", 'query': q, 'timequery': t},
+                        context_instance=RequestContext(request))
+
+#                assert False
+
+                if tpart_from_date == '@':  tpart_from_date = datetime.date.today().strftime("%Y-%m-%d")
+                if tpart_to_date   == '@':  tpart_to_date   = datetime.date.today().strftime("%Y-%m-%d")
+                if tpart_from_date == '':   tpart_from_date = '0001-01-01'
+                if tpart_to_date   == '':   tpart_to_date   = '9999-12-31'
+
+
+                try:
+                    tpart_from_date_valid  = datetime.datetime.strptime(tpart_from_date, "%Y-%m-%d")
+                    tpart_to_date_valid    = datetime.datetime.strptime(tpart_to_date,   "%Y-%m-%d")
+                except ValueError:
+                    return render_to_response('error.html',
+                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - one of your dates is in invalid format or is not a date at all") + ".", 'query': q, 'timequery': t},
+                        context_instance=RequestContext(request))
+
+                tpart_from_final = tpart_from_date_valid + datetime.timedelta(days=tpart_from_diff)
+                tpart_to_final   = tpart_to_date_valid   + datetime.timedelta(days=tpart_to_diff)
+
+                ttt |= Q(start__range=(tpart_from_final,tpart_to_final))
+
+#------------------------------------------------------------------------------
+            events = events & Event.objects.filter( ttt )
+
+
         if len(events) == 0:
             return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
+                {'title': 'error', 'message_col1': _("Your search didn't get any result") + ".", 'query': q, 'timequery': t},
                 context_instance=RequestContext(request))
         else:
             return render_to_response('events/list_search.html',
-                {'title': 'search results', 'events': events, 'query': q},
+                {'title': 'search results', 'events': events, 'query': q, 'timequery': t},
                 context_instance=RequestContext(request))
     else:
         return render_to_response('error.html',
-            {'title': 'error', 'message_col1': _("You have submitted a search with no content") + "."},
+            {'title': 'error', 'message_col1': _("You have submitted a search with no content") + ".", 'query': q, 'timequery': t},
             context_instance=RequestContext(request))
 
 def list_user(request, username):
