@@ -245,7 +245,7 @@ def view_astext(request, event_id):
 
 def list_search(request):
     if 'q' in request.GET and request.GET['q']:
-        q = request.GET['q']
+        q = request.GET['q'].lower()
 
         qqq = Q()
 
