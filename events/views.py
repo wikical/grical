@@ -242,25 +242,56 @@ def list_search(request):
     if 'q' in request.GET and request.GET['q']:
         q = request.GET['q'].lower()
 
-        qqq = Q()
+        events = Event.objects.none()
+        od = {}
+
         for qpart in q.split(" "):
-            qqq |= Q(title__icontains=qpart)
-            qqq |= Q(description__icontains=qpart)
-            qqq |= Q(acro__iexact=qpart)
-            qqq |= Q(country__iexact=qpart)
-            qqq |= Q(city__iexact=qpart)
+#            qqq |= Q()
+#            qqq |= Q(description__icontains=qpart)
+#            qqq |= Q()
+#            qqq |= Q(country__iexact=qpart)
+#            qqq |= Q(city__iexact=qpart)
 
-        events_q = Event.objects.filter( qqq )
-        events_t = TaggedItem.objects.get_union_by_model(Event, q.split(" "))
+            events_titl = Event.objects.filter(title__icontains=qpart)
+            for iii in events_titl:
+                index = iii.id
+                od[index]=od.get(index,0)+1
 
-        events = events_q | events_t
+            events_desc = Event.objects.filter(description__icontains=qpart)
+            for iii in events_desc:
+                index = iii.id
+                od[index]=od.get(index,0)+1
 
+            events_acro = Event.objects.filter(acro__iexact=qpart)
+            for iii in events_acro:
+                index = iii.id
+                od[index]=od.get(index,0)+1
+
+            events_land = Event.objects.filter(country__iexact=qpart)
+            for iii in events_land:
+                index = iii.id
+                od[index]=od.get(index,0)+1
+
+            events_city = Event.objects.filter(city__iexact=qpart)
+            for iii in events_city:
+                index = iii.id
+                od[index]=od.get(index,0)+1
+
+            events_tagg = TaggedItem.objects.get_union_by_model(Event, q.split(" "))
+            for iii in events_tagg:
+                index = iii.id
+                od[index]=od.get(index,0)+1
+
+            events = events | events_titl | events_desc | events_acro | events_land | events_tagg
+
+#        assert False
+
+# if the "t" field is filled, create a filtering QuerySet for filtering the search results by date
         if 't' in request.GET and request.GET['t']:
             t = request.GET['t'].lower()
             ttt = Q()
             for tpart in t.split(" "):
                 tpart_list = tpart.split(":")
-#------------------------------------------------------------------------------
                 if len(tpart_list)==1:
                     tpart_from = tpart_list[0]
                     tpart_to = tpart_list[0]
@@ -296,13 +327,10 @@ def list_search(request):
                         {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from the 'to' date") + ".", 'query': q, 'timequery': t},
                         context_instance=RequestContext(request))
 
-#                assert False
-
                 if tpart_from_date == '@':  tpart_from_date = datetime.date.today().strftime("%Y-%m-%d")
                 if tpart_to_date   == '@':  tpart_to_date   = datetime.date.today().strftime("%Y-%m-%d")
                 if tpart_from_date == '':   tpart_from_date = '0001-01-01'
                 if tpart_to_date   == '':   tpart_to_date   = '9999-12-31'
-
 
                 try:
                     tpart_from_date_valid  = datetime.datetime.strptime(tpart_from_date, "%Y-%m-%d")
@@ -317,9 +345,14 @@ def list_search(request):
 
                 ttt |= Q(start__range=(tpart_from_final,tpart_to_final))
 
-#------------------------------------------------------------------------------
+# apply the filter to the search results
             events = events & Event.objects.filter( ttt )
 
+        list_of_events = list(events)
+
+#        assert False
+
+        list_of_events.sort(key=lambda x: od[x.id], reverse=True)
 
         if len(events) == 0:
             return render_to_response('error.html',
@@ -327,7 +360,7 @@ def list_search(request):
                 context_instance=RequestContext(request))
         else:
             return render_to_response('events/list_search.html',
-                {'title': 'search results', 'events': events, 'query': q, 'timequery': t},
+                {'title': 'search results', 'events': list_of_events, 'query': q, 'timequery': t},
                 context_instance=RequestContext(request))
     else:
         return render_to_response('error.html',
