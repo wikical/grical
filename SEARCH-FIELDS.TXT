@@ -1,0 +1,31 @@
+OR these:
+
+SUBSTRING:
+title
+description
+
+FULL WORD:
+acro
+tags
+country
+city
+
+--------------------------------------------------------
+filter by these:
+
+start
+end
+public
+user
+
+--------------------------------------------------------
+No search on these so far:
+
+creation_time
+modification_time
+latitude
+longitude
+timezone
+postcode
+address
+

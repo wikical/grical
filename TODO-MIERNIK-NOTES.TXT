@@ -1,0 +1,6 @@
+make countries accept unicode chars
+search for countries by names, not only ISO codes
+show number of search results
+allow search with only timelimit, and without query
+what is get_object_or_404(Event, pk=event_id)?
+

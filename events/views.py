@@ -16,7 +16,7 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
+from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, COUNTRIES
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
@@ -245,12 +245,10 @@ def list_search(request):
         events = Event.objects.none()
         od = {}
 
+# ... initialize a lookup dictionary
+        country_to_id_dict = dict((t[1][:].lower(), t[0]) for t in COUNTRIES)
+
         for qpart in q.split(" "):
-#            qqq |= Q()
-#            qqq |= Q(description__icontains=qpart)
-#            qqq |= Q()
-#            qqq |= Q(country__iexact=qpart)
-#            qqq |= Q(city__iexact=qpart)
 
             events_titl = Event.objects.filter(title__icontains=qpart)
             for iii in events_titl:
@@ -267,8 +265,10 @@ def list_search(request):
                 index = iii.id
                 od[index]=od.get(index,0)+1
 
-#            events_land = Event.objects.filter(country__iexact=qpart)
-            events_land = Event.objects.filter(country__iexact=qpart)
+            try:
+                events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart])
+            except KeyError:
+                events_land = Event.objects.none()
             for iii in events_land:
                 index = iii.id
                 od[index]=od.get(index,0)+1
@@ -431,7 +431,6 @@ def list_tag(request, tag):
     query_tag = Tag.objects.get(name=tag)
     events = TaggedItem.objects.get_by_model(Event, query_tag)
     events = events.order_by('-start')
-#   return render_to_response('events/list_tag.html', dict(tag=tag, events=events), context_instance=RequestContext(request))
     return render_to_response('events/list_tag.html', {'title': 'list by tag', 'events': events, 'tag': tag}, context_instance=RequestContext(request))
 
 #def tag(request, tag_name):
