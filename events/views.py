@@ -327,29 +327,47 @@ def list_search(request):
                         {'title': 'error', 'message_col1': _("You have submitted an invalid search - one of your time ranges contain more then 2 elements") + ".", 'query': q, 'timequery': t},
                         context_instance=RequestContext(request))
 
-                tpart_from_p_list = re.split('[+]', tpart_from)
-                if len(tpart_from_p_list) == 1:
-                    tpart_from_date = tpart_from_p_list[0]
-                    tpart_from_diff = 0
-                if len(tpart_from_p_list) == 2:
-                    tpart_from_date = tpart_from_p_list[0]
-                    tpart_from_diff = int(tpart_from_p_list[1])
-                if len(tpart_from_p_list) > 2:
+#                tpart_from_p_list = re.split('[+]', tpart_from)
+#                if len(tpart_from_p_list) == 1:
+#                    tpart_from_date = tpart_from_p_list[0]
+#                    tpart_from_diff = 0
+#                if len(tpart_from_p_list) == 2:
+#                    tpart_from_date = tpart_from_p_list[0]
+#                    tpart_from_diff = int(tpart_from_p_list[1])
+#                if len(tpart_from_p_list) > 2:
+#                    return render_to_response('error.html',
+#                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date") + ".", 'query': q, 'timequery': t},
+#                        context_instance=RequestContext(request))
+
+                if re.match('@', tpart_from) is not None:
+                    divi = 1
+                else:
+                    divi = 10
+                tpart_from_date = tpart_from[0:divi]
+                tpart_from_diff = tpart_from[divi:]
+                if re.search('^\d+-', tpart_from_diff) is not None:
                     return render_to_response('error.html',
                         {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date") + ".", 'query': q, 'timequery': t},
                         context_instance=RequestContext(request))
+                try:
+                    tpart_from_diff = int(tpart_from_diff)
+                except ValueError:
+                    tpart_from_diff = 0
 
-                tpart_to_p_list = re.split('[+]', tpart_to)
-                if len(tpart_to_p_list) == 1:
-                    tpart_to_date = tpart_to_p_list[0]
-                    tpart_to_diff = 0
-                if len(tpart_to_p_list) == 2:
-                    tpart_to_date = tpart_to_p_list[0]
-                    tpart_to_diff = int(tpart_to_p_list[1])
-                if len(tpart_to_p_list) > 2:
+                if re.match('@', tpart_to) is not None:
+                    divi = 1
+                else:
+                    divi = 10
+                tpart_to_date = tpart_to[0:divi]
+                tpart_to_diff = tpart_to[divi:]
+                if re.search('^\d+-', tpart_to_diff) is not None:
                     return render_to_response('error.html',
-                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from the 'to' date") + ".", 'query': q, 'timequery': t},
+                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'to' date") + ".", 'query': q, 'timequery': t},
                         context_instance=RequestContext(request))
+                try:
+                    tpart_to_diff = int(tpart_to_diff)
+                except ValueError:
+                    tpart_to_diff = 0
 
                 if tpart_from_date == '@':  tpart_from_date = datetime.date.today().strftime("%Y-%m-%d")
                 if tpart_to_date   == '@':  tpart_to_date   = datetime.date.today().strftime("%Y-%m-%d")

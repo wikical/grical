@@ -291,8 +291,7 @@ class Event(models.Model):
     start = models.DateField(_('Start'), blank=False, help_text=_("Examples of valid dates: '2006-10-25' '10/25/2006' '10/25/06' 'Oct 25 2006' 'Oct 25, 2006' '25 Oct 2006' '25 Oct, 2006' 'October 25 2006' 'October 25, 2006' '25 October 2006' '25 October, 2006'"))
     end = models.DateField(_('End'), null=True, blank=True)
     #
-    tags = TagField(_('Tags'), blank=True, null=True, help_text=_(u"Only letters (these can be international, like: αöł), digits and hyphens are allowed. Tags are separated with spaces."))
-#   tags = TagField(_('Tags'), blank=True, null=True, help_text=_("Only letters (these can be international), digits and hyphens are allowed. Tags are separated with spaces."))
+    tags = TagField(_('Tags'), blank=True, null=True, help_text=_(u"Tags are case in-sensitive. Only letters (these can be international, like: αöł), digits and hyphens are allowed. Tags are separated with spaces."))
     #
     public = models.BooleanField(_('Public'), default=True, help_text=_("A public entry can be seen by anyone, a private one only by the selected persons and groups"))
     #
