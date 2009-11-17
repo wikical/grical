@@ -301,6 +301,7 @@ def list_search(request):
                     index = iii.id
                     od[index]=od.get(index,0)+1
 
+            del iii
             events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
 
 # if the "t" field is filled, create a filtering QuerySet for filtering the search results by date
@@ -369,24 +370,15 @@ def list_search(request):
                 if tpart_scope == 'start': ttt |= Q(start__range=(tpart_from_final,tpart_to_final))
                 if tpart_scope == 'dl':    ttt |= Q(event_of_deadline__deadline__range=(tpart_from_final,tpart_to_final))
 
-
 # apply the filter to the search results
             events = events & Event.objects.filter( ttt )
         else:
             t = ''
 
-
-
-
-
         list_of_events = list(events)
 
-
-#        assert False
-
-
-
-
+# make the list of events unique
+        list_of_events = list(set(list_of_events))
 
         list_of_events.sort(key=lambda x: od[x.id], reverse=True)
 
