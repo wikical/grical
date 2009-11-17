@@ -93,7 +93,7 @@ COUNTRIES = (
     ('GA', _('Gabon')),
     ('GM', _('Gambia')),
     ('GE', _('Georgia')),
-    ('DE', _('Germany')),
+    ('DE', _(u'Germany')),
     ('GH', _('Ghana')),
     ('GI', _('Gibraltar')),
     ('GR', _('Greece')),
@@ -296,7 +296,7 @@ class Event(models.Model):
     #
     public = models.BooleanField(_('Public'), default=True, help_text=_("A public entry can be seen by anyone, a private one only by the selected persons and groups"))
     #
-    country = CountryField(_('Country'), blank=True, null=True)
+    country = models.CharField(_('Country'), blank=True, null=True, max_length=2, choices=COUNTRIES)
     city = models.CharField(_('City'), blank=True, null=True, max_length=50)
     postcode = models.CharField(_('Postcode'), blank=True, null=True, max_length=16)
     address = models.CharField(_('Street address'), blank=True, null=True, max_length=100)
