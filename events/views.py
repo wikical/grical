@@ -267,6 +267,7 @@ def list_search(request):
                 index = iii.id
                 od[index]=od.get(index,0)+1
 
+#            events_land = Event.objects.filter(country__iexact=qpart)
             events_land = Event.objects.filter(country__iexact=qpart)
             for iii in events_land:
                 index = iii.id
@@ -347,6 +348,8 @@ def list_search(request):
 
 # apply the filter to the search results
             events = events & Event.objects.filter( ttt )
+        else:
+            t = ''
 
         list_of_events = list(events)
 

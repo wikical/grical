@@ -14,7 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 
 COUNTRIES = (
     ('AF', _('Afghanistan')),
-#    ('AX', _('Åland Islands')),
+    ('AX', _(u'Åland Islands')),
     ('AL', _('Albania')),
     ('DZ', _('Algeria')),
     ('AS', _('American Samoa')),
@@ -66,7 +66,7 @@ COUNTRIES = (
     ('CD', _('Congo, the Democratic Republic of the')),
     ('CK', _('Cook Islands')),
     ('CR', _('Costa Rica')),
-#    ('CI', _('Côte d\'Ivoire')),
+    ('CI', _(u'Côte d\'Ivoire')),
     ('HR', _('Croatia')),
     ('CU', _('Cuba')),
     ('CY', _('Cyprus')),
@@ -192,11 +192,11 @@ COUNTRIES = (
     ('PT', _('Portugal')),
     ('PR', _('Puerto Rico')),
     ('QA', _('Qatar')),
-#    ('RE', _('Réunion')),
+    ('RE', _(u'Réunion')),
     ('RO', _('Romania')),
     ('RU', _('Russian Federation')),
     ('RW', _('Rwanda')),
-#    ('BL', _('Saint Barthélemy')),
+    ('BL', _(u'Saint Barthélemy')),
     ('SH', _('Saint Helena')),
     ('KN', _('Saint Kitts and Nevis')),
     ('LC', _('Saint Lucia')),
@@ -261,6 +261,18 @@ COUNTRIES = (
     ('ZW', _('Zimbabwe')),
 )
 
+class CountryField(models.CharField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('max_length', 2)
+        kwargs.setdefault('choices', COUNTRIES)
+
+        super(CountryField, self).__init__(*args, **kwargs)
+
+    def get_internal_type(self):
+        return "CharField"
+
+
 class Event(models.Model):
 	# related_name avoids the errors:
 	# events.event: Accessor for field 'user' clashes with related m2m field 'User.event_set'. Add a related_name argument to the definition for 'user'.
@@ -284,7 +296,7 @@ class Event(models.Model):
     #
     public = models.BooleanField(_('Public'), default=True, help_text=_("A public entry can be seen by anyone, a private one only by the selected persons and groups"))
     #
-    country = models.CharField(_('Country'), blank=True, null=True, max_length=2, choices=COUNTRIES)
+    country = CountryField(_('Country'), blank=True, null=True)
     city = models.CharField(_('City'), blank=True, null=True, max_length=50)
     postcode = models.CharField(_('Postcode'), blank=True, null=True, max_length=16)
     address = models.CharField(_('Street address'), blank=True, null=True, max_length=100)
