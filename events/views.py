@@ -250,40 +250,58 @@ def list_search(request):
 
         for qpart in q.split(" "):
 
-            events_titl = Event.objects.filter(title__icontains=qpart)
-            for iii in events_titl:
-                index = iii.id
-                od[index]=od.get(index,0)+1
+            events_titl = Event.objects.none()
+            if qpart.find(":") == -1 or re.match('titl:', qpart) is not None:
+                qpart_titl = re.sub('titl:', '', qpart, 1)
+                events_titl = Event.objects.filter(title__icontains=qpart_titl)
+                for iii in events_titl:
+                    index = iii.id
+                    od[index]=od.get(index,0)+1
 
-            events_desc = Event.objects.filter(description__icontains=qpart)
-            for iii in events_desc:
-                index = iii.id
-                od[index]=od.get(index,0)+1
+            events_desc = Event.objects.none()
+            if qpart.find(":") == -1 or re.match('desc:', qpart) is not None:
+                qpart_desc = re.sub('desc:', '', qpart, 1)
+                events_desc = Event.objects.filter(description__icontains=qpart_desc)
+                for iii in events_desc:
+                    index = iii.id
+                    od[index]=od.get(index,0)+1
 
-            events_acro = Event.objects.filter(acro__iexact=qpart)
-            for iii in events_acro:
-                index = iii.id
-                od[index]=od.get(index,0)+1
+            events_acro = Event.objects.none()
+            if qpart.find(":") == -1 or re.match('acro:', qpart) is not None:
+                qpart_acro = re.sub('acro:', '', qpart, 1)
+                events_acro = Event.objects.filter(acro__iexact=qpart_acro)
+                for iii in events_acro:
+                    index = iii.id
+                    od[index]=od.get(index,0)+1
 
-            try:
-                events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart])
-            except KeyError:
-                events_land = Event.objects.none()
-            for iii in events_land:
-                index = iii.id
-                od[index]=od.get(index,0)+1
+            events_land = Event.objects.none()
+            if qpart.find(":") == -1 or re.match('land:', qpart) is not None:
+                qpart_land = re.sub('land:', '', qpart, 1)
+                try:
+                    events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart_land])
+                except KeyError:
+                    events_land = Event.objects.none()
+                for iii in events_land:
+                    index = iii.id
+                    od[index]=od.get(index,0)+1
 
-            events_city = Event.objects.filter(city__iexact=qpart)
-            for iii in events_city:
-                index = iii.id
-                od[index]=od.get(index,0)+1
+            events_city = Event.objects.none()
+            if qpart.find(":") == -1 or re.match('city:', qpart) is not None:
+                qpart_city = re.sub('city:', '', qpart, 1)
+                events_city = Event.objects.filter(city__iexact=qpart_city)
+                for iii in events_city:
+                    index = iii.id
+                    od[index]=od.get(index,0)+1
 
-            events_tagg = TaggedItem.objects.get_union_by_model(Event, q.split(" "))
-            for iii in events_tagg:
-                index = iii.id
-                od[index]=od.get(index,0)+1
+            events_tagg = Event.objects.none()
+            if qpart.find(":") == -1 or re.match('tags:', qpart) is not None:
+                qpart_tagg = re.sub('tags:', '', qpart, 1)
+                events_tagg = TaggedItem.objects.get_union_by_model(Event, qpart_tagg)
+                for iii in events_tagg:
+                    index = iii.id
+                    od[index]=od.get(index,0)+1
 
-            events = events | events_titl | events_desc | events_acro | events_land | events_tagg
+            events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
 
 #        assert False
 
