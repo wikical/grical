@@ -303,13 +303,17 @@ def list_search(request):
 
             events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
 
-#        assert False
-
 # if the "t" field is filled, create a filtering QuerySet for filtering the search results by date
         if 't' in request.GET and request.GET['t']:
             t = request.GET['t'].lower()
             ttt = Q()
             for tpart in t.split(" "):
+
+                tpart_scope = 'start'
+                if re.match('dl:', tpart) is not None:
+                    tpart = re.sub('dl:', '', tpart, 1)
+                    tpart_scope = 'dl'
+
                 tpart_list = tpart.split(":")
                 if len(tpart_list)==1:
                     tpart_from = tpart_list[0]
@@ -362,16 +366,27 @@ def list_search(request):
                 tpart_from_final = tpart_from_date_valid + datetime.timedelta(days=tpart_from_diff)
                 tpart_to_final   = tpart_to_date_valid   + datetime.timedelta(days=tpart_to_diff)
 
-                ttt |= Q(start__range=(tpart_from_final,tpart_to_final))
+                if tpart_scope == 'start': ttt |= Q(start__range=(tpart_from_final,tpart_to_final))
+                if tpart_scope == 'dl':    ttt |= Q(event_of_deadline__deadline__range=(tpart_from_final,tpart_to_final))
+
 
 # apply the filter to the search results
             events = events & Event.objects.filter( ttt )
         else:
             t = ''
 
+
+
+
+
         list_of_events = list(events)
 
+
 #        assert False
+
+
+
+
 
         list_of_events.sort(key=lambda x: od[x.id], reverse=True)
 
