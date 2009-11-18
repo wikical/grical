@@ -16,7 +16,7 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, SavedSearch, COUNTRIES
+from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, COUNTRIES
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
@@ -414,43 +414,57 @@ def list_search(request):
             context_instance=RequestContext(request))
 
 def save_search(request):
-    if 'q' in request.POST and request.POST['q']:
-        q = request.POST['q'].lower()
-    else:
-        q = ''
-
-#    if 't' in request.POST and request.POST['t']:
-#        t = request POST['t'].lower()
-#    else:
-#        t = ''
-
-    t = ''
-
-    if q == '' and t == '':
-        return render_to_response('error.html',
-                {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _("You are tryin to save a search without any search terms") + "."},
-                context_instance=RequestContext(request))
-    elif (not request.user.is_authenticated()):
+    if (not request.user.is_authenticated()):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to save this search because you are not logged in") + "."},
                 context_instance=RequestContext(request))
-    elif request.method == 'POST':
-#                    try:
-                        savedsearch = SavedSearch()
-                        savedsearch.user = request.user
-                        savedsearch.query_text = t
-                        savedsearch.query_time = q
-                        savedsearch.save()
-                        return HttpResponse(savedsearch)
-                        return render_to_response('error.html', {'title': 'search saved', 'message_col1': _("Your search was saved sucessfully.")},
-                            context_instance=RequestContext(request))
-#                    except Exception:
-#                        assert False
-#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
-#                            context_instance=RequestContext(request))
     else:
+        if request.method == 'POST':
+                if 'event_astext' in request.POST:
+                    try:
+                        t = request.POST['event_astext'].replace(": ", ":")
+                        event_attr_list = t.splitlines()
+                        event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
+                        event.acro        = event_attr_dict['acro']
+                        event.title       = event_attr_dict['titl']
+                        event.start       = event_attr_dict['date']
+                        event.end         = event_attr_dict['endd']
+                        event.tags        = event_attr_dict['tags']
+                        event.public      = StringToBool(event_attr_dict['publ'])
+                        event.city        = event_attr_dict['city']
+                        event.address     = event_attr_dict['addr']
+                        event.postcode    = event_attr_dict['code']
+                        event.country     = event_attr_dict['land']
+                        event.timezone    = event_attr_dict['tizo']
+                        event.latitude    = event_attr_dict['lati']
+                        event.longitude   = event_attr_dict['long']
+                        event.description = event_attr_dict['desc']
+                        EventUrl.objects.filter(event=event_id).delete()
+                        EventTimechunk.objects.filter(event=event_id).delete()
+                        EventDeadline.objects.filter(event=event_id).delete()
+                        for textline in event_attr_list:
+                            if textline[0:4] == 'url:':
+                                line_attr_list = textline[4:].split("|",1)
+                                eu = EventUrl(event=event, url_name=line_attr_list[0], url=line_attr_list[1])
+                                eu.save(force_insert=True)
+                            if textline[0:5] == 'time:':
+                                line_attr_list = textline[5:].split("|",3)
+                                et = EventTimechunk(event=event, timechunk_name=line_attr_list[0], timechunk_date=line_attr_list[1], timechunk_starttime=line_attr_list[2], timechunk_endtime=line_attr_list[3])
+                                et.save(force_insert=True)
+                            if textline[0:3] == 'dl:':
+                                line_attr_list = textline[3:].split("|",1)
+                                ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
+                                ed.save(force_insert=True)
+                        event.save()
+                        return HttpResponseRedirect('/')
+                    except Exception:
+                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")},
+                    context_instance=RequestContext(request))
+                else:
+                    message = _("You submitted an empty form.")
+                    return HttpResponse(message)
+        else:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q, 'timequery': t},
                 context_instance=RequestContext(request))
