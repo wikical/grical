@@ -349,7 +349,7 @@ class EventDeadline(models.Model):
 #TODO: events comment model. Check for already available django comment module
 
 class SavedSearch(models.Model):
-    user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
+    user = models.ForeignKey(User, unique=False, verbose_name=_('User'))
     email = models.BooleanField(_('Email'), default=False, help_text=_(
             'If set it sends an email to a user when a new event matches all fields set'))
     modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
