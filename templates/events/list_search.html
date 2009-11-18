@@ -2,6 +2,14 @@
 {% load i18n %}
 {% block column1 %}
 <h3> {% trans "Search result for" %}: {{ query }}, {% trans "limited by time" %}: {{ timequery }}</h3>
+
+        Click here to save this search:
+        <form action="/events/list/search_save/" method="POST">
+            <input type="hidden" size="40" name="q" value="{{ query }}">
+            <input type="hidden" size="20" name="t" value="{{ timequery }}">
+            <input type="submit" value="{% trans "Save" %}">
+        </form>
+
 {% include "events/list_wrapper.html" %}
 {% endblock %}
 

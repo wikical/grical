@@ -15,7 +15,8 @@ urlpatterns = patterns('',
     (r'^edit_astext/(?P<event_id>\d+)/$', 'events.views.edit_astext'),
     (r'^view_astext/(?P<event_id>\d+)/$', 'events.views.view_astext'),
     (r'^(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail', info_dict),
-#
+
+    (r'^list/search_save/',                'events.views.save_search'),
     (r'^list/search/',                     'events.views.list_search'),
     (r'^list/user/(?P<username>\w+)/',     'events.views.list_user'),
     (r'^list/my/',                         'events.views.list_my'),
