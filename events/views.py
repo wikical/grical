@@ -440,10 +440,10 @@ def save_search(request):
 #                    try:
                         savedsearch = SavedSearch()
                         savedsearch.user = request.user
-                        savedsearch.query_text = t
-                        savedsearch.query_time = q
+                        savedsearch.query_text = q
+                        savedsearch.query_time = t
                         savedsearch.save()
-                        return HttpResponse(savedsearch)
+#                        return HttpResponse(savedsearch)
                         return render_to_response('error.html', {'title': 'search saved', 'message_col1': _("Your search was saved sucessfully.")},
                             context_instance=RequestContext(request))
 #                    except Exception:
