@@ -327,18 +327,6 @@ def list_search(request):
                         {'title': 'error', 'message_col1': _("You have submitted an invalid search - one of your time ranges contain more then 2 elements") + ".", 'query': q, 'timequery': t},
                         context_instance=RequestContext(request))
 
-#                tpart_from_p_list = re.split('[+]', tpart_from)
-#                if len(tpart_from_p_list) == 1:
-#                    tpart_from_date = tpart_from_p_list[0]
-#                    tpart_from_diff = 0
-#                if len(tpart_from_p_list) == 2:
-#                    tpart_from_date = tpart_from_p_list[0]
-#                    tpart_from_diff = int(tpart_from_p_list[1])
-#                if len(tpart_from_p_list) > 2:
-#                    return render_to_response('error.html',
-#                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date") + ".", 'query': q, 'timequery': t},
-#                        context_instance=RequestContext(request))
-
                 if re.match('@', tpart_from) is not None:
                     divi = 1
                 else:
@@ -413,7 +401,7 @@ def list_search(request):
             {'title': 'error', 'message_col1': _("You have submitted a search with no content") + ".", 'query': q, 'timequery': t},
             context_instance=RequestContext(request))
 
-def save_search(request):
+def filter_save(request):
     if 'q' in request.POST and request.POST['q']:
         q = request.POST['q'].lower()
     else:
@@ -441,7 +429,7 @@ def save_search(request):
                         savedsearch.query_text = q
                         savedsearch.query_time = t
                         savedsearch.save()
-                        return HttpResponseRedirect('/events/list/search_save_edit/' + str(savedsearch.id) + '/') ;
+                        return HttpResponseRedirect('/events/list/filter/edit/' + str(savedsearch.id) + '/') ;
                     except Exception:
                         assert False
                         return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
@@ -452,7 +440,7 @@ def save_search(request):
                 context_instance=RequestContext(request))
 
 
-def saved_search_edit(request, savedsearch_id):
+def filter_edit(request, savedsearch_id):
     try:
         savedsearch = SavedSearch.objects.get(pk=savedsearch_id)
     except SavedSearch.DoesNotExist:
@@ -472,42 +460,39 @@ def saved_search_edit(request, savedsearch_id):
             ssf = SavedSearchForm(request.POST, instance=savedsearch)
             if ssf.is_valid() :
                 ssf.save()
-                return HttpResponseRedirect('/')
+                return HttpResponseRedirect('/events/list/filter/list/')
             else:
                 templates = {'title': 'edit event', 'form': ef, 'savedsearch_id': savedsearch_id }
-                return render_to_response('events/edit_search.html', templates, context_instance=RequestContext(request))
+                return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
         else:
             ef = SavedSearchForm(instance=savedsearch)
             templates = {'title': 'edit event', 'form': ef, 'savedsearch_id': savedsearch_id }
-            return render_to_response('events/edit_search.html', templates, context_instance=RequestContext(request))
-
-#    elif request.method == 'POST':
-#                    try:
-#                        savedsearch = SavedSearch()
-#                        savedsearch.user = request.user
-#                        savedsearch.query_text = q
-#                        savedsearch.query_time = t
-#                        savedsearch.save()
-#                        return render_to_response('error.html', {'title': 'search saved', 'message_col1': _("Your search was saved sucessfully.")},
-#                            context_instance=RequestContext(request))
-#                    except Exception:
-#                        assert False
-#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
-#                            context_instance=RequestContext(request))
-#    else:
-#            return render_to_response('error.html',
-#                {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + "."},
-#                context_instance=RequestContext(request))
+            return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
 
 
 
+def filter_list(request):
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
+                context_instance=RequestContext(request))
+    else:
+        f = SavedSearch.objects.all()
+        f = SavedSearch.objects.filter(user=request.user)
+        if len(f) == 0:
+            return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You do not have any filters configured") + "."},
+                context_instance=RequestContext(request))
+        else:
+            return render_to_response('events/filter_list.html',
+                {'title': 'list my filters', 'filters': f},
+                context_instance=RequestContext(request))
 
 
 
 
 
-
-def list_user(request, username):
+def list_user_events(request, username):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         try:
             u = User.objects.get(username__exact=username)
@@ -546,7 +531,7 @@ def list_user(request, username):
                 {'title': 'error', 'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
 
-def list_my(request):
+def list_my_events(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
@@ -569,14 +554,4 @@ def list_tag(request, tag):
     events = TaggedItem.objects.get_by_model(Event, query_tag)
     events = events.order_by('-start')
     return render_to_response('events/list_tag.html', {'title': 'list by tag', 'events': events, 'tag': tag}, context_instance=RequestContext(request))
-
-#def tag(request, tag_name):
-#    try:
-#        tag_by_name = Tag.objects.get(name=tag_name)
-#    except:
-#        return HttpResponse("There is no tag '%s'." % tag_name)
-#    t = get_object_or_404(Tag, name=tag_name)
-#    events_with_tag = TaggedItem.objects.get_by_model(Event, t)
-#    return render_to_response('events/events.html', {'events_list': events_with_tag})
-#    #return HttpResponse("Number of objects tagged with %s : %d." % (tag_name, len(retrieved)))
 
