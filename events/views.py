@@ -462,11 +462,11 @@ def filter_edit(request, savedsearch_id):
                 ssf.save()
                 return HttpResponseRedirect('/events/list/filter/list/')
             else:
-                templates = {'title': 'edit event', 'form': ef, 'savedsearch_id': savedsearch_id }
+                templates = {'title': 'edit event', 'form': ssf, 'savedsearch_id': savedsearch_id }
                 return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
         else:
-            ef = SavedSearchForm(instance=savedsearch)
-            templates = {'title': 'edit event', 'form': ef, 'savedsearch_id': savedsearch_id }
+            ssf = SavedSearchForm(instance=savedsearch)
+            templates = {'title': 'edit event', 'form': ssf, 'savedsearch_id': savedsearch_id }
             return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
 
 
@@ -484,6 +484,12 @@ def filter_list(request):
                 {'title': 'error', 'message_col1': _("You do not have any filters configured") + "."},
                 context_instance=RequestContext(request))
         else:
+#            url = '/events/list/search/'
+#            values = {'q' : q,
+#                't' : t,
+#                }
+#            fullurl = urllib.urlencode(values)
+
             return render_to_response('events/filter_list.html',
                 {'title': 'list my filters', 'filters': f},
                 context_instance=RequestContext(request))

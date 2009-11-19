@@ -355,7 +355,7 @@ class SavedSearch(models.Model):
     modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
     query_text = models.CharField(_('Text query'), max_length=500, blank=True, null=True)
     query_time = models.CharField(_('Time query'), max_length=500, blank=True, null=True)
-    label = models.CharField(_('Label'), max_length=35, blank=True, null=True)
+    label = models.CharField(_('Label'), max_length=35, unique=True, blank=False, null=False)
 
 class Interest(models.Model):
     user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
