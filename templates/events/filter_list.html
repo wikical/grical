@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block column1 %}
+<p>{% trans "These are your filters" %}:</p>
+<ul>
+    {% for filters in filters %}
+    <li>
+    {{ filters.label }}
+    <a href="/events/list/search/?q={{ filters.query_text }}&t={{ filters.query_time }}">run</a>
+    <a href="/events/list/filter/edit/{{ filters.id }}/">edit</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

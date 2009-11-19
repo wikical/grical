@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% load i18n %}
-{% block column1 %}
-<ul>
-    {% for event in object_list %}
-    <li>{{ event.pk }}</li>
-    {% endfor %}
-</ul>
-{% endblock %}
