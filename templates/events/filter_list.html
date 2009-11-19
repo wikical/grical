@@ -5,9 +5,23 @@
 <ul>
     {% for filters in filters %}
     <li>
-    {{ filters.label }}
-    <a href="/events/list/search/?q={{ filters.query_text }}&t={{ filters.query_time }}">run</a>
+    {{ filters.label }}:
     <a href="/events/list/filter/edit/{{ filters.id }}/">edit</a>
+
+        <form action="/events/list/search/" method="get">
+            <input type="hidden" name="q" value="{{ filters.query_text }}">
+            <input type="hidden" name="t" value="{{ filters.query_time }}">
+            <input type="submit" value="{% trans "Run a search using this filter" %}">
+        </form>
+
+<!--
+    <a href="/events/list/search/?q={{ filters.query_text }}&t={{ filters.query_time }}">run</a>
+-->
+
+
+    <p>
+    </p>
+
     </li>
     {% endfor %}
 </ul>
