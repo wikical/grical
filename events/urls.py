@@ -19,6 +19,7 @@ urlpatterns = patterns('',
     (r'^list/filter/list/',                         'events.views.filter_list'),
     (r'^list/filter/save/',                         'events.views.filter_save'),
     (r'^list/filter/edit/(?P<savedsearch_id>\d+)/', 'events.views.filter_edit'),
+    (r'^list/filter/drop/(?P<savedsearch_id>\d+)/', 'events.views.filter_drop'),
 #
     (r'^list/user/(?P<username>\w+)/',              'events.views.list_user_events'),
     (r'^list/my/',                                  'events.views.list_my_events'),

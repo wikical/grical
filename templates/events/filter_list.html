@@ -7,6 +7,8 @@
     <li>
     {{ filters.label }}:
     <a href="/events/list/filter/edit/{{ filters.id }}/">edit</a>
+    &nbsp;
+    <a href="/events/list/filter/drop/{{ filters.id }}/">delete</a>
 
         <form action="/events/list/search/" method="get">
             <input type="hidden" name="q" value="{{ filters.query_text }}">

@@ -446,7 +446,7 @@ def filter_edit(request, savedsearch_id):
     except SavedSearch.DoesNotExist:
         return render_to_response('error.html',
                     {'title': 'error', 'form': getEventForm(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(event_id)},
+                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(savedsearch_id)},
                     context_instance=RequestContext(request))
     if ((not request.user.is_authenticated()) or (savedsearch.user.id != request.user.id)):
         return render_to_response('error.html',
@@ -468,6 +468,32 @@ def filter_edit(request, savedsearch_id):
             ssf = SavedSearchForm(instance=savedsearch)
             templates = {'title': 'edit event', 'form': ssf, 'savedsearch_id': savedsearch_id }
             return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
+
+def filter_drop(request, savedsearch_id):
+    try:
+        savedsearch = SavedSearch.objects.get(pk=savedsearch_id)
+    except SavedSearch.DoesNotExist:
+        return render_to_response('error.html',
+                    {'title': 'error', 'form': getEventForm(request.user),
+                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(savedsearch_id)},
+                    context_instance=RequestContext(request))
+    if ((not request.user.is_authenticated()) or (savedsearch.user.id != request.user.id)):
+        return render_to_response('error.html',
+                {'title': 'error', 'form': getEventForm(request.user),
+                'message_col1': _('You are not allowed to delete the saved search with the following number') +
+                ": " + str(savedsearch_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+    else:
+        if request.method == 'POST':
+            assert False
+        else:
+            savedsearch.delete()
+            f = SavedSearch.objects.all()
+            f = SavedSearch.objects.filter(user=request.user)
+            return render_to_response('events/filter_list.html',
+                {'title': 'list of my filters', 'filters': f},
+                context_instance=RequestContext(request))
 
 
 
@@ -491,7 +517,7 @@ def filter_list(request):
 #            fullurl = urllib.urlencode(values)
 
             return render_to_response('events/filter_list.html',
-                {'title': 'list my filters', 'filters': f},
+                {'title': 'list of my filters', 'filters': f},
                 context_instance=RequestContext(request))
 
 
