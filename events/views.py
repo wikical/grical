@@ -242,74 +242,16 @@ def list_search(request):
     if 'q' in request.GET and request.GET['q']:
         q = request.GET['q'].lower()
 
+# initialize a lookup dictionary, events instance and an od list:
+        country_to_id_dict = dict((landtable[1][:].lower(), landtable[0]) for landtable in COUNTRIES)
         events = Event.objects.none()
-        od = {}
-
-# ... initialize a lookup dictionary
-        country_to_id_dict = dict((t[1][:].lower(), t[0]) for t in COUNTRIES)
+        time_limiters = Q()
+        sorting_dictionary = {}
 
         for qpart in q.split(" "):
-
-            events_titl = Event.objects.none()
-            if qpart.find(":") == -1 or re.match('titl:', qpart) is not None:
-                qpart_titl = re.sub('titl:', '', qpart, 1)
-                events_titl = Event.objects.filter(title__icontains=qpart_titl)
-                for iii in events_titl:
-                    index = iii.id
-                    od[index]=od.get(index,0)+1
-
-            events_desc = Event.objects.none()
-            if qpart.find(":") == -1 or re.match('desc:', qpart) is not None:
-                qpart_desc = re.sub('desc:', '', qpart, 1)
-                events_desc = Event.objects.filter(description__icontains=qpart_desc)
-                for iii in events_desc:
-                    index = iii.id
-                    od[index]=od.get(index,0)+1
-
-            events_acro = Event.objects.none()
-            if qpart.find(":") == -1 or re.match('acro:', qpart) is not None:
-                qpart_acro = re.sub('acro:', '', qpart, 1)
-                events_acro = Event.objects.filter(acro__iexact=qpart_acro)
-                for iii in events_acro:
-                    index = iii.id
-                    od[index]=od.get(index,0)+1
-
-            events_land = Event.objects.none()
-            if qpart.find(":") == -1 or re.match('land:', qpart) is not None:
-                qpart_land = re.sub('land:', '', qpart, 1)
-                try:
-                    events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart_land])
-                except KeyError:
-                    events_land = Event.objects.none()
-                for iii in events_land:
-                    index = iii.id
-                    od[index]=od.get(index,0)+1
-
-            events_city = Event.objects.none()
-            if qpart.find(":") == -1 or re.match('city:', qpart) is not None:
-                qpart_city = re.sub('city:', '', qpart, 1)
-                events_city = Event.objects.filter(city__iexact=qpart_city)
-                for iii in events_city:
-                    index = iii.id
-                    od[index]=od.get(index,0)+1
-
-            events_tagg = Event.objects.none()
-            if qpart.find(":") == -1 or re.match('tags:', qpart) is not None:
-                qpart_tagg = re.sub('tags:', '', qpart, 1)
-                events_tagg = TaggedItem.objects.get_union_by_model(Event, qpart_tagg)
-                for iii in events_tagg:
-                    index = iii.id
-                    od[index]=od.get(index,0)+1
-
-            del iii
-            events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
-
-# if the "t" field is filled, create a filtering QuerySet for filtering the search results by date
-        if 't' in request.GET and request.GET['t']:
-            t = request.GET['t'].lower()
-            ttt = Q()
-            for tpart in t.split(" "):
-
+            if re.match("(dl:)?(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*(:(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*)?$", qpart):
+###############################################################################
+                tpart = qpart
                 tpart_scope = 'start'
                 if re.match('dl:', tpart) is not None:
                     tpart = re.sub('dl:', '', tpart, 1)
@@ -373,32 +315,84 @@ def list_search(request):
                 tpart_from_final = tpart_from_date_valid + datetime.timedelta(days=tpart_from_diff)
                 tpart_to_final   = tpart_to_date_valid   + datetime.timedelta(days=tpart_to_diff)
 
-                if tpart_scope == 'start': ttt |= Q(start__range=(tpart_from_final,tpart_to_final))
-                if tpart_scope == 'dl':    ttt |= Q(event_of_deadline__deadline__range=(tpart_from_final,tpart_to_final))
+                if tpart_scope == 'start': time_limiters |= Q(start__range=(tpart_from_final,tpart_to_final))
+                if tpart_scope == 'dl':    time_limiters |= Q(event_of_deadline__deadline__range=(tpart_from_final,tpart_to_final))
+###############################################################################
+            elif re.match("[\-\w]*$", qpart):
+###############################################################################
+                events_titl = Event.objects.none()
+                if qpart.find(":") == -1 or re.match('titl:', qpart) is not None:
+                    qpart_titl = re.sub('titl:', '', qpart, 1)
+                    events_titl = Event.objects.filter(title__icontains=qpart_titl)
+                    for iii in events_titl:
+                        index = iii.id
+                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
+
+                events_desc = Event.objects.none()
+                if qpart.find(":") == -1 or re.match('desc:', qpart) is not None:
+                    qpart_desc = re.sub('desc:', '', qpart, 1)
+                    events_desc = Event.objects.filter(description__icontains=qpart_desc)
+                    for iii in events_desc:
+                        index = iii.id
+                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
+
+                events_acro = Event.objects.none()
+                if qpart.find(":") == -1 or re.match('acro:', qpart) is not None:
+                    qpart_acro = re.sub('acro:', '', qpart, 1)
+                    events_acro = Event.objects.filter(acro__iexact=qpart_acro)
+                    for iii in events_acro:
+                        index = iii.id
+                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
+
+                events_land = Event.objects.none()
+                if qpart.find(":") == -1 or re.match('land:', qpart) is not None:
+                    qpart_land = re.sub('land:', '', qpart, 1)
+                    try:
+                        events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart_land])
+                    except KeyError:
+                        events_land = Event.objects.none()
+                    for iii in events_land:
+                        index = iii.id
+                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
+
+                events_city = Event.objects.none()
+                if qpart.find(":") == -1 or re.match('city:', qpart) is not None:
+                    qpart_city = re.sub('city:', '', qpart, 1)
+                    events_city = Event.objects.filter(city__iexact=qpart_city)
+                    for iii in events_city:
+                        index = iii.id
+                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
+
+                events_tagg = Event.objects.none()
+                if qpart.find(":") == -1 or re.match('tags:', qpart) is not None:
+                    qpart_tagg = re.sub('tags:', '', qpart, 1)
+                    events_tagg = TaggedItem.objects.get_union_by_model(Event, qpart_tagg)
+                    for iii in events_tagg:
+                        index = iii.id
+                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
+
+                events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
+###############################################################################
 
 # apply the filter to the search results
-            events = events & Event.objects.filter( ttt )
-        else:
-            t = ''
-
+        events = events & Event.objects.filter(time_limiters)
         list_of_events = list(events)
 
 # make the list of events unique
         list_of_events = list(set(list_of_events))
-
-        list_of_events.sort(key=lambda x: od[x.id], reverse=True)
+        list_of_events.sort(key=lambda x: sorting_dictionary[x.id], reverse=True)
 
         if len(events) == 0:
             return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("Your search didn't get any result") + ".", 'query': q, 'timequery': t},
+                {'title': 'error', 'message_col1': _("Your search didn't get any result") + ".", 'query': q},
                 context_instance=RequestContext(request))
         else:
             return render_to_response('events/list_search.html',
-                {'title': 'search results', 'events': list_of_events, 'query': q, 'timequery': t},
+                {'title': 'search results', 'events': list_of_events, 'query': q},
                 context_instance=RequestContext(request))
     else:
         return render_to_response('error.html',
-            {'title': 'error', 'message_col1': _("You have submitted a search with no content") + ".", 'query': q, 'timequery': t},
+            {'title': 'error', 'message_col1': _("You have submitted a search with no content") + ".", 'query': q},
             context_instance=RequestContext(request))
 
 def filter_save(request):
