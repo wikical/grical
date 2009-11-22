@@ -426,13 +426,16 @@ def filter_save(request):
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
                     try:
+                        f = Filter.objects.all()
+                        f = Filter.objects.filter(user=request.user)
+                        index = len(f) + 1
                         filter = Filter()
                         filter.user = request.user
                         filter.query = q
+                        filter.name = str(request.user) + "'s filter " + str(index)
                         filter.save()
                         return HttpResponseRedirect('/events/filter/edit/' + str(filter.id) + '/') ;
                     except Exception:
-                        assert False
                         return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
                             context_instance=RequestContext(request))
     else:
