@@ -3,15 +3,35 @@
 {% block column1 %}
 <p>{% trans "These are your filters" %}:</p>
 <ul>
-    {% for filters in filters %}
+    {% for fil in filters %}
     <li>
-    {{ filters.name }}:
-    <a href="/events/list/filter/edit/{{ filters.id }}/">edit</a>
+    {{ fil.name }}
     &nbsp;
-    <a href="/events/list/filter/drop/{{ filters.id }}/">delete</a>
+    ({{ fil.results }})
+    &nbsp;
+    <a href="/events/filter/edit/{{ fil.id }}/">edit</a>
+    &nbsp;
+    <a href="/events/filter/drop/{{ fil.id }}/">delete</a>
+
+    {% if fil.errormessage %}
+    <p>
+    <div id="message_col1">
+    {{ fil.errormessage }}
+    </div>
+    </p>
+    {% endif %}
+
+
+        <ul>
+        {% for event in fil.e %}
+        <li>
+            {{event.title}}
+        </li>
+        {% endfor %}
+        </ul>
 
         <form action="/events/list/search/" method="get">
-            <input type="hidden" name="q" value="{{ filters.query }}">
+            <input type="hidden" name="q" value="{{ fil.query }}">
             <input type="submit" value="{% trans "Run a search using this filter" %}">
         </form>
 
