@@ -426,11 +426,11 @@ def filter_save(request):
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
                     try:
-                        Filter = Filter()
-                        Filter.user = request.user
-                        Filter.query = q
-                        Filter.save()
-                        return HttpResponseRedirect('/events/list/filter/edit/' + str(Filter.id) + '/') ;
+                        filter = Filter()
+                        filter.user = request.user
+                        filter.query = q
+                        filter.save()
+                        return HttpResponseRedirect('/events/filter/edit/' + str(filter.id) + '/') ;
                     except Exception:
                         assert False
                         return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
@@ -441,44 +441,44 @@ def filter_save(request):
                 context_instance=RequestContext(request))
 
 
-def filter_edit(request, Filter_id):
+def filter_edit(request, filter_id):
     try:
-        Filter = Filter.objects.get(pk=Filter_id)
-    except Filter.DoesNotExist:
+        filter = Filter.objects.get(pk=filter_id)
+    except filter.DoesNotExist:
         return render_to_response('error.html',
                     {'title': 'error', 'form': getEventForm(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(Filter_id)},
+                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
                     context_instance=RequestContext(request))
-    if ((not request.user.is_authenticated()) or (Filter.user.id != request.user.id)):
+    if ((not request.user.is_authenticated()) or (filter.user.id != request.user.id)):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to edit the saved search with the following number') +
-                ": " + str(Filter_id) + ". " +
+                ": " + str(filter_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
         if request.method == 'POST':
-            ssf = FilterForm(request.POST, instance=Filter)
+            ssf = FilterForm(request.POST, instance=filter)
             if ssf.is_valid() :
                 ssf.save()
-                return HttpResponseRedirect('/events/list/filter/list/')
+                return HttpResponseRedirect('/events/filter/list/')
             else:
-                templates = {'title': 'edit event', 'form': ssf, 'Filter_id': Filter_id }
+                templates = {'title': 'edit event', 'form': ssf, 'filter_id': filter_id }
                 return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
         else:
-            ssf = FilterForm(instance=Filter)
-            templates = {'title': 'edit event', 'form': ssf, 'Filter_id': Filter_id }
+            ssf = FilterForm(instance=filter)
+            templates = {'title': 'edit event', 'form': ssf, 'filter_id': filter_id }
             return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
 
-def filter_drop(request, Filter_id):
+def filter_drop(request, filter_id):
     try:
-        Filter = Filter.objects.get(pk=Filter_id)
-    except Filter.DoesNotExist:
+        filter = Filter.objects.get(pk=filter_id)
+    except filter.DoesNotExist:
         return render_to_response('error.html',
                     {'title': 'error', 'form': getEventForm(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(Filter_id)},
+                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
                     context_instance=RequestContext(request))
-    if ((not request.user.is_authenticated()) or (Filter.user.id != request.user.id)):
+    if ((not request.user.is_authenticated()) or (filter.user.id != request.user.id)):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to delete the saved search with the following number') +
@@ -489,14 +489,12 @@ def filter_drop(request, Filter_id):
         if request.method == 'POST':
             assert False
         else:
-            Filter.delete()
+            filter.delete()
             f = Filter.objects.all()
             f = Filter.objects.filter(user=request.user)
             return render_to_response('events/filter_list.html',
                 {'title': 'list of my filters', 'filters': f},
                 context_instance=RequestContext(request))
-
-
 
 def filter_list(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
@@ -512,13 +510,38 @@ def filter_list(request):
                 context_instance=RequestContext(request))
         else:
 #            url = '/events/list/search/'
-#            values = {'q' : q,
-#                't' : t,
-#                }
+#            values = {'q' : q,}
 #            fullurl = urllib.urlencode(values)
 
+            flist = list(f)
+
+            list_of_filters = list()
+
+            for fff in flist:
+                search_result = list_search_get(fff.query)['list_of_events']
+                search_error = list_search_get(fff.query)['errormessage']
+                fff_dict = dict()
+                fff_dict['id'] = fff.id
+                fff_dict['name'] = fff.name
+                fff_dict['query'] = fff.query
+                fff_dict['results'] = len(search_result)
+                if search_error == '':
+                    fff_len = len(search_result)
+                    if fff_len <= 5:
+                        show = fff_len
+                    else:
+                        show = 5
+                    for i in range(0,show-1):
+                        istr = 'e'+str(i)
+                        fff_dict[istr] = search_result[i]
+                else:
+                    fff_dict['errormessage'] = search_error
+
+                list_of_filters.append(fff_dict)
+                del fff_dict
+
             return render_to_response('events/filter_list.html',
-                {'title': 'list of my filters', 'filters': f},
+                {'title': 'list of my filters', 'filters': list_of_filters},
                 context_instance=RequestContext(request))
 
 def list_user_events(request, username):
