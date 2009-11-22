@@ -352,8 +352,10 @@ class Filter(models.Model):
     user = models.ForeignKey(User, unique=False, verbose_name=_('User'))
     email = models.BooleanField(_('Email'), default=False, help_text=_('If set it sends an email to a user when a new event matches all fields set'))
     modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
-    query = models.CharField(_('Query'), max_length=500, blank=True, null=True)
-    name = models.CharField(_('Name'), max_length=40, unique=True, blank=False, null=False)
+    query = models.CharField(_('Query'), max_length=500, blank=False, null=False)
+    name = models.CharField(_('Name'), max_length=40, blank=False, null=False)
+    class Meta:
+        unique_together = ("user", "name")
 
 class Interest(models.Model):
     user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
