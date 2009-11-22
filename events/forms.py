@@ -1,10 +1,10 @@
 import re
 from django.forms import ModelForm, ValidationError
-from gridcalendar.events.models import Event, SavedSearch
+from gridcalendar.events.models import Event, Filter
 
-class SavedSearchForm(ModelForm):
+class FilterForm(ModelForm):
     class Meta:
-        model = SavedSearch
+        model = Filter
         exclude = ('user',)
 
 class EventForm(ModelForm):

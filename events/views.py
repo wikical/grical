@@ -15,8 +15,8 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, SavedSearch, COUNTRIES
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, SavedSearchForm
+from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
 
@@ -426,11 +426,11 @@ def filter_save(request):
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
                     try:
-                        savedsearch = SavedSearch()
-                        savedsearch.user = request.user
-                        savedsearch.query = q
-                        savedsearch.save()
-                        return HttpResponseRedirect('/events/list/filter/edit/' + str(savedsearch.id) + '/') ;
+                        Filter = Filter()
+                        Filter.user = request.user
+                        Filter.query = q
+                        Filter.save()
+                        return HttpResponseRedirect('/events/list/filter/edit/' + str(Filter.id) + '/') ;
                     except Exception:
                         assert False
                         return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
@@ -441,57 +441,57 @@ def filter_save(request):
                 context_instance=RequestContext(request))
 
 
-def filter_edit(request, savedsearch_id):
+def filter_edit(request, Filter_id):
     try:
-        savedsearch = SavedSearch.objects.get(pk=savedsearch_id)
-    except SavedSearch.DoesNotExist:
+        Filter = Filter.objects.get(pk=Filter_id)
+    except Filter.DoesNotExist:
         return render_to_response('error.html',
                     {'title': 'error', 'form': getEventForm(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(savedsearch_id)},
+                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(Filter_id)},
                     context_instance=RequestContext(request))
-    if ((not request.user.is_authenticated()) or (savedsearch.user.id != request.user.id)):
+    if ((not request.user.is_authenticated()) or (Filter.user.id != request.user.id)):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to edit the saved search with the following number') +
-                ": " + str(savedsearch_id) + ". " +
+                ": " + str(Filter_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
         if request.method == 'POST':
-            ssf = SavedSearchForm(request.POST, instance=savedsearch)
+            ssf = FilterForm(request.POST, instance=Filter)
             if ssf.is_valid() :
                 ssf.save()
                 return HttpResponseRedirect('/events/list/filter/list/')
             else:
-                templates = {'title': 'edit event', 'form': ssf, 'savedsearch_id': savedsearch_id }
+                templates = {'title': 'edit event', 'form': ssf, 'Filter_id': Filter_id }
                 return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
         else:
-            ssf = SavedSearchForm(instance=savedsearch)
-            templates = {'title': 'edit event', 'form': ssf, 'savedsearch_id': savedsearch_id }
+            ssf = FilterForm(instance=Filter)
+            templates = {'title': 'edit event', 'form': ssf, 'Filter_id': Filter_id }
             return render_to_response('events/filter_edit.html', templates, context_instance=RequestContext(request))
 
-def filter_drop(request, savedsearch_id):
+def filter_drop(request, Filter_id):
     try:
-        savedsearch = SavedSearch.objects.get(pk=savedsearch_id)
-    except SavedSearch.DoesNotExist:
+        Filter = Filter.objects.get(pk=Filter_id)
+    except Filter.DoesNotExist:
         return render_to_response('error.html',
                     {'title': 'error', 'form': getEventForm(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(savedsearch_id)},
+                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(Filter_id)},
                     context_instance=RequestContext(request))
-    if ((not request.user.is_authenticated()) or (savedsearch.user.id != request.user.id)):
+    if ((not request.user.is_authenticated()) or (Filter.user.id != request.user.id)):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to delete the saved search with the following number') +
-                ": " + str(savedsearch_id) + ". " +
+                ": " + str(Filter_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
         if request.method == 'POST':
             assert False
         else:
-            savedsearch.delete()
-            f = SavedSearch.objects.all()
-            f = SavedSearch.objects.filter(user=request.user)
+            Filter.delete()
+            f = Filter.objects.all()
+            f = Filter.objects.filter(user=request.user)
             return render_to_response('events/filter_list.html',
                 {'title': 'list of my filters', 'filters': f},
                 context_instance=RequestContext(request))
@@ -504,8 +504,8 @@ def filter_list(request):
                 {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
     else:
-        f = SavedSearch.objects.all()
-        f = SavedSearch.objects.filter(user=request.user)
+        f = Filter.objects.all()
+        f = Filter.objects.filter(user=request.user)
         if len(f) == 0:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You do not have any filters configured") + "."},
