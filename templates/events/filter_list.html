@@ -25,14 +25,14 @@
         <ul>
         {% for event in fil.e %}
         <li>
-            {{event.title}}
+            <a href="/events/view_astext/{{event.id}}/">{{event.title}}</a>
         </li>
         {% endfor %}
         </ul>
 
         <form action="/events/list/search/" method="get">
             <input type="hidden" name="q" value="{{ fil.query }}">
-            <input type="submit" value="{% trans "Run a search using this filter" %}">
+            <input type="submit" value="{% trans "Run a full search using this filter" %}">
         </form>
 
     <p>

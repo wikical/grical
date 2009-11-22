@@ -518,27 +518,26 @@ def filter_list(request):
             list_of_filters = list()
 
             for fff in flist:
-                search_result = list_search_get(fff.query)['list_of_events']
+                search_results = list_search_get(fff.query)['list_of_events']
                 search_error = list_search_get(fff.query)['errormessage']
                 fff_dict = dict()
                 fff_dict['id'] = fff.id
                 fff_dict['name'] = fff.name
                 fff_dict['query'] = fff.query
-                fff_dict['results'] = len(search_result)
+                fff_dict['results'] = len(search_results)
                 if search_error == '':
-                    fff_len = len(search_result)
+                    fff_len = len(search_results)
                     if fff_len <= 5:
                         show = fff_len
                     else:
                         show = 5
-                    for i in range(0,show-1):
-                        istr = 'e'+str(i)
-                        fff_dict[istr] = search_result[i]
+                    fff_dict['e'] = search_results[0:show]
                 else:
                     fff_dict['errormessage'] = search_error
 
                 list_of_filters.append(fff_dict)
                 del fff_dict
+                del search_error
 
             return render_to_response('events/filter_list.html',
                 {'title': 'list of my filters', 'filters': list_of_filters},
