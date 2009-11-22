@@ -353,9 +353,8 @@ class SavedSearch(models.Model):
     email = models.BooleanField(_('Email'), default=False, help_text=_(
             'If set it sends an email to a user when a new event matches all fields set'))
     modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
-    query_text = models.CharField(_('Text query'), max_length=500, blank=True, null=True)
-    query_time = models.CharField(_('Time query'), max_length=500, blank=True, null=True)
-    label = models.CharField(_('Label'), max_length=35, unique=True, blank=False, null=False)
+    query = models.CharField(_('Query'), max_length=500, blank=True, null=True)
+    name = models.CharField(_('Name'), max_length=40, unique=True, blank=False, null=False)
 
 class Interest(models.Model):
     user = models.ForeignKey(User, unique=True, verbose_name=_('User'))

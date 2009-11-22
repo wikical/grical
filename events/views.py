@@ -1,7 +1,7 @@
 import datetime
 from time import strftime
-
 import re
+
 from django import forms
 from django.db.models import Q
 from django.forms.models import inlineformset_factory
@@ -9,7 +9,6 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
-
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
@@ -238,15 +237,14 @@ def view_astext(request, event_id):
 
 ##### views below present lists of events #####
 
-def list_search(request):
-    if 'q' in request.GET and request.GET['q']:
-        q = request.GET['q'].lower()
+def list_search_get(q):
 
 # initialize a lookup dictionary, events instance and an od list:
         country_to_id_dict = dict((landtable[1][:].lower(), landtable[0]) for landtable in COUNTRIES)
         events = Event.objects.none()
         time_limiters = Q()
         sorting_dictionary = {}
+        errormessage = ''
 
         for qpart in q.split(" "):
             if re.match("(dl:)?(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*(:(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*)?$", qpart):
@@ -265,9 +263,9 @@ def list_search(request):
                     tpart_from = tpart_list[0]
                     tpart_to = tpart_list[1]
                 if len(tpart_list)>2:
-                    return render_to_response('error.html',
-                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - one of your time ranges contain more then 2 elements") + ".", 'query': q, 'timequery': t},
-                        context_instance=RequestContext(request))
+                    errormessage = _("You have submitted an invalid search - one of your time ranges contain more then 2 elements")
+                    search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                    return search_dict
 
                 if re.match('@', tpart_from) is not None:
                     divi = 1
@@ -276,9 +274,9 @@ def list_search(request):
                 tpart_from_date = tpart_from[0:divi]
                 tpart_from_diff = tpart_from[divi:]
                 if re.search('^\d+-', tpart_from_diff) is not None:
-                    return render_to_response('error.html',
-                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date") + ".", 'query': q, 'timequery': t},
-                        context_instance=RequestContext(request))
+                    errormessage = _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date")
+                    search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                    return search_dict
                 try:
                     tpart_from_diff = int(tpart_from_diff)
                 except ValueError:
@@ -291,9 +289,9 @@ def list_search(request):
                 tpart_to_date = tpart_to[0:divi]
                 tpart_to_diff = tpart_to[divi:]
                 if re.search('^\d+-', tpart_to_diff) is not None:
-                    return render_to_response('error.html',
-                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'to' date") + ".", 'query': q, 'timequery': t},
-                        context_instance=RequestContext(request))
+                        errormessage = _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'to' date")
+                        search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                        return search_dict
                 try:
                     tpart_to_diff = int(tpart_to_diff)
                 except ValueError:
@@ -308,9 +306,9 @@ def list_search(request):
                     tpart_from_date_valid  = datetime.datetime.strptime(tpart_from_date, "%Y-%m-%d")
                     tpart_to_date_valid    = datetime.datetime.strptime(tpart_to_date,   "%Y-%m-%d")
                 except ValueError:
-                    return render_to_response('error.html',
-                        {'title': 'error', 'message_col1': _("You have submitted an invalid search - one of your dates is in invalid format or is not a date at all") + ".", 'query': q, 'timequery': t},
-                        context_instance=RequestContext(request))
+                        errormessage = _("You have submitted an invalid search - one of your dates is in invalid format or is not a date at all")
+                        search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                        return search_dict
 
                 tpart_from_final = tpart_from_date_valid + datetime.timedelta(days=tpart_from_diff)
                 tpart_to_final   = tpart_to_date_valid   + datetime.timedelta(days=tpart_to_diff)
@@ -373,6 +371,10 @@ def list_search(request):
 
                 events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
 ###############################################################################
+            else:
+                errormessage = _("You have submitted an invalid search - check your query format and try again")
+                search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                return search_dict
 
 # apply the filter to the search results
         events = events & Event.objects.filter(time_limiters)
@@ -382,13 +384,24 @@ def list_search(request):
         list_of_events = list(set(list_of_events))
         list_of_events.sort(key=lambda x: sorting_dictionary[x.id], reverse=True)
 
-        if len(events) == 0:
+        search_dict = {'errormessage': '', 'list_of_events': list_of_events}
+        return search_dict
+
+def list_search(request):
+    if 'q' in request.GET and request.GET['q']:
+        q = request.GET['q'].lower()
+
+        search_dict = list_search_get(q)
+
+        if not search_dict['errormessage'] == '':
+            return render_to_response('error.html', {'title': 'error', 'message_col1': search_dict['errormessage'] + ".", 'query': q}, context_instance=RequestContext(request))
+        elif len(search_dict['list_of_events']) == 0:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("Your search didn't get any result") + ".", 'query': q},
                 context_instance=RequestContext(request))
         else:
             return render_to_response('events/list_search.html',
-                {'title': 'search results', 'events': list_of_events, 'query': q},
+                {'title': 'search results', 'events': search_dict['list_of_events'], 'query': q},
                 context_instance=RequestContext(request))
     else:
         return render_to_response('error.html',
@@ -401,12 +414,7 @@ def filter_save(request):
     else:
         q = ''
 
-    if 't' in request.POST and request.POST['t']:
-        t = request.POST['t'].lower()
-    else:
-        t = ''
-
-    if q == '' and t == '':
+    if q == '':
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are trying to save a search without any search terms") + "."},
@@ -420,8 +428,7 @@ def filter_save(request):
                     try:
                         savedsearch = SavedSearch()
                         savedsearch.user = request.user
-                        savedsearch.query_text = q
-                        savedsearch.query_time = t
+                        savedsearch.query = q
                         savedsearch.save()
                         return HttpResponseRedirect('/events/list/filter/edit/' + str(savedsearch.id) + '/') ;
                     except Exception:
@@ -430,7 +437,7 @@ def filter_save(request):
                             context_instance=RequestContext(request))
     else:
             return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q, 'timequery': t},
+                {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
                 context_instance=RequestContext(request))
 
 
@@ -513,10 +520,6 @@ def filter_list(request):
             return render_to_response('events/filter_list.html',
                 {'title': 'list of my filters', 'filters': f},
                 context_instance=RequestContext(request))
-
-
-
-
 
 def list_user_events(request, username):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
