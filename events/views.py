@@ -105,6 +105,27 @@ def generate_event_textarea(event):
     except Exception:
          ee = ''
 
+
+    if event.country is None:
+        str_country = ''
+    else:
+        str_country = unicode(event.country)
+
+    if event.timezone is None:
+        str_timezone = ''
+    else:
+        str_timezone = str(event.timezone)
+
+    if event.latitude is None:
+        str_latitude = ''
+    else:
+        str_latitude = str(event.latitude)
+
+    if event.longitude is None:
+        str_longitude = ''
+    else:
+        str_longitude = str(event.longitude)
+
     t = ''
     t = t + 'acro: ' + unicode(event.acro) + '\n'
     t = t + 'titl: ' + unicode(event.title) + '\n'
@@ -115,22 +136,31 @@ def generate_event_textarea(event):
     t = t + 'city: ' + unicode(event.city) + '\n'
     t = t + 'addr: ' + unicode(event.address) + '\n'
     t = t + 'code: ' + unicode(event.postcode) + '\n'
-    t = t + 'land: ' + unicode(event.country) + '\n'
-    t = t + 'tizo: ' + str(event.timezone) + '\n'
-    t = t + 'lati: ' + str(event.latitude) + '\n'
-    t = t + 'long: ' + str(event.longitude) + '\n'
+    t = t + 'land: ' + str_country + '\n'
+    t = t + 'tizo: ' + str_timezone + '\n'
+    t = t + 'lati: ' + str_latitude + '\n'
+    t = t + 'long: ' + str_longitude + '\n'
 
     eu = EventUrl.objects.filter(event=event.id)
-    for e in eu.all():
-         t = t + 'url: ' + e.url_name + '|' + e.url + '\n'
+    if len(eu) < 0:
+        t = t + 'url: ' + '\n'
+    else:
+        for e in eu.all():
+             t = t + 'url: ' + e.url_name + '|' + e.url + '\n'
 
     et = EventTimechunk.objects.filter(event=event.id)
-    for e in et.all():
-         t = t + 'time: ' + e.timechunk_name + '|' + str(e.timechunk_date) + '|' + str(e.timechunk_starttime) + '|' + str(e.timechunk_endtime) +'\n'
+    if len(et) < 0:
+        t = t + 'time: ' + '\n'
+    else:
+        for e in et.all():
+            t = t + 'time: ' + e.timechunk_name + '|' + str(e.timechunk_date) + '|' + str(e.timechunk_starttime) + '|' + str(e.timechunk_endtime) +'\n'
 
     ed = EventDeadline.objects.filter(event=event.id)
-    for e in ed.all():
-         t = t + 'dl: ' + e.deadline_name + '|' + str(e.deadline) + '\n'
+    if len(ed) < 0:
+        t = t + 'dl: ' + '\n'
+    else:
+        for e in ed.all():
+            t = t + 'dl: ' + e.deadline_name + '|' + str(e.deadline) + '\n'
 
     t = t + 'desc: ' + unicode(event.description) + '\n'
     return t
@@ -160,23 +190,45 @@ def edit_astext(request, event_id):
     else:
         if request.method == 'POST':
                 if 'event_astext' in request.POST:
-                    try:
+#                    try:
                         t = request.POST['event_astext'].replace(": ", ":")
                         event_attr_list = t.splitlines()
                         event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
+
+                        if re.match('\d\d\d\d\-\d\d\-\d\d$', event_attr_dict['endd']) is not None:
+                            event_end = event_attr_dict['endd']
+                        else:
+                            event_end = None
+
+                        if re.match('\d+\.\d*$', event_attr_dict['lati']) is not None:
+                            event_lati = event_attr_dict['lati']
+                        else:
+                            event_lati = None
+
+                        if re.match('\d+\.\d*$', event_attr_dict['long']) is not None:
+                            event_long = event_attr_dict['long']
+                        else:
+                            event_long = None
+
+                        if re.match('\d+$', event_attr_dict['tizo']) is not None:
+                            event_tizo = event_attr_dict['tizo']
+                        else:
+                            event_tizo = None
+
+
                         event.acro        = event_attr_dict['acro']
                         event.title       = event_attr_dict['titl']
                         event.start       = event_attr_dict['date']
-                        event.end         = event_attr_dict['endd']
+                        event.end         = event_end
                         event.tags        = event_attr_dict['tags']
                         event.public      = StringToBool(event_attr_dict['publ'])
                         event.city        = event_attr_dict['city']
                         event.address     = event_attr_dict['addr']
                         event.postcode    = event_attr_dict['code']
                         event.country     = event_attr_dict['land']
-                        event.timezone    = event_attr_dict['tizo']
-                        event.latitude    = event_attr_dict['lati']
-                        event.longitude   = event_attr_dict['long']
+                        event.timezone    = event_tizo
+                        event.latitude    = event_lati
+                        event.longitude   = event_long
                         event.description = event_attr_dict['desc']
                         EventUrl.objects.filter(event=event_id).delete()
                         EventTimechunk.objects.filter(event=event_id).delete()
@@ -196,9 +248,8 @@ def edit_astext(request, event_id):
                                 ed.save(force_insert=True)
                         event.save()
                         return HttpResponseRedirect('/')
-                    except Exception:
-                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")},
-                    context_instance=RequestContext(request))
+#                    except Exception:
+#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
                 else:
                     message = _("You submitted an empty form.")
                     return HttpResponse(message)
