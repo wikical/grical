@@ -1,0 +1,11 @@
+The following events are mathing your filters:
+
+{% for event in user_events %}
+    {{event.title}}
+    http://{{site.domain}}/events/view_astext/{{event.id}}/
+{% endfor %}
+
+You may view your filters at: http://{{site.domain}}/events/filter/list/
+
+-- 
+http://{{site.domain}}

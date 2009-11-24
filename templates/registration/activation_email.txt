@@ -6,5 +6,5 @@ http://{{site.domain}}{% url registration_activate activation_key %}
 
 This need to be done in less than {{ expiration_days }} days.
 
---
+-- 
 http://{{site.domain}}
