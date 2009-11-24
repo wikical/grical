@@ -1,26 +1,13 @@
-#import datetime
-#from time import strftime
-#import re
-
-#from django import forms
-#from django.db.models import Q
-#from django.http import HttpResponse, HttpResponseRedirect
-from django.template.loader import render_to_string
-#from django.template import RequestContext
-from django.utils.translation import ugettext as _
-#from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail, BadHeaderError
+from django.template.loader import render_to_string
+from django.utils.translation import ugettext as _
 
-from gridcalendar.events.views import list_search_get
 from gridcalendar.events.models import Filter
-
-#from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
-
+from gridcalendar.events.views import list_search_get
 
 def mail_notif():
-
     site = Site.objects.get(pk=1)
 
 #    users = User.objects.all()
@@ -38,10 +25,10 @@ def mail_notif():
             search_error = list_search_get(fff.query)['errormessage']
             if search_error == '':
                 fff_len = len(search_results)
-                if fff_len <= 10:
+                if fff_len <= fff.maxevents_email:
                     show = fff_len
                 else:
-                    show = 10
+                    show = maxevents_email
                 for event in search_results[0:show]:
                     user_events.append(event)
             else:
@@ -55,20 +42,14 @@ def mail_notif():
             'site': site,
         }
 
-        print user_events
+        if len(user_events) > 0:
 
-        subject = 'notification about new events on ' + site.domain
-#       subject = render_to_string('events/notif_email_subject.txt', context)
-        message = render_to_string('events/notif_email.txt', context)
-        from_email = 'noreply@' + site.domain
-        if subject and message and from_email:
-#            print subject
-#            print message
-#            print from_email
-#            print to_email
-#            try:
-                send_mail(subject, message, from_email, [to_email])
-#            except BadHeaderError:
-#                assert False
-
+            subject = 'notification about new events on ' + site.domain
+            message = render_to_string('events/notif_email.txt', context)
+            from_email = 'noreply@' + site.domain
+            if subject and message and from_email:
+#               try:
+                    send_mail(subject, message, from_email, [to_email])
+#               except BadHeaderError:
+#                   assert False
 

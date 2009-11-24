@@ -1,1 +1,0 @@
-notification about new events on [{{site.domain}}]
