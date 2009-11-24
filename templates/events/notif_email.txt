@@ -1,4 +1,4 @@
-The following events are mathing your filters:
+The following events are matching your filters:
 
 {% for event in user_events %}
     {{event.title}}
