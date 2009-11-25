@@ -133,6 +133,7 @@ def generate_event_textarea(event):
     t = t + 'endd: ' + ee + '\n'
     t = t + 'tags: ' + unicode(event.tags) + '\n'
     t = t + 'publ: ' + str(event.public) + '\n'
+    t = t + 'modi: ' + str(event.public_modi) + '\n'
     t = t + 'city: ' + unicode(event.city) + '\n'
     t = t + 'addr: ' + unicode(event.address) + '\n'
     t = t + 'code: ' + unicode(event.postcode) + '\n'
@@ -222,6 +223,7 @@ def edit_astext(request, event_id):
                         event.end         = event_end
                         event.tags        = event_attr_dict['tags']
                         event.public      = StringToBool(event_attr_dict['publ'])
+                        event.public_modi = StringToBool(event_attr_dict['modi'])
                         event.city        = event_attr_dict['city']
                         event.address     = event_attr_dict['addr']
                         event.postcode    = event_attr_dict['code']
