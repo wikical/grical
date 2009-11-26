@@ -35,7 +35,7 @@ class Group(models.Model):
 class Membership(models.Model):
     user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
     group = models.ForeignKey(Group, unique=True, verbose_name=_('Group'))
-    is_administrator = models.BooleanField(_('Is administrator'))
+    is_administrator = models.BooleanField(_('Is administrator')) # TODO: default true, not used for the moment
     new_event_email = models.BooleanField(_('New event email'), default=True)
     new_member_email = models.BooleanField(_('email_member_email'), default=True)
     date_joined = models.DateField(_('date_joined'), editable=False, auto_now_add=True)
@@ -62,13 +62,6 @@ class CalendarInline(admin.TabularInline):
 class GroupAdmin(admin.ModelAdmin):
     inlines = (MembershipInline, CalendarInline,)
 
-# TODO: add setting info to users. See the auth documentation because there is a method for adding
-# fields to User. E.g.
-#   - interesting locations
-#   - interesting tags
-#   - hidden: location and tags clicked before
-
-#TODO: events comment model. Check for already available django comment modul
 
 # They are already registered somehow
 admin.site.register(Group, GroupAdmin)

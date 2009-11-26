@@ -357,20 +357,8 @@ class Filter(models.Model):
     email = models.BooleanField(_('Email'), default=False, help_text=_('If set it sends an email to a user when a new event matches all fields set'))
     maxevents_email = models.SmallIntegerField(_('Max events in e-mail'), blank=True, null=True, default=10, help_text=_("Maximum number of events you to show in a notification e-mail"))
     class Meta:
-        unique_together = ("user", "name")
-
-class Interest(models.Model):
-    user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
-    title = models.CharField(_('Title'), max_length=200, blank=True, null=True)
-    tags =  models.CharField(_('Tags'), max_length=200, blank=True, null=True)
-    city =  models.CharField(_('City'), max_length=50, blank=True, null=True)
-    country = models.CharField(_('Country'), blank=True, null=True, max_length=2, choices=COUNTRIES)
-    email = models.BooleanField(_('Email'), default=False, help_text=_(
-            'If set it sends an email to a user when a new event matches all fields set'))
-    modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
-    class Meta:
         ordering = ['modification_time']
-        verbose_name = _('Interest')
-        verbose_name_plural = _('Interests')
-
+        unique_together = ("user", "name")
+        verbose_name = _('Filter')
+        verbose_name_plural = _('Filters')
 
