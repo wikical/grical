@@ -11,10 +11,11 @@
                     {{ message_col1 }}
                 </div>
                 {% endif %}
-                {% block column1 %}{% endblock %}
+                {% block column1 %}
+		{% endblock %}
 			</div>
 <!--
-			<div class="col2">
+	<div class="col2">
                 {% block column2 %}
                 {% if user.username %}
                 <p align="right"><a href="/groups/create">{% trans "Create a new group" %}</a></p>
@@ -52,7 +53,7 @@
             <p>TODO: tag cloud</p>
             {% endif %}
             {% endblock %}
-            </div>
+	</div>
 -->
 
         </div>
