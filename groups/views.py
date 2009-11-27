@@ -1,6 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from gridcalendar.events.models import Event
 from tagging.models import TaggedItem
 from tagging.models import Tag
 from django.shortcuts import render_to_response, get_object_or_404
@@ -13,15 +12,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponseRedirect
 
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous
-
-# notice that an anonymous user get a form without the 'public' field (simplified)
-
-def getEventForm(user):
-    """returns a simplied event form with or without the public field"""
-    if user.is_authenticated():
-        return SimplifiedEventForm()
-    return SimplifiedEventFormAnonymous()
+from gridcalendar.groups.models import Group, Membership
+from gridcalendar.groups.forms import NewGroupForm
 
 def edit(request, event_id):
     pass
@@ -62,16 +54,42 @@ def edit(request, event_id):
 def create(request):
     if not request.user.is_authenticated():
         return render_to_response('groups/no_authenticated.html', {}, context_instance=RequestContext(request))
-    form = NewGroupForm(request.POST)
     if request.method == 'POST':
+        form = NewGroupForm(request.POST)
         if form.is_valid():
             form.save()
+            group_name = request.POST.get('name', '')
+            new_group = Group.objects.get(name=group_name)
+            new_membership = Membership(user=request.user, group=new_group)
+            new_membership.save()
+#            new_group.members.add(new_membership)
+# Cannot use create() on a ManyToManyField which specifies an intermediary model. Use Membership's Manager instead.
+#            new_membership = new_group.members.create(user=request.user)
             # TODO: notify all invited members of the group
-            return HttpResponseRedirect(request.get_host())
+            return HttpResponseRedirect('/groups/list/')
         else:
             return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
     else:
-        return HttpResponseRedirect(request.get_host())
+        form = NewGroupForm()
+        return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
+
+def list_my_groups(request):
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You must be logged in to list your groups") + "."},
+                context_instance=RequestContext(request))
+    else:
+#        groups = Membership.objects.all()
+        groups = Membership.objects.filter(user=request.user)
+        if len(groups) == 0:
+            return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You are not a member of any groups yet") + "."},
+                context_instance=RequestContext(request))
+        else:
+            return render_to_response('groups/list_my.html',
+                {'title': 'list my groups', 'groups': groups},
+                context_instance=RequestContext(request))
+
 
 def answer_invitation(request, group_id):
     """A user can accept or deny the invitation"""
