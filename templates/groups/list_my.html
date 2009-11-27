@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block column1 %}
+<h3> {% trans "My groups" %}:</h3>
+
+{% if groups %}
+    {% for group in groups %}
+        <br /><a href="/{{group.id}}/">{{ group.id }}</a>
+    {% endfor %}
+{% else %}
+	    <p>No groups found!</p>
+{% endif %}
+
+{% endblock %}
+
