@@ -59,7 +59,7 @@ def edit(request, event_id):
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-    if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
+    if (not event.public_edit) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _('You are not allowed to edit the event with the following number') +
@@ -104,7 +104,6 @@ def generate_event_textarea(event):
          ee = event.end.strftime("%Y-%m-%d")
     except Exception:
          ee = ''
-
 
     if event.country is None:
         str_country = ''
@@ -181,7 +180,7 @@ def edit_astext(request, event_id):
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-    if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
+    if (not event.public_edit) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
