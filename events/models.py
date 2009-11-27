@@ -293,8 +293,8 @@ class Event(models.Model):
     #
     tags = TagField(_('Tags'), blank=True, null=True, help_text=_(u"Tags are case in-sensitive. Only letters (these can be international, like: αöł), digits and hyphens are allowed. Tags are separated with spaces."))
     #
-    public = models.BooleanField(_('Public'), default=True, help_text=_("A public entry can be seen by anyone, a private one only by the selected persons and groups"))
-    public_modi = models.BooleanField(_('Modi'), default=True, help_text=_("A boolean field that sets who can modify the event. Possible values: true meaning anyone can modify it, false meaning only the owner can modify it."))
+    public_view = models.BooleanField(_('Publicly viewable'), default=True, help_text=_("A publicly viewable entry can be seen by anyone, otherwise only by the selected persons and groups"))
+    public_edit = models.BooleanField(_('Publicly editable'), default=True, help_text=_("A publicly editable entry can be edited by anyone, otherwise only by the selected persons and groups"))
     #
     country = models.CharField(_('Country'), blank=True, null=True, max_length=2, choices=COUNTRIES)
     city = models.CharField(_('City'), blank=True, null=True, max_length=50)

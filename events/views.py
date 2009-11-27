@@ -18,7 +18,7 @@ from tagging.models import Tag, TaggedItem
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 
-# notice that an anonymous user get a form without the 'public' field (simplified)
+# notice that an anonymous user get a form without the 'public_view' field (simplified)
 
 def simplified_submission(request):
     if request.method == 'POST':
@@ -31,11 +31,11 @@ def simplified_submission(request):
             cd = sef.cleaned_data
             # create a new entry and saves the data
             if request.user.is_authenticated():
-                public_value = public=cd['public']
+                public_view_value = public_view=cd['public_view']
             else:
-                public_value = True
+                public_view_value = True
             e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
-                        tags=cd['tags'], public=public_value)
+                        tags=cd['tags'], public_view=public_view_value)
             e.save()
             return HttpResponseRedirect('/events/edit/' + str(e.id)) ;
             # TODO: look in a thread for all users who wants to receive an email notification and send it
@@ -132,8 +132,8 @@ def generate_event_textarea(event):
     t = t + 'date: ' + event.start.strftime("%Y-%m-%d") + '\n'
     t = t + 'endd: ' + ee + '\n'
     t = t + 'tags: ' + unicode(event.tags) + '\n'
-    t = t + 'publ: ' + str(event.public) + '\n'
-    t = t + 'modi: ' + str(event.public_modi) + '\n'
+    t = t + 'view: ' + str(event.public_view) + '\n'
+    t = t + 'edit: ' + str(event.public_edit) + '\n'
     t = t + 'city: ' + unicode(event.city) + '\n'
     t = t + 'addr: ' + unicode(event.address) + '\n'
     t = t + 'code: ' + unicode(event.postcode) + '\n'
@@ -222,8 +222,8 @@ def edit_astext(request, event_id):
                         event.start       = event_attr_dict['date']
                         event.end         = event_end
                         event.tags        = event_attr_dict['tags']
-                        event.public      = StringToBool(event_attr_dict['publ'])
-                        event.public_modi = StringToBool(event_attr_dict['modi'])
+                        event.public_view = StringToBool(event_attr_dict['public_view'])
+                        event.public_edit = StringToBool(event_attr_dict['public_edit'])
                         event.city        = event_attr_dict['city']
                         event.address     = event_attr_dict['addr']
                         event.postcode    = event_attr_dict['code']
@@ -268,7 +268,7 @@ def view_astext(request, event_id):
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
-    if (not event.public) and (event.user.id != request.user.id):
+    if (not event.public_view) and (event.user.id != request.user.id):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to edit the event with the following number") +
@@ -606,7 +606,7 @@ def list_user_events(request, username):
             useridtmp = u.id
             events = Event.objects.all()
             events = Event.objects.filter(user=useridtmp)
-            events = Event.objects.filter(public=True)
+            events = Event.objects.filter(public_view=True)
             if len(events) == 0:
                 return render_to_response('error.html',
                     {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
