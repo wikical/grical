@@ -31,7 +31,7 @@ def index(request):
         ev = SimplifiedEventFormAnonymous()
         coming_events = Event.objects.filter(start__gte=datetime.now()).exclude(public_view=False)[:100]
         past_events   = Event.objects.filter(start__lt=datetime.now()).exclude(public_view=False)[:100]
-      # coming_events = Event.objects.all()
+#       coming_events = Event.objects.all()
     return render_to_response('index.html', {'title': 'home', 'form': ev, 'coming_events': coming_events, 'past_events': past_events}, context_instance=RequestContext(request))
 
 # for this decorator, see
