@@ -21,6 +21,10 @@ from django.contrib.sites.models import Site
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 class Group(models.Model):
+#    def save(self):
+#        m = Membership()
+#        m.user
+#        super(Group, self).save()
     name = models.CharField(_('Name'), max_length=80, unique=True)
     description = models.TextField(_('Description'))
     members = models.ManyToManyField(User, through='Membership', verbose_name=_('Members'))
@@ -35,7 +39,7 @@ class Group(models.Model):
 class Membership(models.Model):
     user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
     group = models.ForeignKey(Group, unique=True, verbose_name=_('Group'))
-    is_administrator = models.BooleanField(_('Is administrator')) # TODO: default true, not used for the moment
+    is_administrator = models.BooleanField(_('Is administrator'), default=True) # TODO: default true, not used for the moment
     new_event_email = models.BooleanField(_('New event email'), default=True)
     new_member_email = models.BooleanField(_('email_member_email'), default=True)
     date_joined = models.DateField(_('date_joined'), editable=False, auto_now_add=True)
@@ -43,6 +47,7 @@ class Membership(models.Model):
         verbose_name = _('Membership')
         verbose_name_plural = _('Memberships')
 
+# model "Calendar" is about which events are interesting for which group
 class Calendar(models.Model):
     event = models.ForeignKey(Event, unique=True, verbose_name=_('Event'))
     group = models.ForeignKey(Group, unique=True, verbose_name=_('Group'))
