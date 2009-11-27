@@ -24,12 +24,12 @@ class EventForm(ModelForm):
 class EventFormAnonymous(EventForm):
     class Meta:
         model = Event
-        exclude = ('public',)
+        exclude = ('public_view', 'public_edit')
 
 class SimplifiedEventForm(EventForm):
     class Meta:
         model = Event
-        fields = ('title', 'start', 'tags', 'public')
+        fields = ('title', 'start', 'tags', 'public_view', 'public_edit')
 
 class SimplifiedEventFormAnonymous(EventForm):
     class Meta:
