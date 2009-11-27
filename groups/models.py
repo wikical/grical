@@ -37,13 +37,14 @@ class Group(models.Model):
         verbose_name_plural = _('Groups')
 
 class Membership(models.Model):
-    user = models.ForeignKey(User, unique=True, verbose_name=_('User'))
-    group = models.ForeignKey(Group, unique=True, verbose_name=_('Group'))
+    user = models.ForeignKey(User, verbose_name=_('User'))
+    group = models.ForeignKey(Group, verbose_name=_('Group'))
     is_administrator = models.BooleanField(_('Is administrator'), default=True) # TODO: default true, not used for the moment
     new_event_email = models.BooleanField(_('New event email'), default=True)
     new_member_email = models.BooleanField(_('email_member_email'), default=True)
     date_joined = models.DateField(_('date_joined'), editable=False, auto_now_add=True)
     class Meta:
+        unique_together = ("user", "group")
         verbose_name = _('Membership')
         verbose_name_plural = _('Memberships')
 

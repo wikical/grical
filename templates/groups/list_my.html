@@ -4,9 +4,15 @@
 <h3> {% trans "My groups" %}:</h3>
 
 {% if groups %}
-    {% for group in groups %}
-        <br /><a href="/{{group.id}}/">{{ group.id }}</a>
+<ul>
+    {% for g in groups %}
+        <li>
+ {{ g.name }}
+<!--
+        <br /><a href="/{{group.id}}/">{{ group.name }}</a>
+-->
     {% endfor %}
+</ul>
 {% else %}
 	    <p>No groups found!</p>
 {% endif %}

@@ -7,8 +7,7 @@ from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from tagging.models import TaggedItem
 from tagging.models import Tag
-
-from django import forms
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponseRedirect
 
@@ -80,7 +79,8 @@ def list_my_groups(request):
                 context_instance=RequestContext(request))
     else:
 #        groups = Membership.objects.all()
-        groups = Membership.objects.filter(user=request.user)
+        u = User(request.user)
+        groups = Group.objects.filter(membership__user=u)
         if len(groups) == 0:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You are not a member of any groups yet") + "."},
