@@ -11,8 +11,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponseRedirect
 
-from gridcalendar.groups.models import Group, Membership
-from gridcalendar.groups.forms import NewGroupForm
+from gridcalendar.events.views import Event
+from gridcalendar.groups.models import Group, Membership, Calendar
+from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm
 
 def edit(request, event_id):
     pass
@@ -61,9 +62,6 @@ def create(request):
             new_group = Group.objects.get(name=group_name)
             new_membership = Membership(user=request.user, group=new_group)
             new_membership.save()
-#            new_group.members.add(new_membership)
-# Cannot use create() on a ManyToManyField which specifies an intermediary model. Use Membership's Manager instead.
-#            new_membership = new_group.members.create(user=request.user)
             # TODO: notify all invited members of the group
             return HttpResponseRedirect('/groups/list/')
         else:
@@ -78,7 +76,6 @@ def list_my_groups(request):
                 {'title': 'error', 'message_col1': _("You must be logged in to list your groups") + "."},
                 context_instance=RequestContext(request))
     else:
-#        groups = Membership.objects.all()
         u = User(request.user)
         groups = Group.objects.filter(membership__user=u)
         if len(groups) == 0:
@@ -90,6 +87,47 @@ def list_my_groups(request):
                 {'title': 'list my groups', 'groups': groups},
                 context_instance=RequestContext(request))
 
+def quit_group(request, group_id):
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You must be logged in to quit your groups") + "."},
+                context_instance=RequestContext(request))
+    else:
+        u = User(request.user)
+        try:
+            g = Group.objects.get(id=group_id, membership__user=u)
+            m = Membership.objects.get(user=request.user, group=g)
+            m.delete()
+            return HttpResponseRedirect('/groups/list/')
+        except:
+            return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("There is no such group or you are not a member of that group") + "."},
+                context_instance=RequestContext(request))
+
+def add_event(request, event_id):
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You must be logged in to add an event to a group") + "."},
+                context_instance=RequestContext(request))
+    e = Event.objects.get(id=event_id)
+    calentry = Calendar(event=e)
+    if request.POST:
+        form = AddEventToGroupForm(data=request.POST, instance=calentry)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect('/groups/list/')
+        else:
+            request.user.message_set.create(message='Please check your data.')
+    else:
+        form = AddEventToGroupForm(instance=calentry)
+    context = dict()
+    context['form'] = form
+    return render_to_response('groups/add_event_to_group.html', context_instance=RequestContext(request, context))
+
+#        u = User(request.user)
+#        data = {'user_id': u,}
+#        form = AddEventToGroupForm(data)
+#        return render_to_response('groups/add_event_to_group.html', {'form': form}, context_instance=RequestContext(request))
 
 def answer_invitation(request, group_id):
     """A user can accept or deny the invitation"""

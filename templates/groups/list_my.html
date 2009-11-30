@@ -6,11 +6,8 @@
 {% if groups %}
 <ul>
     {% for g in groups %}
-        <li>
- {{ g.name }}
-<!--
-        <br /><a href="/{{group.id}}/">{{ group.name }}</a>
--->
+        <li> {{ g.name }}
+        <br /><a href="/groups/quit/{{g.id}}/">quit from this group</a>
     {% endfor %}
 </ul>
 {% else %}

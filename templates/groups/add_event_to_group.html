@@ -3,34 +3,23 @@
 
 {% block column1 %}
 
-<p>{% trans "Event details" %}:</p>
-<div id="event_textarea_form">
-<pre>
-
+<p>{% trans "Add event to group" %}:</p>
+<div id="event_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+        </p>
+    {% endif %}
+    <form action="" method="post">
         <table>
-            <div>{{ event_textarea }}</div>
+            {{ form.as_table }}
         </table>
-
-</pre>
+        <input type="submit" value={% trans "Add" %}>
+    </form>
 </div>
-
-<a href="/events/edit/{{ event_id }}/"><span class="field_title">edit this event with webforms</span></a>
-&nbsp;
-<a href="/events/edit_astext/{{ event_id }}/"><span class="field_title">edit this event as text</span></a>
-&nbsp;
-<a href="/groups/add_event/{{ event_id }}/"><span class="field_title">add event to a group</span></a>
-
-
-<p>
-
-
-</p>
-
-
 
 {% endblock %}
 
-<!--
 {% block column2 %}
 {% if user.username %}
 <p>TODO If user has groups: Latest events in his groups:</p>
@@ -53,5 +42,3 @@
 
 {% block column3 %}
 {% endblock %}
-
--->
