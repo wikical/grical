@@ -21,10 +21,6 @@ from django.contrib.sites.models import Site
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 class Group(models.Model):
-#    def save(self):
-#        m = Membership()
-#        m.user
-#        super(Group, self).save()
     name = models.CharField(_('Name'), max_length=80, unique=True)
     description = models.TextField(_('Description'))
     members = models.ManyToManyField(User, through='Membership', verbose_name=_('Members'))
@@ -35,6 +31,8 @@ class Group(models.Model):
         ordering = ['creation_time']
         verbose_name = _('Group')
         verbose_name_plural = _('Groups')
+    def __unicode__(self):
+        return self.name
 
 class Membership(models.Model):
     user = models.ForeignKey(User, verbose_name=_('User'))
