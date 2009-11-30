@@ -129,6 +129,18 @@ def add_event(request, event_id):
 #        form = AddEventToGroupForm(data)
 #        return render_to_response('groups/add_event_to_group.html', {'form': form}, context_instance=RequestContext(request))
 
+def group(request, group_id):
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You must be logged in to view events in a group") + "."},
+                context_instance=RequestContext(request))
+    else:
+        group = Group.objects.filter(id=group_id)
+        events = Event.objects.filter(group=group)
+        return render_to_response('groups/group.html',
+                {'title': 'group page', 'group_id': group_id, 'events': events},
+                context_instance=RequestContext(request))
+
 def answer_invitation(request, group_id):
     """A user can accept or deny the invitation"""
     pass

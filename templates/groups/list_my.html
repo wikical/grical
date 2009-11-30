@@ -7,11 +7,12 @@
 <ul>
     {% for g in groups %}
         <li> {{ g.name }}
+        <br /><a href="/groups/{{g.id}}/">events this group</a>
         <br /><a href="/groups/quit/{{g.id}}/">quit from this group</a>
     {% endfor %}
 </ul>
 {% else %}
-	    <p>No groups found!</p>
+	    <p>{% trans "No groups found!" %}</p>
 {% endif %}
 
 {% endblock %}
