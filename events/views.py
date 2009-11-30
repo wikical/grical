@@ -545,7 +545,7 @@ def filter_drop(request, filter_id):
             assert False
         else:
             filter.delete()
-            f = Filter.objects.all()
+#            f = Filter.objects.all()
             f = Filter.objects.filter(user=request.user)
             return render_to_response('events/filter_list.html',
                 {'title': 'list of my filters', 'filters': f},
@@ -557,7 +557,7 @@ def filter_list(request):
                 {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
     else:
-        f = Filter.objects.all()
+#        f = Filter.objects.all()
         f = Filter.objects.filter(user=request.user)
         if len(f) == 0:
             return render_to_response('error.html',
@@ -603,7 +603,7 @@ def list_user_events(request, username):
         try:
             u = User.objects.get(username__exact=username)
             useridtmp = u.id
-            events = Event.objects.all()
+#            events = Event.objects.all()
             events = Event.objects.filter(user=useridtmp)
             events = Event.objects.filter(public_view=True)
             if len(events) == 0:
@@ -622,7 +622,7 @@ def list_user_events(request, username):
         try:
             u = User.objects.get(username__exact=username)
             useridtmp = u.id
-            events = Event.objects.all()
+#            events = Event.objects.all()
             events = Event.objects.filter(user=useridtmp)
             if len(events) == 0:
                 return render_to_response('error.html',
@@ -643,7 +643,7 @@ def list_my_events(request):
                 {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},
                 context_instance=RequestContext(request))
     else:
-        events = Event.objects.all()
+#        events = Event.objects.all()
         events = Event.objects.filter(user=request.user)
         if len(events) == 0:
             return render_to_response('error.html',
