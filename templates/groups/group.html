@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block column1 %}
+
+{% if events %}
+<h3> {% trans "Events in this group" %}:</h3>
+{% include "events/list_wrapper.html" %}
+{% else %}
+
+<p>{% trans "There are no events in this group" %}.</p>
+
+{% endif %}
+
+
+
+{% endblock %}
+
