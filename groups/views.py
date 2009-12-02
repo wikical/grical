@@ -72,26 +72,12 @@ def add_event(request, event_id):
                 {'title': 'error', 'message_col1': _("You must be logged in to add an event to a group") + "."},
                 context_instance=RequestContext(request))
 
-    """
     e = Event.objects.get(id=event_id)
-    calentry = Calendar(event=e)
+    u = User(request.user)
     if request.POST:
-        f = AddEventToGroupForm(data=request.POST, instance=calentry)
-        if f.is_valid():
-            for g in f.cleaned_data['grouplist']:
-                calentry.group.add(g)
-            return HttpResponseRedirect('/groups/list/')
-        else:
-            request.user.message_set.create(message='Please check your data.')
-    else:
-        f = AddEventToGroupForm(instance=calentry)
-
-    """
-
-
-    e = Event.objects.get(id=event_id)
-    if request.POST:
-        f = AddEventToGroupForm(data=request.POST)
+        grouplist_dirty=request.POST['grouplist']
+        formdata = {'user': u, 'grouplist': grouplist_dirty}
+        f = AddEventToGroupForm(data=formdata)
         if f.is_valid():
             for g in f.cleaned_data['grouplist']:
                 calentry = Calendar(event=e, group=g)
@@ -100,11 +86,8 @@ def add_event(request, event_id):
         else:
             request.user.message_set.create(message='Please check your data.')
     else:
-        f = AddEventToGroupForm()
-
-
-
-
+#        formdata = {'user': u, 'grouplist': None}
+        f = AddEventToGroupForm(request)
 
     context = dict()
     context['form'] = f
@@ -135,7 +118,6 @@ def invite(request, group_id):
     else:
         g = Group.objects.get(id=group_id)
         if request.POST:
-#            form = InviteToGroupForm(data=request.POST, instance=invitation)
             username_dirty=request.POST['username']
             formdata = {'username': username_dirty,
                         'group_id': group_id}

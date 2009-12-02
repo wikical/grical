@@ -8,35 +8,14 @@ class NewGroupForm(ModelForm):
         model = Group
         fields = ('name', 'description',)
 
-class AddEventToGroupFormOld(ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(AddEventToGroupForm, self).__init__(*args, **kwargs)
-        grs = Group.objects.filter(id=1)
-
-        # change a widget attribute:
-        self.fields['group'].widget = SelectMultiple
-
-    class Meta:
-        model = Calendar
-        fields = ('group',)
-#        widgets = {
-#            'group': CheckboxSelectMultiple
-#        }
-
-#    def __init__(self, *args, **kwargs):
-#        super(AddEventToGroupForm, self).__init__(*args, **kwargs)
-#        self.fields['group'].widget = CheckboxSelectMultiple()
-
 class AddEventToGroupForm(Form):
-    grouplist = ModelMultipleChoiceField(queryset=Group.objects.all(), widget=SelectMultiple())
+#    user = CharField(max_length=30, widget=HiddenInput)
+#    grouplist = ModelMultipleChoiceField(queryset=Group.objects.all().filter(members__username__exact=user), widget=SelectMultiple())
+    grouplist = ModelMultipleChoiceField(queryset=Group.objects.none(), widget=SelectMultiple())
+    def __init__(self, request, *args, **kwargs):
+        super(AddEventToGroupForm, self).__init__(*args, **kwargs)
+        self.fields["grouplist"].queryset = Group.objects.filter(members=request.user)
 
-class AddEventToGroupForm1(ModelForm):
-    group = ModelMultipleChoiceField(queryset=Group.objects.all(), widget=SelectMultiple())
-
-    class Meta:
-        model = Calendar
-        fields = ('group',)
 
 class InviteToGroupForm(Form):
     group_id = IntegerField(widget=HiddenInput)
