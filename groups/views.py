@@ -71,19 +71,43 @@ def add_event(request, event_id):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to add an event to a group") + "."},
                 context_instance=RequestContext(request))
+
+    """
     e = Event.objects.get(id=event_id)
     calentry = Calendar(event=e)
     if request.POST:
-        form = AddEventToGroupForm(data=request.POST, instance=calentry)
-        if form.is_valid():
-            form.save()
+        f = AddEventToGroupForm(data=request.POST, instance=calentry)
+        if f.is_valid():
+            for g in f.cleaned_data['grouplist']:
+                calentry.group.add(g)
             return HttpResponseRedirect('/groups/list/')
         else:
             request.user.message_set.create(message='Please check your data.')
     else:
-        form = AddEventToGroupForm(instance=calentry)
+        f = AddEventToGroupForm(instance=calentry)
+
+    """
+
+
+    e = Event.objects.get(id=event_id)
+    if request.POST:
+        f = AddEventToGroupForm(data=request.POST)
+        if f.is_valid():
+            for g in f.cleaned_data['grouplist']:
+                calentry = Calendar(event=e, group=g)
+                calentry.save()
+            return HttpResponseRedirect('/groups/list/')
+        else:
+            request.user.message_set.create(message='Please check your data.')
+    else:
+        f = AddEventToGroupForm()
+
+
+
+
+
     context = dict()
-    context['form'] = form
+    context['form'] = f
     return render_to_response('groups/add_event_to_group.html', context_instance=RequestContext(request, context))
 
 #        u = User(request.user)
