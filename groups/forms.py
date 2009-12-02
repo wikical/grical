@@ -1,5 +1,5 @@
 import re
-from django.forms import CharField, IntegerField, HiddenInput, Form, ModelForm, ValidationError
+from django.forms import CharField, IntegerField, HiddenInput, Form, ModelForm, ValidationError, CheckboxSelectMultiple, SelectMultiple, ModelMultipleChoiceField
 from django.contrib.auth.models import User
 from gridcalendar.groups.models import Group, Membership, Calendar
 
@@ -8,7 +8,32 @@ class NewGroupForm(ModelForm):
         model = Group
         fields = ('name', 'description',)
 
-class AddEventToGroupForm(ModelForm):
+class AddEventToGroupFormOld(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(AddEventToGroupForm, self).__init__(*args, **kwargs)
+        grs = Group.objects.filter(id=1)
+
+        # change a widget attribute:
+        self.fields['group'].widget = SelectMultiple
+
+    class Meta:
+        model = Calendar
+        fields = ('group',)
+#        widgets = {
+#            'group': CheckboxSelectMultiple
+#        }
+
+#    def __init__(self, *args, **kwargs):
+#        super(AddEventToGroupForm, self).__init__(*args, **kwargs)
+#        self.fields['group'].widget = CheckboxSelectMultiple()
+
+class AddEventToGroupForm(Form):
+    grouplist = ModelMultipleChoiceField(queryset=Group.objects.all(), widget=SelectMultiple())
+
+class AddEventToGroupForm1(ModelForm):
+    group = ModelMultipleChoiceField(queryset=Group.objects.all(), widget=SelectMultiple())
+
     class Meta:
         model = Calendar
         fields = ('group',)
