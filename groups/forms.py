@@ -1,5 +1,5 @@
 import re
-from django.forms import ModelForm, ValidationError
+from django.forms import CharField, Form, ModelForm, ValidationError
 from gridcalendar.groups.models import Group, Calendar
 
 class NewGroupForm(ModelForm):
@@ -11,9 +11,7 @@ class AddEventToGroupForm(ModelForm):
     class Meta:
         model = Calendar
         fields = ('group',)
-#    def __init__(self, *args, **kwargs):
-#        super(AddEventToGroupForm, self).__init__(*args, **kwargs)
-#        if self.instance:
-#            self.fields['group'].queryset = Group.objects.filter(membership__user=self.data['user_id'])
 
+class InviteToGroupForm(Form):
+    username = CharField(max_length=30)
 

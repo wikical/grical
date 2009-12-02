@@ -1,55 +1,17 @@
 import datetime
-from django.http import HttpResponse
-from tagging.models import TaggedItem
-from tagging.models import Tag
+
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
-from tagging.models import TaggedItem
-from tagging.models import Tag
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from django.http import HttpResponseRedirect
+
+from tagging.models import TaggedItem, Tag
 
 from gridcalendar.events.views import Event
-from gridcalendar.groups.models import Group, Membership, Calendar
-from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm
-
-def edit(request, event_id):
-    pass
-#    try:
-#        event = Event.objects.get(id=event_id)
-#    except Event.DoesNotExist:
-#        return render_to_response('index.html',
-#                    {'form': getEventForm(request.user),
-#                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-#                    context_instance=RequestContext(request))
-#    # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-#    if (event.user is not None) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
-#        return render_to_response('index.html',
-#                {'form': getEventForm(request.user),
-#                'message_col1': _('You are not allowed to edit the event with the following number') +
-#                ": " + str(event_id) + ". " +
-#                _("Maybe it is because you are not logged in with the right account") + "."},
-#                context_instance=RequestContext(request))
-#    else:
-#        if request.method == 'POST':
-#            if request.user.is_authenticated():
-#                ef = EventForm(request.POST, instance=event)
-#            else:
-#                ef = EventFormAnonymous(request.POST, instance=event)
-#            if ef.is_valid():
-#                ef.save()
-#                # TODO: look in a thread for all users who wants to receive an email notification and send it
-#                return HttpResponseRedirect('/')
-#            else:
-#                return render_to_response('events/edit.html', {'form': ef}, context_instance=RequestContext(request))
-#        else:
-#            if request.user.is_authenticated():
-#                form = EventForm(instance=event)
-#            else:
-#                form = EventFormAnonymous(instance=event)
-#            return render_to_response('events/edit.html', {'form': form}, context_instance=RequestContext(request))
+from gridcalendar.groups.models import Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
+from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
 
 def create(request):
     if not request.user.is_authenticated():
@@ -141,6 +103,51 @@ def group(request, group_id):
                 {'title': 'group page', 'group_id': group_id, 'events': events},
                 context_instance=RequestContext(request))
 
+def invite(request, group_id):
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {'title': 'error', 'message_col1': _("You must be logged in to invite someone to a group") + "."},
+                context_instance=RequestContext(request))
+    else:
+        g = Group.objects.get(id=group_id)
+#        invitation = GroupInvitation(group=g)
+        if request.POST:
+#            form = InviteToGroupForm(data=request.POST, instance=invitation)
+            form = InviteToGroupForm(data=request.POST)
+            if form.is_valid():
+                username = form.cleaned_data['username']
+                u = User.objects.get(username=username)
+                GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
+#                invitation = GroupInvitation(group=g, username=username)
+                return HttpResponseRedirect('/groups/list/')
+            else:
+                request.user.message_set.create(message='Please check your data.')
+        else:
+#            form = InviteToGroupForm(instance=invitation)
+            form = InviteToGroupForm()
+
+#        context = dict()
+#        context['form'] = form
+
+        return render_to_response('groups/invite.html',
+                {'title': 'invite to group', 'group_id': group_id, 'form': form},
+                context_instance=RequestContext(request))
+
+
+
+
+
+
+
+
+
+def activate(request, activation_key):
+    """A user clicks on activation link"""
+    pass
+
+
 def answer_invitation(request, group_id):
     """A user can accept or deny the invitation"""
     pass
+
+
