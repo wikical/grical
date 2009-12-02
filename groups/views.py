@@ -133,18 +133,18 @@ def invite(request, group_id):
                 {'title': 'invite to group', 'group_id': group_id, 'form': form},
                 context_instance=RequestContext(request))
 
-
-
-
-
-
-
-
-
 def activate(request, activation_key):
     """A user clicks on activation link"""
-    pass
-
+    group_id = 1
+    a = GroupInvitation.objects.activate_invitation(activation_key)
+    if a:
+        return render_to_response('groups/invitation_activate.html',
+                {'title': 'activate invitation', 'group_id': group_id},
+                context_instance=RequestContext(request))
+    else:
+        return render_to_response('groups/invitation_activate_failed.html',
+                {'title': 'activate invitation failed', 'group_id': group_id},
+                context_instance=RequestContext(request))
 
 def answer_invitation(request, group_id):
     """A user can accept or deny the invitation"""
