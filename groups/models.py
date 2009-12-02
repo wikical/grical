@@ -120,21 +120,21 @@ class GroupInvitationManager(models.Manager):
                 as_administrator = invitation.as_administrator
                 # check that the host is an administrator of the group
                 h = Membership.objects.filter(user=host,group=group)
-                if size(h) == 0:
+                if len(h) == 0:
                     return False
                 if not h[0].is_administrator:
                     return False
                 # check if the user is already in the group and give him administrator rights if he
                 # hasn't it but it was set in the invitation
                 member_list = Membership.objects.filter(user=guest, group=group)
-                if not size(member_list) == 0:
-                    assert size(member_list) == 1
+                if not len(member_list) == 0:
+                    assert len(member_list) == 1
                     if as_administrator and not member_list[0].is_administrator:
                         member_list[0].is_administrator = True
                         member_list[0].activation_key = self.model.ACTIVATED
                     return False
                 else:
-                    member = Membership(user=host, group=group, is_administrator=as_administrator)
+                    member = Membership(user=guest, group=group, is_administrator=as_administrator)
                     member.activation_key = self.model.ACTIVATED
                     member.save()
                     return True
@@ -270,6 +270,6 @@ class GroupInvitation(models.Model):
         """
         expiration_date = datetime.timedelta(days=settings.ACCOUNT_ACTIVATION_DAYS)
         return self.activation_key == self.ACTIVATED or \
-               (self.user.date_joined + expiration_date <= datetime.datetime.now())
+               (self.guest.date_joined + expiration_date <= datetime.datetime.now())
     # TODO: find out and explain here what this means:
     activation_key_expired.boolean = True
