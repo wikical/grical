@@ -239,7 +239,7 @@ class GroupInvitation(models.Model):
     objects = GroupInvitationManager()
     
     class Meta:
-        unique_together = ("host", "guest", "group")
+#        unique_together = ("host", "guest", "group")
         verbose_name = _('Group invitation')
         verbose_name_plural = _('Group invitations')
     
