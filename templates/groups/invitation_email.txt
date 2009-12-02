@@ -1,0 +1,10 @@
+You have been invited to join a group on {{site.domain}}, the community driven calendar.
+
+
+To accept the invitation click:
+http://{{site.domain}}{% url invitation_activate activation_key %}
+
+This need to be done in less than {{ expiration_days }} days.
+
+-- 
+http://{{site.domain}}

@@ -174,26 +174,26 @@ class GroupInvitationManager(models.Manager):
         
         """
         salt = sha.new(str(random.random())).hexdigest()[:5]
-        activation_key = sha.new(salt+user.name).hexdigest()
+        activation_key = sha.new(salt+guest.username).hexdigest()
         self.create(host=host,guest=guest,group=group,as_administrator=as_administrator,
                            activation_key=activation_key)
         
         from django.core.mail import send_mail
         current_site = Site.objects.get_current()
         
-        subject = render_to_string('registration/activation_email_subject.txt',
+        subject = render_to_string('groups/invitation_email_subject.txt',
                                    { 'site': current_site })
         # Email subject *must not* contain newlines
         subject = ''.join(subject.splitlines())
         
-        message = render_to_string('registration/activation_email.txt',
-                                   { 'activation_key': registration_profile.activation_key,
+        message = render_to_string('groups/invitation_email.txt',
+                                   { 'activation_key': activation_key,
                                      'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS,
                                      'site': current_site,
-                                     'host': host.name,
+                                     'host': host.username,
                                      'group': group.name, })
         
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [new_user.email])
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [guest.email])
     
         
     def delete_expired_invitations(self):
@@ -228,9 +228,9 @@ class GroupInvitation(models.Model):
     """
     ACTIVATED = u"ALREADY_ACTIVATED"
     
-    host = models.ForeignKey(User, unique=True, related_name="host", verbose_name=_('host'))
-    guest = models.ForeignKey(User, unique=True, related_name="guest", verbose_name=_('host'))
-    group = models.ForeignKey(Group, unique=True, verbose_name=_('group'))
+    host = models.ForeignKey(User, related_name="host", verbose_name=_('host'))
+    guest = models.ForeignKey(User, related_name="guest", verbose_name=_('host'))
+    group = models.ForeignKey(Group, verbose_name=_('group'))
     as_administrator = models.BooleanField(_('as administrator'), default=False)
     activation_key = models.CharField(_('activation key'), max_length=40)
     
@@ -238,6 +238,7 @@ class GroupInvitation(models.Model):
     objects = GroupInvitationManager()
     
     class Meta:
+        unique_together = ("host", "guest", "group")
         verbose_name = _('Group invitation')
         verbose_name_plural = _('Group invitations')
     
