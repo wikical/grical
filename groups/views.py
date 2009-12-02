@@ -110,25 +110,26 @@ def invite(request, group_id):
                 context_instance=RequestContext(request))
     else:
         g = Group.objects.get(id=group_id)
-#        invitation = GroupInvitation(group=g)
         if request.POST:
 #            form = InviteToGroupForm(data=request.POST, instance=invitation)
-            form = InviteToGroupForm(data=request.POST)
+            username_dirty=request.POST['username']
+            formdata = {'username': username_dirty,
+                        'group_id': group_id}
+            form = InviteToGroupForm(data=formdata)
             if form.is_valid():
                 username = form.cleaned_data['username']
                 u = User.objects.get(username=username)
                 GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
-#                invitation = GroupInvitation(group=g, username=username)
                 return HttpResponseRedirect('/groups/list/')
             else:
                 request.user.message_set.create(message='Please check your data.')
         else:
 #            form = InviteToGroupForm(instance=invitation)
+#            formdata = {
+#                        'username': None,
+#                        'group_id': group_id}
+#            form = InviteToGroupForm(data=formdata)
             form = InviteToGroupForm()
-
-#        context = dict()
-#        context['form'] = form
-
         return render_to_response('groups/invite.html',
                 {'title': 'invite to group', 'group_id': group_id, 'form': form},
                 context_instance=RequestContext(request))

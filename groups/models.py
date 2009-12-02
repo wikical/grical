@@ -140,7 +140,7 @@ class GroupInvitationManager(models.Manager):
                     member.save()
                     return True
         return False
-    
+
     def create_invitation(self, host, guest, group, as_administrator):
         """
         Create a new invitation and email its activation key to the

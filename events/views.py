@@ -221,8 +221,8 @@ def edit_astext(request, event_id):
                         event.start       = event_attr_dict['date']
                         event.end         = event_end
                         event.tags        = event_attr_dict['tags']
-                        event.public_view = StringToBool(event_attr_dict['public_view'])
-                        event.public_edit = StringToBool(event_attr_dict['public_edit'])
+                        event.public_view = StringToBool(event_attr_dict['view'])
+                        event.public_edit = StringToBool(event_attr_dict['edit'])
                         event.city        = event_attr_dict['city']
                         event.address     = event_attr_dict['addr']
                         event.postcode    = event_attr_dict['code']
@@ -494,7 +494,6 @@ def filter_save(request):
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
                 context_instance=RequestContext(request))
-
 
 def filter_edit(request, filter_id):
     try:
