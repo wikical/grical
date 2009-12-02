@@ -48,10 +48,11 @@ class Membership(models.Model):
 
 # model "Calendar" is about which events are interesting for which group
 class Calendar(models.Model):
-    event = models.ForeignKey(Event, unique=True, verbose_name=_('Event'))
-    group = models.ForeignKey(Group, unique=True, verbose_name=_('Group'))
+    event = models.ForeignKey(Event, verbose_name=_('Event'))
+    group = models.ForeignKey(Group, verbose_name=_('Group'))
     date_added = models.DateField(_('Date added'), editable=False, auto_now_add=True)
     class Meta:
+        unique_together = ("event", "group")
         verbose_name = _('Calendar')
         verbose_name_plural = _('Calendars')
 
