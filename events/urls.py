@@ -16,7 +16,7 @@ urlpatterns = patterns('',
     (r'^view_astext/(?P<event_id>\d+)/$',      'events.views.view_astext'),
     (r'^(?P<object_id>\d+)/$',                 'django.views.generic.list_detail.object_detail', info_dict),
 #
-    (r'^filter/list/',                         'events.views.filter_list'),
+    (r'^filter/list/',                         'events.views.filter_list_view'),
     (r'^filter/save/',                         'events.views.filter_save'),
     (r'^filter/edit/(?P<filter_id>\d+)/',      'events.views.filter_edit'),
     (r'^filter/drop/(?P<filter_id>\d+)/',      'events.views.filter_drop'),
