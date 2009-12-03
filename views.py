@@ -17,8 +17,12 @@ from django.template import RequestContext
 
 from django.db.models import Q
 
+from django.contrib.auth.models import User
+
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
-from gridcalendar.groups.views import all_events_in_user_groups
+from gridcalendar.events.functions import filter_list
+from gridcalendar.groups.models import Group
+from gridcalendar.groups.functions import all_events_in_user_groups
 
 def index(request):
     if request.user.is_authenticated():
@@ -40,4 +44,7 @@ def index(request):
 @login_required
 def settings(request):
     # user is logged in
-    return render_to_response('settings.html', {'title': 'settings'}, context_instance=RequestContext(request))
+    fl = filter_list(request.user.id)
+    u = User(request.user)
+    groups = Group.objects.filter(membership__user=u)
+    return render_to_response('settings.html', {'title': 'settings', 'filter_list': fl, 'groups': groups}, context_instance=RequestContext(request))
