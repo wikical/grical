@@ -18,6 +18,7 @@ from django.template import RequestContext
 from django.db.models import Q
 
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
+from gridcalendar.groups.views import all_events_in_user_groups
 
 def index(request):
     if request.user.is_authenticated():
@@ -32,7 +33,7 @@ def index(request):
         coming_events = Event.objects.filter(start__gte=datetime.now()).exclude(public_view=False)[:100]
         past_events   = Event.objects.filter(start__lt=datetime.now()).exclude(public_view=False)[:100]
 #       coming_events = Event.objects.all()
-    return render_to_response('index.html', {'title': 'home', 'form': ev, 'coming_events': coming_events, 'past_events': past_events}, context_instance=RequestContext(request))
+    return render_to_response('index.html', {'title': 'home', 'form': ev, 'coming_events': coming_events, 'past_events': past_events, 'all_events_in_user_groups': all_events_in_user_groups(request.user.id)}, context_instance=RequestContext(request))
 
 # for this decorator, see
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator

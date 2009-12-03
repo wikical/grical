@@ -49,6 +49,8 @@ Past events:
 
 {% endif %}
 
+{% endblock %}
+
 {% if user.username %}
 <!--
 <p>TODO: events interesting for user according to its preferences and its previous behaviour, e.g.
@@ -59,5 +61,19 @@ which previous events (location, tags) he clicked on</p>
 <p>TODO: events in location of user according to ip or other data from browser like language</p>
 -->
 {% endif %}
+
+
+{% block column2 %}
+
+{% include "coming_events_in_my_groups.html" %}
+
 {% endblock %}
+
+
+
+{% block column3 %}
+
+
+{% endblock %}
+
 
