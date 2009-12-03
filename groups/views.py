@@ -71,13 +71,10 @@ def add_event(request, event_id):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to add an event to a group") + "."},
                 context_instance=RequestContext(request))
-
     e = Event.objects.get(id=event_id)
     u = User(request.user)
     if request.POST:
-        grouplist_dirty=request.POST['grouplist']
-        formdata = {'user': u, 'grouplist': grouplist_dirty}
-        f = AddEventToGroupForm(request, e, data=formdata)
+        f = AddEventToGroupForm(data=request.POST, u=u, e=e)
         if f.is_valid():
             for g in f.cleaned_data['grouplist']:
                 calentry = Calendar(event=e, group=g)
@@ -86,17 +83,10 @@ def add_event(request, event_id):
         else:
             request.user.message_set.create(message='Please check your data.')
     else:
-#        formdata = {'user': u, 'grouplist': None}
-        f = AddEventToGroupForm(request, e)
-
+        f = AddEventToGroupForm(u=u, e=e)
     context = dict()
     context['form'] = f
     return render_to_response('groups/add_event_to_group.html', context_instance=RequestContext(request, context))
-
-#        u = User(request.user)
-#        data = {'user_id': u,}
-#        form = AddEventToGroupForm(data)
-#        return render_to_response('groups/add_event_to_group.html', {'form': form}, context_instance=RequestContext(request))
 
 def group(request, group_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
