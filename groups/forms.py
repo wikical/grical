@@ -1,5 +1,11 @@
 import re
-from django.forms import CharField, IntegerField, HiddenInput, Form, ModelForm, ValidationError, CheckboxSelectMultiple, SelectMultiple, ModelMultipleChoiceField
+
+from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField
+
+from django.forms import Form, ModelForm, ValidationError
+
+from django.forms import CheckboxSelectMultiple, SelectMultiple
+
 from django.contrib.auth.models import User
 from gridcalendar.groups.models import Group, Membership, Calendar
 
@@ -9,12 +15,10 @@ class NewGroupForm(ModelForm):
         fields = ('name', 'description',)
 
 class AddEventToGroupForm(Form):
-#    user = CharField(max_length=30, widget=HiddenInput)
-#    grouplist = ModelMultipleChoiceField(queryset=Group.objects.all().filter(members__username__exact=user), widget=SelectMultiple())
-    grouplist = ModelMultipleChoiceField(queryset=Group.objects.none(), widget=SelectMultiple())
-    def __init__(self, request, e, *args, **kwargs):
+    grouplist = ModelMultipleChoiceField(queryset=Group.objects.none(), widget=CheckboxSelectMultiple())
+    def __init__(self, u, e, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)
-        self.fields["grouplist"].queryset = Group.objects.filter(members=request.user).exclude(events=e)
+        self.fields["grouplist"].queryset = Group.objects.filter(members=u).exclude(events=e)
 
 class InviteToGroupForm(Form):
     group_id = IntegerField(widget=HiddenInput)
