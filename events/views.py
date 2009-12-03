@@ -3,7 +3,7 @@ from time import strftime
 import re
 
 from django import forms
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
@@ -248,19 +248,20 @@ def filter_save(request):
                 'message_col1': _("You are not allowed to save this search because you are not logged in") + "."},
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
-                    try:
-                        f = Filter.objects.all()
+#                    try:
                         f = Filter.objects.filter(user=request.user)
+#                        max = Filter.objects.aggregate(Max('id'))
+                        max = Filter.objects.aggregate(Max('id'))['id__max']
                         index = len(f) + 1
                         filter = Filter()
                         filter.user = request.user
                         filter.query = q
-                        filter.name = str(request.user) + "'s filter " + str(index)
+#                        filter.name = str(request.user) + "'s filter " + str(index)
+                        filter.name = str(request.user) + "'s filter " + str(max)
                         filter.save()
                         return HttpResponseRedirect('/events/filter/edit/' + str(filter.id) + '/') ;
-                    except Exception:
-                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")},
-                            context_instance=RequestContext(request))
+#                    except Exception:
+#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
     else:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
