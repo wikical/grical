@@ -58,8 +58,10 @@ def quit_group(request, group_id, sure):
         u = User(request.user)
         s = int(sure)
         try:
-            g = Group.objects.get(id=group_id, membership__user=u)
-            if (len(Membership.objects.filter(group=g).filter(user=u)) == 0):
+            try:
+                g = Group.objects.get(id=group_id, membership__user=u)
+            except Group.DoesNotExist:
+#               if (len(Membership.objects.filter(group=g).filter(user=u)) == 0):
                 return render_to_response('error.html', {'title': 'error', 'message_col1': _("There is no such group, or you are not a member of that group") + "."}, context_instance=RequestContext(request))
             else:
                 testsize = len(Membership.objects.filter(group=g).exclude(user=u))
