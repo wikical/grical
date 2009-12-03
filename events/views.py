@@ -248,11 +248,10 @@ def filter_save(request):
                 'message_col1': _("You are not allowed to save this search because you are not logged in") + "."},
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
-#                    try:
-                        f = Filter.objects.filter(user=request.user)
-#                        max = Filter.objects.aggregate(Max('id'))
+                    try:
+#                        f = Filter.objects.filter(user=request.user)
                         max = Filter.objects.aggregate(Max('id'))['id__max']
-                        index = len(f) + 1
+#                        index = len(f) + 1
                         filter = Filter()
                         filter.user = request.user
                         filter.query = q
@@ -260,8 +259,8 @@ def filter_save(request):
                         filter.name = str(request.user) + "'s filter " + str(max)
                         filter.save()
                         return HttpResponseRedirect('/events/filter/edit/' + str(filter.id) + '/') ;
-#                    except Exception:
-#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+                    except Exception:
+                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
     else:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
@@ -299,7 +298,7 @@ def filter_edit(request, filter_id):
 def filter_drop(request, filter_id):
     try:
         filter = Filter.objects.get(pk=filter_id)
-    except filter.DoesNotExist:
+    except Filter.DoesNotExist:
         return render_to_response('error.html',
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
@@ -316,10 +315,7 @@ def filter_drop(request, filter_id):
             assert False
         else:
             filter.delete()
-            f = Filter.objects.filter(user=request.user)
-            return render_to_response('events/filter_list.html',
-                {'title': 'list of my filters', 'filters': f},
-                context_instance=RequestContext(request))
+            return HttpResponseRedirect('/events/filter/list/')
 
 def filter_list_view(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
