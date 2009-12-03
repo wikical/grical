@@ -77,7 +77,7 @@ def add_event(request, event_id):
     if request.POST:
         grouplist_dirty=request.POST['grouplist']
         formdata = {'user': u, 'grouplist': grouplist_dirty}
-        f = AddEventToGroupForm(data=formdata)
+        f = AddEventToGroupForm(request, e, data=formdata)
         if f.is_valid():
             for g in f.cleaned_data['grouplist']:
                 calentry = Calendar(event=e, group=g)
@@ -87,7 +87,7 @@ def add_event(request, event_id):
             request.user.message_set.create(message='Please check your data.')
     else:
 #        formdata = {'user': u, 'grouplist': None}
-        f = AddEventToGroupForm(request)
+        f = AddEventToGroupForm(request, e)
 
     context = dict()
     context['form'] = f
