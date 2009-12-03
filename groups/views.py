@@ -13,6 +13,30 @@ from gridcalendar.events.views import Event
 from gridcalendar.groups.models import Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
 from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
 
+def all_events_in_user_groups(user_id):
+    """
+    This function returns a list of dictionaries, which contain the group name and a list of events
+    """
+    finlist = list()
+    if (user_id is None):
+        return None
+    else:
+        u = User.objects.get(id=user_id)
+        groups = Group.objects.filter(membership__user=u)
+        if len(groups) == 0:
+            return None
+        else:
+            for g in groups:
+                dle = {}
+                dle['group_name'] = g.name
+                el = list()
+                events = Event.objects.filter(group=g)[0:5]
+                for e in events:
+                    el.append(e)
+                dle['el'] = el
+                finlist.append(dle)
+            return finlist
+
 def create(request):
     if not request.user.is_authenticated():
         return render_to_response('groups/no_authenticated.html', {}, context_instance=RequestContext(request))
@@ -104,7 +128,7 @@ def add_event(request, event_id):
     else:
         return render_to_response('error.html',
                     {'title': 'error',
-                    'message_col1': _("This even is already in all groups that you are in, so you can't add it to any more groups.") },
+                    'message_col1': _("This event is already in all groups that you are in, so you can't add it to any more groups.") },
                     context_instance=RequestContext(request))
 
 def group(request, group_id):
