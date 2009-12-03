@@ -42,7 +42,7 @@ def list_my_groups(request):
         groups = Group.objects.filter(membership__user=u)
         if len(groups) == 0:
             return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You are not a member of any groups yet") + "."},
+                {'title': 'error', 'message_col1': _("You are not a member of any group") + "."},
                 context_instance=RequestContext(request))
         else:
             return render_to_response('groups/list_my.html',
@@ -56,24 +56,26 @@ def quit_group(request, group_id, sure):
                 context_instance=RequestContext(request))
     else:
         u = User(request.user)
+        s = int(sure)
         try:
             g = Group.objects.get(id=group_id, membership__user=u)
-            if (len(Group.objects.filter(group=g).exclude(members=u)) == 0) and (sure == 1):
-                m = Membership.objects.get(user=request.user, group=g)
-                m.delete()
-                g.delete()
-                return HttpResponseRedirect('/groups/list/')
-            elif (len(Group.objects.filter(group=g).exclude(members=u)) > 0):    # if number of other users is > 0 then delete silentlu <<<< FIX HERE!!!
-                m = Membership.objects.get(user=request.user, group=g)
-                m.delete()
-                return HttpResponseRedirect('/groups/list/')
+            if (len(Membership.objects.filter(group=g).filter(user=u)) == 0):
+                return render_to_response('error.html', {'title': 'error', 'message_col1': _("There is no such group, or you are not a member of that group") + "."}, context_instance=RequestContext(request))
             else:
-                return render_to_response('groups/quit_group_confirm.html', {'group_id': 'group_id'}, context_instance=RequestContext(request))
-#                return HttpResponseRedirect('/groups/quit/' + group_id + '/1/')
+                testsize = len(Membership.objects.filter(group=g).exclude(user=u))
+                if (testsize > 0):
+                    m = Membership.objects.get(user=request.user, group=g)
+                    m.delete()
+                    return HttpResponseRedirect('/groups/list/')
+                elif (s == 1):
+                    m = Membership.objects.get(user=request.user, group=g)
+                    m.delete()
+                    g.delete()
+                    return HttpResponseRedirect('/groups/list/')
+                else:
+                    return render_to_response('groups/quit_group_confirm.html', {'group_id': group_id, 'group_name': g.name}, context_instance=RequestContext(request))
         except:
-            return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("There is no such group or you are not a member of that group") + "."},
-                context_instance=RequestContext(request))
+            return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
 
 def add_event(request, event_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
