@@ -12,10 +12,9 @@ class AddEventToGroupForm(Form):
 #    user = CharField(max_length=30, widget=HiddenInput)
 #    grouplist = ModelMultipleChoiceField(queryset=Group.objects.all().filter(members__username__exact=user), widget=SelectMultiple())
     grouplist = ModelMultipleChoiceField(queryset=Group.objects.none(), widget=SelectMultiple())
-    def __init__(self, request, *args, **kwargs):
+    def __init__(self, request, e, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)
-        self.fields["grouplist"].queryset = Group.objects.filter(members=request.user)
-
+        self.fields["grouplist"].queryset = Group.objects.filter(members=request.user).exclude(events=e)
 
 class InviteToGroupForm(Form):
     group_id = IntegerField(widget=HiddenInput)
