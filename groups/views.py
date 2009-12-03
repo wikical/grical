@@ -73,20 +73,26 @@ def add_event(request, event_id):
                 context_instance=RequestContext(request))
     e = Event.objects.get(id=event_id)
     u = User(request.user)
-    if request.POST:
-        f = AddEventToGroupForm(data=request.POST, u=u, e=e)
-        if f.is_valid():
-            for g in f.cleaned_data['grouplist']:
-                calentry = Calendar(event=e, group=g)
-                calentry.save()
-            return HttpResponseRedirect('/groups/list/')
+    if len(Group.objects.filter(members=u).exclude(events=e)) > 0:
+        if request.POST:
+            f = AddEventToGroupForm(data=request.POST, u=u, e=e)
+            if f.is_valid():
+                for g in f.cleaned_data['grouplist']:
+                    calentry = Calendar(event=e, group=g)
+                    calentry.save()
+                return HttpResponseRedirect('/groups/list/')
+            else:
+                request.user.message_set.create(message='Please check your data.')
         else:
-            request.user.message_set.create(message='Please check your data.')
+            f = AddEventToGroupForm(u=u, e=e)
+        context = dict()
+        context['form'] = f
+        return render_to_response('groups/add_event_to_group.html', context_instance=RequestContext(request, context))
     else:
-        f = AddEventToGroupForm(u=u, e=e)
-    context = dict()
-    context['form'] = f
-    return render_to_response('groups/add_event_to_group.html', context_instance=RequestContext(request, context))
+        return render_to_response('error.html',
+                    {'title': 'error',
+                    'message_col1': _("This even is already in all groups that you are in, so you can't add it to any more groups.") },
+                    context_instance=RequestContext(request))
 
 def group(request, group_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
@@ -132,7 +138,8 @@ def invite(request, group_id):
 
 def activate(request, activation_key):
     """A user clicks on activation link"""
-    group_id = 1
+    i = GroupInvitation.objects.get(activation_key=activation_key)
+    group_id = i.id
     a = GroupInvitation.objects.activate_invitation(activation_key)
     if a:
         return render_to_response('groups/invitation_activate.html',
@@ -142,9 +149,4 @@ def activate(request, activation_key):
         return render_to_response('groups/invitation_activate_failed.html',
                 {'title': 'activate invitation failed', 'group_id': group_id},
                 context_instance=RequestContext(request))
-
-def answer_invitation(request, group_id):
-    """A user can accept or deny the invitation"""
-    pass
-
 

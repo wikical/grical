@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 
-{% block content %}
-You have now joined the group.
+{% block column1 %}
+{% trans "You have now joined the group" %}.
+
+
+<p>
+
+<a href="http://dev.cloca.net/groups/{{group_id}}/">all events in this group</a>
+
+
+
+</p>
+
+
 {% endblock %}
