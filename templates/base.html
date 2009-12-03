@@ -5,6 +5,8 @@
 <div class="colmask blogstyle">
 	<div class="colmid">
 		<div class="colleft">
+
+
 			<div class="col1">
                 {% if message_col1 %}
                 <div id="message_col1">
@@ -12,48 +14,60 @@
                 </div>
                 {% endif %}
                 {% block column1 %}
-		{% endblock %}
+		        {% endblock %}
 			</div>
-<!--
-	<div class="col2">
+
+
+	        <div class="col2">
                 {% block column2 %}
                 {% if user.username %}
-                <p align="right"><a href="/groups/create">{% trans "Create a new group" %}</a></p>
-                <h2 align="center">{% trans "Groups" %}</h2>
-                <p>TODO If user has groups: Latest events in his groups:</p>
-                <ul>
-                    <li>group A</li>
-                    <ul>
-                        <li>event A.1</li>
-                        <li>event A.2</li>
-                    </ul>
-                    <li>group B</li>
-                    <ul>
-                        <li>event B.1</li>
-                        <li>event B.2</li>
-                    </ul>
-                </ul>
+
+
+                <p align="right"><a href="/groups/create/">{% trans "Create a new group" %}</a></p>
+                <h2 align="center">{% trans "Coming events in my groups" %}</h2>
+
+{% if all_events_in_user_groups %}
+    {% for g in all_events_in_user_groups %}
+        Group: {{g.group_name}}<br>
+        {% for event in g.el %}
+        <p>
+        <div class="field">
+            <a href="/events/view_astext/{{ event.id }}/"><span class="field_title"> {{ event.title }} </span></a><br />
+            <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
+            </span>
+        </div>
+        </p>
+        {% endfor %}
+<hr />
+    {% endfor %}
+{% else %}
+        <p>No events found!</p>
+{% endif %}
+
+
                 {% else %}
                 <h2>{% trans "What is CLOCA.net?" %}</h2>
                 <p>
                 {% trans "Cloud Calendar (abbreviated as 'CLOCA'), is a web site where people store quickly a few information about interesting events, so that others can also easily know about it. Cloca makes easy and fast for its users to store interesting events in its own external calendars" %}.</p>
                 <p>
                 {% trans "One you have an account, you can be a member of a private group and also create groups and invite others. Members of private groups can add events marked as private to be seen only by the group members. They can also mark public events as interesting for a group, so that the members of the group will be notified" %}.</p>
-                <p><a href="/accounts/register">{% trans "Create an account now" %}</a></p>
+                <p><a href="/accounts/register/">{% trans "Create an account now" %}</a></p>
                 {% endif %}
                 {% endblock %}
-			</div>
-			<div class="col3">
-            {% block column3 %}
-            {% if user.username %}
-            <p class="info">{% trans "This column may contain advertisements" %}</p>
-            <h2>Interesting events</h2>
-            <p>TODO interesting events for logged user</p>
-            {% else %}
-            <p>TODO: tag cloud</p>
-            {% endif %}
-            {% endblock %}
-	</div>
+		    </div>
+
+<!--
+		    <div class="col3">
+                {% block column3 %}
+                {% if user.username %}
+                <p class="info">{% trans "This column may contain advertisements" %}</p>
+                <h2>Interesting events</h2>
+                <p>TODO interesting events for logged user</p>
+                {% else %}
+                <p>TODO: tag cloud</p>
+                {% endif %}
+                {% endblock %}
+	        </div>
 -->
 
         </div>
