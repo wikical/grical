@@ -1,4 +1,6 @@
-from django.contrib.syndication.feeds import Feed
+import hashlib
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group
 from gridcalendar import settings
@@ -15,27 +17,42 @@ class FeedGroupEvents(Feed):
     title_template = 'feeds/groupevents_title.html'
     description_template = 'feeds/groupevents_description.html'
 
-    def get_object(self, group_id):
-        if len(group_id) < 1:
+    def get_object(self, bits):
+        if len(bits) != 3:
             raise ObjectDoesNotExist
-        return Group.objects.get(id=group_id[0])
-
-    def title(self, obj):
-        return "events in group '%s'" % obj.name
-
-    def link(self, obj):
-        if not obj:
-            raise FeedDoesNotExist
-        return obj.get_absolute_url()
-
-    def description(self, obj):
-        return "events in group %s" % obj.name
-
-    def items(self, group_id):
-        if 1 == 0:
-            return Event.objects.filter(group=group_id).order_by('start')[:settings.FEED_SIZE]
+        group_id = bits[0]
+        user_id = bits[1]
+        token = bits[2]
+        if token == hashlib.sha512("%s!%s!%s" % (settings.SECRET_KEY, group_id, user_id)).hexdigest():
+            return Group.objects.get(id=group_id)
         else:
             return None
+
+    def title(self, obj):
+        if obj is None:
+            return "You are not allowed to view this feed."
+        else:
+            return "events in group '%s'" % obj.name
+
+    def link(self, obj):
+        if obj is None:
+            return '/'
+        elif not obj:
+            raise FeedDoesNotExist
+        else:
+            return obj.get_absolute_url()
+
+    def description(self, obj):
+        if obj is None:
+            return "You are not allowed to view this feed."
+        else:
+            return "events in group %s" % obj.name
+
+    def items(self, obj):
+        if obj is None:
+            return Event.objects.none()
+        else:
+            return Event.objects.filter(group=obj).order_by('start')[:settings.FEED_SIZE]
 
 # does not work, because 'datetime.date' object has no attribute 'tzinfo'
 #    def item_pubdate(self, item):
