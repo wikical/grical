@@ -3,13 +3,13 @@ from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group
 from gridcalendar import settings
 
-class FeedLatestEntries(Feed):
-    title = "gridcalendar news"
-    link = "/groups/"
-    description = "Updates on changes ."
+class FeedAllComingEvents(Feed):
+    title = "All coming events"
+    link = "/"
+    description = "All upcoming events."
 
     def items(self):
-        return Event.objects.order_by('-start')[:settings.FEED_SIZE]
+        return Event.objects.order_by('start')[:settings.FEED_SIZE]
 
 class FeedGroupEvents(Feed):
     title_template = 'feeds/groupevents_title.html'
@@ -24,11 +24,20 @@ class FeedGroupEvents(Feed):
         return "events in group '%s'" % obj.name
 
     def link(self, obj):
-        return "/"
+        if not obj:
+            raise FeedDoesNotExist
+        return obj.get_absolute_url()
 
     def description(self, obj):
         return "events in group %s" % obj.name
 
     def items(self, group_id):
-#        group = Group.objects.filter(id=group_id)
-        return Event.objects.filter(group=group_id).order_by('-start')[:settings.FEED_SIZE]
+        if 1 == 0:
+            return Event.objects.filter(group=group_id).order_by('start')[:settings.FEED_SIZE]
+        else:
+            return None
+
+# does not work, because 'datetime.date' object has no attribute 'tzinfo'
+#    def item_pubdate(self, item):
+#        return item.start
+

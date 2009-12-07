@@ -3,7 +3,7 @@ from django.contrib import admin, databrowse
 from django.contrib.admin import site
 from django.conf import settings
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
-from gridcalendar.feeds import FeedLatestEntries, FeedGroupEvents
+from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents
 
 databrowse.site.register(Event)
 databrowse.site.register(EventUrl)
@@ -13,7 +13,7 @@ databrowse.site.register(EventDeadline)
 admin.autodiscover()
 
 feeds = {
-    'latest': FeedLatestEntries,
+    'allcomingevents': FeedAllComingEvents,
     'groupevents': FeedGroupEvents,
 }
 

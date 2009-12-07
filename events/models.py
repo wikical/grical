@@ -314,7 +314,7 @@ class Event(models.Model):
     def __unicode__(self):
 		return self.start.isoformat() + " : " + self.title
     def get_absolute_url(self):
-        return 'http://dev.cloca.net/events/view_astext/' + str(self.id) + '/'
+        return '/events/view_astext/' + str(self.id) + '/'
     class Meta:
         ordering = ['start']
         verbose_name = _('Event')
