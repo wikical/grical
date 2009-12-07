@@ -3,6 +3,9 @@
 {% block column1 %}
 
 {% if events %}
+
+<a href="/feeds/groupevents/{{ group_id }}/"><img src="/media/15px-Feed-icon.svg.png">RSS feed of this group</a>
+
 <h3> {% trans "Events in this group" %}:</h3>
 {% include "events/list_wrapper.html" %}
 {% else %}
