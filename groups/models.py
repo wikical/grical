@@ -33,6 +33,8 @@ class Group(models.Model):
         verbose_name_plural = _('Groups')
     def __unicode__(self):
         return self.name
+    def get_absolute_url(self):
+        return '/group/' + str(self.id) + '/'
 
 class Membership(models.Model):
     user = models.ForeignKey(User, verbose_name=_('User'))

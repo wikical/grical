@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block feeds %}
+<link rel="alternate" type="application/rss+xml" title="Group Feed" href="/feeds/allcomingevents/" />
+{%endblock feeds%}
+
+
 {% block column1 %}
 
 <p class="info">{% trans "Submit a new event" %} ({% trans "more info like a URL can be added after submitting" %}):</p>
