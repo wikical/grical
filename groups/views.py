@@ -119,7 +119,6 @@ def group(request, group_id):
         group = Group.objects.filter(id=group_id)
         events = Event.objects.filter(group=group)
         token = hashlib.sha512("%s!%s!%s" % (SECRET_KEY, group_id, request.user.id)).hexdigest()
-#        token = md5("%s!%s!%s" % (SECRET_KEY, group_id, request.user.id)).hexdigest()
         return render_to_response('groups/group.html',
                 {'title': 'group page', 'group_id': group_id, 'user_id': request.user.id, 'token': token, 'events': events},
                 context_instance=RequestContext(request))
