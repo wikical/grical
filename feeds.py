@@ -2,8 +2,9 @@ import hashlib
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from gridcalendar.events.models import Event
-from gridcalendar.groups.models import Group
+from gridcalendar.groups.models import Group, Membership
 from gridcalendar import settings
+from django.contrib.auth.models import User
 
 class FeedAllComingEvents(Feed):
     title = "All coming events"
@@ -23,7 +24,9 @@ class FeedGroupEvents(Feed):
         group_id = bits[0]
         user_id = bits[1]
         token = bits[2]
-        if token == hashlib.sha512("%s!%s!%s" % (settings.SECRET_KEY, group_id, user_id)).hexdigest():
+        g = Group.objects.filter(id=group_id)
+        u = User.objects.filter(id=user_id)
+        if (token == hashlib.sha512("%s!%s!%s" % (settings.SECRET_KEY, group_id, user_id)).hexdigest()) and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
             return Group.objects.get(id=group_id)
         else:
             return None
