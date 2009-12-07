@@ -1,4 +1,4 @@
-import datetime
+import datetime, hashlib
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
@@ -13,6 +13,8 @@ from gridcalendar.events.views import Event
 from gridcalendar.groups.models import Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
 from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
 from gridcalendar.groups.functions import all_events_in_user_groups
+
+from gridcalendar.settings import SECRET_KEY
 
 def create(request):
     if not request.user.is_authenticated():
@@ -116,8 +118,10 @@ def group(request, group_id):
     else:
         group = Group.objects.filter(id=group_id)
         events = Event.objects.filter(group=group)
+        token = hashlib.sha512("%s!%s!%s" % (SECRET_KEY, group_id, request.user.id)).hexdigest()
+#        token = md5("%s!%s!%s" % (SECRET_KEY, group_id, request.user.id)).hexdigest()
         return render_to_response('groups/group.html',
-                {'title': 'group page', 'group_id': group_id, 'events': events},
+                {'title': 'group page', 'group_id': group_id, 'user_id': request.user.id, 'token': token, 'events': events},
                 context_instance=RequestContext(request))
 
 def invite(request, group_id):

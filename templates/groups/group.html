@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block feeds %}
-<link rel="alternate" type="application/rss+xml" title="Group Feed" href="/feeds/groupevents/{{group_id}}" />
+<link rel="alternate" type="application/rss+xml" title="Group Feed" href="/feeds/groupevents/{{group_id}}/{{user_id}}/{{token}}/" />
 {%endblock feeds%}
 
 {% block column1 %}
@@ -10,10 +10,12 @@
 {% if events %}
 
 <p>
-<a href="/feeds/groupevents/{{group_id}}/">
+
+<a href="/feeds/groupevents/{{group_id}}/{{user_id}}/{{token}}/">
 <img src="/media/15px-Feed-icon.svg.png">
 RSS
 </a>
+
 </p>
 
 <h3> {% trans "Events in this group" %}:</h3>
