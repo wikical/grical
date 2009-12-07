@@ -44,6 +44,11 @@ FORCE_LOWERCASE_TAGS = True
 # for the registration application
 ACCOUNT_ACTIVATION_DAYS = 10
 
+# for RSS feeds
+FEED_SIZE = 10
+
+DATE_FORMAT = 'Y-m-d'
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
