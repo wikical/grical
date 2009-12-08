@@ -3,7 +3,7 @@ from django.contrib import admin, databrowse
 from django.contrib.admin import site
 from django.conf import settings
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
-from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents
+from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents, ICalForEvent, ICalForGroup
 
 databrowse.site.register(Event)
 databrowse.site.register(EventUrl)
@@ -26,7 +26,10 @@ urlpatterns = patterns('',
 #
     (r'^events/', include('gridcalendar.events.urls')),
     (r'^groups/', include('gridcalendar.groups.urls')),
-    (r'^feeds/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', {'feed_dict': feeds}),
+    (r'^rss/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', {'feed_dict': feeds}),
+# iCalendar feeds
+    (r'^ical/event/(?P<event_id>\d+)/$',                    ICalForEvent()),
+    (r'^ical/group/(?P<group_id>\d+)/$',                    ICalForGroup()),
 #
     #(r'^comments/', include('django.contrib.comments.urls')),
     (r'^admin/doc/', include('django.contrib.admindocs.urls')),

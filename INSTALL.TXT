@@ -6,6 +6,9 @@ local   all         gridcalendar                      md5
 
 killall -HUP postgres
 
+2a. Install vobject (needed for iCalendar):
+# aptitude install python-vobject
+
 3. Create the gridcalendar postgres user with password:
 
 $ su

@@ -1,4 +1,5 @@
-import hashlib
+import hashlib, vobject
+from django.http import HttpResponse, HttpResponseRedirect
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from gridcalendar.events.models import Event
@@ -15,8 +16,8 @@ class FeedAllComingEvents(Feed):
         return Event.objects.order_by('start')[:settings.FEED_SIZE]
 
 class FeedGroupEvents(Feed):
-    title_template = 'feeds/groupevents_title.html'
-    description_template = 'feeds/groupevents_description.html'
+    title_template = 'rss/groupevents_title.html'
+    description_template = 'rss/groupevents_description.html'
 
     def get_object(self, bits):
         if len(bits) != 3:
@@ -60,4 +61,64 @@ class FeedGroupEvents(Feed):
 # does not work, because 'datetime.date' object has no attribute 'tzinfo'
 #    def item_pubdate(self, item):
 #        return item.start
+
+
+from gridcalendar.icalendar import ICalendarFeed, EVENT_ITEMS
+
+class ICalForGroup(ICalendarFeed):
+
+    def __call__(self, request, group_id):
+        cal = vobject.iCalendar()
+        for item in self.items(group_id):
+            event = cal.add('vevent')
+            for vkey, key in EVENT_ITEMS:
+                value = getattr(self, 'item_' + key)(item)
+                if value:
+                    event.add(vkey).value = value
+        response = HttpResponse(cal.serialize())
+        response['Content-Type'] = 'text/calendar'
+        return response
+
+    def items(self, group_id):
+        g = Group.objects.filter(id=group_id)
+        return Event.objects.filter(group=g)
+#        return Event.objects.all()
+
+    def item_uid(self, item):
+        return str(item.id)
+
+    def item_start(self, item):
+        return item.start
+
+    def item_end(self, item):
+        return item.end
+
+class ICalForEvent(ICalendarFeed):
+
+    def __call__(self, request, event_id):
+        cal = vobject.iCalendar()
+        for item in self.items(event_id):
+            event = cal.add('vevent')
+            for vkey, key in EVENT_ITEMS:
+                value = getattr(self, 'item_' + key)(item)
+                if value:
+                    event.add(vkey).value = value
+        response = HttpResponse(cal.serialize())
+        response['Content-Type'] = 'text/calendar'
+        return response
+
+#    def items(self):
+#        return Event.objects.filter(pk=12)
+
+    def items(self, event_id):
+        return Event.objects.filter(pk=event_id)
+
+    def item_uid(self, item):
+        return str(item.id)
+
+    def item_start(self, item):
+        return item.start
+
+    def item_end(self, item):
+        return item.end
 

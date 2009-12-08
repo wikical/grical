@@ -17,6 +17,10 @@ from tagging.models import Tag, TaggedItem
 
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
+from gridcalendar.feeds import ICalForEvent, ICalForGroup
+
+def ical_for_event(request, event_id):
+    return ICalForEvent(event_id)
 
 def getEventForm(user):
     """returns a simplied event form with or without the public field"""
