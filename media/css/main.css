@@ -138,7 +138,14 @@ img {
     vertical-align: top;
     text-align: left;
 }
-    
+
+.field {
+    background:#eee;
+    color:gray;
+    font-size:80%;
+    border:1px solid #000;
+    padding:5px ;
+}
 
 /* column container */
 .colmask {

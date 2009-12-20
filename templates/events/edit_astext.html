@@ -14,11 +14,16 @@
     </form>
 
 </div>
-        <a href="/events/edit/{{ event_id }}/"><span class="field_title"> edit this event with webforms </span></a>
+
+<div>
+        <a href="/e/edit/{{ event_id }}/"><span class="field_title">{% trans "edit this event with a form" %}</span></a>
+        <br>{% trans "Warning: clicking this link will make you lose any data changes done in the box above" %}
+</div>
+
 
 <p>
 
-Example of filling the form:
+{% trans "Example of event text sourcecode" %}:
 <pre>
 acro: 26C3
 titl: 26. Chaos Communication Congress

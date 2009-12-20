@@ -1,48 +1,74 @@
 from datetime import datetime
-from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from gridcalendar.events.models import Event
-from tagging.models import TaggedItem
-from tagging.models import Tag
-from django.shortcuts import render_to_response, get_object_or_404
-from django.utils.translation import ugettext as _
-from django.contrib.auth.decorators import login_required
 
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
-
-from django.template import RequestContext
-
+from django.conf import settings
 from django.db.models import Q
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
+from django.utils.translation import ugettext as _
 
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
-from gridcalendar.events.functions import filter_list
-from gridcalendar.groups.models import Group
-from gridcalendar.groups.functions import all_events_in_user_groups
+from tagging.models import TaggedItem
+from tagging.models import Tag
 
-def index(request):
+from gridcalendar.events.models import Event
+from gridcalendar.groups.models import Group
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
+from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, ip_country_events, ip_continent_events, landless_events
+from gridcalendar.groups.lists import all_events_in_user_groups
+
+def root(request):
+    """
+    Generates the root (^/$) view of the website
+    """
     if request.user.is_authenticated():
-        ev = SimplifiedEventForm()
-# show all events
-        coming_events = Event.objects.filter( Q(start__gte=datetime.now()) & ( Q(public_view=True) | Q(user=request.user)) )[:100]
-        past_events   = Event.objects.filter( Q(start__lt=datetime.now()) & ( Q(public_view=True) | Q(user=request.user)) )[:100]
-# show only events of this user
-#       coming_events = Event.objects.filter(user=request.user).filter(start__gte=datetime.now())[:5]
+        event_form = SimplifiedEventForm()
+#        coming_events = Event.objects.filter( Q(start__gte=datetime.now()) & ( Q(public_view=True) | Q(user=request.user)) )[:100]
+#        past_events   = Event.objects.filter( Q(start__lt=datetime.now()) & ( Q(public_view=True) | Q(user=request.user)) )[:100]
+########
+
+        events = user_filters_events_list(request.user.id)
+
+        if len(events) < settings.MAX_EVENTS_ON_ROOT_PAGE :
+            add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events)
+            ip_country_event_list = ip_country_events(request.META.get('REMOTE_ADDR'))[0:add_thismany]
+        else:
+            ip_country_event_list = None
+
+        if len(events) + len(ip_country_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
+            add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list)
+            ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'))[0:add_thismany]
+        else:
+            ip_continent_event_list = None
+
+        if len(events) + len(ip_country_event_list) + len(ip_continent_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
+            add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list) - len(ip_continent_event_list)
+            landless_event_list = landless_events()[0:add_thismany]
+        else:
+            landless_event_list = None
+
+########
     else:
-        ev = SimplifiedEventFormAnonymous()
-        coming_events = Event.objects.filter(start__gte=datetime.now()).exclude(public_view=False)[:100]
-        past_events   = Event.objects.filter(start__lt=datetime.now()).exclude(public_view=False)[:100]
-#       coming_events = Event.objects.all()
-    return render_to_response('index.html', {'title': 'home', 'form': ev, 'coming_events': coming_events, 'past_events': past_events, 'all_events_in_user_groups': all_events_in_user_groups(request.user.id)}, context_instance=RequestContext(request))
+        event_form = SimplifiedEventFormAnonymous()
+        events = Event.objects.filter(start__gte=datetime.now()).exclude(public_view=False)[:100]
+    return render_to_response('root.html', {
+            'title': 'Welcome to the CloudCalendar',
+            'form': event_form,
+            'events': events,
+            'ip_country_event_list': ip_country_event_list,
+            'ip_continent_event_list': ip_continent_event_list,
+            'landless_event_list': landless_event_list,
+            'group_events': all_events_in_user_groups(request.user.id),
+        }, context_instance=RequestContext(request))
 
 # for this decorator, see
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator
 @login_required
-def settings(request):
+def settings_page(request):
     # user is logged in
     fl = filter_list(request.user.id)
     u = User(request.user)

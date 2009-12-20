@@ -9,12 +9,11 @@ from django.contrib.auth.forms import UserCreationForm
 
 from tagging.models import TaggedItem, Tag
 
-from gridcalendar.events.views import Event
+from gridcalendar.settings import SECRET_KEY
+from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
 from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
-from gridcalendar.groups.functions import all_events_in_user_groups
-
-from gridcalendar.settings import SECRET_KEY
+from gridcalendar.groups.lists import all_events_in_user_groups
 
 def create(request):
     if not request.user.is_authenticated():
@@ -28,7 +27,7 @@ def create(request):
             new_membership = Membership(user=request.user, group=new_group)
             new_membership.save()
             # TODO: notify all invited members of the group
-            return HttpResponseRedirect('/groups/list/')
+            return HttpResponseRedirect('/p/groups/')
         else:
             return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
     else:
@@ -71,16 +70,22 @@ def quit_group(request, group_id, sure):
                 if (testsize > 0):
                     m = Membership.objects.get(user=request.user, group=g)
                     m.delete()
-                    return HttpResponseRedirect('/groups/list/')
+                    return HttpResponseRedirect('/p/groups/')
                 elif (s == 1):
                     m = Membership.objects.get(user=request.user, group=g)
                     m.delete()
                     g.delete()
-                    return HttpResponseRedirect('/groups/list/')
+                    return HttpResponseRedirect('/p/groups/')
                 else:
                     return render_to_response('groups/quit_group_confirm.html', {'group_id': group_id, 'group_name': g.name}, context_instance=RequestContext(request))
         except:
             return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
+
+def quit_group_ask(request, group_id):
+    return quit_group(request, group_id, 0)
+
+def quit_group_sure(request, group_id):
+    return quit_group(request, group_id, 1)
 
 def add_event(request, event_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
@@ -96,7 +101,7 @@ def add_event(request, event_id):
                 for g in f.cleaned_data['grouplist']:
                     calentry = Calendar(event=e, group=g)
                     calentry.save()
-                return HttpResponseRedirect('/groups/list/')
+                return HttpResponseRedirect('/p/groups/')
             else:
                 request.user.message_set.create(message='Please check your data.')
         else:
@@ -139,7 +144,7 @@ def invite(request, group_id):
                 username = form.cleaned_data['username']
                 u = User.objects.get(username=username)
                 GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
-                return HttpResponseRedirect('/groups/list/')
+                return HttpResponseRedirect('/p/groups/')
             else:
                 request.user.message_set.create(message='Please check your data.')
         else:

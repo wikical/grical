@@ -9,9 +9,8 @@ from django.contrib.auth.forms import UserCreationForm
 
 from tagging.models import TaggedItem, Tag
 
-from gridcalendar.events.views import Event
-from gridcalendar.groups.models import Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
-from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
+from gridcalendar.events.models import Event
+from gridcalendar.groups.models import Group
 
 def all_events_in_user_groups(user_id):
     """
