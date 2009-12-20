@@ -26,7 +26,8 @@
         <input type="submit" value={% trans "Save" %}>
     </form>
 </div>
-        <a href="/events/edit_astext/{{ event_id }}/"><span class="field_title"> edit this event as text </span></a>
+        <a href="/e/edit/{{ event_id }}/raw/"><span class="field_title">{% trans "edit this event as text" %}</span></a>
+        <br>{% trans "Warning: clicking this link will make you lose any data changes done in the form above" %}
 {% endblock %}
 
 

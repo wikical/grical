@@ -3,15 +3,18 @@
 <ul>
     {% for fil in filter_list %}
     <li>
-    <a href="/events/list/search/?q={{fil.query|urlencode}}">
+<!--
+    <a href="/q/?q={{fil.query|urlencode}}">
+-->
+    <a href="/s/{{fil.query|urlencode}}/">
     {{ fil.name }}
     </a>
     &nbsp;
     ({{ fil.results }})
     &nbsp;
-    <a href="/events/filter/edit/{{ fil.id }}/">edit</a>
+    <a href="/f/edit/{{ fil.id }}/">edit</a>
     &nbsp;
-    <a href="/events/filter/drop/{{ fil.id }}/">delete</a>
+    <a href="/f/delete/{{ fil.id }}/">delete</a>
 
     {% if fil.errormessage %}
     <p>

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block feeds %}
+<link rel="alternate" type="application/rss+xml" title="Group Feed" href="/feeds/allcomingevents/" />
+{%endblock feeds%}
+
+
+{% block column1 %}
+
+<p class="info">{% trans "Submit a new event" %} ({% trans "more info like a URL can be added after submitting" %}):</p>
+<div id="event_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+        </p>
+    {% endif %}
+    <form action="/e/new/" method="post">
+        <table>
+            {{ form.as_table }}
+        </table>
+        <input type="submit" value={% trans "Submit" %}>
+    </form>
+</div>
+<br />
+<br />
+
+<!--
+{% if user.username %}
+<p class="info">{% trans "Change what is displayed here in" %}:
+    <a href="/settings#filters">{% trans "filters" %}</a></p>
+{% endif %}
+-->
+
+{% if events %}
+    {% for event in events %}
+        <br />
+        {% include "events/list_expanded.html" %}
+        {% trans "Matches your filters" %}:
+        {% for fil in event.filters %}
+            <a href="/s/{{fil.query|urlencode}}">{{ fil.name }}</a>&nbsp;
+            <a href="/f/{{fil.id}}/ical/"><img src="{{ MEDIA_URL }}/icallogo.png" width="14"></a>&nbsp;
+            <a href="/f/{{fil.id}}/rss/"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
+        {% endfor %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+
+{% if ip_country_event_list %}
+    <br/>
+    {% trans "Below are some events which happen soon in the country we think you are in now" %}:
+    {% for event in ip_country_event_list %}
+        <br />
+        {% include "events/list_expanded.html" %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+{% if ip_continent_event_list %}
+    <br/>
+    {% trans "Below are some events which happen soon on the continent we think you are in now" %}:
+    {% for event in ip_continent_event_list %}
+        <br />
+        {% include "events/list_expanded.html" %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+{% if landless_event_list %}
+    <br/>
+    {% trans "Below are some events which have no indication on which country they happen in. Maybe you can fill in the missing field?" %}:
+    {% for event in landless_event_list %}
+        <br />
+        {% include "events/list_expanded.html" %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+
+
+
+
+
+
+{% endblock %}
+
+{% block column2 %}
+
+{% include "coming_events_in_my_groups.html" %}
+
+{% endblock %}
+
+
+
+{% block column3 %}
+
+{% endblock %}
+

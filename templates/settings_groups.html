@@ -4,11 +4,11 @@
 <ul>
     {% for g in groups %}
         <li>
-            <a href="/groups/{{g.id}}/">{{ g.name }}</a>
+            <a href="/g/{{g.id}}/">{{ g.name }}</a>
             &nbsp;
-            <a href="/groups/quit/{{g.id}}/0/">quit</a>
+            <a href="/g/quit/{{g.id}}/">quit</a>
             &nbsp;
-            <a href="/groups/invite/{{g.id}}/">invite</a>
+            <a href="/g/invite/{{g.id}}/">invite</a>
     {% endfor %}
 </ul>
 {% else %}

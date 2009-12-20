@@ -47,6 +47,8 @@ ACCOUNT_ACTIVATION_DAYS = 10
 # for RSS feeds
 FEED_SIZE = 10
 
+MAX_EVENTS_ON_ROOT_PAGE=20
+
 DATE_FORMAT = 'Y-m-d'
 
 # Local time zone for this installation. Choices can be found here:
@@ -77,9 +79,9 @@ MEDIA_ROOT = os.path.join(dirname, "media")
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 #MEDIA_URL = 'http://gridcalendar.net/media/'
-MEDIA_URL = '/media/'
+MEDIA_URL = '/m/'
 
-ADMIN_MEDIA_PREFIX = '/media/admin/'
+ADMIN_MEDIA_PREFIX = '/m/admin/'
 
 # Make this unique, and don't share it with anybody.
 # !!!!!!!!! REPLACE !!!!!!!!!!!!!!
@@ -116,9 +118,12 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+#    'django.contrib.gis',
     'django.contrib.databrowse',
     'django.contrib.admindocs',
     'gridcalendar.tagging',
     'gridcalendar.registration',
     'django.contrib.comments',
 )
+
+GEOIP_PATH = '/usr/share/GeoIP/'

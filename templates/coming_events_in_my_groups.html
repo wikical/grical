@@ -4,8 +4,8 @@
     <p align="right"><a href="/groups/create/">{% trans "Create a new group" %}</a></p>
     <h2 align="center">{% trans "Coming events in my groups" %}</h2>
 
-    {% if all_events_in_user_groups %}
-        {% for g in all_events_in_user_groups %}
+    {% if group_events %}
+        {% for g in group_events %}
             Group: {{g.group_name}}<br>
             {% for event in g.el %}
             <p>

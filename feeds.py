@@ -1,11 +1,15 @@
 import hashlib, vobject
-from django.http import HttpResponse, HttpResponseRedirect
+
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
-from gridcalendar.events.models import Event
-from gridcalendar.groups.models import Group, Membership
-from gridcalendar import settings
+from django.http import HttpResponse, HttpResponseRedirect
+
 from django.contrib.auth.models import User
+from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
+
+from gridcalendar import settings
+from gridcalendar.events.models import Event, Filter
+from gridcalendar.events.lists import list_search_get
+from gridcalendar.groups.models import Group, Membership
 
 class FeedAllComingEvents(Feed):
     title = "All coming events"
@@ -65,6 +69,34 @@ class FeedGroupEvents(Feed):
 
 from gridcalendar.icalendar import ICalendarFeed, EVENT_ITEMS
 
+class ICalForFilter(ICalendarFeed):
+
+    def __call__(self, request, filter_id):
+        cal = vobject.iCalendar()
+        for item in self.items(filter_id):
+            event = cal.add('vevent')
+            for vkey, key in EVENT_ITEMS:
+                value = getattr(self, 'item_' + key)(item)
+                if value:
+                    event.add(vkey).value = value
+        response = HttpResponse(cal.serialize())
+        response['Content-Type'] = 'text/calendar'
+        return response
+
+    def items(self, filter_id):
+        f = Filter.objects.get(id=filter_id)
+        l = list_search_get(f.query)['list_of_events']
+        return l
+
+    def item_uid(self, item):
+        return str(item.id)
+
+    def item_start(self, item):
+        return item.start
+
+    def item_end(self, item):
+        return item.end
+
 class ICalForGroup(ICalendarFeed):
 
     def __call__(self, request, group_id):
@@ -82,7 +114,6 @@ class ICalForGroup(ICalendarFeed):
     def items(self, group_id):
         g = Group.objects.filter(id=group_id)
         return Event.objects.filter(group=g)
-#        return Event.objects.all()
 
     def item_uid(self, item):
         return str(item.id)
@@ -106,9 +137,6 @@ class ICalForEvent(ICalendarFeed):
         response = HttpResponse(cal.serialize())
         response['Content-Type'] = 'text/calendar'
         return response
-
-#    def items(self):
-#        return Event.objects.filter(pk=12)
 
     def items(self, event_id):
         return Event.objects.filter(pk=event_id)

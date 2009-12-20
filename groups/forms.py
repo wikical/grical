@@ -1,11 +1,8 @@
 import re
 
 from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField
-
 from django.forms import Form, ModelForm, ValidationError
-
 from django.forms import CheckboxSelectMultiple, SelectMultiple
-
 from django.contrib.auth.models import User
 from gridcalendar.groups.models import Group, Membership, Calendar
 

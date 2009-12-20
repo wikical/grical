@@ -60,3 +60,24 @@ Installing index for comments.Comment model
 Installing index for comments.CommentFlag model
 $
 
+6. Install these Debian packages to support geo functions:
+libgdal1-1.5.0
+postgresql-8.3-postgis
+postgresql-server-dev-8.3
+python-geoip   version higher then 1.2.1-2 in lenny, for example 1.2.4-1, because 1.2.1 doesn't have continent support
+geoip-database
+Will use 56.5MB of disk space  DL Size: 18.2MB
+
+These will probably be already installed, but I mention them here just to be sure:
+binutils
+postgresql-8.3
+python-psycopg2
+python-setuptools
+
+7. After instllation of PostGIS debian packages you must issue commands like this:
+$ su
+# su postgres
+$ cd /usr/share/postgresql-8.3-postgis/
+postgres@cloca:/usr/share/postgresql-8.3-postgis$ createlang plpgsql gridcalendar
+postgres@cloca:/usr/share/postgresql-8.3-postgis$ psql -d gridcalendar -f lwpostgis.sql
+postgres@cloca:/usr/share/postgresql-8.3-postgis$ psql -d gridcalendar -f spatial_ref_sys.sql

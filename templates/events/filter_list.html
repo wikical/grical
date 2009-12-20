@@ -1,17 +1,20 @@
 {% extends "base.html" %}
 {% load i18n %}
+
 {% block column1 %}
 <p>{% trans "These are your filters" %}:</p>
 <ul>
     {% for fil in filters %}
     <li>
-    {{ fil.name }}
+    <a href="/s/{{ fil.query|urlencode }}/">
+        {{ fil.name }}
+    </a>
     &nbsp;
     ({{ fil.results }})
     &nbsp;
-    <a href="/events/filter/edit/{{ fil.id }}/">edit</a>
+    <a href="/f/edit/{{ fil.id }}/">edit</a>
     &nbsp;
-    <a href="/events/filter/drop/{{ fil.id }}/">delete</a>
+    <a href="/f/delete/{{ fil.id }}/">delete</a>
 
     {% if fil.errormessage %}
     <p>
@@ -21,19 +24,20 @@
     </p>
     {% endif %}
 
-
         <ul>
-        {% for event in fil.e %}
+        {% for event in fil.list_of_events %}
         <li>
-            <a href="/events/view_astext/{{event.id}}/">{{event.title}}</a>
+            <a href="/e/show/{{event.id}}/raw/">{{event.title}}</a>
         </li>
         {% endfor %}
         </ul>
 
-        <form action="/events/list/search/" method="get">
+<!--
+        <form action="/q/" method="get">
             <input type="hidden" name="q" value="{{ fil.query }}">
             <input type="submit" value="{% trans "Run a full search using this filter" %}">
         </form>
+-->
 
     <p>
     </p>
