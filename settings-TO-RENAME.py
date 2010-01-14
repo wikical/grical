@@ -51,6 +51,8 @@ MAX_EVENTS_ON_ROOT_PAGE=20
 
 DATE_FORMAT = 'Y-m-d'
 
+INTERNAL_IPS = ('127.0.0.1',)
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -98,6 +100,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'gridcalendar.urls'
@@ -124,6 +127,7 @@ INSTALLED_APPS = (
     'gridcalendar.tagging',
     'gridcalendar.registration',
     'django.contrib.comments',
+    'debug_toolbar',
 )
 
 GEOIP_PATH = '/usr/share/GeoIP/'

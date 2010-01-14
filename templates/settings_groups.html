@@ -9,6 +9,8 @@
             <a href="/g/quit/{{g.id}}/">quit</a>
             &nbsp;
             <a href="/g/invite/{{g.id}}/">invite</a>
+            <a href="/g/{{g.id}}/ical/{{xxxx.user_id}}/{{xxxx.hash}}/"><img src="{{ MEDIA_URL }}/icallogo.png" width="14"></a>&nbsp;
+            <a href="/g/{{g.id}}/rss/"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
     {% endfor %}
 </ul>
 {% else %}

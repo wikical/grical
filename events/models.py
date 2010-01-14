@@ -314,7 +314,7 @@ class Event(models.Model):
     def __unicode__(self):
 		return self.start.isoformat() + " : " + self.title
     def get_absolute_url(self):
-        return '/events/view_astext/' + str(self.id) + '/'
+        return '/e/show/' + str(self.id) + '/'
     class Meta:
         ordering = ['start']
         verbose_name = _('Event')

@@ -4,9 +4,13 @@ from django.contrib import admin, databrowse
 from django.contrib.admin import site
 
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
-from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents, ICalForEvent, ICalForGroup, ICalForFilter
 from gridcalendar.groups.models import Group
+
 from gridcalendar.groups.views import activate
+
+from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents
+from gridcalendar.rss import RssForSearchAuth
+from gridcalendar.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
 
 #from tagging.views import tagged_object_list
 
@@ -17,9 +21,9 @@ databrowse.site.register(EventDeadline)
 
 admin.autodiscover()
 
-feeds = {
-    'allcomingevents': FeedAllComingEvents,
-    'groupevents': FeedGroupEvents,
+rss_feeds = {
+    'allcomingevents':  FeedAllComingEvents,
+    'g':      FeedGroupEvents,
 }
 
 urlpatterns = patterns('',
@@ -36,33 +40,57 @@ urlpatterns += patterns('',
 ###############################################################################
 
 urlpatterns += patterns('',
-    (r'^$', 'views.root'),
+    (r'^$',                                                             'views.root'),
 )
 
-urlpatterns += patterns('', # RSS feeds for list of events
-    (r'^rss/(?P<url>.*)/$', 'django.contrib.syndication.views.feed', {'feed_dict': feeds}),
+#urlpatterns += patterns('', # RSS feeds for list of events
+#    (r'^e/(?P<url>.*)/rss/$',                                           'django.contrib.syndication.views.feed', {'feed_dict': rss_feeds}),
+#)
+
+###############################################################################
+
+urlpatterns += patterns('', # events created by the user logged in
+    (r'^p/events/$',                                                    'events.views.list_my_events'),
 )
 
-urlpatterns += patterns('', # iCalendar feeds for list of events
-    (r'^g/(?P<group_id>\d+)/ical/$',                ICalForGroup()),
-    (r'^f/(?P<filter_id>\d+)/ical/$',               ICalForFilter()),
+urlpatterns += patterns('', # events matching a filter
+    (r'^f/(?P<filter_id>\d+)/ical/$',                                   ICalForFilterAuth()),
+    (r'^f/(?P<filter_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',    ICalForFilterHash()),
 )
 
-urlpatterns += patterns('', # HTML feeds for list of events
-    (r'^e/list/user/(?P<username>\w+)/$',           'events.views.list_user_events'),
-    (r'^p/events/$',                                'events.views.list_my_events'),
-    (r'^e/list/tags/(?P<tag>[ \-\w]*)/$' ,          'events.views.list_tag'),
-# list events in a group:
-    (r'^g/(?P<group_id>\d+)/$',                     'groups.views.group'),
-# searching
-    (r'^q/',                                        'events.views.list_query'),
-    (r'^s/(?P<query>.*)/$',                         'events.views.list_search'),
+urlpatterns += patterns('', # events matching some query
+    (r'^q/',                                                            'events.views.list_query'),
+#
+    (r'^s/(?P<query>.*)/ical/$',                                        ICalForSearchAuth()),
+    (r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',         ICalForSearchHash()),
+#    (r'^s/rss/(?P<url>.*)/$',                                           'django.contrib.syndication.views.feed', {'feed_dict': {'rss': FeedGroupEvents}}),
+#    (r'^s/(?P<query>.*)/rss/$',                                         RssForSearchAuth()),   ############ HEREEEERERERE ############
+    (r'^s/(?P<query>.*)/rss/$',                                         'rss.rss_for_search'),
+    (r'^s/(?P<query>.*)/$',                                             'events.views.list_search'),
+#
+    (r'^t/(?P<tag>[ \-\w]*)/$' ,                                        'events.views.list_tag'),
+)
+
+urlpatterns += patterns('', # events in a group
+    (r'^g/(?P<group_id>\d+)/$',                                         'groups.views.group'),
+    (r'^g/(?P<group_id>\d+)/ical/$',                                    ICalForGroupAuth()),
+    (r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',     ICalForGroupHash()),
+#    (r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',     'django.contrib.syndication.views.feed', {'feed_dict': {'groupevents': FeedGroupEvents}}),
+#    (r'^g/(?P<group_id>\d+)/rss/(?P<url>.*)/$',                        'django.contrib.syndication.views.feed', {'feed_dict': {'groupevents': FeedGroupEvents}}),
+#    (r'^g/rss/(?P<url>.*)/$',                                          'django.contrib.syndication.views.feed', {'feed_dict': {'rss': FeedGroupEvents}}),
+)
+
+###############################################################################
+
+urlpatterns += patterns('',
+# list events created by a certain user (commented for now because of privacy concerns)
+#   (r'^e/list/user/(?P<username>\w+)/$',                               'events.views.list_user_events'),
 )
 
 urlpatterns += patterns('', # views of a single event
-    (r'^e/show/(?P<event_id>\d+)/raw/$',            'events.views.view_astext'),
-    (r'^e/show/(?P<event_id>\d+)/$',                'events.views.show'),
-    (r'^e/show/(?P<event_id>\d+)/ical/$',           ICalForEvent()),
+    (r'^e/show/(?P<event_id>\d+)/$',                                    'events.views.show'),
+    (r'^e/show/(?P<event_id>\d+)/raw/$',                                'events.views.view_astext'),
+    (r'^e/show/(?P<event_id>\d+)/ical/$',                               ICalForEvent()),
 )
 
 ###############################################################################
