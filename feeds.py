@@ -2,6 +2,9 @@ import hashlib, vobject
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
+from django.utils.translation import ugettext as _
+from django.template import RequestContext
 
 from django.contrib.auth.models import User
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
@@ -18,6 +21,28 @@ class FeedAllComingEvents(Feed):
 
     def items(self):
         return Event.objects.order_by('start')[:settings.FEED_SIZE]
+
+class FeedSearchEvents(Feed):
+    title_template = 'rss/searchevents_title.html'
+    description_template = 'rss/searchevents_description.html'
+
+    def get_object(self, bits):
+        if len(bits) != 1:
+            raise ObjectDoesNotExist
+        query = bits[0]
+        return query
+
+    def title(self, obj):
+            return "events for search '%s'" % obj
+
+    def link(self, obj):
+            return '/s/' + obj + '/'
+
+    def description(self, obj):
+            return "events for search %s" % obj
+
+    def items(self, obj):
+            return list_search_get(obj)['list_of_events']
 
 class FeedGroupEvents(Feed):
     title_template = 'rss/groupevents_title.html'
@@ -69,6 +94,72 @@ class FeedGroupEvents(Feed):
 
 from gridcalendar.icalendar import ICalendarFeed, EVENT_ITEMS
 
+class ICalForSearch(ICalendarFeed):
+
+    def __call__(self, request, query):
+        cal = vobject.iCalendar()
+        for item in self.items(query):
+            event = cal.add('vevent')
+            for vkey, key in EVENT_ITEMS:
+                value = getattr(self, 'item_' + key)(item)
+                if value:
+                    event.add(vkey).value = value
+        response = HttpResponse(cal.serialize())
+        response['Content-Type'] = 'text/calendar'
+        return response
+
+    def items(self, query):
+        l = list_search_get(query)['list_of_events']
+        return l
+
+    def item_uid(self, item):
+        return str(item.id)
+
+    def item_start(self, item):
+        return item.start
+
+    def item_end(self, item):
+        return item.end
+
+class ICalForSearchAuth(ICalForSearch):
+
+    def __call__(self, request, query):
+        cal = vobject.iCalendar()
+
+        for item in self.items(query):
+            event = cal.add('vevent')
+            for vkey, key in EVENT_ITEMS:
+                value = getattr(self, 'item_' + key)(item)
+                if value:
+                    event.add(vkey).value = value
+        response = HttpResponse(cal.serialize())
+        response['Content-Type'] = 'text/calendar'
+        return response
+
+class ICalForSearchHash(ICalForSearch):
+
+    def __call__(self, request, query, user_id, hash):
+        cal = vobject.iCalendar()
+        f = Filter.objects.filter(id=filter_id)
+        u = User.objects.filter(id=user_id)
+        if (hash == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, filter_id, user_id)).hexdigest()) and (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
+            for item in self.items(filter_id):
+                event = cal.add('vevent')
+                for vkey, key in EVENT_ITEMS:
+                    value = getattr(self, 'item_' + key)(item)
+                    if value:
+                        event.add(vkey).value = value
+            response = HttpResponse(cal.serialize())
+            response['Content-Type'] = 'text/calendar'
+            return response
+        else:
+            return render_to_response('error.html',
+                {'title': 'error',
+                'message_col1': _("You are not allowed to fetch the iCalendar for the filter with the following number") +
+                ": " + str(group_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+
 class ICalForFilter(ICalendarFeed):
 
     def __call__(self, request, filter_id):
@@ -97,8 +188,53 @@ class ICalForFilter(ICalendarFeed):
     def item_end(self, item):
         return item.end
 
-class ICalForGroup(ICalendarFeed):
+class ICalForFilterAuth(ICalForFilter):
+    def __call__(self, request, filter_id):
+        cal = vobject.iCalendar()
+        f = Filter.objects.filter(id=filter_id)
+        u = User.objects.filter(id=request.user.id)
+        if (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
+            for item in self.items(filter_id):
+                event = cal.add('vevent')
+                for vkey, key in EVENT_ITEMS:
+                    value = getattr(self, 'item_' + key)(item)
+                    if value:
+                        event.add(vkey).value = value
+            response = HttpResponse(cal.serialize())
+            response['Content-Type'] = 'text/calendar'
+            return response
+        else:
+            return render_to_response('error.html',
+                {'title': 'error',
+                'message_col1': _("You are not allowed to fetch the iCalendar for the filter with the following number") +
+                ": " + str(filter_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
 
+class ICalForFilterHash(ICalForFilter):
+    def __call__(self, request, filter_id, user_id, hash):
+        cal = vobject.iCalendar()
+        f = Filter.objects.filter(id=filter_id)
+        u = User.objects.filter(id=user_id)
+        if (hash == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, filter_id, user_id)).hexdigest()) and (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
+            for item in self.items(filter_id):
+                event = cal.add('vevent')
+                for vkey, key in EVENT_ITEMS:
+                    value = getattr(self, 'item_' + key)(item)
+                    if value:
+                        event.add(vkey).value = value
+            response = HttpResponse(cal.serialize())
+            response['Content-Type'] = 'text/calendar'
+            return response
+        else:
+            return render_to_response('error.html',
+                {'title': 'error',
+                'message_col1': _("You are not allowed to fetch the iCalendar for the filter with the following number") +
+                ": " + str(group_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+
+class ICalForGroup(ICalendarFeed):
     def __call__(self, request, group_id):
         cal = vobject.iCalendar()
         for item in self.items(group_id):
@@ -123,6 +259,53 @@ class ICalForGroup(ICalendarFeed):
 
     def item_end(self, item):
         return item.end
+
+class ICalForGroupAuth(ICalForGroup):
+    def __call__(self, request, group_id):
+        cal = vobject.iCalendar()
+        g = Group.objects.filter(id=group_id)
+        u = User.objects.filter(id=request.user.id)
+        if (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
+            for item in self.items(group_id):
+                event = cal.add('vevent')
+                for vkey, key in EVENT_ITEMS:
+                    value = getattr(self, 'item_' + key)(item)
+                    if value:
+                        event.add(vkey).value = value
+            response = HttpResponse(cal.serialize())
+            response['Content-Type'] = 'text/calendar'
+            return response
+        else:
+            return render_to_response('error.html',
+                {'title': 'error',
+                'message_col1': _("You are not allowed to fetch the iCalendar for the group with the following number") +
+                ": " + str(group_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
+
+class ICalForGroupHash(ICalForGroup):
+
+    def __call__(self, request, group_id, user_id, hash):
+        cal = vobject.iCalendar()
+        g = Group.objects.filter(id=group_id)
+        u = User.objects.filter(id=user_id)
+        if (hash == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, group_id, user_id)).hexdigest()) and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
+            for item in self.items(group_id):
+                event = cal.add('vevent')
+                for vkey, key in EVENT_ITEMS:
+                    value = getattr(self, 'item_' + key)(item)
+                    if value:
+                        event.add(vkey).value = value
+            response = HttpResponse(cal.serialize())
+            response['Content-Type'] = 'text/calendar'
+            return response
+        else:
+            return render_to_response('error.html',
+                {'title': 'error',
+                'message_col1': _("You are not allowed to fetch the iCalendar for the group with the following number") +
+                ": " + str(group_id) + ". " +
+                _("Maybe it is because you are not logged in with the right account") + "."},
+                context_instance=RequestContext(request))
 
 class ICalForEvent(ICalendarFeed):
 

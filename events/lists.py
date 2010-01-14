@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta
 from time import strftime
 import re
@@ -19,6 +20,7 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
+from gridcalendar.settings import SECRET_KEY
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
 
@@ -95,8 +97,14 @@ def filters_matching_event(events_filters_list, event_id):
     for event in events_filters_list:
         id = event['event_id']
         if event_id == id:
+            f_dict = dict()
             f = Filter.objects.get(id=event['filter_id'])
-            l.append(f)
+            f_dict['id'] = f.id
+            f_dict['user_id'] = f.user.id
+            f_dict['name'] = f.name
+            f_dict['query'] = f.query
+            f_dict['hash'] = hashlib.sha256("%s!%s!%s" % (SECRET_KEY, f.id, f.user.id)).hexdigest()
+            l.append(f_dict)
     return l
 
 def user_filters_events_list(user_id):
