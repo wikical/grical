@@ -20,10 +20,6 @@ databrowse.site.register(EventDeadline)
 
 admin.autodiscover()
 
-rss_feeds = {
-    'allcomingevents':  FeedAllComingEvents,
-}
-
 urlpatterns = patterns('',
     (r'^a/admin/doc/', include('django.contrib.admindocs.urls')),
     (r'^a/admin/(.*)', admin.site.root),
@@ -41,9 +37,13 @@ urlpatterns += patterns('',
     (r'^$',                                                             'views.root'),
 )
 
-#urlpatterns += patterns('', # RSS feeds for list of events
-#    (r'^e/(?P<url>.*)/rss/$',                                           'django.contrib.syndication.views.feed', {'feed_dict': rss_feeds}),
-#)
+###############################################################################
+
+urlpatterns += patterns('', # views of a single event
+    (r'^e/show/(?P<event_id>\d+)/$',                                    'events.views.show'),
+    (r'^e/show/(?P<event_id>\d+)/raw/$',                                'events.views.view_astext'),
+    (r'^e/show/(?P<event_id>\d+)/ical/$',                               ICalForEvent()),
+)
 
 ###############################################################################
 
@@ -84,12 +84,6 @@ urlpatterns += patterns('',
 #   (r'^e/list/user/(?P<username>\w+)/$',                               'events.views.list_user_events'),
 )
 
-urlpatterns += patterns('', # views of a single event
-    (r'^e/show/(?P<event_id>\d+)/$',                                    'events.views.show'),
-    (r'^e/show/(?P<event_id>\d+)/raw/$',                                'events.views.view_astext'),
-    (r'^e/show/(?P<event_id>\d+)/ical/$',                               ICalForEvent()),
-)
-
 ###############################################################################
 
 urlpatterns += patterns('',
@@ -98,7 +92,7 @@ urlpatterns += patterns('',
     (r'^e/edit/(?P<event_id>\d+)/$',                'events.views.edit'),
     (r'^e/edit/(?P<event_id>\d+)/raw/$',            'events.views.edit_raw'),
 # settings
-    (r'^p/settings/$', 'views.settings_page'),
+    (r'^p/settings/$',                              'views.settings_page'),
 # filter management:
     (r'^p/filters/$',                               'events.views.filter_list_view'),
     (r'^f/new/$',                                   'events.views.filter_save'),

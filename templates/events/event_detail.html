@@ -52,9 +52,9 @@
 
         <p>
         {% if event.get_tags %}
-        <br />Tasgs: <span class="tags">
+        <br />{% trans "Tags" %}: <span class="tags">
         {% for tag in event.get_tags %}
-            <span class="tag"><a href="/events/list/tags/{{ tag }}">{{ tag }}</a>, </span>
+            <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a>, </span>
         {% endfor %}
         {% endif %}
         </p>
