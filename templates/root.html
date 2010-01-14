@@ -38,9 +38,9 @@
         {% include "events/list_expanded.html" %}
         {% trans "Matches your filters" %}:
         {% for fil in event.filters %}
-            <a href="/s/{{fil.query|urlencode}}">{{ fil.name }}</a>&nbsp;
+            <a href="/s/{{fil.query|urlencode}}/">{{ fil.name }}</a>&nbsp;
             <a href="/f/{{fil.id}}/ical/{{fil.user_id}}/{{fil.hash}}/"><img src="{{ MEDIA_URL }}/icallogo.png" width="14"></a>&nbsp;
-            <a href="/f/{{fil.id}}/rss/"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
+            <a href="/f/{{fil.id}}/rss/{{fil.user_id}}/{{fil.hash}}/"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
         {% endfor %}
         <br/>
     {% endfor %}

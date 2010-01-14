@@ -73,10 +73,17 @@ class FeedGroupEvents(Feed):
     description_template = 'rss/groupevents_description.html'
 
     def get_object(self, bits):
-        if len(bits) != 1:
+        if len(bits) != 3:
             raise ObjectDoesNotExist
         group_id = bits[0]
-        return Group.objects.get(id=group_id)
+        user_id = bits[1]
+        token = bits[2]
+        g = Group.objects.filter(id=group_id)
+        u = User.objects.filter(id=user_id)
+        if (token == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, group_id, user_id)).hexdigest()) and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
+            return Group.objects.get(id=group_id)
+        else:
+            return None
 
     def title(self, obj):
         if obj is None:
