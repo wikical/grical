@@ -23,6 +23,7 @@ from tagging.models import Tag, TaggedItem
 from gridcalendar.settings import SECRET_KEY
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
+from gridcalendar.groups.lists import all_events_in_user_groups
 
 def all_events_in_user_filters(user_id):
     """
@@ -35,13 +36,13 @@ def all_events_in_user_filters(user_id):
         u = User.objects.get(id=user_id)
         filters = Filter.objects.filter(user=u)
         if len(filters) == 0:
-            return None
+            return list()
         else:
             for f in filters:
                 dle = {}
                 dle['filter_name'] = f.name
                 el = list()
-                s = list_search_get(f.query)
+                s = list_search_get(f.query, user_id)
                 events = s['list_of_events']
                 for e in events:
                     el.append(e)
@@ -54,7 +55,7 @@ def events_with_user_filters(user_id):
     returns a list of dictionaries, which contain 'event_id' and 'filter_id'
     """
     if (user_id is None):
-        return None
+        return list()
     else:
         u = User.objects.get(id=user_id)
         filter_list = Filter.objects.filter(user=u)
@@ -64,7 +65,7 @@ def events_with_user_filters(user_id):
             l = len(filter_list)
             finlist = list()
             for filter in filter_list:
-                event_query = list_search_get(filter.query)
+                event_query = list_search_get(filter.query, user_id, 1)
                 if event_query['errormessage'] is not None:
                     return None
                 else:
@@ -80,14 +81,15 @@ def uniq_events_list(events_filters_list):
     """
     returns
     """
+    if events_filters_list is None:
+        return list()
+
     l = list()
     for event in events_filters_list:
         id = event['event_id']
         if id not in l:
             l.append(id)
-#    assert False
     return l
-
 
 def filters_matching_event(events_filters_list, event_id):
     """
@@ -107,11 +109,39 @@ def filters_matching_event(events_filters_list, event_id):
             l.append(f_dict)
     return l
 
+#------------------------------------------------------------------------------
+
+def list_events_user_is_allowed_to_see(uuu):
+    l = list()
+
+    events_public = Event.objects.filter(public_view=True)
+    for e in events_public:
+        l.append(e.id)
+
+    events_user = Event.objects.filter(user__id=uuu)
+    for e in events_user:
+        l.append(e.id)
+
+    for lod in all_events_in_user_groups(uuu, -1):
+        for e in lod['el']:
+            l.append(e.id)
+
+    return l
+
+#------------------------------------------------------------------------------
+
 def user_filters_events_list(user_id):
     """
     returns
     """
     events_filters_list = events_with_user_filters(user_id)
+
+    if events_filters_list is None:
+        return list()
+
+    if len(events_filters_list) == 0:
+        return list()
+
     event_list = list()
     for event_id in uniq_events_list(events_filters_list):
         event_dict = {}
@@ -127,13 +157,36 @@ def user_filters_events_list(user_id):
         event_list.append(event_dict)
     return event_list[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
 
-def ip_country_events(ip_addr):
+def user_filters_events_id_list(user_id):
+    """
+    returns
+    """
+    events_filters_list = events_with_user_filters(user_id)
+
+    if events_filters_list is None:
+        return list()
+
+    if len(events_filters_list) == 0:
+        return list()
+
+    event_list = list()
+    for event_id in uniq_events_list(events_filters_list):
+        event_list.append(event_id)
+    return event_list[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
+
+def ip_country_events(ip_addr, user_id):
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
     events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country))
-    return events
 
-def ip_continent_events(ip_addr):
+# filter to display only events that the user is allowed to see
+    final_list_of_events = list()
+    for e in events:
+            if (e.id in list_events_user_is_allowed_to_see(user_id)) & (e.id not in user_filters_events_id_list(user_id)):
+                final_list_of_events.append(e)
+    return final_list_of_events
+
+def ip_continent_events(ip_addr, user_id):
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
     continent = GeoIPup.country_continents.get(country, "N/A")
@@ -143,13 +196,25 @@ def ip_continent_events(ip_addr):
             other_countries_on_continent.append(a[0])
 
     events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent))
-    return events
+# filter to display only events that the user is allowed to see
+    final_list_of_events = list()
+    for e in events:
+            if (e.id in list_events_user_is_allowed_to_see(user_id)) & (e.id not in user_filters_events_id_list(user_id)):
+                final_list_of_events.append(e)
+    return final_list_of_events
 
-def landless_events():
+def landless_events(user_id):
     events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=None))
-    return events
+# filter to display only events that the user is allowed to see
+    final_list_of_events = list()
+    for e in events:
+            if (e.id in list_events_user_is_allowed_to_see(user_id)) & (e.id not in user_filters_events_id_list(user_id)):
+                final_list_of_events.append(e)
+    return final_list_of_events
 
-def list_search_get(q):
+#------------------------------------------------------------------------------
+
+def list_search_get(q, user_id, only_future):
         """
         This function takes a query entered into the search as an argument and returns a dictionary containing the "errormessage" and "list_of_events"
         """
@@ -178,7 +243,7 @@ def list_search_get(q):
                     tpart_to = tpart_list[1]
                 if len(tpart_list)>2:
                     errormessage = _("You have submitted an invalid search - one of your time ranges contain more then 2 elements")
-                    search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                    search_dict = {'errormessage': errormessage, 'list_of_events': list()}
                     return search_dict
 
                 if re.match('@', tpart_from) is not None:
@@ -189,7 +254,7 @@ def list_search_get(q):
                 tpart_from_diff = tpart_from[divi:]
                 if re.search('^\d+-', tpart_from_diff) is not None:
                     errormessage = _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date")
-                    search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                    search_dict = {'errormessage': errormessage, 'list_of_events': list()}
                     return search_dict
                 try:
                     tpart_from_diff = int(tpart_from_diff)
@@ -204,7 +269,7 @@ def list_search_get(q):
                 tpart_to_diff = tpart_to[divi:]
                 if re.search('^\d+-', tpart_to_diff) is not None:
                         errormessage = _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'to' date")
-                        search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                        search_dict = {'errormessage': errormessage, 'list_of_events': list()}
                         return search_dict
                 try:
                     tpart_to_diff = int(tpart_to_diff)
@@ -221,14 +286,14 @@ def list_search_get(q):
                     tpart_to_date_valid    = datetime.strptime(tpart_to_date,   "%Y-%m-%d")
                 except ValueError:
                         errormessage = _("You have submitted an invalid search - one of your dates is in invalid format or is not a date at all")
-                        search_dict = {'errormessage': errormessage, 'list_of_events': ''}
+                        search_dict = {'errormessage': errormessage, 'list_of_events': list()}
                         return search_dict
 
                 tpart_from_final = tpart_from_date_valid + timedelta(days=tpart_from_diff)
                 tpart_to_final   = tpart_to_date_valid   + timedelta(days=tpart_to_diff)
 
-                if tpart_scope == 'start': time_limiters |= Q(start__range=(tpart_from_final,tpart_to_final))
-                if tpart_scope == 'dl':    time_limiters |= Q(event_of_deadline__deadline__range=(tpart_from_final,tpart_to_final))
+                if tpart_scope == 'start': time_limiters |= Q(start__range=(tpart_from_final, tpart_to_final))
+                if tpart_scope == 'dl':    time_limiters |= Q(event_of_deadline__deadline__range=(tpart_from_final, tpart_to_final))
 ###############################################################################
             elif re.match("[\-\w]*$", qpart):
 ###############################################################################
@@ -287,18 +352,28 @@ def list_search_get(q):
 ###############################################################################
             else:
                 errormessage = _("You have submitted an invalid search - check your query format and try again")
-                search_dict = {'errormessage': errormessage, 'list_of_events': None}
+                search_dict = {'errormessage': errormessage, 'list_of_events': list()}
                 return search_dict
 
 # apply the filter to the search results
         events = events & Event.objects.filter(time_limiters)
+
+        if only_future == 1:
+            events = events & Event.objects.filter(start__gte=datetime.now())
+
         list_of_events = list(events)
 
 # make the list of events unique
         list_of_events = list(set(list_of_events))
         list_of_events.sort(key=lambda x: sorting_dictionary[x.id], reverse=True)
 
-        search_dict = {'errormessage': None, 'list_of_events': list_of_events}
+# filter to display only events that the user is allowed to see
+        final_list_of_events = list()
+        for e in list_of_events:
+            if e.id in list_events_user_is_allowed_to_see(user_id):
+                final_list_of_events.append(e)
+
+        search_dict = {'errormessage': None, 'list_of_events': final_list_of_events}
         return search_dict
 
 def filter_list(user_id):
@@ -307,8 +382,9 @@ def filter_list(user_id):
     flist = list(f)
     list_of_filters = list()
     for fff in flist:
-        search_results = list_search_get(fff.query)['list_of_events']
-        search_error = list_search_get(fff.query)['errormessage']
+        search_get = list_search_get(fff.query, user_id, 1)
+        search_results = search_get['list_of_events']
+        search_error = search_get['errormessage']
         fff_dict = dict()
         fff_dict['id'] = fff.id
         fff_dict['name'] = fff.name
@@ -327,4 +403,3 @@ def filter_list(user_id):
         del fff_dict
         del search_error
     return list_of_filters
-
