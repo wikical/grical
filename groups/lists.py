@@ -12,24 +12,27 @@ from tagging.models import TaggedItem, Tag
 from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group
 
-def all_events_in_user_groups(user_id):
+def all_events_in_user_groups(user_id, limit):
     """
     This function returns a list of dictionaries, which contain the group name and a list of events
     """
     finlist = list()
     if (user_id is None):
-        return None
+        return list()
     else:
         u = User.objects.get(id=user_id)
         groups = Group.objects.filter(membership__user=u)
         if len(groups) == 0:
-            return None
+            return list()
         else:
             for g in groups:
                 dle = {}
                 dle['group_name'] = g.name
                 el = list()
-                events = Event.objects.filter(group=g)[0:5]
+                if limit > 0:
+                    events = Event.objects.filter(group=g)[0:limit]
+                else:
+                    events = Event.objects.filter(group=g)
                 for e in events:
                     el.append(e)
                 dle['el'] = el

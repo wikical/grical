@@ -25,35 +25,32 @@ def root(request):
     """
     Generates the root (^/$) view of the website
     """
+    user_id = request.user.id
+
     if request.user.is_authenticated():
         event_form = SimplifiedEventForm()
-#        coming_events = Event.objects.filter( Q(start__gte=datetime.now()) & ( Q(public_view=True) | Q(user=request.user)) )[:100]
-#        past_events   = Event.objects.filter( Q(start__lt=datetime.now()) & ( Q(public_view=True) | Q(user=request.user)) )[:100]
-
-        events = user_filters_events_list(request.user.id)
-
+        events = user_filters_events_list(user_id)
     else:
         event_form = SimplifiedEventFormAnonymous()
-        events = Event.objects.filter(start__gte=datetime.now()).exclude(public_view=False)[:100]
+        events = Event.objects.none()
 
     if len(events) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events)
-        ip_country_event_list = ip_country_events(request.META.get('REMOTE_ADDR'))[0:add_thismany]
+        ip_country_event_list = ip_country_events(request.META.get('REMOTE_ADDR'), user_id)[0:add_thismany]
     else:
-        ip_country_event_list = None
+        ip_country_event_list = list()
 
     if len(events) + len(ip_country_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list)
-        ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'))[0:add_thismany]
+        ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'), user_id)[0:add_thismany]
     else:
-        ip_continent_event_list = None
+        ip_continent_event_list = list()
 
     if len(events) + len(ip_country_event_list) + len(ip_continent_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list) - len(ip_continent_event_list)
-        landless_event_list = landless_events()[0:add_thismany]
+        landless_event_list = landless_events(user_id)[0:add_thismany]
     else:
-        landless_event_list = None
-
+        landless_event_list = list()
 
     return render_to_response('root.html', {
             'title': 'Welcome to the CloudCalendar',
@@ -63,7 +60,7 @@ def root(request):
             'ip_country_event_list': ip_country_event_list,
             'ip_continent_event_list': ip_continent_event_list,
             'landless_event_list': landless_event_list,
-            'group_events': all_events_in_user_groups(request.user.id),
+            'group_events': all_events_in_user_groups(request.user.id, 5),
         }, context_instance=RequestContext(request))
 
 # for this decorator, see
