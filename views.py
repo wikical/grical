@@ -18,8 +18,7 @@ from tagging.models import Tag
 from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
-from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, ip_country_events, ip_continent_events, landless_events
-from gridcalendar.groups.lists import all_events_in_user_groups
+from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, ip_country_events, ip_continent_events, landless_events, all_events_in_user_groups, uniq_events_list
 
 def root(request):
     """
@@ -29,39 +28,62 @@ def root(request):
 
     if request.user.is_authenticated():
         event_form = SimplifiedEventForm()
-        events = user_filters_events_list(user_id)
     else:
         event_form = SimplifiedEventFormAnonymous()
-        events = Event.objects.none()
 
+    if request.user.is_authenticated():
+        efl = events_with_user_filters(user_id)
+        uel = uniq_events_list(efl)
+        events = user_filters_events_list(user_id, efl)
+    else:
+        efl = list()
+        uel = list()
+        events = list()
+
+#----------------------------------------
+
+    ip_country_event_list = list()
+    ip_continent_event_list = list()
+    landless_event_list = list()
+
+    """
     if len(events) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events)
-        ip_country_event_list = ip_country_events(request.META.get('REMOTE_ADDR'), user_id)[0:add_thismany]
+        ip_country_event_list = ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel)[0:add_thismany]
     else:
         ip_country_event_list = list()
+    """
 
+    """
     if len(events) + len(ip_country_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list)
-        ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'), user_id)[0:add_thismany]
+        ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'), user_id, uel)[0:add_thismany]
     else:
         ip_continent_event_list = list()
+    """
 
+    """
     if len(events) + len(ip_country_event_list) + len(ip_continent_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
-        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list) - len(ip_continent_event_list)
-        landless_event_list = landless_events(user_id)[0:add_thismany]
-    else:
-        landless_event_list = list()
+        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list, uel) - len(ip_continent_event_list)
+        landless_event_list = landless_events(user_id, add_thismany)
+    """
 
     return render_to_response('root.html', {
             'title': 'Welcome to the CloudCalendar',
             'form': event_form,
             'events': events,
+
 #            hash = hashlib.sha256("%s!%s!%s" % (SECRET_KEY, filter_id, request.user.id)).hexdigest()
+
             'ip_country_event_list': ip_country_event_list,
             'ip_continent_event_list': ip_continent_event_list,
             'landless_event_list': landless_event_list,
-            'group_events': all_events_in_user_groups(request.user.id, 5),
+
+#            'group_events': all_events_in_user_groups(request.user.id, 5),
+            'group_events': list(),
         }, context_instance=RequestContext(request))
+
+
 
 # for this decorator, see
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator

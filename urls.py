@@ -109,7 +109,7 @@ urlpatterns += patterns('',
     (r'^g/quit/(?P<group_id>\d+)/$',                'groups.views.quit_group_ask'),
     (r'^g/quit/(?P<group_id>\d+)/confirm/$',        'groups.views.quit_group_sure'),
 # adding events to groups:
-    (r'^e/(?P<event_id>\d+)/group/$',               'groups.views.add_event'),
+    (r'^e/group/(?P<event_id>\d+)/$',               'groups.views.add_event'),
 # list of groups:
     (r'^p/groups/$',                                'groups.views.list_my_groups'),
 )

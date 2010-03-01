@@ -23,66 +23,228 @@ from tagging.models import Tag, TaggedItem
 from gridcalendar.settings import SECRET_KEY
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
-from gridcalendar.groups.lists import all_events_in_user_groups
+from gridcalendar.events.functions import is_user_in_group, is_event_viewable_by_user
+from gridcalendar.groups.models import Group
 
-def all_events_in_user_filters(user_id):
+def all_events_in_user_groups(user_id, limit):
     """
-    returns a list of dictionaries, which contain the filter name and a list of events
+    This function returns a list of dictionaries, which contain the group name and a list of events
     """
     finlist = list()
     if (user_id is None):
-        return None
+        return list()
     else:
         u = User.objects.get(id=user_id)
-        filters = Filter.objects.filter(user=u)
-        if len(filters) == 0:
+        groups = Group.objects.filter(membership__user=u)
+        if len(groups) == 0:
             return list()
         else:
-            for f in filters:
+            for g in groups:
                 dle = {}
-                dle['filter_name'] = f.name
+                dle['group_name'] = g.name
                 el = list()
-                s = list_search_get(f.query, user_id)
-                events = s['list_of_events']
+                if limit > 0:
+                    events = Event.objects.filter(group=g)[0:limit]
+                else:
+                    events = Event.objects.filter(group=g)
                 for e in events:
                     el.append(e)
                 dle['el'] = el
                 finlist.append(dle)
             return finlist
 
+
+def list_search_get(q, user_id, only_future):
+    """
+    This function takes a query entered into the search as an argument and returns a list of events
+    """
+    def time_limiter_get(tpart):
+        tpart_scope = 'start'
+        if re.match('dl:', tpart) is not None:
+            tpart = re.sub('dl:', '', tpart, 1)
+            tpart_scope = 'dl'
+
+        tpart_list = tpart.split(":")
+        if len(tpart_list)==1:
+            tpart_from = tpart_list[0]
+            tpart_to = tpart_list[0]
+        if len(tpart_list)==2:
+            tpart_from = tpart_list[0]
+            tpart_to = tpart_list[1]
+        if len(tpart_list)>2:
+            raise ValueError(_("You have submitted an invalid search - one of your time ranges contain more then 2 elements."))
+
+        if re.match('@', tpart_from) is not None:
+            divi = 1
+        else:
+            divi = 10
+        tpart_from_date = tpart_from[0:divi]
+        tpart_from_diff = tpart_from[divi:]
+        if re.search('^\d+-', tpart_from_diff) is not None:
+            raise ValueError(_("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date."))
+
+        try:
+            tpart_from_diff = int(tpart_from_diff)
+        except ValueError:
+            tpart_from_diff = 0
+
+        if re.match('@', tpart_to) is not None:
+            divi = 1
+        else:
+            divi = 10
+        tpart_to_date = tpart_to[0:divi]
+        tpart_to_diff = tpart_to[divi:]
+        if re.search('^\d+-', tpart_to_diff) is not None:
+            raise ValueError(_("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'to' date."))
+        try:
+            tpart_to_diff = int(tpart_to_diff)
+        except ValueError:
+            tpart_to_diff = 0
+
+        if tpart_from_date == '@':  tpart_from_date = datetime.date.today().strftime("%Y-%m-%d")
+        if tpart_to_date   == '@':  tpart_to_date   = datetime.date.today().strftime("%Y-%m-%d")
+        if tpart_from_date == '':   tpart_from_date = '0001-01-01'
+        if tpart_to_date   == '':   tpart_to_date   = '9999-12-31'
+
+        try:
+            tpart_from_date_valid  = datetime.strptime(tpart_from_date, "%Y-%m-%d")
+            tpart_to_date_valid    = datetime.strptime(tpart_to_date,   "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(_("You have submitted an invalid search - one of your dates is in invalid format or is not a date at all."))
+
+        tpart_from_final = tpart_from_date_valid + timedelta(days=tpart_from_diff)
+        tpart_to_final   = tpart_to_date_valid   + timedelta(days=tpart_to_diff)
+
+        if tpart_scope == 'start':
+            return Q(start__range=(tpart_from_final, tpart_to_final))
+        elif tpart_scope == 'dl':
+            return Q(event_of_deadline__deadline__range=(tpart_from_final, tpart_to_final))
+        else:
+            assert False
+
+    def qpart_query(qpart):
+        events_titl = Event.objects.none()
+        if qpart.find(":") == -1 or re.match('titl:', qpart) is not None:
+            qpart_titl = re.sub('titl:', '', qpart, 1)
+            events_titl = Event.objects.filter(title__icontains=qpart_titl)
+            for iii in events_titl:
+                sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
+
+        events_desc = Event.objects.none()
+        if qpart.find(":") == -1 or re.match('desc:', qpart) is not None:
+            qpart_desc = re.sub('desc:', '', qpart, 1)
+            events_desc = Event.objects.filter(description__icontains=qpart_desc)
+            for iii in events_desc:
+                sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
+
+        events_acro = Event.objects.none()
+        if qpart.find(":") == -1 or re.match('acro:', qpart) is not None:
+            qpart_acro = re.sub('acro:', '', qpart, 1)
+            events_acro = Event.objects.filter(acro__iexact=qpart_acro)
+            for iii in events_acro:
+                sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
+
+        events_land = Event.objects.none()
+        if qpart.find(":") == -1 or re.match('land:', qpart) is not None:
+            qpart_land = re.sub('land:', '', qpart, 1)
+            try:
+                events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart_land])
+            except KeyError:
+                events_land = Event.objects.none()
+            for iii in events_land:
+                sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
+
+        events_city = Event.objects.none()
+        if qpart.find(":") == -1 or re.match('city:', qpart) is not None:
+            qpart_city = re.sub('city:', '', qpart, 1)
+            events_city = Event.objects.filter(city__iexact=qpart_city)
+            for iii in events_city:
+                sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
+
+        events_tagg = Event.objects.none()
+        if qpart.find(":") == -1 or re.match('tags:', qpart) is not None:
+            qpart_tagg = re.sub('tags:', '', qpart, 1)
+            events_tagg = TaggedItem.objects.get_union_by_model(Event, qpart_tagg)
+            for iii in events_tagg:
+                sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
+
+        return events_titl | events_desc | events_acro | events_land | events_city | events_tagg
+
+    # initialize a lookup dictionary, events instance and some empty objects:
+    country_to_id_dict = dict((landtable[1][:].lower(), landtable[0]) for landtable in COUNTRIES)
+    events = Event.objects.none()
+    time_limiters = Q()
+    sorting_dictionary = {}
+
+    for qpart in q.split(" "):
+        if   re.match("(dl:)?(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*(:(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*)?$", qpart):
+            time_limiters |= time_limiter_get(qpart)
+        elif re.match("[\-\w]*$", qpart):
+            events = events | qpart_query(qpart)
+        else:
+            raise ValueError(_("You have submitted an invalid search - check your query format and try again."))
+
+    # apply the time limiting filters to the search results
+    events = events & Event.objects.filter(time_limiters)
+
+    # if querying only future events, filter the results
+    if only_future == 1:
+        events = events & Event.objects.filter(start__gte=datetime.now())
+
+    # transform the model objects to a list
+    list_of_events = list(events)
+
+    # make the list of events unique
+    list_of_events = list(set(list_of_events))
+
+    # sort the list of events by weigth
+    list_of_events.sort(key=lambda x: sorting_dictionary[x.id], reverse=True)
+
+    # filter to display only events that the user is allowed to see
+    final_list_of_events = list()
+    for e in list_of_events:
+        if is_event_viewable_by_user(e.id, user_id):
+            final_list_of_events.append(e)
+
+    final_list_of_events = list_of_events
+
+    return final_list_of_events
+
+
 def events_with_user_filters(user_id):
     """
     returns a list of dictionaries, which contain 'event_id' and 'filter_id'
     """
-    if (user_id is None):
+    try:
+        u = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return None
+
+    filter_list = Filter.objects.filter(user=u)
+    l = len(filter_list)
+    if l == 0:
         return list()
     else:
-        u = User.objects.get(id=user_id)
-        filter_list = Filter.objects.filter(user=u)
-        if len(filter_list) == 0:
-            return None
-        else:
-            l = len(filter_list)
-            finlist = list()
-            for filter in filter_list:
-                event_query = list_search_get(filter.query, user_id, 1)
-                if event_query['errormessage'] is not None:
-                    return None
-                else:
-                    event_list = event_query['list_of_events']
-                    for event in event_list:
-                        event_dict = {}
-                        event_dict['filter_id'] = filter.id
-                        event_dict['event_id'] = event.id
-                        finlist.append(event_dict)
-            return finlist
+        finlist = list()
+        for filter in filter_list:
+            try:
+                event_list = list_search_get(filter.query, user_id, 1)
+            except:
+                return list()
+            for event in event_list:
+                event_dict = {}
+                event_dict['filter_id'] = filter.id
+                event_dict['event_id'] = event.id
+                finlist.append(event_dict)
+        return finlist
+
 
 def uniq_events_list(events_filters_list):
     """
     returns
     """
     if events_filters_list is None:
-        return list()
+        return None
 
     l = list()
     for event in events_filters_list:
@@ -90,6 +252,7 @@ def uniq_events_list(events_filters_list):
         if id not in l:
             l.append(id)
     return l
+
 
 def filters_matching_event(events_filters_list, event_id):
     """
@@ -109,35 +272,11 @@ def filters_matching_event(events_filters_list, event_id):
             l.append(f_dict)
     return l
 
-#------------------------------------------------------------------------------
 
-def list_events_user_is_allowed_to_see(uuu):
-    l = list()
-
-    events_public = Event.objects.filter(public_view=True)
-    for e in events_public:
-        l.append(e.id)
-
-    events_user = Event.objects.filter(user__id=uuu)
-    for e in events_user:
-        l.append(e.id)
-
-    for lod in all_events_in_user_groups(uuu, -1):
-        for e in lod['el']:
-            l.append(e.id)
-
-    return l
-
-#------------------------------------------------------------------------------
-
-def user_filters_events_list(user_id):
-    """
-    returns
-    """
-    events_filters_list = events_with_user_filters(user_id)
+def user_filters_events_list(user_id, events_filters_list):
 
     if events_filters_list is None:
-        return list()
+        return None
 
     if len(events_filters_list) == 0:
         return list()
@@ -157,36 +296,27 @@ def user_filters_events_list(user_id):
         event_list.append(event_dict)
     return event_list[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
 
-def user_filters_events_id_list(user_id):
-    """
-    returns
-    """
-    events_filters_list = events_with_user_filters(user_id)
 
-    if events_filters_list is None:
-        return list()
 
-    if len(events_filters_list) == 0:
-        return list()
+#------------------------------------------------------------------------------
 
-    event_list = list()
-    for event_id in uniq_events_list(events_filters_list):
-        event_list.append(event_id)
-    return event_list[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
-
-def ip_country_events(ip_addr, user_id):
+def ip_country_events(ip_addr, user_id, uel):
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
+
+    #TODO: don't mass-copy events from db to memory!
     events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country))
 
-# filter to display only events that the user is allowed to see
+    # filter to display only events that the user is allowed to see
     final_list_of_events = list()
+
     for e in events:
-            if (e.id in list_events_user_is_allowed_to_see(user_id)) & (e.id not in user_filters_events_id_list(user_id)):
-                final_list_of_events.append(e)
+        if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
+            final_list_of_events.append(e)
+
     return final_list_of_events
 
-def ip_continent_events(ip_addr, user_id):
+def ip_continent_events(ip_addr, user_id, uel):
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
     continent = GeoIPup.country_continents.get(country, "N/A")
@@ -195,186 +325,51 @@ def ip_continent_events(ip_addr, user_id):
         if a[1] == continent and not a[0] == country:
             other_countries_on_continent.append(a[0])
 
+    #TODO: don't mass-copy events from db to memory!
     events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent))
-# filter to display only events that the user is allowed to see
+
+    # filter to display only events that the user is allowed to see
     final_list_of_events = list()
+
     for e in events:
-            if (e.id in list_events_user_is_allowed_to_see(user_id)) & (e.id not in user_filters_events_id_list(user_id)):
-                final_list_of_events.append(e)
+        if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
+            final_list_of_events.append(e)
+
     return final_list_of_events
 
-def landless_events(user_id):
+def landless_events(user_id, total, uel):
+
+    #TODO: don't mass-copy events from db to memory!
     events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=None))
-# filter to display only events that the user is allowed to see
+
     final_list_of_events = list()
+    events_appended = 0
+
     for e in events:
-            if (e.id in list_events_user_is_allowed_to_see(user_id)) & (e.id not in user_filters_events_id_list(user_id)):
-                final_list_of_events.append(e)
+        if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
+            final_list_of_events.append(e)
+            events_appended =+ 1
+        if events_appended >= total:
+            break
+
     return final_list_of_events
 
 #------------------------------------------------------------------------------
 
-def list_search_get(q, user_id, only_future):
-        """
-        This function takes a query entered into the search as an argument and returns a dictionary containing the "errormessage" and "list_of_events"
-        """
-# initialize a lookup dictionary, events instance and an od list:
-        country_to_id_dict = dict((landtable[1][:].lower(), landtable[0]) for landtable in COUNTRIES)
-        events = Event.objects.none()
-        time_limiters = Q()
-        sorting_dictionary = {}
-        errormessage = None
+def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events):
+    g = GeoIP()
+    country = g.country(ip_addr)['country_code']
 
-        for qpart in q.split(" "):
-            if re.match("(dl:)?(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*(:(\d\d\d\d\-\d\d\-\d\d|@)[+\-]?(\d)*)?$", qpart):
-###############################################################################
-                tpart = qpart
-                tpart_scope = 'start'
-                if re.match('dl:', tpart) is not None:
-                    tpart = re.sub('dl:', '', tpart, 1)
-                    tpart_scope = 'dl'
+    events_appended = 0
+    while events_appended < max_events :
+        # get 1 event at a time!
+        next_event = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0]
+        events_appended =+ 1
 
-                tpart_list = tpart.split(":")
-                if len(tpart_list)==1:
-                    tpart_from = tpart_list[0]
-                    tpart_to = tpart_list[0]
-                if len(tpart_list)==2:
-                    tpart_from = tpart_list[0]
-                    tpart_to = tpart_list[1]
-                if len(tpart_list)>2:
-                    errormessage = _("You have submitted an invalid search - one of your time ranges contain more then 2 elements")
-                    search_dict = {'errormessage': errormessage, 'list_of_events': list()}
-                    return search_dict
 
-                if re.match('@', tpart_from) is not None:
-                    divi = 1
-                else:
-                    divi = 10
-                tpart_from_date = tpart_from[0:divi]
-                tpart_from_diff = tpart_from[divi:]
-                if re.search('^\d+-', tpart_from_diff) is not None:
-                    errormessage = _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'from' date")
-                    search_dict = {'errormessage': errormessage, 'list_of_events': list()}
-                    return search_dict
-                try:
-                    tpart_from_diff = int(tpart_from_diff)
-                except ValueError:
-                    tpart_from_diff = 0
 
-                if re.match('@', tpart_to) is not None:
-                    divi = 1
-                else:
-                    divi = 10
-                tpart_to_date = tpart_to[0:divi]
-                tpart_to_diff = tpart_to[divi:]
-                if re.search('^\d+-', tpart_to_diff) is not None:
-                        errormessage = _("You have submitted an invalid search - you are trying to add or subtract more than one value from a 'to' date")
-                        search_dict = {'errormessage': errormessage, 'list_of_events': list()}
-                        return search_dict
-                try:
-                    tpart_to_diff = int(tpart_to_diff)
-                except ValueError:
-                    tpart_to_diff = 0
+#------------------------------------------------------------------------------
 
-                if tpart_from_date == '@':  tpart_from_date = datetime.date.today().strftime("%Y-%m-%d")
-                if tpart_to_date   == '@':  tpart_to_date   = datetime.date.today().strftime("%Y-%m-%d")
-                if tpart_from_date == '':   tpart_from_date = '0001-01-01'
-                if tpart_to_date   == '':   tpart_to_date   = '9999-12-31'
-
-                try:
-                    tpart_from_date_valid  = datetime.strptime(tpart_from_date, "%Y-%m-%d")
-                    tpart_to_date_valid    = datetime.strptime(tpart_to_date,   "%Y-%m-%d")
-                except ValueError:
-                        errormessage = _("You have submitted an invalid search - one of your dates is in invalid format or is not a date at all")
-                        search_dict = {'errormessage': errormessage, 'list_of_events': list()}
-                        return search_dict
-
-                tpart_from_final = tpart_from_date_valid + timedelta(days=tpart_from_diff)
-                tpart_to_final   = tpart_to_date_valid   + timedelta(days=tpart_to_diff)
-
-                if tpart_scope == 'start': time_limiters |= Q(start__range=(tpart_from_final, tpart_to_final))
-                if tpart_scope == 'dl':    time_limiters |= Q(event_of_deadline__deadline__range=(tpart_from_final, tpart_to_final))
-###############################################################################
-            elif re.match("[\-\w]*$", qpart):
-###############################################################################
-                events_titl = Event.objects.none()
-                if qpart.find(":") == -1 or re.match('titl:', qpart) is not None:
-                    qpart_titl = re.sub('titl:', '', qpart, 1)
-                    events_titl = Event.objects.filter(title__icontains=qpart_titl)
-                    for iii in events_titl:
-                        index = iii.id
-                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
-
-                events_desc = Event.objects.none()
-                if qpart.find(":") == -1 or re.match('desc:', qpart) is not None:
-                    qpart_desc = re.sub('desc:', '', qpart, 1)
-                    events_desc = Event.objects.filter(description__icontains=qpart_desc)
-                    for iii in events_desc:
-                        index = iii.id
-                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
-
-                events_acro = Event.objects.none()
-                if qpart.find(":") == -1 or re.match('acro:', qpart) is not None:
-                    qpart_acro = re.sub('acro:', '', qpart, 1)
-                    events_acro = Event.objects.filter(acro__iexact=qpart_acro)
-                    for iii in events_acro:
-                        index = iii.id
-                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
-
-                events_land = Event.objects.none()
-                if qpart.find(":") == -1 or re.match('land:', qpart) is not None:
-                    qpart_land = re.sub('land:', '', qpart, 1)
-                    try:
-                        events_land = Event.objects.filter(country__iexact=country_to_id_dict[qpart_land])
-                    except KeyError:
-                        events_land = Event.objects.none()
-                    for iii in events_land:
-                        index = iii.id
-                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
-
-                events_city = Event.objects.none()
-                if qpart.find(":") == -1 or re.match('city:', qpart) is not None:
-                    qpart_city = re.sub('city:', '', qpart, 1)
-                    events_city = Event.objects.filter(city__iexact=qpart_city)
-                    for iii in events_city:
-                        index = iii.id
-                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
-
-                events_tagg = Event.objects.none()
-                if qpart.find(":") == -1 or re.match('tags:', qpart) is not None:
-                    qpart_tagg = re.sub('tags:', '', qpart, 1)
-                    events_tagg = TaggedItem.objects.get_union_by_model(Event, qpart_tagg)
-                    for iii in events_tagg:
-                        index = iii.id
-                        sorting_dictionary[index]=sorting_dictionary.get(index,0)+1
-
-                events = events | events_titl | events_desc | events_acro | events_land | events_city | events_tagg
-###############################################################################
-            else:
-                errormessage = _("You have submitted an invalid search - check your query format and try again")
-                search_dict = {'errormessage': errormessage, 'list_of_events': list()}
-                return search_dict
-
-# apply the filter to the search results
-        events = events & Event.objects.filter(time_limiters)
-
-        if only_future == 1:
-            events = events & Event.objects.filter(start__gte=datetime.now())
-
-        list_of_events = list(events)
-
-# make the list of events unique
-        list_of_events = list(set(list_of_events))
-        list_of_events.sort(key=lambda x: sorting_dictionary[x.id], reverse=True)
-
-# filter to display only events that the user is allowed to see
-        final_list_of_events = list()
-        for e in list_of_events:
-            if e.id in list_events_user_is_allowed_to_see(user_id):
-                final_list_of_events.append(e)
-
-        search_dict = {'errormessage': None, 'list_of_events': final_list_of_events}
-        return search_dict
 
 def filter_list(user_id):
     u = User.objects.get(id=user_id)
@@ -403,3 +398,30 @@ def filter_list(user_id):
         del fff_dict
         del search_error
     return list_of_filters
+
+
+def all_events_in_user_filters(user_id):
+    """
+    returns a list of dictionaries, which contain the filter name and a list of events
+    """
+    finlist = list()
+    if (user_id is None):
+        return None
+    else:
+        u = User.objects.get(id=user_id)
+        filters = Filter.objects.filter(user=u)
+        if len(filters) == 0:
+            return list()
+        else:
+            for f in filters:
+                dle = {}
+                dle['filter_name'] = f.name
+                el = list()
+                s = list_search_get(f.query, user_id, 1)
+                events = s['list_of_events']
+                for e in events:
+                    el.append(e)
+                dle['el'] = el
+                finlist.append(dle)
+            return finlist
+

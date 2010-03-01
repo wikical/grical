@@ -13,7 +13,7 @@ from gridcalendar.settings import SECRET_KEY
 from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
 from gridcalendar.groups.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
-from gridcalendar.groups.lists import all_events_in_user_groups
+from gridcalendar.events.lists import all_events_in_user_groups
 
 def create(request):
     if not request.user.is_authenticated():

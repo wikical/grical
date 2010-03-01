@@ -8,7 +8,7 @@ TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     # !!!!!! REPLACE WITH YOUR USERNAME AND EMAIL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ('ogai', 'cloca-django@example.com'),
+    ('ogai', 'django@example.com'),
 )
 
 MANAGERS = ADMINS
