@@ -6,9 +6,9 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
-from gridcalendar.tagging.models import Tag
-from gridcalendar.tagging.fields import TagField
-from gridcalendar.tagging import register
+from tagging.models import Tag
+from tagging.fields import TagField
+from tagging import register
 from django.utils.translation import ugettext_lazy as _
 
 
