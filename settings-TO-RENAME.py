@@ -124,9 +124,9 @@ INSTALLED_APPS = (
 #    'django.contrib.gis',
     'django.contrib.databrowse',
     'django.contrib.admindocs',
-    'gridcalendar.tagging',
-    'gridcalendar.registration',
     'django.contrib.comments',
+    'tagging',
+    'registration',
     'debug_toolbar',
 )
 
