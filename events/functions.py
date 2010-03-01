@@ -17,6 +17,7 @@ from tagging.models import Tag, TaggedItem
 
 from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
+from gridcalendar.groups.models import Group
 
 def getEventForm(user):
     """returns a simplied event form with or without the public field"""
@@ -95,4 +96,24 @@ def StringToBool(s):
         return s
     s = str(s).strip().lower()
     return not s in ['false','f','n','0','']
+
+def is_user_in_group(user_id, group_id):
+    if len(Membership.objects.filter(user__id__exact=user_id, group__id__exact=group_id)) == 1:
+        return True
+    else:
+        return False
+
+
+def is_event_viewable_by_user(event_id, user_id):
+    event = Event.objects.get(id=event_id)
+    if event.public_view:
+        return True
+    elif event.user.id == user_id:
+        return True
+    else:
+        # iterating over all groups that the event belongs to
+        for g in Group.objects.filter(events__id__exact=event_id):
+            if is_user_in_group(user_id, g.id):
+                return True
+        return False
 

@@ -263,18 +263,22 @@ def list_query(request):
 
 def list_search(request, query):
         q = query.lower()
+        user_id = request.user.id
 
-        search_dict = list_search_get(q)
+        try:
+            search_result = list_search_get(q, user_id, 0)
+        except ValueError, (errmsg):
+            return render_to_response('error.html',
+                {'title': 'error 1', 'message_col1': errmsg, 'query': q},
+                context_instance=RequestContext(request))
 
-        if search_dict['errormessage'] is not None:
-            return render_to_response('error.html', {'title': 'error 1', 'message_col1': search_dict['errormessage'], 'query': q}, context_instance=RequestContext(request))
-        elif len(search_dict['list_of_events']) == 0:
+        if len(search_result) == 0:
             return render_to_response('error.html',
                 {'title': 'error 2', 'message_col1': _("Your search didn't get any result") + ".", 'query': q},
                 context_instance=RequestContext(request))
         else:
             return render_to_response('events/list_search.html',
-                {'title': 'search results', 'events': search_dict['list_of_events'], 'query': q},
+                {'title': 'search results', 'events': search_result, 'query': q},
                 context_instance=RequestContext(request))
 
 def filter_save(request):
