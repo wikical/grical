@@ -40,7 +40,7 @@ def simplified_submission(request):
             e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
                         tags=cd['tags'], public_view=public_view_value)
             e.save()
-            return HttpResponseRedirect('/events/edit/' + str(e.id)) ;
+            return HttpResponseRedirect('/e/edit/' + str(e.id) + '/') ;
             # TODO: look in a thread for all users who wants to receive an email notification and send it
         else:
             return render_to_response('index.html', {'title': 'edit step 1', 'form': sef}, context_instance=RequestContext(request))
