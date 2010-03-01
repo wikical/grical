@@ -6,7 +6,7 @@ import random
 import re
 import sha
 
-from gridcalendar.tagging import register
+from tagging import register
 from gridcalendar.events.models import Event
 
 from django.db import models
@@ -79,34 +79,34 @@ admin.site.register(Group, GroupAdmin)
 class GroupInvitationManager(models.Manager):
     """
     Custom manager for the ``GroupInvitation`` model.
-    
+
     The methods defined here provide shortcuts for account creation
     and activation (including generation and emailing of activation
     keys), and for cleaning out expired Group Invitations.
-    
+
     """
     def activate_invitation(self, activation_key):
         """
         Validate an activation key and adds the corresponding
         ``User`` to the corresponding ``Group`` if valid.
-        
+
         If the key is valid and has not expired, returns a dictionary
         with values ``host``, ``guest``, ``group`` after adding the
         user to the group.
-        
+
         If the key is not valid or has expired, return ``False``.
-        
+
         If the key is valid but the ``User`` is already in the group,
         return ``False``, but set it as administrator if the invitation
         set it but the user wasn't an administrator
-        
+
         If the key is valid but the ``host`` is not an administrator of
         the group, return False.
 
         To prevent membership of a user who has been
         removed by a group administrator after his activation, the activation key is reset to the
         string ``ALREADY_ACTIVATED`` after successful activation.
-        
+
         """
         # Make sure the key we're trying conforms to the pattern of a
         # SHA1 hash; if it doesn't, no point trying to look it up in
@@ -147,7 +147,7 @@ class GroupInvitationManager(models.Manager):
         """
         Create a new invitation and email its activation key to the
         ``guest``.
-        
+
         The activation key will be a
         SHA1 hash, generated from a combination of the ``User``'s
         name and a random salt.
@@ -174,44 +174,44 @@ class GroupInvitationManager(models.Manager):
             ``django.contrib.sites.models.Site`` instance,
             ``host`` will be the user name of the person inviting and
             ``group`` will be the name of the gropu.
-        
+
         """
         salt = sha.new(str(random.random())).hexdigest()[:5]
         activation_key = sha.new(salt+guest.username).hexdigest()
         self.create(host=host,guest=guest,group=group,as_administrator=as_administrator,
                            activation_key=activation_key)
-        
+
         from django.core.mail import send_mail
         current_site = Site.objects.get_current()
-        
+
         subject = render_to_string('groups/invitation_email_subject.txt',
                                    { 'site': current_site })
         # Email subject *must not* contain newlines
         subject = ''.join(subject.splitlines())
-        
+
         message = render_to_string('groups/invitation_email.txt',
                                    { 'activation_key': activation_key,
                                      'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS,
                                      'site': current_site,
                                      'host': host.username,
                                      'group': group.name, })
-        
+
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [guest.email])
-    
-        
+
+
     def delete_expired_invitations(self):
         """
         Remove expired instances of ``GroupInvitation``.
-        
+
         Accounts to be deleted are identified by searching for
         instances of ``GroupInvitation`` with expired activation
         keys.
-        
+
         It is recommended that this method be executed regularly as
         part of your routine site maintenance; this application
         provides a custom management command which will call this
         method, accessible as ``manage.py cleanupgroupinvitation``.
-        
+
         """
         for invitation in self.all():
             if invitation.activation_key_expired():
@@ -222,41 +222,41 @@ class GroupInvitation(models.Model):
     """
     A simple class which stores an activation key for use during
     user group invitations.
-    
+
     Generally, you will not want to interact directly with instances
     of this model; the provided manager includes methods
     for creating and activating invitations, as well as for cleaning
     out group invitations which have never been activated.
-    
+
     """
     ACTIVATED = u"ALREADY_ACTIVATED"
-    
+
     host = models.ForeignKey(User, related_name="host", verbose_name=_('host'))
     guest = models.ForeignKey(User, related_name="guest", verbose_name=_('host'))
     group = models.ForeignKey(Group, verbose_name=_('group'))
     as_administrator = models.BooleanField(_('as administrator'), default=False)
     activation_key = models.CharField(_('activation key'), max_length=40)
-    
+
     # see http://docs.djangoproject.com/en/1.0/topics/db/managers/
     objects = GroupInvitationManager()
-    
+
     class Meta:
 #        unique_together = ("host", "guest", "group")
         verbose_name = _('Group invitation')
         verbose_name_plural = _('Group invitations')
-    
+
     def __unicode__(self):
         return u"group invitation information for group %s for user %s from user %s" % (self.group,
                 self.guest, self.host)
-    
+
     def activation_key_expired(self):
         """
         Determine whether this ``GroupInvitation``'s activation
         key has expired, returning a boolean -- ``True`` if the key
         has expired.
-        
+
         Key expiration is determined by a two-step process:
-        
+
         1. If the user has already activated, the key will have been
            reset to the string ``ALREADY_ACTIVATED``. Re-activating is
            not permitted, and so this method returns ``True`` in this
@@ -269,7 +269,7 @@ class GroupInvitation(models.Model):
            activate their account); if the result is less than or
            equal to the current date, the key has expired and this
            method returns ``True``.
-        
+
         """
         expiration_date = datetime.timedelta(days=settings.ACCOUNT_ACTIVATION_DAYS)
         return self.activation_key == self.ACTIVATED or \
