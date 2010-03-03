@@ -45,3 +45,63 @@ from gridcalendar.groups.models import Group
 #    return l
 
 
+#------------------------------------------------------------------------------
+
+def ip_country_events(ip_addr, user_id, uel):
+
+    g = GeoIP()
+    country = g.country(ip_addr)['country_code']
+
+    #TODO: don't mass-copy events from db to memory!
+    events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country))
+
+    # filter to display only events that the user is allowed to see
+    final_list_of_events = list()
+
+    for e in events:
+        if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
+            final_list_of_events.append(e)
+
+    return final_list_of_events
+
+def ip_continent_events(ip_addr, user_id, uel):
+    g = GeoIP()
+    country = g.country(ip_addr)['country_code']
+
+    continent = GeoIPup.country_continents.get(country, "N/A")
+    other_countries_on_continent = list()
+    for a in GeoIPup.country_continents.items():
+        if a[1] == continent and not a[0] == country:
+            other_countries_on_continent.append(a[0])
+
+    #TODO: don't mass-copy events from db to memory!
+    events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent))
+
+    # filter to display only events that the user is allowed to see
+    final_list_of_events = list()
+
+    for e in events:
+        if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
+            final_list_of_events.append(e)
+
+    return final_list_of_events
+
+def landless_events(user_id, total, uel):
+
+    #TODO: don't mass-copy events from db to memory!
+    events = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=None))
+
+    final_list_of_events = list()
+    events_appended = 0
+
+    for e in events:
+        if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
+            final_list_of_events.append(e)
+            events_appended += 1
+        if events_appended >= total:
+            break
+
+    return final_list_of_events
+
+#------------------------------------------------------------------------------
+

@@ -18,7 +18,7 @@ from tagging.models import Tag
 from gridcalendar.events.models import Event
 from gridcalendar.groups.models import Group
 from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous
-from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, ip_country_events, ip_continent_events, landless_events, all_events_in_user_groups, uniq_events_list
+from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list
 from gridcalendar.events.lists import list_up_to_max_events_ip_country_events
 
 def root(request):
@@ -77,8 +77,8 @@ def root(request):
             'ip_continent_event_list': ip_continent_event_list,
             'landless_event_list': landless_event_list,
 
-#            'group_events': all_events_in_user_groups(request.user.id, 5),
-            'group_events': list(),
+            'group_events': all_events_in_user_groups(request.user.id, 5),
+#            'group_events': list(),
         }, context_instance=RequestContext(request))
 
 
