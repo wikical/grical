@@ -301,6 +301,7 @@ def user_filters_events_list(user_id, events_filters_list):
 #------------------------------------------------------------------------------
 
 def ip_country_events(ip_addr, user_id, uel):
+
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
 
@@ -319,6 +320,7 @@ def ip_country_events(ip_addr, user_id, uel):
 def ip_continent_events(ip_addr, user_id, uel):
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
+
     continent = GeoIPup.country_continents.get(country, "N/A")
     other_countries_on_continent = list()
     for a in GeoIPup.country_continents.items():
@@ -348,7 +350,7 @@ def landless_events(user_id, total, uel):
     for e in events:
         if (is_event_viewable_by_user(e.id, user_id)) & (e.id not in uel):
             final_list_of_events.append(e)
-            events_appended =+ 1
+            events_appended += 1
         if events_appended >= total:
             break
 
@@ -356,22 +358,41 @@ def landless_events(user_id, total, uel):
 
 #------------------------------------------------------------------------------
 
-def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events):
+def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):
+
+    #TODO: remove this in production version!
+    ip_addr = '85.183.50.38'
+
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
+
+    if mode == 'continent':
+        continent = GeoIPup.country_continents.get(country, "N/A")
+        other_countries_on_continent = list()
+        for a in GeoIPup.country_continents.items():
+            if a[1] == continent and not a[0] == country:
+                other_countries_on_continent.append(a[0])
+
+    if mode == 'landless':
+        country = None
 
     list_of_events = list()
     events_appended = 0
     while events_appended < max_events :
         # get 1 event at a time!
         try:
-            e = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:1].get()
+            if mode == 'continent':
+                e = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:1].get()
+            else:
+                e = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:1].get()
+            print "found event %d" % e.id
             inital_exclude_event_id_list.append(e.id)
             if (is_event_viewable_by_user(e.id, user_id)):
                 list_of_events.append(e)
-                events_appended =+ 1
+                events_appended += 1
         except Event.DoesNotExist:
             return list_of_events
+
     return list_of_events
 
 

@@ -108,6 +108,8 @@ def is_event_viewable_by_user(event_id, user_id):
     event = Event.objects.get(id=event_id)
     if event.public_view:
         return True
+    elif event.user == None:
+        return True
     elif event.user.id == user_id:
         return True
     else:
