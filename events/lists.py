@@ -345,25 +345,23 @@ def filter_list(user_id):
     list_of_filters = list()
     for fff in flist:
         search_get = list_search_get(fff.query, user_id, 1)
-        search_results = search_get['list_of_events']
-        search_error = search_get['errormessage']
+        search_results = search_get
         fff_dict = dict()
         fff_dict['id'] = fff.id
         fff_dict['name'] = fff.name
         fff_dict['query'] = fff.query
         fff_dict['results'] = len(search_results)
-        if search_error == '':
+        try:
             fff_len = len(search_results)
             if fff_len <= 5:
                 show = fff_len
             else:
                 show = 5
             fff_dict['e'] = search_results[0:show]
-        else:
-            fff_dict['errormessage'] = search_error
+        except:
+            raise ValueError
         list_of_filters.append(fff_dict)
         del fff_dict
-        del search_error
     return list_of_filters
 
 
