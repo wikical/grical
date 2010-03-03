@@ -26,32 +26,42 @@ from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDea
 from gridcalendar.events.functions import is_user_in_group, is_event_viewable_by_user
 from gridcalendar.groups.models import Group
 
-def all_events_in_user_groups(user_id, limit):
-    """
-    This function returns a list of dictionaries, which contain the group name and a list of events
-    """
-    finlist = list()
-    if (user_id is None):
-        return list()
-    else:
-        u = User.objects.get(id=user_id)
-        groups = Group.objects.filter(membership__user=u)
-        if len(groups) == 0:
-            return list()
-        else:
-            for g in groups:
-                dle = {}
-                dle['group_name'] = g.name
-                el = list()
-                if limit > 0:
-                    events = Event.objects.filter(group=g)[0:limit]
-                else:
-                    events = Event.objects.filter(group=g)
-                for e in events:
-                    el.append(e)
-                dle['el'] = el
-                finlist.append(dle)
-            return finlist
+
+def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):
+
+    #TODO: remove this in production version!
+    ip_addr = '85.183.50.38'
+
+    g = GeoIP()
+    country = g.country(ip_addr)['country_code']
+
+    if mode == 'continent':
+        continent = GeoIPup.country_continents.get(country, "N/A")
+        other_countries_on_continent = list()
+        for a in GeoIPup.country_continents.items():
+            if a[1] == continent and not a[0] == country:
+                other_countries_on_continent.append(a[0])
+
+    if mode == 'landless':
+        country = None
+
+    list_of_events = list()
+    events_appended = 0
+    while events_appended < max_events :
+        try:
+            if mode == 'continent':
+                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
+            else:
+                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
+            for e in e_list:
+                inital_exclude_event_id_list.append(e.id)
+                if (is_event_viewable_by_user(e.id, user_id)):
+                    list_of_events.append(e)
+                    events_appended += 1
+        except Event.DoesNotExist:
+            return list_of_events
+
+    return list_of_events
 
 
 def list_search_get(q, user_id, only_future):
@@ -297,46 +307,6 @@ def user_filters_events_list(user_id, events_filters_list):
     return event_list[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
 
 
-def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):
-
-    #TODO: remove this in production version!
-    ip_addr = '85.183.50.38'
-
-    g = GeoIP()
-    country = g.country(ip_addr)['country_code']
-
-    if mode == 'continent':
-        continent = GeoIPup.country_continents.get(country, "N/A")
-        other_countries_on_continent = list()
-        for a in GeoIPup.country_continents.items():
-            if a[1] == continent and not a[0] == country:
-                other_countries_on_continent.append(a[0])
-
-    if mode == 'landless':
-        country = None
-
-    list_of_events = list()
-    events_appended = 0
-    while events_appended < max_events :
-        # get 1 event at a time!
-        try:
-            if mode == 'continent':
-                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
-            else:
-                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
-            for e in e_list:
-                inital_exclude_event_id_list.append(e.id)
-                if (is_event_viewable_by_user(e.id, user_id)):
-                    list_of_events.append(e)
-                    events_appended += 1
-        except Event.DoesNotExist:
-            return list_of_events
-
-    return list_of_events
-
-
-#------------------------------------------------------------------------------
-
 
 def filter_list(user_id):
     u = User.objects.get(id=user_id)
@@ -389,4 +359,33 @@ def all_events_in_user_filters(user_id):
                 dle['el'] = el
                 finlist.append(dle)
             return finlist
+
+
+def all_events_in_user_groups(user_id, limit):
+    """
+    This function returns a list of dictionaries, which contain the group name and a list of events
+    """
+    finlist = list()
+    if (user_id is None):
+        return list()
+    else:
+        u = User.objects.get(id=user_id)
+        groups = Group.objects.filter(membership__user=u)
+        if len(groups) == 0:
+            return list()
+        else:
+            for g in groups:
+                dle = {}
+                dle['group_name'] = g.name
+                el = list()
+                if limit > 0:
+                    events = Event.objects.filter(group=g)[0:limit]
+                else:
+                    events = Event.objects.filter(group=g)
+                for e in events:
+                    el.append(e)
+                dle['el'] = el
+                finlist.append(dle)
+            return finlist
+
 
