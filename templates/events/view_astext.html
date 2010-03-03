@@ -8,7 +8,7 @@
 
 <p>
 
-<a href="/ical/event/{{event_id}}/">
+<a href="/e/show/{{event_id}}/ical/">
 iCal {% trans "for this event" %}
 </a>
 
@@ -27,11 +27,11 @@ iCal {% trans "for this event" %}
 </pre>
 </div>
 
-<a href="/events/edit/{{ event_id }}/"><span class="field_title">{% trans "edit this event with webforms" %}</span></a>
+<a href="/e/edit/{{ event_id }}/"><span class="field_title">{% trans "edit this event with webforms" %}</span></a>
 &nbsp;
-<a href="/events/edit_astext/{{ event_id }}/"><span class="field_title">{% trans "edit this event as text" %}</span></a>
+<a href="/e/edit/{{ event_id }}/raw/"><span class="field_title">{% trans "edit this event as text" %}</span></a>
 &nbsp;
-<a href="/groups/add_event/{{ event_id }}/"><span class="field_title">{% trans "add this event to a group" %}</span></a>
+<a href="/e/group/{{ event_id }}/"><span class="field_title">{% trans "add this event to a group" %}</span></a>
 
 
 <p>

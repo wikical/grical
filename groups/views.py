@@ -142,7 +142,12 @@ def invite(request, group_id):
             form = InviteToGroupForm(data=formdata)
             if form.is_valid():
                 username = form.cleaned_data['username']
-                u = User.objects.get(username=username)
+                try:
+                    u = User.objects.get(username=username)
+                except User.DoesNotExist:
+                    return render_to_response('error.html',
+                        {'title': 'error', 'message_col1': _("There is no user with the username: ") + username + "."},
+                        context_instance=RequestContext(request))
                 GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
                 return HttpResponseRedirect('/p/groups/')
             else:
@@ -159,7 +164,9 @@ def invite(request, group_id):
                 context_instance=RequestContext(request))
 
 def activate(request, activation_key):
-    """A user clicks on activation link"""
+    """
+    A user clicks on activation link
+    """
     i = GroupInvitation.objects.get(activation_key=activation_key)
     group_id = i.id
     a = GroupInvitation.objects.activate_invitation(activation_key)
