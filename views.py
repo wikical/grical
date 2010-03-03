@@ -50,23 +50,21 @@ def root(request):
     if len(events) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events)
         #ip_country_event_list = ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel)[0:add_thismany]
-        ip_country_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany)
+        ip_country_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'country')
     else:
         ip_country_event_list = list()
 
-    """
     if len(events) + len(ip_country_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list)
-        ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'), user_id, uel)[0:add_thismany]
+        #ip_continent_event_list = ip_continent_events(request.META.get('REMOTE_ADDR'), user_id, uel)[0:add_thismany]
+        ip_continent_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'continent')
     else:
         ip_continent_event_list = list()
-    """
 
-    """
     if len(events) + len(ip_country_event_list) + len(ip_continent_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list, uel) - len(ip_continent_event_list)
-        landless_event_list = landless_events(user_id, add_thismany)
-    """
+        #landless_event_list = landless_events(user_id, add_thismany)
+        landless_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'landless')
 
     return render_to_response('root.html', {
             'title': 'Welcome to the CloudCalendar',
