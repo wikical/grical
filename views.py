@@ -76,9 +76,7 @@ def root(request):
             'ip_country_event_list': ip_country_event_list,
             'ip_continent_event_list': ip_continent_event_list,
             'landless_event_list': landless_event_list,
-
             'group_events': all_events_in_user_groups(request.user.id, 5),
-#            'group_events': list(),
         }, context_instance=RequestContext(request))
 
 
