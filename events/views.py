@@ -48,6 +48,8 @@ def simplified_submission(request):
         return HttpResponseRedirect(request.get_host())
 
 def edit(request, event_id):
+
+    # check if the event exists
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
@@ -55,14 +57,32 @@ def edit(request, event_id):
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
+
+    # check if the user is allowed to edit this event
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-    if (not event.public_edit) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
-        return render_to_response('error.html',
-                {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _('You are not allowed to edit the event with the following number') +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
+
+    if (not event.public_edit):
+        if (not request.user.is_authenticated()):
+            return render_to_response('error.html',
+                        {'title': 'error', 'form': getEventForm(request.user),
+                        'message_col1': _('Users which are not logged-in are not allowed to edit the event with number') +
+                        ": " + str(event_id) + ". " +
+                        _("Please log-in and try again") + "."},
+                        context_instance=RequestContext(request))
+        else:
+            if (event.user == None):
+                if (event.user.id != request.user.id):
+                    return render_to_response('error.html',
+                        {'title': 'error', 'form': getEventForm(request.user),
+                        'message_col1': _('You are not allowed to edit the event with the following number') +
+                        ": " + str(event_id) + " " +
+                        _("because you are not logged in with the right account") + "."},
+                        context_instance=RequestContext(request))
+            else:
+                break
+
+
+
     else:
         EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
         EventTimechunkInlineFormSet = inlineformset_factory(Event, EventTimechunk, extra=1)
