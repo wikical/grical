@@ -1,5 +1,5 @@
 syntax: glob
-*.sqlite
+#*.sqlite
 *.pyc
 .*.swp
 syntax: regexp
