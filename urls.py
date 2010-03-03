@@ -89,8 +89,8 @@ urlpatterns += patterns('',
 urlpatterns += patterns('',
 # creating and editing events:
     (r'^e/new/$',                                   'events.views.simplified_submission'),
-    (r'^e/edit/(?P<event_id>\d+)/$',                'events.views.edit'),
-    (r'^e/edit/(?P<event_id>\d+)/raw/$',            'events.views.edit_raw'),
+    url(r'^e/edit/(?P<event_id>\d+)/$',                'events.views.edit', {'raw': False}, name="event_edit"),
+    url(r'^e/edit/(?P<event_id>\d+)/raw/$',            'events.views.edit', {'raw': True}, name="event_edit_raw"),
 # settings
     (r'^p/settings/$',                              'views.settings_page'),
 # filter management:

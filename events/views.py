@@ -47,7 +47,7 @@ def simplified_submission(request):
     else:
         return HttpResponseRedirect(request.get_host())
 
-def edit(request, event_id):
+def edit(request, event_id, raw):
 
     # check if the event exists
     try:
@@ -60,7 +60,6 @@ def edit(request, event_id):
 
     # check if the user is allowed to edit this event
     # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-
     if (not event.public_edit):
         if (not request.user.is_authenticated()):
             return render_to_response('error.html',
@@ -70,7 +69,7 @@ def edit(request, event_id):
                         _("Please log-in and try again") + "."},
                         context_instance=RequestContext(request))
         else:
-            if (event.user == None):
+            if (event.user != None):
                 if (event.user.id != request.user.id):
                     return render_to_response('error.html',
                         {'title': 'error', 'form': getEventForm(request.user),
@@ -78,12 +77,8 @@ def edit(request, event_id):
                         ": " + str(event_id) + " " +
                         _("because you are not logged in with the right account") + "."},
                         context_instance=RequestContext(request))
-            else:
-                break
 
-
-
-    else:
+    if (not raw):
         EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
         EventTimechunkInlineFormSet = inlineformset_factory(Event, EventTimechunk, extra=1)
         EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=1)
@@ -115,27 +110,10 @@ def edit(request, event_id):
             ef_deadline = EventDeadlineInlineFormSet(instance=event)
             templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
             return render_to_response('events/edit.html', templates, context_instance=RequestContext(request))
-
-def edit_raw(request, event_id):
-    try:
-        event = Event.objects.get(pk=event_id)
-    except Event.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': 'error', 'form': getEventForm(request.user),
-                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-                    context_instance=RequestContext(request))
-    # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-    if (not event.public_edit) and ((not request.user.is_authenticated()) or (event.user.id != request.user.id)):
-        return render_to_response('error.html',
-                {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
-    else:
+    elif (raw):
         if request.method == 'POST':
                 if 'event_astext' in request.POST:
-#                    try:
+                    try:
                         t = request.POST['event_astext'].replace(": ", ":")
                         event_attr_list = t.splitlines()
                         event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
@@ -159,7 +137,6 @@ def edit_raw(request, event_id):
                             event_tizo = event_attr_dict['tizo']
                         else:
                             event_tizo = None
-
 
                         event.acro        = event_attr_dict['acro']
                         event.title       = event_attr_dict['titl']
@@ -194,8 +171,8 @@ def edit_raw(request, event_id):
                                 ed.save(force_insert=True)
                         event.save()
                         return HttpResponseRedirect('/e/show/' + event_id + '/')
-#                    except Exception:
-#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+                    except Exception:
+                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
                 else:
                     message = _("You submitted an empty form.")
                     return HttpResponse(message)
