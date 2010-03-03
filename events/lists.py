@@ -360,12 +360,19 @@ def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_eve
     g = GeoIP()
     country = g.country(ip_addr)['country_code']
 
+    list_of_events = list()
     events_appended = 0
     while events_appended < max_events :
         # get 1 event at a time!
-        next_event = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0]
-        events_appended =+ 1
-
+        try:
+            e = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:1].get()
+            inital_exclude_event_id_list.append(e.id)
+            if (is_event_viewable_by_user(e.id, user_id)):
+                list_of_events.append(e)
+                events_appended =+ 1
+        except Event.DoesNotExist:
+            return list_of_events
+    return list_of_events
 
 
 #------------------------------------------------------------------------------
