@@ -29,6 +29,7 @@ from gridcalendar.gridcal.functions import generate_event_textarea, StringToBool
 from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
 from gridcalendar.gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 from gridcalendar.gridcal.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
+from gridcalendar.gridcal.lists import is_event_viewable_by_user
 
 # notice that an anonymous user get a form without the 'public_view' field (simplified)
 
@@ -198,24 +199,16 @@ def show(request, event_id):
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
-    if (not event.public_view) and (event.user.id != request.user.id):
+    if not is_event_viewable_by_user(event_id, request.user.id):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
+                'message_col1': _("You are not allowed to view the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
-        if request.method == 'POST':
-            return render_to_response('error.html',
-                {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
-        else:
-            templates = {'title': 'view event detail', 'event': event }
-            return render_to_response('events/show.html', templates, context_instance=RequestContext(request))
+        templates = {'title': 'view event detail', 'event': event }
+        return render_to_response('events/show.html', templates, context_instance=RequestContext(request))
 
 def view_astext(request, event_id):
     try:
@@ -225,47 +218,22 @@ def view_astext(request, event_id):
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
-    if (not event.public_view) and (event.user.id != request.user.id):
+    if not is_event_viewable_by_user(event_id, request.user.id):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
+                'message_col1': _("You are not allowed to view the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
-        if request.method == 'POST':
-            return render_to_response('error.html',
-                {'title': 'error', 'form': getEventForm(request.user),
-                'message_col1': _("You are not allowed to edit the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
-        else:
-            event_textarea = generate_event_textarea(event)
-            templates = {'title': 'view as text', 'event_textarea': event_textarea, 'event_id': event_id }
-            return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
+        event_textarea = generate_event_textarea(event)
+        templates = {'title': 'view as text', 'event_textarea': event_textarea, 'event_id': event_id }
+        return render_to_response('events/view_astext.html', templates, context_instance=RequestContext(request))
 
 def list_query(request):
     if 'q' in request.GET and request.GET['q']:
         q = request.GET['q'].lower()
         return http.HttpResponseRedirect('/s/' + q + '/')
-
-#        search_dict = list_search_get(q)
-#
-#        if search_dict['errormessage'] is not None:
-#            return render_to_response('error.html', {'title': 'error 1', 'message_col1': search_dict['errormessage'], 'query': q}, context_instance=RequestContext(request))
-#        elif len(search_dict['list_of_events']) == 0:
-#            return render_to_response('error.html',
-#                {'title': 'error 2', 'message_col1': _("Your search didn't get any result") + ".", 'query': q},
-#                context_instance=RequestContext(request))
-#        else:
-#            return render_to_response('events/list_search.html',
-#                {'title': 'search results', 'events': search_dict['list_of_events'], 'query': q},
-#                context_instance=RequestContext(request))
-#    else:
-#        return render_to_response('error.html',
-#            {'title': 'error 3', 'message_col1': _("You have submitted a search with no content") + ".", 'query': q},
-#            context_instance=RequestContext(request))
 
 def list_search(request, query):
         q = query.lower()

@@ -5,38 +5,42 @@ import settings
 setup_environ(settings)
 
 from django.contrib.auth.models import User
-from gridcalendar.gridcal.models import Event, Group, Membership, Calendar
+from gridcalendar.gridcal.models import Event, Group, Membership, Calendar, Filter
 
 
-events_how_many = 10
+events_how_many = 3
 
 #-------------------- create some userless events ----------------
 event_c = 0
 while event_c < events_how_many:
-    e = Event(
-        acro =          'ACRO',
-        title =         "EVENT " + str(event_c) + " USERLESS",
-        start =         '2010-03-15',
-        end =           '2010-04-15',
-        public_edit =   False,
-        public_view =   True,
-        # tags =          'tag',
-        country =       'DE',
-        city =          'Berlin',
-        postcode =      '10439',
-        address =       'Random Street 3',
-        latitude =      50.32323,
-        longitude =     13.83245,
-        timezone =      60,
-        description =   'Event description.'
-        )
+    for pv in [True, False]:
+        if pv:
+            pv_str = 'PUBLIC'
+        else:
+            pv_str = 'NON-PUBLIC'
+        e = Event(
+            acro =          'ACRO',
+            title =         "EVENT " + str(event_c) + " USERLESS " + pv_str,
+            start =         '2010-03-15',
+            end =           '2010-04-15',
+            public_edit =   False,
+            public_view =   pv,
+            # tags =          'tag',
+            country =       'DE',
+            city =          'Berlin',
+            postcode =      '10439',
+            address =       'Random Street 3',
+            latitude =      50.32323,
+            longitude =     13.83245,
+            timezone =      60,
+            description =   'Event description.'
+            )
+        try:
+            e.save()
+            print "OK    SAVING EVENT: " + str(event_c) + " " + pv_str
+        except:
+            print "ERROR SAVING EVENT: " + str(event_c) + " " + pv_str
     event_c += 1
-
-    try:
-        e.save()
-        print "OK    SAVING EVENT: " + str(event_c)
-    except:
-        print "ERROR SAVING EVENT: " + str(event_c)
 
 
 #----------------- create some users and let them create some events ----------------
@@ -55,32 +59,43 @@ for user_id in range(1, 5):
     except:
         print "ERROR SAVING USER: " + str(user_id)
 
+    filter = Filter(user=u,
+        query = 'berlin',
+        name = u.username + "'s filter: " + "berlin"
+        )
+    filter.save()
+
     event_c = 0
     while event_c < events_how_many:
-        e = Event(
-            acro =          'ACRO',
-            title =         "EVENT "+ str(event_c) + " USER " + str(user_id),
-            start =         '2010-03-15',
-            end =           '2010-04-15',
-            public_edit =   False,
-            public_view =   True,
-            # tags =          'tag',
-            country =       'DE',
-            city =          'Berlin',
-            postcode =      '10439',
-            address =       'Random Street 3',
-            latitude =      50.32323,
-            longitude =     13.83245,
-            timezone =      60,
-            description =   'Event description.'
-            )
+        for pv in [True, False]:
+            if pv:
+                pv_str = 'PUBLIC'
+            else:
+                pv_str = 'NON-PUBLIC'
+            e = Event(
+                    user = u,
+                    acro =          'ACRO',
+                    title =         "EVENT "+ str(event_c) + " USER " + str(user_id) + " " + pv_str,
+                    start =         '2010-03-15',
+                    end =           '2010-04-15',
+                    public_edit =   False,
+                    public_view =   pv,
+                    # tags =          'tag',
+                    country =       'DE',
+                    city =          'Berlin',
+                    postcode =      '10439',
+                    address =       'Random Street 3',
+                    latitude =      50.32323,
+                    longitude =     13.83245,
+                    timezone =      60,
+                    description =   'Event description.'
+                    )
+            try:
+                e.save()
+                print "OK    SAVING EVENT: " + str(event_c) + " " + pv_str
+            except:
+                print "ERROR SAVING EVENT: " + str(event_c) + " " + pv_str
         event_c += 1
-
-        try:
-            e.save()
-            print "OK    SAVING EVENT: " + str(event_c)
-        except:
-            print "ERROR SAVING EVENT: " + str(event_c)
 
 #------ create some groups ---------------------------------------
 
