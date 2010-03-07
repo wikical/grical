@@ -12,22 +12,24 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
+import GeoIP as GeoIPup
+
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-import GeoIP as GeoIPup
 from django.contrib.gis.utils import GeoIP
 from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
 from gridcalendar.settings import SECRET_KEY
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
-from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, COUNTRIES
-from gridcalendar.events.functions import is_user_in_group, is_event_viewable_by_user
-from gridcalendar.groups.models import Group
+from gridcalendar.gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
+from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
+from gridcalendar.gridcal.functions import is_user_in_group, is_event_viewable_by_user
 
 
 def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):
+
+    #return list()
 
     #TODO: remove this in production version!
     ip_addr = '85.183.50.38'

@@ -3,13 +3,11 @@ from django.conf.urls.defaults import *
 from django.contrib import admin, databrowse
 from django.contrib.admin import site
 
-from gridcalendar.events.models import Event, EventUrl, EventTimechunk, EventDeadline
-from gridcalendar.groups.models import Group
+from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Group
+from gridcalendar.gridcal.views_groups import activate
 
-from gridcalendar.groups.views import activate
-
-from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents
-from gridcalendar.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
+from gridcalendar.gridcal.feeds import FeedAllComingEvents, FeedGroupEvents
+from gridcalendar.gridcal.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
 
 #from tagging.views import tagged_object_list
 
@@ -34,84 +32,84 @@ urlpatterns += patterns('',
 ###############################################################################
 
 urlpatterns += patterns('',
-    (r'^$',                                                             'views.root'),
+    (r'^$',                                                             'gridcal.views.root'),
 )
 
 ###############################################################################
 
 urlpatterns += patterns('', # views of a single event
-    (r'^e/show/(?P<event_id>\d+)/$',                                    'events.views.show'),
-    (r'^e/show/(?P<event_id>\d+)/raw/$',                                'events.views.view_astext'),
+    (r'^e/show/(?P<event_id>\d+)/$',                                    'gridcal.views.show'),
+    (r'^e/show/(?P<event_id>\d+)/raw/$',                                'gridcal.views.view_astext'),
     (r'^e/show/(?P<event_id>\d+)/ical/$',                               ICalForEvent()),
 )
 
 ###############################################################################
 
 urlpatterns += patterns('', # events created by the user logged in
-    (r'^p/events/$',                                                    'events.views.list_my_events'),
+    (r'^p/events/$',                                                    'gridcal.views.list_my_events'),
 )
 
 urlpatterns += patterns('', # events matching a filter
     (r'^f/(?P<filter_id>\d+)/ical/$',                                   ICalForFilterAuth()),
     (r'^f/(?P<filter_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',    ICalForFilterHash()),
-    (r'^f/(?P<filter_id>\d+)/rss/$',                                    'rss.rss_for_filter_auth'),
-    (r'^f/(?P<filter_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',     'rss.rss_for_filter_hash'),
+    (r'^f/(?P<filter_id>\d+)/rss/$',                                    'gridcal.rss.rss_for_filter_auth'),
+    (r'^f/(?P<filter_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',     'gridcal.rss.rss_for_filter_hash'),
 )
 
 urlpatterns += patterns('', # events matching some query
-    (r'^q/',                                                            'events.views.list_query'),
+    (r'^q/',                                                            'gridcal.views.list_query'),
 #
     (r'^s/(?P<query>.*)/ical/$',                                        ICalForSearchAuth()),
     (r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',         ICalForSearchHash()),
-    (r'^s/(?P<query>.*)/rss/$',                                         'rss.rss_for_search'),
-    (r'^s/(?P<query>.*)/$',                                             'events.views.list_search'),
+    (r'^s/(?P<query>.*)/rss/$',                                         'gridcal.rss.rss_for_search'),
+    (r'^s/(?P<query>.*)/$',                                             'gridcal.views.list_search'),
 #
-    (r'^t/(?P<tag>[ \-\w]*)/$' ,                                        'events.views.list_tag'),
+    (r'^t/(?P<tag>[ \-\w]*)/$' ,                                        'gridcal.views.list_tag'),
 )
 
 urlpatterns += patterns('', # events in a group
     (r'^g/(?P<group_id>\d+)/ical/$',                                    ICalForGroupAuth()),
     (r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',     ICalForGroupHash()),
-    (r'^g/(?P<group_id>\d+)/rss/$',                                     'rss.rss_for_group_auth'),
-    (r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',      'rss.rss_for_group_hash'),
-    (r'^g/(?P<group_id>\d+)/$',                                         'groups.views.group'),
+    (r'^g/(?P<group_id>\d+)/rss/$',                                     'gridcal.rss.rss_for_group_auth'),
+    (r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',      'gridcal.rss.rss_for_group_hash'),
+    (r'^g/(?P<group_id>\d+)/$',                                         'gridcal.views_groups.group'),
 )
 
 ###############################################################################
 
 urlpatterns += patterns('',
 # list events created by a certain user (commented for now because of privacy concerns)
-#   (r'^e/list/user/(?P<username>\w+)/$',                               'events.views.list_user_events'),
+#   (r'^e/list/user/(?P<username>\w+)/$',                               'gridcal.views.list_user_events'),
 )
 
 ###############################################################################
 
 urlpatterns += patterns('',
 # creating and editing events:
-    (r'^e/new/$',                                   'events.views.simplified_submission'),
-    url(r'^e/edit/(?P<event_id>\d+)/$',                'events.views.edit', {'raw': False}, name="event_edit"),
-    url(r'^e/edit/(?P<event_id>\d+)/raw/$',            'events.views.edit', {'raw': True}, name="event_edit_raw"),
+    (r'^e/new/$',                                   'gridcal.views.simplified_submission'),
+    url(r'^e/edit/(?P<event_id>\d+)/$',             'gridcal.views.edit', {'raw': False}, name="event_edit"),
+    url(r'^e/edit/(?P<event_id>\d+)/raw/$',         'gridcal.views.edit', {'raw': True}, name="event_edit_raw"),
 # settings
-    (r'^p/settings/$',                              'views.settings_page'),
+    (r'^p/settings/$',                              'gridcal.views.settings_page'),
 # filter management:
-    (r'^p/filters/$',                               'events.views.filter_list_view'),
-    (r'^f/new/$',                                   'events.views.filter_save'),
-    (r'^f/edit/(?P<filter_id>\d+)/$',               'events.views.filter_edit'),
-    (r'^f/delete/(?P<filter_id>\d+)/$',             'events.views.filter_drop'),
+    (r'^p/filters/$',                               'gridcal.views.filter_list_view'),
+    (r'^f/new/$',                                   'gridcal.views.filter_save'),
+    (r'^f/edit/(?P<filter_id>\d+)/$',               'gridcal.views.filter_edit'),
+    (r'^f/delete/(?P<filter_id>\d+)/$',             'gridcal.views.filter_drop'),
 # creating groups:
-    (r'^g/new/$',                                   'groups.views.create'),
+    (r'^g/new/$',                                   'gridcal.views_groups.create'),
 # adding a user to a group:
-    (r'^g/invite/(?P<group_id>\d+)/$',              'groups.views.invite'),
+    (r'^g/invite/(?P<group_id>\d+)/$',              'gridcal.views_groups.invite'),
     url(r'^g/invite/confirm/(?P<activation_key>\w+)/$',
                            activate,
                            name='invitation_activate'),
 # leaving a group:
-    (r'^g/quit/(?P<group_id>\d+)/$',                'groups.views.quit_group_ask'),
-    (r'^g/quit/(?P<group_id>\d+)/confirm/$',        'groups.views.quit_group_sure'),
+    (r'^g/quit/(?P<group_id>\d+)/$',                'gridcal.views_groups.quit_group_ask'),
+    (r'^g/quit/(?P<group_id>\d+)/confirm/$',        'gridcal.views_groups.quit_group_sure'),
 # adding events to groups:
-    (r'^e/group/(?P<event_id>\d+)/$',               'groups.views.add_event'),
+    (r'^e/group/(?P<event_id>\d+)/$',               'gridcal.views_groups.add_event'),
 # list of groups:
-    (r'^p/groups/$',                                'groups.views.list_my_groups'),
+    (r'^p/groups/$',                                'gridcal.views_groups.list_my_groups'),
 )
 
 ###############################################################################
