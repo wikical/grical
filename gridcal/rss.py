@@ -1,14 +1,17 @@
 import hashlib
+
 from django.utils.translation import ugettext as _
 from django.template import RequestContext
-from django.contrib.syndication.views import feed
-from gridcalendar.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
 from django.shortcuts import render_to_response
-from gridcalendar.events.functions import getEventForm
 
+from django.contrib.syndication.views import feed
 from django.contrib.auth.models import User
+
 from gridcalendar import settings
-from gridcalendar.groups.models import Group, Membership
+
+from gridcalendar.gridcal.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
+from gridcalendar.gridcal.functions import getEventForm
+from gridcalendar.gridcal.models import Group, Membership
 
 def rss_for_search(request, query):
         f = feed(request = request, url = 's/' + query, feed_dict = {

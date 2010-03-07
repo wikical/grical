@@ -4,6 +4,6 @@ from django.core.management import setup_environ
 import settings
 setup_environ(settings)
 
-from gridcalendar.events.external import mail_notif
+from gridcalendar.gridcal.external import mail_notif
 
 mail_notif()

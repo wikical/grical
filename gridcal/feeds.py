@@ -10,9 +10,9 @@ from django.contrib.auth.models import User
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 
 from gridcalendar import settings
-from gridcalendar.events.models import Event, Filter
-from gridcalendar.events.lists import list_search_get
-from gridcalendar.groups.models import Group, Membership
+from gridcalendar.gridcal.models import Event, Filter, Group, Membership
+from gridcalendar.gridcal.lists import list_search_get
+from gridcalendar.gridcal.icalendar import ICalendarFeed, EVENT_ITEMS
 
 class FeedAllComingEvents(Feed):
     title = "All coming events"
@@ -109,7 +109,6 @@ class FeedGroupEvents(Feed):
 #        return item.start
 
 
-from gridcalendar.icalendar import ICalendarFeed, EVENT_ITEMS
 
 class ICalForSearch(ICalendarFeed):
 
