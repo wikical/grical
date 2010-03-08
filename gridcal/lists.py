@@ -384,9 +384,9 @@ def all_events_in_user_groups(user_id, limit):
                 dle['group_name'] = g.name
                 el = list()
                 if limit > 0:
-                    events = Event.objects.filter(group=g)[0:limit]
+                    events = Event.objects.filter(group=g).filter(start__gte=datetime.now())[0:limit]
                 else:
-                    events = Event.objects.filter(group=g)
+                    events = Event.objects.filter(group=g).filter(start__gte=datetime.now())
                 for e in events:
                     el.append(e)
                 dle['el'] = el

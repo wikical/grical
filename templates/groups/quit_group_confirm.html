@@ -11,14 +11,14 @@
 </p>
 
 <p>
-<a href="/g/quit/{{group_id}}/confirm/">confirm by clicking here</a>
+<a href="/g/quit/{{group_id}}/confirm/">{% trans "confirm by clicking here" %}</a>
 </p>
 <p>
 {% trans "Note: this operation is irreversable!" %}
 </p>
 
 {% else %}
-	    <p>{% trans "No groups found!" %}</p>
+        <p>{% trans "No groups found!" %}</p>
 {% endif %}
 
 {% endblock %}
