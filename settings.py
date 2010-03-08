@@ -80,7 +80,7 @@ INSTALLED_APPS = (
     'tagging',
     'registration',
     'debug_toolbar',
-    'dilla',
+#    'dilla',
 )
 
 GEOIP_PATH = '/usr/share/GeoIP/'
