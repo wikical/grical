@@ -1,4 +1,3 @@
-# Django settings for gridcalendar project.
 import os
 
 dirname = os.path.dirname(globals()["__file__"])
@@ -10,7 +9,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.debug",
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
-    "gridcalendar.context_processors.global_template_vars",
+    "context_processors.global_template_vars",
 )
 
 # for tagging application
@@ -32,7 +31,6 @@ DATE_FORMAT = 'Y-m-d'
 USE_I18N = True
 
 # Absolute path to the directory that holds media.
-#MEDIA_ROOT = '/usr/local/django-projects/gridcalendar/'
 MEDIA_ROOT = os.path.join(dirname, "media")
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
@@ -56,7 +54,7 @@ MIDDLEWARE_CLASSES = (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
-ROOT_URLCONF = 'gridcalendar.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".

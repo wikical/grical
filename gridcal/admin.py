@@ -1,4 +1,4 @@
-from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Tag
+from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Tag
 from django.contrib import admin
 
 class UrlInline(admin.StackedInline):

@@ -7,11 +7,11 @@ from django.shortcuts import render_to_response
 from django.contrib.syndication.views import feed
 from django.contrib.auth.models import User
 
-from gridcalendar import settings
+import settings
 
-from gridcalendar.gridcal.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
-from gridcalendar.gridcal.functions import getEventForm
-from gridcalendar.gridcal.models import Group, Membership
+from gridcal.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
+from gridcal.functions import getEventForm
+from gridcal.models import Group, Membership
 
 def rss_for_search(request, query):
         f = feed(request = request, url = 's/' + query, feed_dict = {
