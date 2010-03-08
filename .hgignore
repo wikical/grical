@@ -3,5 +3,5 @@ syntax: glob
 *.pyc
 .*.swp
 syntax: regexp
-settings.py
+settings_local.py
 apache/django.wsgi

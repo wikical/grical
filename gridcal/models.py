@@ -426,7 +426,7 @@ class GroupAdmin(admin.ModelAdmin):
 
 
 # They are already registered somehow
-admin.site.register(Group, GroupAdmin)
+# admin.site.register(Group, GroupAdmin)
 # register(Event)
 
 # Next code is an adaptation of some code in python-django-registration
