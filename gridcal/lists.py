@@ -52,14 +52,17 @@ def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_eve
     while events_appended < max_events :
         try:
             if mode == 'continent':
-                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
+                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[2:max_events]
             else:
                 e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
-            for e in e_list:
-                inital_exclude_event_id_list.append(e.id)
-                if (is_event_viewable_by_user(e.id, user_id)):
-                    list_of_events.append(e)
-                    events_appended += 1
+            if len(e_list) > 0:
+                for e in e_list:
+                    inital_exclude_event_id_list.append(e.id)
+                    if (is_event_viewable_by_user(e.id, user_id)):
+                        list_of_events.append(e)
+                        events_appended += 1
+            else:
+                break
         except Event.DoesNotExist:
             return list_of_events
 
