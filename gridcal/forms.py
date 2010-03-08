@@ -6,7 +6,7 @@ from django.forms import CheckboxSelectMultiple, SelectMultiple
 
 from django.contrib.auth.models import User
 
-from gridcalendar.gridcal.models import Event, Filter, Group, Membership, Calendar
+from gridcal.models import Event, Filter, Group, Membership, Calendar
 
 
 class FilterForm(ModelForm):

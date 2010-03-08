@@ -21,10 +21,10 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.settings import SECRET_KEY
-from gridcalendar.gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
-from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
-from gridcalendar.gridcal.functions import is_user_in_group, is_event_viewable_by_user
+from settings import SECRET_KEY
+from gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
+from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
+from gridcal.functions import is_user_in_group, is_event_viewable_by_user
 
 
 def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):

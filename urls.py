@@ -3,11 +3,11 @@ from django.conf.urls.defaults import *
 from django.contrib import admin, databrowse
 from django.contrib.admin import site
 
-from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Group
-from gridcalendar.gridcal.views_groups import activate
+from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Group
+from gridcal.views_groups import activate
 
-from gridcalendar.gridcal.feeds import FeedAllComingEvents, FeedGroupEvents
-from gridcalendar.gridcal.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
+from gridcal.feeds import FeedAllComingEvents, FeedGroupEvents
+from gridcal.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
 
 #from tagging.views import tagged_object_list
 

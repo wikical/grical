@@ -9,10 +9,10 @@ from django.template import RequestContext
 from django.contrib.auth.models import User
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 
-from gridcalendar import settings
-from gridcalendar.gridcal.models import Event, Filter, Group, Membership
-from gridcalendar.gridcal.lists import list_search_get
-from gridcalendar.gridcal.icalendar import ICalendarFeed, EVENT_ITEMS
+import settings
+from gridcal.models import Event, Filter, Group, Membership
+from gridcal.lists import list_search_get
+from gridcal.icalendar import ICalendarFeed, EVENT_ITEMS
 
 class FeedAllComingEvents(Feed):
     title = "All coming events"

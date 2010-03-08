@@ -9,11 +9,11 @@ from django.contrib.auth.forms import UserCreationForm
 
 from tagging.models import TaggedItem, Tag
 
-from gridcalendar.settings import SECRET_KEY
+from settings import SECRET_KEY
 
-from gridcalendar.gridcal.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
-from gridcalendar.gridcal.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
-from gridcalendar.gridcal.lists import all_events_in_user_groups
+from gridcal.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
+from gridcal.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
+from gridcal.lists import all_events_in_user_groups
 
 def create(request):
     if not request.user.is_authenticated():

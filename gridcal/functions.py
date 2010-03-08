@@ -15,8 +15,8 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, Membership, COUNTRIES
-from gridcalendar.gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
+from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, Membership, COUNTRIES
+from gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 
 def getEventForm(user):
     """returns a simplied event form with or without the public field"""

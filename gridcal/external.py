@@ -5,8 +5,8 @@ from django.template.loader import render_to_string
 from django.utils.translation import ugettext as _
 from django.core.management.base import NoArgsCommand
 
-from gridcalendar.gridcal.models import Filter, GroupInvitation
-from gridcalendar.gridcal.views import list_search_get
+from gridcal.models import Filter, GroupInvitation
+from gridcal.views import list_search_get
 
 def mail_notif():
     site = Site.objects.get(pk=1)

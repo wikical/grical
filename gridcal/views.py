@@ -25,11 +25,11 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.gridcal.functions import generate_event_textarea, StringToBool, getEventForm
-from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
-from gridcalendar.gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
-from gridcalendar.gridcal.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
-from gridcalendar.gridcal.lists import is_event_viewable_by_user
+from gridcal.functions import generate_event_textarea, StringToBool, getEventForm
+from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
+from gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
+from gridcal.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
+from gridcal.lists import is_event_viewable_by_user
 
 # notice that an anonymous user get a form without the 'public_view' field (simplified)
 
