@@ -1,7 +1,8 @@
 import os, sys
-sys.path.append('/home/hg')
-sys.path.append('/home/hg/gridcalendar')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'gridcalendar.settings'
+#sys.path.append('/home/hg/gridcalendar')
+sys.path.append(dirname(os.path.realpath(os.path.dirname(__file__))))
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import django.core.handlers.wsgi
 
