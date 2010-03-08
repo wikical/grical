@@ -9,27 +9,27 @@
     <meta name="description" content="{% trans "open community driven calendar, tagged and localized events" %}" />
     <meta name="keywords" content="{% trans "events" %}, {% trans "calendar" %}, {% trans "community" %}, {% trans "open" %}, {% trans "social" %}" />
     <title>GridCalendar - {{ title }}</title>
-    <link href="{{ media_url }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
-    <link href="{{ media_url }}css/print.css" rel="stylesheet" type="text/css" media="print" />
+    <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
+    <link href="{{ MEDIA_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
 {% block feeds %}
 {%endblock feeds%}
     {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
     {% block css %}{% endblock %}
     <!--
-    <script type="text/javascript" src="{{ media_url }}javascript/external.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}javascript/external.js"></script>
     -->
 </head>
 <body>
 <div id="header">
-    <a href="/"><img src="{{ media_url }}cloca-logo-small.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
+    <a href="/"><img src="{{ MEDIA_URL }}cloca-logo-small.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
     <h1>{{DOMAIN}}  -  {% trans "Cloud Calendar" %}</h1>
     <h2>{% trans "open community driven calendar" %}</h2>
     <h3 style="color:gray"> {% trans "beta version" %}</h3>
     <!-- menu if needed
     <ul>
-		<li><a href="http://matthewjamestaylor.com/blog/perfect-3-column.htm">3 Column <span>Holy Grail</span></a></li>
-		<li><a href="http://matthewjamestaylor.com/blog/perfect-3-column-blog-style.htm" class="active">3 Column <span>Blog Style</span></a></li>
+        <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column.htm">3 Column <span>Holy Grail</span></a></li>
+        <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column-blog-style.htm" class="active">3 Column <span>Blog Style</span></a></li>
     </ul>
     -->
     <div id="navigation">

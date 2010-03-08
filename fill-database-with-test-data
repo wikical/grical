@@ -16,11 +16,11 @@ event_c = 0
 while event_c < events_how_many:
     for when in ['past', 'future']:
         if when == 'past':
-            start_str =         str(datetime.date.today() + datetime.timedelta(-30))
-            end_str =           str(datetime.date.today() + datetime.timedelta(-28))
+            start_str =         str(datetime.date.today() + datetime.timedelta(-36))
+            end_str =           str(datetime.date.today() + datetime.timedelta(-33))
         elif when == 'future':
-            start_str =         str(datetime.date.today() + datetime.timedelta(28))
-            end_str =           str(datetime.date.today() + datetime.timedelta(30))
+            start_str =         str(datetime.date.today() + datetime.timedelta(33))
+            end_str =           str(datetime.date.today() + datetime.timedelta(36))
         else:
             assert False
         for pv in [True, False]:
@@ -79,11 +79,11 @@ for user_id in range(1, 5):
     while event_c < events_how_many:
         for when in ['past', 'future']:
             if when == 'past':
-                start_str =         str(datetime.date.today() + datetime.timedelta(-30))
-                end_str =           str(datetime.date.today() + datetime.timedelta(-28))
+                start_str =         str(datetime.date.today() + datetime.timedelta(-36))
+                end_str =           str(datetime.date.today() + datetime.timedelta(-33))
             elif when == 'future':
-                start_str =         str(datetime.date.today() + datetime.timedelta(28))
-                end_str =           str(datetime.date.today() + datetime.timedelta(30))
+                start_str =         str(datetime.date.today() + datetime.timedelta(33))
+                end_str =           str(datetime.date.today() + datetime.timedelta(36))
             else:
                 assert False
             for pv in [True, False]:
