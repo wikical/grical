@@ -10,7 +10,7 @@
         </p>
 
 
-        <a href="/e/show/{{ event.id }}/"><span class="field_title"> {{ event.title }} </span></a><br />
+        <a href="{% url event_show event.id %}"><span class="field_title"> {{ event.title }} </span></a><br />
 
         <p>
         <span class="field_dates">
@@ -54,7 +54,7 @@
         {% if event.get_tags %}
         <br />{% trans "Tags" %}: <span class="tags">
         {% for tag in event.get_tags %}
-            <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a>, </span>
+            <span class="tag"><a href="{% url list_events_tag tag %}">{{ tag }}</a>, </span>
         {% endfor %}
         {% endif %}
         </p>
@@ -66,11 +66,11 @@
         </p>
 
         <br />
-        <a href="/e/edit/{{ event.id }}/"><span class="field_link">{% trans "edit this event" %}</span></a>
+        <a href="{% url event_edit event.id %}"><span class="field_link">{% trans "edit this event" %}</span></a>
         &nbsp;
-        <a href="/e/edit/{{ event.id }}/raw/"><span class="field_link">{% trans "edit this event as text" %}</span></a>
+        <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit this event as text" %}</span></a>
         &nbsp;
-        <a href="/e/group/{{ event.id }}/"><span class="field_link">{% trans "add this event to a group" %}</span></a>
-        <a href="/e/show/{{ event.id }}/ical/"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
+        <a href="{% url group_add_event event.id %}"><span class="field_link">{% trans "add this event to a group" %}</span></a>
+        <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
     </div>
 

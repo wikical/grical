@@ -3,9 +3,9 @@
 {% if events %}
     {% for event in events %}
         <br />
-    {% include "events/list_expanded.html" %}
+    {% include "event_show_expanded.html" %}
     {% endfor %}
 {% else %}
-	    <p>{% trans "No events found" %}!</p>
+        <p>{% trans "No events found" %}!</p>
 {% endif %}
 

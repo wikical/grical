@@ -3,6 +3,8 @@ import os
 PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 
 LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/a/accounts/login/'
+LOGOUT_URL = '/a/accounts/logout/'
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.auth",

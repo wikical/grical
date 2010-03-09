@@ -321,8 +321,11 @@ class Event(models.Model):
         return Tag.objects.get_for_object(self)
     def __unicode__(self):
         return self.start.isoformat() + " : " + self.title
+    @models.permalink
     def get_absolute_url(self):
-        return '/e/show/' + str(self.id) + '/'
+        #return '/e/show/' + str(self.id) + '/'
+        #return (reverse('event_show', kwargs={'event_id': str(self.id)}))
+        return ('event_show', (), { 'event_id': self.id })
     class Meta:
         ordering = ['start']
         verbose_name = _('Event')
@@ -371,6 +374,11 @@ class Filter(models.Model):
         unique_together = ("user", "name")
         verbose_name = _('Filter')
         verbose_name_plural = _('Filters')
+    def __unicode__(self):
+        return self.name
+    @models.permalink
+    def get_absolute_url(self):
+        return ('filter_edit', (), { 'filter_id': self.id })
 
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
@@ -388,8 +396,9 @@ class Group(models.Model):
         verbose_name_plural = _('Groups')
     def __unicode__(self):
         return self.name
+    @models.permalink
     def get_absolute_url(self):
-        return '/group/' + str(self.id) + '/'
+        return ('list_events_group', (), { 'group_id': self.id })
 
 class Membership(models.Model):
     user = models.ForeignKey(User, verbose_name=_('User'))

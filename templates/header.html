@@ -22,7 +22,7 @@
 </head>
 <body>
 <div id="header">
-    <a href="/"><img src="{{ MEDIA_URL }}cloca-logo-small.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
+    <a href="{% url root %}"><img src="{{ MEDIA_URL }}cloca-logo-small.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
     <h1>{{DOMAIN}}  -  {% trans "Cloud Calendar" %}</h1>
     <h2>{% trans "open community driven calendar" %}</h2>
     <h3 style="color:gray"> {% trans "beta version" %}</h3>
@@ -36,17 +36,21 @@
         <div id="userlinks">
             {% if user.username %}
             {% trans "Welcome" %} <b>{{ user.username }}</b>
-                | <a href="/p/settings/">{% trans "settings" %}</a>
-                | <a href="/a/accounts/logout/">{% trans "logout" %}</a>
+                | <a href="{% url settings %}">{% trans "settings" %}</a>
+                | <a href="{% url auth_logout %}">{% trans "logout" %}</a>
             {% else %}
-            <a href="/a/accounts/register">{% trans "Sign up" %}</a> | <a href="/a/accounts/login/">{% trans "log in" %}</a>
+            <a href="{% url registration_register %}">{% trans "Sign up" %}</a> | <a href="/a/accounts/login/">{% trans "log in" %}</a>
             {% endif %}
         </div>
-        <form action="/q/" method="get">
+        <form action="{% url query %}" method="get">
             <input type="text" size="40" name="q" value="{{ query }}">
             <input type="submit" value="{% trans "Search" %}">
         </form>
         <div id="sitelinks">
+
+<!--
+    TODO: change below to URL names!
+-->
             <a href="/h/help">{% trans "help" %}</a>
             | <a href="/h/legal_notice">{% trans "legal notice" %}</a>
         </div>
