@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+<h3> {% trans "Search result for" %}: {{ query }}</h3>
+
+<p>
+        <form action="{% url filter_save %}" method="POST">
+            <input type="hidden" size="60" name="q" value="{{ query }}">
+            <input type="submit" value="{% trans "Save this search as a filter" %}">
+        </form>
+</p>
+
+
+<a href="{% url list_events_search_ical query %}"><span class="field_ical"><img src="{{ MEDIA_URL }}/icallogo.png" width="14"></span></a>
+<a href="{% url list_events_search_rss query %}"><span class="field_rss"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></span></a>
+
+{% include "list_events_wrapper.html" %}
+{% endblock %}
+

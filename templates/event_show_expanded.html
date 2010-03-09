@@ -1,7 +1,7 @@
 {% load i18n %}
 
 <div class="field">
-    <a href="/e/show/{{ event.id }}/"><span class="field_title">{{ event.title }}</span></a>
+    <a href="{% url event_show event.id %}"><span class="field_title">{{ event.title }}</span></a>
 
     <br />
 
@@ -30,11 +30,11 @@
 
     <br />
 
-    <a href="/e/edit/{{ event.id }}/">{% trans "edit this event with a form" %}</a>
+    <a href="{% url event_edit event.id %}">{% trans "edit this event with a form" %}</a>
     &nbsp;
-    <a href="/e/edit/{{ event.id }}/raw/">{% trans "edit this event as text" %}</a>
+    <a href="{% url event_edit_raw event.id %}">{% trans "edit this event as text" %}</a>
     &nbsp;
-    <a href="/e/group/{{ event.id }}/">{% trans "add this event to a group" %}</a>
-    <a href="/e/show/{{ event.id }}/ical/"><span class="field_ical"><img src="{{ MEDIA_URL }}/icallogo.png" width="16"></span></a>
+    <a href="{% url group_add_event event.id %}">{% trans "add this event to a group" %}</a>
+    <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}/icallogo.png" width="16"></span></a>
 </div>
 

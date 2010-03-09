@@ -1,5 +1,6 @@
 import hashlib
 
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -15,7 +16,7 @@ from gridcal.models import Event, Group, Membership, Calendar, GroupInvitation, 
 from gridcal.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
 from gridcal.lists import all_events_in_user_groups
 
-def create(request):
+def group_new(request):
     if not request.user.is_authenticated():
         return render_to_response('groups/no_authenticated.html', {}, context_instance=RequestContext(request))
     if request.method == 'POST':
@@ -27,14 +28,15 @@ def create(request):
             new_membership = Membership(user=request.user, group=new_group)
             new_membership.save()
             # TODO: notify all invited members of the group
-            return HttpResponseRedirect('/p/groups/')
+            #return HttpResponseRedirect('/p/groups/')
+            return HttpResponseRedirect(reverse('list_groups_my'))
         else:
             return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
     else:
         form = NewGroupForm()
         return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
 
-def list_my_groups(request):
+def list_groups_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to list your groups") + "."},
@@ -51,7 +53,7 @@ def list_my_groups(request):
                 {'title': 'list my groups', 'groups': groups},
                 context_instance=RequestContext(request))
 
-def quit_group(request, group_id, sure):
+def group_quit(request, group_id, sure):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to quit your groups") + "."},
@@ -70,24 +72,26 @@ def quit_group(request, group_id, sure):
                 if (testsize > 0):
                     m = Membership.objects.get(user=request.user, group=g)
                     m.delete()
-                    return HttpResponseRedirect('/p/groups/')
+                    #return HttpResponseRedirect('/p/groups/')
+                    return HttpResponseRedirect(reverse('list_groups_my'))
                 elif (s == 1):
                     m = Membership.objects.get(user=request.user, group=g)
                     m.delete()
                     g.delete()
-                    return HttpResponseRedirect('/p/groups/')
+                    #return HttpResponseRedirect('/p/groups/')
+                    return HttpResponseRedirect(reverse('list_groups_my'))
                 else:
                     return render_to_response('groups/quit_group_confirm.html', {'group_id': group_id, 'group_name': g.name}, context_instance=RequestContext(request))
         except:
             return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
 
-def quit_group_ask(request, group_id):
-    return quit_group(request, group_id, 0)
+def group_quit_ask(request, group_id):
+    return group_quit(request, group_id, 0)
 
-def quit_group_sure(request, group_id):
-    return quit_group(request, group_id, 1)
+def group_quit_sure(request, group_id):
+    return group_quit(request, group_id, 1)
 
-def add_event(request, event_id):
+def group_add_event(request, event_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to add an event to a group") + "."},
@@ -101,7 +105,8 @@ def add_event(request, event_id):
                 for g in f.cleaned_data['grouplist']:
                     calentry = Calendar(event=e, group=g)
                     calentry.save()
-                return HttpResponseRedirect('/p/groups/')
+                #return HttpResponseRedirect('/p/groups/')
+                return HttpResponseRedirect(reverse('list_groups_my'))
             else:
                 request.user.message_set.create(message='Please check your data.')
         else:
@@ -115,7 +120,7 @@ def add_event(request, event_id):
                     'message_col1': _("This event is already in all groups that you are in, so you can't add it to any more groups.") },
                     context_instance=RequestContext(request))
 
-def group(request, group_id):
+def list_events_group(request, group_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to view events in a group") + "."},
@@ -128,7 +133,7 @@ def group(request, group_id):
                 {'title': 'group page', 'group_id': group_id, 'user_id': request.user.id, 'hash': hash, 'events': events},
                 context_instance=RequestContext(request))
 
-def invite(request, group_id):
+def group_invite(request, group_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You must be logged in to invite someone to a group") + "."},
@@ -149,7 +154,8 @@ def invite(request, group_id):
                         {'title': 'error', 'message_col1': _("There is no user with the username: ") + username + "."},
                         context_instance=RequestContext(request))
                 GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
-                return HttpResponseRedirect('/p/groups/')
+                return HttpResponseRedirect(reverse('list_groups_my'))
+                #return HttpResponseRedirect('/p/groups/')
             else:
                 request.user.message_set.create(message='Please check your data.')
         else:
@@ -163,7 +169,7 @@ def invite(request, group_id):
                 {'title': 'invite to group', 'group_id': group_id, 'form': form},
                 context_instance=RequestContext(request))
 
-def activate(request, activation_key):
+def group_invite_activate(request, activation_key):
     """
     A user clicks on activation link
     """

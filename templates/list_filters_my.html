@@ -6,15 +6,15 @@
 <ul>
     {% for fil in filters %}
     <li>
-    <a href="/s/{{ fil.query|urlencode }}/">
+    <a href="{% url list_events_search fil.query|urlencode %}/">
         {{ fil.name }}
     </a>
     &nbsp;
     ({{ fil.results }})
     &nbsp;
-    <a href="/f/edit/{{ fil.id }}/">edit</a>
+    <a href="{% filter_edit fil.id %}">edit</a>
     &nbsp;
-    <a href="/f/delete/{{ fil.id }}/">delete</a>
+    <a href="{% filter_drop fil.id %}">delete</a>
 
     {% if fil.errormessage %}
     <p>
@@ -27,13 +27,13 @@
         <ul>
         {% for event in fil.list_of_events %}
         <li>
-            <a href="/e/show/{{event.id}}/raw/">{{event.title}}</a>
+            <a href="{% url event_show_raw event.id %}">{{event.title}}</a>
         </li>
         {% endfor %}
         </ul>
 
 <!--
-        <form action="/q/" method="get">
+        <form action="{% url query %}" method="get">
             <input type="hidden" name="q" value="{{ fil.query }}">
             <input type="submit" value="{% trans "Run a full search using this filter" %}">
         </form>

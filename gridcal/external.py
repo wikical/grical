@@ -48,7 +48,7 @@ def mail_notif():
         if len(user_events) > 0:
 
             subject = 'notification about new events on ' + site.domain
-            message = render_to_string('events/notif_email.txt', context)
+            message = render_to_string('mail/new_events_notif.txt', context)
             from_email = 'noreply@' + site.domain
             if subject and message and from_email:
                try:
