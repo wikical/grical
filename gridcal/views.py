@@ -460,7 +460,7 @@ def root(request):
         landless_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'landless')
 
     return render_to_response('root.html', {
-            'title': 'Welcome to the CloudCalendar',
+            'title': 'Welcome to GridCalendar',
             'form': event_form,
             'events': events,
             'ip_country_event_list': ip_country_event_list,

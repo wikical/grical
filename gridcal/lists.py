@@ -12,35 +12,35 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
-import GeoIP as GeoIPup
+import GeoIP
 
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django.contrib.gis.utils import GeoIP
 from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from settings import SECRET_KEY
+from settings import SECRET_KEY, DEBUG
 from gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
 from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
 from gridcal.functions import is_user_in_group, is_event_viewable_by_user
 
 
 def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):
+    if DEBUG and ip_addr == '127.0.0.1': ip_addr = '85.183.50.38'
+    # TODO: add random events if IP is not usable like 127.0.0.1
 
-    #return list()
+    geoip = GeoIP.new(GeoIP.GEOIP_STANDARD)
+    # TODO: test if the following line is faster and workable with many queries:
+    # geoip = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
 
-    #TODO: remove this in production version!
-    ip_addr = '85.183.50.38'
-
-    g = GeoIP()
-    country = g.country(ip_addr)['country_code']
+    country = geoip.country_code_by_addr(ip_addr)
+    # see more code examples at /usr/share/doc/python-geoip/examples
 
     if mode == 'continent':
-        continent = GeoIPup.country_continents.get(country, "N/A")
+        continent = GeoIP.country_continents.get(country, "N/A")
         other_countries_on_continent = list()
-        for a in GeoIPup.country_continents.items():
+        for a in GeoIP.country_continents.items():
             if a[1] == continent and not a[0] == country:
                 other_countries_on_continent.append(a[0])
 

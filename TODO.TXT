@@ -3,8 +3,12 @@ IGNORE
 
 high priority
 -------------
-- Data base as in http://trac.cloca.net/wiki/DataFormats
-- Web interface input in two steps
+- When committing remove and create new data base creating automatically a new super user to avoid
+  the question:
+      You just installed Django's auth system, which means you don't have any superusers defined.
+      Would you like to create one now? (yes/no): 
+- Rename events.EventTimechunk
+- See and edit http://code.gridcalendar.net/wiki/DataFormats
 - profile:
     - change password
     - list of interests
@@ -22,6 +26,7 @@ high priority
 
 medium priority
 ---------------
+- Check out http://code.djangoproject.com/wiki/GeoDjango
 - add message to user invited to a group
 - check hard wired urls like '/accounts/logout'
 - for each event add a possibility of adding it to a group the user is member of (as public or
@@ -60,7 +65,7 @@ low priority
     - Facebook MyCalendar application
       http://www.facebook.com/home.php?ref=home#/apps/application.php?id=38610296669&ref=nf
   Each event entry should show an icon to add it when the user is logged in
-- cloca api. See e.g. http://fi.am/entry/building-a-website-api-with-django-part-2a-api-aut/
+- GridCalendar api. See e.g. http://fi.am/entry/building-a-website-api-with-django-part-2a-api-aut/
 - OpenID. See
   http://www.heise.de/newsticker/Identity-Management-OpenID-mit-openid4java--/meldung/139607
 - Develop a client for mobile devices, maybe one with JavaFX, as they run on Android, Desktops and
