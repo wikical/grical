@@ -1,6 +1,6 @@
 INSTALLATION
 ------------
-- Search for dev.cloca.net on all files and change it to your domain
+- Search for 'gridcalendar' on all files and change it accordingly
 - If using Apache edit apache/django.wsgi and replace the path of the installation.
 - Edit settings-TO-RENAME.py and set the variables accordingly to your installation. Then rename it
   to settings.py

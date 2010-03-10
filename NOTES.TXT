@@ -1,1 +1,28 @@
 The iCal logo was downloaded from http://www.rovc.ca/images/library/icallogo.png
+
+There is an interesting package: incf.countryutils (http://pypi.python.org/pypi/incf.countryutils/1.0)
+    In Debian based systems it can be installed with:
+        aptitude install python-pip
+        pip install incf.countryutils
+
+There is a full-featured geographical application for django. The instructions to install it are:
+    libgdal1-1.5.0 postgresql-8.3-postgis postgresql-server-dev-8.3 python-geoip
+    For python-geoip a version higher then 1.2.1-2 is needed, for example 1.2.4-1, because 1.2.1 doesn't have continent support
+    geoip-database
+    Will use 56.5MB of disk space  DL Size: 18.2MB
+
+    These will probably be already installed, but I mention them here just to be sure:
+    binutils
+    postgresql-8.3
+    python-psycopg2
+    python-setuptools
+
+    7. After instllation of PostGIS debian packages you must issue commands like this:
+    $ su
+    # su postgres
+    $ cd /usr/share/postgresql-8.3-postgis/
+    postgres@gridcalendar:/usr/share/postgresql-8.3-postgis$ createlang plpgsql gridcalendar
+    postgres@gridcalendar:/usr/share/postgresql-8.3-postgis$ psql -d gridcalendar -f lwpostgis.sql
+    postgres@gridcalendar:/usr/share/postgresql-8.3-postgis$ psql -d gridcalendar -f spatial_ref_sys.sql
+
+    FIXME: create a script to do it automatically with something like './admin.py init'

@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.defaults import *
 from django.contrib import admin, databrowse
 
-from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline
+from gridcalendar.gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline
 
 databrowse.site.register(Event)
 databrowse.site.register(EventUrl)

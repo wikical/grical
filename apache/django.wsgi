@@ -1,8 +1,10 @@
-import os, sys
+from os.path import dirname, realpath
+from os import environ
+from sys import path
 
-sys.path.append(os.path.dirname(os.path.realpath(os.path.dirname(__file__))))
+path.append(dirname(realpath(dirname(__file__))))
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import django.core.handlers.wsgi
 
