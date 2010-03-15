@@ -1,0 +1,8 @@
+syntax: glob
+*.sqlite
+*.pyc
+.*.swp
+syntax: regexp
+settings_local.py
+apache/django.wsgi
+gridcalendar.sqlite

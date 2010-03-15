@@ -1,0 +1,72 @@
+
+IGNORE
+
+high priority
+-------------
+- When committing remove and create new data base creating automatically a new super user to avoid
+  the question:
+      You just installed Django's auth system, which means you don't have any superusers defined.
+      Would you like to create one now? (yes/no): 
+- Rename events.EventTimechunk
+- See and edit http://code.gridcalendar.net/wiki/DataFormats
+- profile:
+    - change password
+    - list of interests
+    - groups with the option for notification for new event and for new member
+- message after a submission: "Thanks for submitting: <name>"
+- add new group
+- group view
+- add change password and delete account. Already implemented in the registration
+- bug: after logout the form at home is not rendered
+- add 'term of service' at registration and at adding a new event, etc.
+- add 'help page'
+- add 'add group' and 'add tag' to an event
+- add to user profile an option for receiving notifications by email for group invitations.
+- program logic for group invitation after clicking url in email, write the email templates, etc.
+
+medium priority
+---------------
+- Check out http://code.djangoproject.com/wiki/GeoDjango
+- add message to user invited to a group
+- check hard wired urls like '/accounts/logout'
+- for each event add a possibility of adding it to a group the user is member of (as public or
+  private) may be with a nice grey icon, or two
+- allow to introduce datas e.g. without the year or month, assuming it is this year and this month
+- add comments to entries. See:
+    http://code.djangoproject.com/wiki/UsingFreeComment
+    http://www.guindilla.eu/blog/2006/09/14/django-comments-framework-2/
+- add an option "I will be there"
+  Users should have friends (mayby group members are considered as friends as a profile option)
+  who can be notified (as option in profile)
+
+low priority
+------------
+- Add RSS support. See
+  http://docs.djangoproject.com/en/1.0//ref/contrib/syndication/#ref-contrib-syndication
+- look and replace hard coded server name like in: templates/registration/activation_email.txt
+- add captcha. example of how at e.g. http://www.djangosnippets.org/snippets/127/
+- add in profiles to receive entries per email for e.g. a group, or group and location, or search
+  string, etc. Add a link in the email for the icalc entry, etc.
+- add an icon on events to e.g. get it as iCal, vCal
+- add an option to add an entry by email, e.g.
+    name=FFII demonstration
+    start=2008-06-06
+    url=http://...
+    tags=...
+    ...
+- for:user (like in del.icio.us)
+- add 'interesting' to an event
+- advanced group features like admins for groups, etc. See:
+  http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
+- add in profiles an option to automatically add new entries inserted by a user in his external
+  calendar like google calendar
+- User profile can have external services attached. E.g.
+    - Google Calendar
+    - Facebook MyCalendar application
+      http://www.facebook.com/home.php?ref=home#/apps/application.php?id=38610296669&ref=nf
+  Each event entry should show an icon to add it when the user is logged in
+- GridCalendar api. See e.g. http://fi.am/entry/building-a-website-api-with-django-part-2a-api-aut/
+- OpenID. See
+  http://www.heise.de/newsticker/Identity-Management-OpenID-mit-openid4java--/meldung/139607
+- Develop a client for mobile devices, maybe one with JavaFX, as they run on Android, Desktops and
+  Java ME mobile devices

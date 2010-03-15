@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block column1 %}
+<h3> {% trans "Confirm quitting the group" %}:</h3>
+{% if group_id %}
+
+<p>
+
+{% trans "You are the only member of the group now. If you quit, the group will be deleted. Are you sure you would like to quit the group"%} {{group_name}}?
+
+</p>
+
+<p>
+<a href="{% group_quit_confirm group_id %}">{% trans "confirm by clicking here" %}</a>
+</p>
+<p>
+{% trans "Note: this operation is irreversable!" %}
+</p>
+
+{% else %}
+        <p>{% trans "No groups found!" %}</p>
+{% endif %}
+
+{% endblock %}
+

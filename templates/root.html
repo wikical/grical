@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block feeds %}
+<!--
+    TODO: make below feed show all events
+-->
+<link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_filter_rss 1 %}" />
+{%endblock feeds%}
+
+
+{% block column1 %}
+
+<p class="info">{% trans "Submit a new event" %} ({% trans "more info like a URL can be added after submitting" %}):</p>
+<div id="event_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+        </p>
+    {% endif %}
+    <form action="{% url event_new %}" method="post">
+        <table>
+            {{ form.as_table }}
+        </table>
+        <input type="submit" value={% trans "Submit" %}>
+    </form>
+</div>
+<br />
+<br />
+
+<!--
+{% if user.username %}
+<p class="info">{% trans "Change what is displayed here in" %}:
+    <a href="{% url settings %}">{% trans "filters" %}</a></p>
+{% endif %}
+-->
+
+{% if events %}
+    {% for event in events %}
+        <br />
+        {% include "event_show_expanded.html" %}
+        {% trans "Matches your filters" %}:
+        {% for fil in event.filters %}
+            <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
+            <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}/icallogo.png" width="14"></a>&nbsp;
+            <a href="{% url list_events_filter_rss_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
+        {% endfor %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+
+{% if ip_country_event_list %}
+    <br/>
+    {% trans "Below are some events which happen soon in the country we think you are in now" %}:
+    {% for event in ip_country_event_list %}
+        <br />
+        {% include "event_show_expanded.html" %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+{% if ip_continent_event_list %}
+    <br/>
+    {% trans "Below are some events which happen soon on the continent we think you are in now" %}:
+    {% for event in ip_continent_event_list %}
+        <br />
+        {% include "event_show_expanded.html" %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+{% if landless_event_list %}
+    <br/>
+    {% trans "Below are some events which have no indication on which country they happen in. Maybe you can fill in the missing field?" %}:
+    {% for event in landless_event_list %}
+        <br />
+        {% include "event_show_expanded.html" %}
+        <br/>
+    {% endfor %}
+{% endif %}
+
+
+
+
+
+
+
+{% endblock %}
+
+{% block column2 %}
+
+{% include "coming_events_in_my_groups.html" %}
+
+{% endblock %}
+
+
+
+{% block column3 %}
+
+{% endblock %}
+

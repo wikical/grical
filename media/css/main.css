@@ -1,0 +1,214 @@
+/* http://matthewjamestaylor.com/blog/perfect-3-column-blog-style.htm */
+.errorlist {
+    font-size:90%;
+    color:red;
+}
+
+.info {
+    font-size: 0.8em;
+    color: #808080;
+    text-align: right;
+}
+
+#message_col1 {
+    background:#d44;
+    padding:5px;
+    margin:5px;
+}
+
+body {
+	margin:0;
+	padding:0;
+	border:0;			/* This removes the border around the viewport in old versions of IE */
+	width:100%;
+	background:#fff;
+	min-width:600px;    	/* Minimum width of layout - remove line if not required */
+					/* The min-width property does not work in old versions of Internet Explorer */
+}
+a {
+	color:#369;
+}
+a:hover {
+	color:#fff;
+	background:#369;
+	text-decoration:none;
+}
+h1, h2, {
+	margin:.8em 0 .2em 0;
+	padding:0;
+}
+h3 {
+	margin:.0;
+	padding:0;
+}
+p {
+	margin:.4em 0 .8em 0;
+	padding:0;
+}
+img {
+	margin:10px 0 5px;
+}
+/* Header styles */
+#header {
+	clear:both;
+	float:left;
+	width:100%;
+}
+#header {
+	border-bottom:1px solid #000;
+}
+#header p,
+#header h1,
+#header h2 {
+	padding:.4em 15px 0 15px;
+	margin:0;
+}
+#header ul {
+	clear:left;
+	float:left;
+	width:100%;
+	list-style:none;
+	margin:10px 0 0 0;
+	padding:0;
+}
+#header ul li {
+	display:inline;
+	list-style:none;
+	margin:0;
+	padding:0;
+}
+#header ul li a {
+	display:block;
+	float:left;
+	margin:0 0 0 1px;
+	padding:3px 10px;
+	text-align:center;
+	background:#eee;
+	color:#000;
+	text-decoration:none;
+	position:relative;
+	left:15px;
+	line-height:1.3em;
+}
+#header ul li a:hover {
+	background:#369;
+	color:#fff;
+}
+#header ul li a.active,
+#header ul li a.active:hover {
+	color:#fff;
+	background:#000;
+	font-weight:bold;
+}
+#header ul li a span {
+	display:block;
+}
+#header img {
+    float:left;
+    border: 0;
+    padding: 0 2em 0 0 ;
+	text-align:center;
+}
+
+#navigation {
+	clear:both;
+	background:#eee;
+	border-top:4px solid #000;
+	margin:0;
+	padding:6px 15px !important;
+	text-align:left;
+}
+#navigation form { display:inline }
+#userlinks { display:inline ; padding:0 1em 0 1em }
+#sitelinks { display:inline ; padding:0 1em 0 1em }
+
+#event_form {
+    background:#eee;
+    color:gray;
+    font-size:80%;
+    border:1px solid #000;
+    padding:5px ;
+}
+#event_form label {
+    color:black;
+    font-size:120%;
+	font-weight:bold;
+}
+#event_form th {
+    vertical-align: top;
+    text-align: left;
+}
+
+.field {
+    background:#eee;
+    color:gray;
+    font-size:80%;
+    border:1px solid #000;
+    padding:5px ;
+}
+
+/* column container */
+.colmask {
+	position:relative;		/* This fixes the IE7 overflow hidden bug */
+	clear:both;
+	float:left;
+	width:100%;				/* width of whole page */
+	overflow:hidden;			/* This chops off any overhanging divs */
+}
+/* common column settings */
+.colright,
+.colmid,
+.colleft {
+	float:left;
+	width:100%;				/* width of page */
+	position:relative;
+}
+.col1,
+.col2,
+.col3 {
+	float:left;
+	position:relative;
+	padding:0 0 1em 0;		/* no left and right padding on columns, we just make them narrower instead
+						only padding top and bottom is included here, make it whatever value you need */
+	overflow:hidden;
+}
+/* 3 Column blog style settings */
+.blogstyle {
+	background:#eee;			/* right column background colour */
+}
+.blogstyle .colmid {
+	right:25%;				/* width of the right column */
+	background:#f4f4f4;		/* center column background colour */
+}
+.blogstyle .colleft {
+	right:25%;				/* width of the middle column */
+	background:#fff;			/* left column background colour */
+}
+.blogstyle .col1 {
+	width:46%;				/* 46% width of center column content (column width minus padding on either side) */
+	left:52%;				/* 52% 100% plus left padding of center column */
+}
+.blogstyle .col2 {
+	width:25%;				/* Width of left column content (column width minus padding on either side) */
+	left:56%;				/* width of (right column) plus (center column left and right padding) plus (left column left padding) */
+}
+.blogstyle .col3 {
+	width:25%;				/* Width of right column content (column width minus padding on either side) */
+	left:60%;				/* Please make note of the brackets here:
+						(100% - left column width) plus (center column left and right padding) plus (left column left and right padding) plus (right column left padding) */
+}
+/* Footer styles */
+#footer {
+	clear:both;
+	float:left;
+	width:100%;
+	border-top:1px solid #000;
+}
+#footer p {
+	padding:10px;
+	margin:0;
+}
+
+.tags {
+    font-size:0.8em
+}

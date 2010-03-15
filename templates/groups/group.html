@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block feeds %}
+<link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss_hashed group.id user_id hash %}" />
+{%endblock feeds%}
+
+{% block column1 %}
+
+{% if events %}
+
+<p>
+
+<a href="{% url list_events_group_rss_hashed group.id user_id hash %}">
+<img src="{{MEDIA_URL}}15px-Feed-icon.svg.png">
+RSS
+</a>
+
+</p>
+
+<p>
+
+<a href="{% url list_events_group_ical_hashed group.id user_id hash %}">
+<img width="16" src="{{MEDIA_URL}}icallogo.png">
+iCal
+</a>
+
+</p>
+
+<h3> {% trans "Events in this group" %}:</h3>
+{% include "list_events_wrapper.html" %}
+{% else %}
+
+<p>{% trans "There are no events in this group" %}.</p>
+
+{% endif %}
+
+
+
+{% endblock %}
+

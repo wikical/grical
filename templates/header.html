@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% load comments i18n %}
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+    <meta http-equiv="Content-Language" content="{{ LANGUAGE_CODE }}" />
+    <meta name="language" content="{{ LANGUAGE_CODE }}" />
+    <meta name="description" content="{% trans "open community driven calendar, tagged and localized events" %}" />
+    <meta name="keywords" content="{% trans "events" %}, {% trans "calendar" %}, {% trans "community" %}, {% trans "open" %}, {% trans "social" %}" />
+    <title>GridCalendar - {{ title }}</title>
+    <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
+    <link href="{{ MEDIA_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+{% block feeds %}
+{%endblock feeds%}
+    {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
+    {% block css %}{% endblock %}
+    <!--
+    <script type="text/javascript" src="{{ MEDIA_URL }}javascript/external.js"></script>
+    -->
+</head>
+<body>
+<div id="header">
+    <a href="{% url root %}"><img src="{{ MEDIA_URL }}gridcalendar-logo-small.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
+    <h1>{{DOMAIN}}  -  {% trans "Grid Calendar" %}</h1>
+    <h2>{% trans "open community driven calendar" %}</h2>
+    <h3 style="color:gray"> {% trans "beta version" %}</h3>
+    <!-- menu if needed
+    <ul>
+        <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column.htm">3 Column <span>Holy Grail</span></a></li>
+        <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column-blog-style.htm" class="active">3 Column <span>Blog Style</span></a></li>
+    </ul>
+    -->
+    <div id="navigation">
+        <div id="userlinks">
+            {% if user.username %}
+            {% trans "Welcome" %} <b>{{ user.username }}</b>
+                | <a href="{% url settings %}">{% trans "settings" %}</a>
+                | <a href="{% url auth_logout %}">{% trans "logout" %}</a>
+            {% else %}
+            <a href="{% url registration_register %}">{% trans "Sign up" %}</a> | <a href="/a/accounts/login/">{% trans "log in" %}</a>
+            {% endif %}
+        </div>
+        <form action="{% url query %}" method="get">
+            <input type="text" size="40" name="q" value="{{ query }}">
+            <input type="submit" value="{% trans "Search" %}">
+        </form>
+        <div id="sitelinks">
+
+<!--
+    TODO: change below to URL names!
+-->
+            <a href="/h/help">{% trans "help" %}</a>
+            | <a href="/h/legal_notice">{% trans "legal notice" %}</a>
+        </div>
+    </div>
+</div>
+{% block body %}
+{% endblock %}
+<div id="footer">
+</div>
+</body>
+</html>

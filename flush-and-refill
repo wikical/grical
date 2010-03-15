@@ -1,0 +1,5 @@
+#! /bin/sh
+
+python manage.py flush --noinput
+
+./fill-database-with-test-data
