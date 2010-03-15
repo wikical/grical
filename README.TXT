@@ -1,3 +1,23 @@
+ABOUT THE PUBLIC-FLAG IN EVENTS
+-------------------------------
+Public events can be edited by anyone, otherwise only by the submitter and the members of the group
+the event might belong to. A private event can belong to maximal one group. On the contrary, public
+events can belong to many groups.
+
+Events submitted by anonymous users are public.
+
+The public-flag of an event cannot be changed after the first submission.
+
+The rational of private events belonging only to a single group is also that events have comments,
+and members of a group commenting on an event might not want non-members to see their comments.
+
+USING THE DJANGO SHELL
+----------------------
+> ./manage shell
+from gridcalendar.events.models import *
+e = Event.objects.get(pk=1)
+g = e.group_set.all()
+
 INSTALLATION
 ------------
 - Search for 'gridcalendar' on all files and change it accordingly
@@ -11,7 +31,7 @@ NOTES
   he, all, some groups)
 
 
-For developement, in the /etc/apache2/apache2.conf file, this setting was included:
+For development, in the /etc/apache2/apache2.conf file, this setting was included:
 
 MaxRequestsPerChild 1
 

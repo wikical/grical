@@ -12,9 +12,9 @@ from tagging.models import TaggedItem, Tag
 
 from settings import SECRET_KEY
 
-from gridcal.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
-from gridcal.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
-from gridcal.lists import all_events_in_user_groups
+from events.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
+from events.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
+from events.lists import all_events_in_user_groups
 
 def group_new(request):
     if not request.user.is_authenticated():

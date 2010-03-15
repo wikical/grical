@@ -9,9 +9,9 @@ from django.contrib.auth.models import User
 
 import settings
 
-from gridcal.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
-from gridcal.functions import getEventForm
-from gridcal.models import Group, Membership
+from events.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
+from events.forms import getEventForm
+from events.models import Group, Membership
 
 def rss_for_search(request, query):
         f = feed(request = request, url = 's/' + query, feed_dict = {

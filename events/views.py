@@ -25,13 +25,11 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from gridcal.functions import generate_event_textarea, StringToBool, getEventForm
-from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
-from gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
-from gridcal.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
-from gridcal.lists import is_event_viewable_by_user
+from events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
+from events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, getEventForm
+from events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
 
-# notice that an anonymous user get a form without the 'public_view' field (simplified)
+# notice that an anonymous user get a form without the 'public' field (simplified)
 
 def event_new(request):
     if request.method == 'POST':
@@ -44,11 +42,11 @@ def event_new(request):
             cd = sef.cleaned_data
             # create a new entry and saves the data
             if request.user.is_authenticated():
-                public_view_value = public_view=cd['public_view']
+                public = cd['public']
             else:
-                public_view_value = True
+                public = True
             e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
-                        tags=cd['tags'], public_view=public_view_value)
+                        tags=cd['tags'], public=public)
             e.save()
 #            return HttpResponseRedirect('/e/edit/' + str(e.id) + '/')
             return HttpResponseRedirect(reverse('event_edit', kwargs={'event_id': str(e.id)}))
@@ -59,8 +57,7 @@ def event_new(request):
         return HttpResponseRedirect(reverse('root'))
 
 def event_edit(request, event_id, raw):
-
-    # check if the event exists
+    # checks if the event exists
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
@@ -69,24 +66,27 @@ def event_edit(request, event_id, raw):
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
 
-    # check if the user is allowed to edit this event
-    # events submitted by anonymous users can be edited by anyone, otherwise only by the submitter
-    if (not event.public_edit):
+    # checks if the user is allowed to edit this event
+    # public events can be edited by anyone, otherwise only by the submitter
+    # and the group the event belongs to
+    if (not event.public):
+        # events submitted by anonymous users cannot be non-public:
+        assert (event.user != None)
         if (not request.user.is_authenticated()):
             return render_to_response('error.html',
-                        {'title': 'error', 'form': getEventForm(request.user),
-                        'message_col1': _('Users which are not logged-in are not allowed to edit the event with number') +
-                        ": " + str(event_id) + ". " +
-                        _("Please log-in and try again") + "."},
-                        context_instance=RequestContext(request))
+                    {'title': 'error', 'form': getEventForm(request.user),
+                    'message_col1': _('You need to be logged-in to be able' +
+                    ' to edit the event with the number:') +
+                    " " + str(event_id) + "). " +
+                    _("Please log-in and try again") + "."},
+                    context_instance=RequestContext(request))
         else:
-            if (event.user != None):
-                if (event.user.id != request.user.id):
-                    return render_to_response('error.html',
+            if (not Event.is_event_viewable_by_user(event_id, request.user.id)):
+                return render_to_response('error.html',
                         {'title': 'error', 'form': getEventForm(request.user),
-                        'message_col1': _('You are not allowed to edit the event with the following number') +
-                        ": " + str(event_id) + " " +
-                        _("because you are not logged in with the right account") + "."},
+                        'message_col1': _('You are not allowed to edit the' +
+                        ' event with the number:') +
+                        " " + str(event_id) },
                         context_instance=RequestContext(request))
 
     if (not raw):
@@ -97,10 +97,7 @@ def event_edit(request, event_id, raw):
             ef_url = EventUrlInlineFormSet(request.POST, instance=event)
             ef_timechunk = EventTimechunkInlineFormSet(request.POST, instance=event)
             ef_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
-            if request.user.is_authenticated():
-                ef = EventForm(request.POST, instance=event)
-            else:
-                ef = EventFormAnonymous(request.POST, instance=event)
+            ef = EventForm(request.POST, instance=event)
             if ef.is_valid() & ef_url.is_valid() & ef_timechunk.is_valid() & ef_deadline.is_valid() :
                 ef.save()
                 ef_url.save()
@@ -113,10 +110,7 @@ def event_edit(request, event_id, raw):
                 templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
                 return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
         else:
-            if request.user.is_authenticated():
-                ef = EventForm(instance=event)
-            else:
-                ef = EventFormAnonymous(instance=event)
+            ef = EventForm(instance=event)
             ef_url = EventUrlInlineFormSet(instance=event)
             ef_timechunk = EventTimechunkInlineFormSet(instance=event)
             ef_deadline = EventDeadlineInlineFormSet(instance=event)
@@ -127,60 +121,59 @@ def event_edit(request, event_id, raw):
                 if 'event_astext' in request.POST:
                     try:
                         t = request.POST['event_astext'].replace(": ", ":")
-                        event_attr_list = t.splitlines()
-                        event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
+                        #event_attr_list = t.splitlines()
+                        #event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
 
-                        if re.match('\d\d\d\d\-\d\d\-\d\d$', event_attr_dict['endd']) is not None:
-                            event_end = event_attr_dict['endd']
-                        else:
-                            event_end = None
+                        #if re.match('\d\d\d\d\-\d\d\-\d\d$', event_attr_dict['endd']) is not None:
+                        #    event_end = event_attr_dict['endd']
+                        #else:
+                        #    event_end = None
 
-                        if re.match('\d+\.\d*$', event_attr_dict['lati']) is not None:
-                            event_lati = event_attr_dict['lati']
-                        else:
-                            event_lati = None
+                        #if re.match('\d+\.\d*$', event_attr_dict['lati']) is not None:
+                        #    event_lati = event_attr_dict['lati']
+                        #else:
+                        #    event_lati = None
 
-                        if re.match('\d+\.\d*$', event_attr_dict['long']) is not None:
-                            event_long = event_attr_dict['long']
-                        else:
-                            event_long = None
+                        #if re.match('\d+\.\d*$', event_attr_dict['long']) is not None:
+                        #    event_long = event_attr_dict['long']
+                        #else:
+                        #    event_long = None
 
-                        if re.match('\d+$', event_attr_dict['tizo']) is not None:
-                            event_tizo = event_attr_dict['tizo']
-                        else:
-                            event_tizo = None
+                        #if re.match('\d+$', event_attr_dict['tizo']) is not None:
+                        #    event_tizo = event_attr_dict['tizo']
+                        #else:
+                        #    event_tizo = None
 
-                        event.acro        = event_attr_dict['acro']
-                        event.title       = event_attr_dict['titl']
-                        event.start       = event_attr_dict['date']
-                        event.end         = event_end
-                        event.tags        = event_attr_dict['tags']
-                        event.public_view = StringToBool(event_attr_dict['view'])
-                        event.public_edit = StringToBool(event_attr_dict['edit'])
-                        event.city        = event_attr_dict['city']
-                        event.address     = event_attr_dict['addr']
-                        event.postcode    = event_attr_dict['code']
-                        event.country     = event_attr_dict['land']
-                        event.timezone    = event_tizo
-                        event.latitude    = event_lati
-                        event.longitude   = event_long
-                        event.description = event_attr_dict['desc']
-                        EventUrl.objects.filter(event=event_id).delete()
-                        EventTimechunk.objects.filter(event=event_id).delete()
-                        EventDeadline.objects.filter(event=event_id).delete()
-                        for textline in event_attr_list:
-                            if textline[0:4] == 'url:':
-                                line_attr_list = textline[4:].split("|",1)
-                                eu = EventUrl(event=event, url_name=line_attr_list[0], url=line_attr_list[1])
-                                eu.save(force_insert=True)
-                            if textline[0:5] == 'time:':
-                                line_attr_list = textline[5:].split("|",3)
-                                et = EventTimechunk(event=event, timechunk_name=line_attr_list[0], timechunk_date=line_attr_list[1], timechunk_starttime=line_attr_list[2], timechunk_endtime=line_attr_list[3])
-                                et.save(force_insert=True)
-                            if textline[0:3] == 'dl:':
-                                line_attr_list = textline[3:].split("|",1)
-                                ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
-                                ed.save(force_insert=True)
+                        #event.acronym     = event_attr_dict['acro']
+                        #event.title       = event_attr_dict['titl']
+                        #event.start       = event_attr_dict['date']
+                        #event.end         = event_end
+                        #event.tags        = event_attr_dict['tags']
+                        #event.public      = StringToBool(event_attr_dict['publ'])
+                        #event.city        = event_attr_dict['city']
+                        #event.address     = event_attr_dict['addr']
+                        #event.postcode    = event_attr_dict['code']
+                        #event.country     = event_attr_dict['land']
+                        #event.timezone    = event_tizo
+                        #event.latitude    = event_lati
+                        #event.longitude   = event_long
+                        #event.description = event_attr_dict['desc']
+                        #EventUrl.objects.filter(event=event_id).delete()
+                        #EventTimechunk.objects.filter(event=event_id).delete()
+                        #EventDeadline.objects.filter(event=event_id).delete()
+                        #for textline in event_attr_list:
+                        #    if textline[0:4] == 'url:':
+                        #        line_attr_list = textline[4:].split("|",1)
+                        #        eu = EventUrl(event=event, url_name=line_attr_list[0], url=line_attr_list[1])
+                        #        eu.save(force_insert=True)
+                        #    if textline[0:5] == 'time:':
+                        #        line_attr_list = textline[5:].split("|",3)
+                        #        et = EventTimechunk(event=event, timechunk_name=line_attr_list[0], timechunk_date=line_attr_list[1], timechunk_starttime=line_attr_list[2], timechunk_endtime=line_attr_list[3])
+                        #        et.save(force_insert=True)
+                        #    if textline[0:3] == 'dl:':
+                        #        line_attr_list = textline[3:].split("|",1)
+                        #        ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
+                        #        ed.save(force_insert=True)
                         event.save()
                         #return HttpResponseRedirect('/e/show/' + event_id + '/')
                         return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
@@ -201,7 +194,7 @@ def event_show(request, event_id):
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
-    if not is_event_viewable_by_user(event_id, request.user.id):
+    if not Event.is_event_viewable_by_user(event_id, request.user.id):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to view the event with the following number") +
@@ -220,7 +213,7 @@ def event_show_raw(request, event_id):
                     {'title': 'error', 'form': getEventForm(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
-    if not is_event_viewable_by_user(event_id, request.user.id):
+    if not Event.is_event_viewable_by_user(event_id, request.user.id):
         return render_to_response('error.html',
                 {'title': 'error', 'form': getEventForm(request.user),
                 'message_col1': _("You are not allowed to view the event with the following number") +
@@ -368,7 +361,7 @@ def list_events_of_user(request, username):
             u = User.objects.get(username__exact=username)
             useridtmp = u.id
             events = Event.objects.filter(user=useridtmp)
-            events = Event.objects.filter(public_view=True)
+            events = Event.objects.filter(public=True)
             if len(events) == 0:
                 return render_to_response('error.html',
                     {'title': 'error', 'message_col1': _("Your search didn't get any result") + "."},

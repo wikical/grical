@@ -6,14 +6,14 @@ import settings
 setup_environ(settings)
 
 from django.contrib.auth.models import User
-from gridcalendar.gridcal.models import Event, Group, Membership, Calendar, Filter
+from gridcalendar.events.models import Event, Group, Membership, Calendar, Filter
 
 
-events_how_many = 3
+NUMBER_OF_EVENTS = 3
 
 #-------------------- create some userless events ----------------
 event_c = 0
-while event_c < events_how_many:
+while event_c < NUMBER_OF_EVENTS:
     for when in ['past', 'future']:
         if when == 'past':
             start_str =         str(datetime.date.today() + datetime.timedelta(-36))
@@ -21,20 +21,14 @@ while event_c < events_how_many:
         elif when == 'future':
             start_str =         str(datetime.date.today() + datetime.timedelta(33))
             end_str =           str(datetime.date.today() + datetime.timedelta(36))
-        else:
-            assert False
-        for pv in [True, False]:
-            if pv:
-                pv_str = 'PUBLIC'
-            else:
-                pv_str = 'NON-PUBLIC'
-            e = Event(
-                acro =          'ACRO',
-                title =         "EVENT " + str(event_c) + " " + when + " USERLESS " + pv_str,
+        else: assert False
+        event_c += 1
+        e = Event(
+                acronym =       'ACRO',
+                title =         "EVENT " + str(event_c) + " " + when + " USERLESS PUBLIC",
                 start =         start_str,
                 end =           end_str,
-                public_edit =   False,
-                public_view =   pv,
+                public =        True,
                 tags =          'tag',
                 country =       'DE',
                 city =          'Berlin',
@@ -45,12 +39,9 @@ while event_c < events_how_many:
                 timezone =      60,
                 description =   'Event description.'
                 )
-            try:
-                e.save()
-                print "OK    SAVING EVENT: " + str(event_c) + " " + when + " " + pv_str
-            except:
-                print "ERROR SAVING EVENT: " + str(event_c) + " " + when + " " + pv_str
-        event_c += 1
+        print "SAVING EVENT: " + str(event_c) + " " + when + " PUBLIC"
+        e.save()
+    event_c += 1
 
 
 #----------------- create some users and let them create some events ----------------
@@ -76,7 +67,7 @@ for user_id in range(1, 5):
     filter.save()
 
     event_c = 0
-    while event_c < events_how_many:
+    while event_c < NUMBER_OF_EVENTS:
         for when in ['past', 'future']:
             if when == 'past':
                 start_str =         str(datetime.date.today() + datetime.timedelta(-36))
@@ -93,12 +84,11 @@ for user_id in range(1, 5):
                     pv_str = 'NON-PUBLIC'
                 e = Event(
                         user = u,
-                        acro =          'ACRO',
+                        acronym =       'ACRO',
                         title =         "EVENT " + str(event_c) + " " + when + " USER " + str(user_id) + " " + pv_str,
                         start =         start_str,
                         end =           end_str,
-                        public_edit =   False,
-                        public_view =   pv,
+                        public =        pv,
                         tags =          'tag',
                         country =       'DE',
                         city =          'Berlin',

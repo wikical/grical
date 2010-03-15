@@ -5,3 +5,4 @@ syntax: glob
 syntax: regexp
 settings_local.py
 apache/django.wsgi
+gridcalendar.sqlite

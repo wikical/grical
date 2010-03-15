@@ -41,7 +41,7 @@ ACCOUNT_ACTIVATION_DAYS = 10
 # ======================================================================
 
 INSTALLED_APPS = (
-    'gridcal',
+    'gridcalendar.events',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.humanize',

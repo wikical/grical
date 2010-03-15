@@ -21,9 +21,10 @@ from django.contrib.sites.models import Site
 from tagging.models import Tag, TaggedItem
 
 from settings import SECRET_KEY, DEBUG
-from gridcal.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, EventFormAnonymous, FilterForm
-from gridcal.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
-from gridcal.functions import is_user_in_group, is_event_viewable_by_user
+from events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm
+from events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
+from gridcalendar.events.models import Group
+from gridcalendar.events.models import Event
 
 
 def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_event_id_list, max_events, mode):
@@ -58,7 +59,7 @@ def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_eve
             if len(e_list) > 0:
                 for e in e_list:
                     inital_exclude_event_id_list.append(e.id)
-                    if (is_event_viewable_by_user(e.id, user_id)):
+                    if (Event.is_event_viewable_by_user(e.id, user_id)):
                         list_of_events.append(e)
                         events_appended += 1
             else:
@@ -70,8 +71,8 @@ def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_eve
 
 
 def list_search_get(q, user_id, only_future):
-    """
-    This function takes a query entered into the search as an argument and returns a list of events
+    """ Takes a query entered into the search field as an argument and
+    returns a list of events.
     """
     def time_limiter_get(tpart):
         tpart_scope = 'start'
@@ -155,7 +156,7 @@ def list_search_get(q, user_id, only_future):
         events_acro = Event.objects.none()
         if qpart.find(":") == -1 or re.match('acro:', qpart) is not None:
             qpart_acro = re.sub('acro:', '', qpart, 1)
-            events_acro = Event.objects.filter(acro__iexact=qpart_acro)
+            events_acro = Event.objects.filter(acronym__iexact=qpart_acro)
             for iii in events_acro:
                 sorting_dictionary[iii.id]=sorting_dictionary.get(iii.id,0)+1
 
@@ -218,7 +219,7 @@ def list_search_get(q, user_id, only_future):
     # filter to display only events that the user is allowed to see
     final_list_of_events = list()
     for e in list_of_events:
-        if is_event_viewable_by_user(e.id, user_id):
+        if Event.is_event_viewable_by_user(e.id, user_id):
             final_list_of_events.append(e)
 
     final_list_of_events = list_of_events

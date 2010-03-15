@@ -269,80 +269,309 @@ COUNTRIES = (
     ('ZW', _('Zimbabwe')),
 )
 
-class CountryField(models.CharField):
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('max_length', 2)
-        kwargs.setdefault('choices', COUNTRIES)
-
-        super(CountryField, self).__init__(*args, **kwargs)
-
-    def get_internal_type(self):
-        return "CharField"
-
-
 class Event(models.Model):
-    # related_name avoids the errors:
-    # events.event: Accessor for field 'user' clashes with related m2m field 'User.event_set'. Add a related_name argument to the definition for 'user'.
-    # events.event: Accessor for m2m field 'users' clashes with related field 'User.event_set'. Add a related_name argument to the definition for 'users'.
-    #
-    # AnonymousUser is not a user in the table User. For events posted by non-logged-in-users, this field will be null
-    user = models.ForeignKey(User, editable=False, related_name="owner", blank=True, null=True, verbose_name=_('User'))
-    # time stamp for event creation
-    creation_time = models.DateTimeField(_('Creation time'), editable=False, auto_now_add=True)
-    modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
-    ##############################################################
-    acro = models.CharField(_('Acronym'), max_length=20, blank=True, null=True, help_text=_('Example: 26C3'))
-    #
-    title = models.CharField(_('Title'), max_length=200, blank=False, help_text=_('Example: Demostration in Munich against software patents organised by the German association FFII e.V.'))
-    #
-    start = models.DateField(_('Start'), blank=False, help_text=_("Examples of valid dates: '2006-10-25' '10/25/2006' '10/25/06' 'Oct 25 2006' 'Oct 25, 2006' '25 Oct 2006' '25 Oct, 2006' 'October 25 2006' 'October 25, 2006' '25 October 2006' '25 October, 2006'"))
+    """ Event model. """
+    user = models.ForeignKey(User, editable=False, related_name="owner",
+            blank=True, null=True, verbose_name=_('User'))
+    """The user who created the event or null if AnonymousUser"""
+    creation_time = models.DateTimeField(_('Creation time'), editable=False,
+            auto_now_add=True)
+    """Time stamp for event creation"""
+    modification_time = models.DateTimeField(_('Modification time'),
+            editable=False, auto_now=True)
+    """Time stamp for event modification"""
+    acronym = models.CharField(_('Acronym'), max_length=20, blank=True,
+            null=True, help_text=_('Example: 26C3'))
+    title = models.CharField(_('Title'), max_length=200, blank=False,
+            help_text=_('Example: Demostration in Munich against software \
+                patents organised by the German association FFII e.V.'))
+    start = models.DateField(_('Start'), blank=False, help_text=_("Examples \
+            of valid dates: '2006-10-25' '10/25/2006' '10/25/06' 'Oct 25 \
+            2006' 'Oct 25, 2006' '25 Oct 2006' '25 Oct, 2006' \
+            'October 25 2006' 'October 25, 2006' '25 October 2006' '25 \
+            October, 2006'"))
     end = models.DateField(_('End'), null=True, blank=True)
-    #
-    tags = TagField(_('Tags'), blank=True, null=True, help_text=_(u"Tags are case in-sensitive. Only letters (these can be international, like: αöł), digits and hyphens are allowed. Tags are separated with spaces."))
-    #
-    public_view = models.BooleanField(_('Publicly viewable'), default=True, help_text=_("A publicly viewable entry can be seen by anyone, otherwise only by the selected persons and groups"))
-    public_edit = models.BooleanField(_('Publicly editable'), default=False, help_text=_("A publicly editable entry can be edited by anyone, otherwise only by the selected persons and groups"))
-    #
-    country = models.CharField(_('Country'), blank=True, null=True, max_length=2, choices=COUNTRIES)
+    tags = TagField(_('Tags'), blank=True, null=True, help_text=_(u"Tags are \
+        case in-sensitive. Only letters (these can be international, like: \
+        αöł), digits and hyphens (-) are allowed. Tags are separated with \
+        spaces."))
+    public = models.BooleanField(_('Public'), default=True, help_text=_("A \
+        public event can be seen and edited by anyone, otherwise only by the \
+        members of selected groups"))
+    country = models.CharField(_('Country'), blank=True, null=True,
+            max_length=2, choices=COUNTRIES)
     city = models.CharField(_('City'), blank=True, null=True, max_length=50)
-    postcode = models.CharField(_('Postcode'), blank=True, null=True, max_length=16)
-    address = models.CharField(_('Street address'), blank=True, null=True, max_length=100)
-    latitude = models.FloatField(_('Latitude'), blank=True, null=True, help_text=_("Please type decimal degrees, not degrees/minutes/seconds. Prefix with \"-\" for South, no sign for North."))
-    longitude = models.FloatField(_('Longitude'), blank=True, null=True, help_text=_("Please type decimal degrees, not degrees/minutes/seconds. Prefix with \"-\" for West, no sign for East."))
-    timezone = models.SmallIntegerField(_('Timezone'), blank=True, null=True, help_text=_("Minutes relative to UTC. Examples: UTC+1 = 60, UTC-3 = -180"))
-    #
+    postcode = models.CharField(_('Postcode'), blank=True, null=True,
+            max_length=16)
+    address = models.CharField(_('Street address'), blank=True, null=True,
+            max_length=100)
+    latitude = models.FloatField(_('Latitude'), blank=True, null=True,
+            help_text=_("In decimal degrees, not \
+            degrees/minutes/seconds. Prefix with \"-\" for South, no sign for \
+            North."))
+    longitude = models.FloatField(_('Longitude'), blank=True, null=True,
+            help_text=_("In decimal degrees, not \
+                degrees/minutes/seconds. Prefix with \"-\" for West, no sign \
+                for East."))
+    timezone = models.SmallIntegerField(_('Timezone'), blank=True, null=True,
+            help_text=_("Minutes relative to UTC (e.g. -60 means UTC-1"))
     description = models.TextField(_('Description'), blank=True, null=True)
-    ##############################################################
-    # groups = models.ManyToManyField(Group, blank=True, null=True, help_text=_("Groups to be notified and allowed to see it if not public"))
-    def set_tags(self, tags):
-        Tag.objects.update_tags(self, tags)
-    def get_tags(self):
-        return Tag.objects.get_for_object(self)
-    def __unicode__(self):
-        return self.start.isoformat() + " : " + self.title
-    @models.permalink
-    def get_absolute_url(self):
-        #return '/e/show/' + str(self.id) + '/'
-        #return (reverse('event_show', kwargs={'event_id': str(self.id)}))
-        return ('event_show', (), { 'event_id': self.id })
+    # the relation event-group is now handle in group
+    # groups = models.ManyToManyField(Group, blank=True, null=True,
+    # help_text=_("Groups to be notified and allowed to see it if not public"))
+
     class Meta:
         ordering = ['start']
         verbose_name = _('Event')
         verbose_name_plural = _('Events')
 
+    def set_tags(self, tags):
+        Tag.objects.update_tags(self, tags)
+
+    def get_tags(self):
+        return Tag.objects.get_for_object(self)
+
+    def __unicode__(self):
+        return self.start.isoformat() + " : " + self.title
+
+    @models.permalink
+    def get_absolute_url(self):
+        #return '/e/show/' + str(self.id) + '/'
+        #return (reverse('event_show', kwargs={'event_id': str(self.id)}))
+        return ('event_show', (), { 'event_id': self.id })
+
+    def save(self, *args, **kwargs):
+        """ Call the real 'save' function after some assertions. """
+        # It is not allowed to have a non-public event without owner:
+        assert not ((self.public == False) and (self.user == None))
+        # It is not allowed to modify the 'public' field:
+        assert ((self.pk == None) # true when it is a new event
+                or (self.public == Event.objects.get(pk=self.pk).public))
+        super(Event, self).save(*args, **kwargs) # Call the "real" save() method.
+
+    def as_text(self):
+        """ Returns a multiline string representation of the event."""
+        # TODO: add a test hier to create an event as a text with the output of
+        # this function
+        to_return = ""
+        for keyword in synonyms().values():
+            if keyword == 'title':
+                to_return += keyword + ": " + unicode(self.title) + "\n"
+            elif keyword == 'start':
+                to_return += keyword + ": " + self.start.strftime("%Y-%m-%d") + "\n"
+            elif keyword == 'end' and self.end:
+                to_return += keyword + ": " + self.end.strftime("%Y-%m-%d") + "\n"
+            elif keyword == 'country' and self.country:
+                to_return += keyword + ": " + unicode(self.country) + "\n"
+            elif keyword == 'timezone' and self.timezone:
+                to_return += keyword + ": " + unicode(self.timezone) + "\n"
+            elif keyword == 'latitude' and self.latitude:
+                to_return += keyword + ": " + unicode(self.latitude) + "\n"
+            elif keyword == 'longitude' and self.longitude:
+                to_return += keyword + ": " + unicode(self.longitude) + "\n"
+            elif keyword == 'acronym' and self.acronym:
+                to_return += keyword + ": " + unicode(self.acronym) + "\n"
+            elif keyword == 'tags' and self.tags:
+                to_return += keyword + ": " + unicode(self.tags) + "\n"
+            elif keyword == 'public' and self.public:
+                to_return += keyword + ": " + unicode(self.public) + "\n"
+            elif keyword == 'address' and self.address:
+                to_return += keyword + ": " + unicode(self.address) + "\n"
+            elif keyword == 'city' and self.city:
+                to_return += keyword + ": " + unicode(self.city) + "\n"
+            elif keyword == 'code' and self.code:
+                to_return += keyword + ": " + unicode(self.code) + "\n"
+            elif keyword == 'urls' and self.urls:
+                urls = EventUrl.objects.filter(event=self.id)
+                if len(urls) > 0:
+                    to_return += "urls:\n"
+                    for url in urls:
+                        to_return += "\t" + url.url_name + ': ' + url.url + "\n"
+            elif keyword == 'Timechunks' and self.Timechunks:
+                times = EventTimechunk.objects.filter(event=self.id)
+                if len(times) > 0:
+                    to_return += "Timechunks:\n"
+                    for time in times:
+                        to_return = "".joint((to_return, "\t",
+                            self.timechunk_name, ": ",
+                            self.timechunk_date.strftime("%Y-%m-%d"), ": ",
+                            str(self.timechunk_starttime), "-",
+                            str(self.timechunk_endtime), '\n'))
+                        # TODO: use strftime instead of str in the lines above
+            elif keyword == 'groups' and self.groups:
+                pass #FIXME
+            elif keyword == 'description' and self.description:
+                pass #FIXME
+        return to_return
+
+    @staticmethod
+    def parse_text(text, pk=None):
+        """It parses a text and saves it as one or more events in the data base.
+
+        Events are separated by blank lines.
+        
+        A text to be parsed as an event is of the form:
+            title: a title
+            tags: tag1 tag2 tag3
+            start: 2020-01-30
+            ...
+
+        There are synonyms for the names of the field like 't' for 'title'. See
+        get_synonyms()
+        
+        The text for the field 'urls' is of the form:
+            urls: web_url
+                name1: name1_url
+                name2: name2_url
+                ...
+        The idented lines are optional. If web_url is present, it will be saved
+        with the url_name 'web'
+
+        The text for the field 'Timechunks' is of the form:
+            FIXME: complete
+
+        The text for the field 'groups' is of the form:
+            groups: group1 group2 ...
+        """
+        # TODO: allow to put comments on events by email
+        data = {}
+        # separate events
+        # get fields
+        field_pattern = re.compile(
+                r"^[^ :]+\s*:.*(?:(?:\n|\r\n?) .+)*", re.MULTILINE)
+        parts_pattern = re.compile(
+                r"^([^ :]+\s*):(.*)((?:(?:\n|\r\n?) .+)*)", re.MULTILINE)
+        # group 0 is the text before the colon
+        # group 1 is the text after the colon
+        # group 2 are all indented lines
+        synonyms = get_synonyms()
+        for field_text in field_pattern.findall(text):
+            parts = parts_pattern.match(field_text).groups()
+            field_name = synonyms[parts[0]]
+            if field_name == 'groups':
+                pass
+            elif field_name == 'urls':
+                pass
+            elif field_name == 'Timechunks':
+                pass
+            else:
+                if not parts[2] == '': raise ValidationError(_(
+                        "field '%' doesn't accept subparts" % parts[1]))
+                if parts[0] == '': raise ValidationError(_(
+                        "a left part of a colon is empty"))
+                if not synomys.has_key(parts[0]): raise ValidationError(_(
+                        "keyword % unknown" % parts[0]))
+                data[synomys[parts[0]]] = parts[1]
+        event_form = EventForm(data)
+        if (pk == None):
+            pass
+        else:
+            pass
+        #FIXME: finish this function
+
+    @staticmethod
+    def get_synonyms():
+        """Returns a dictionay with names (strings) and the fields (strings)
+        they refer.
+        
+        All values of the returned dictionary (except groups, urls and
+        Timechunks) must be names of fields of the Event class.
+
+        >>> synomyns_values_set = set(Event.get_synonyms().values())
+        >>> assert ('groups' in synomyns_values_set)
+        >>> synomyns_values_set.remove('groups')
+        >>> assert ('urls' in synomyns_values_set)
+        >>> synomyns_values_set.remove('urls')
+        >>> assert ('Timechunks' in synomyns_values_set)
+        >>> synomyns_values_set.remove('Timechunks')
+        >>> assert (set(dir(Event)) >= synomyns_values_set)
+        """
+        # TODO: subclass dictionary to ensure you don't override a key
+        synonyms = {}
+        synonyms['title']       = 'title'       # title
+        synonyms['t']           = 'title'
+        synonyms['titl']        = 'title'
+        synonyms['start']       = 'start'       # start
+        synonyms['date']        = 'start'
+        synonyms['d']           = 'start'
+        synonyms['tags']        = 'tags'        # tags
+        synonyms['subjects']    = 'tags'
+        synonyms['s']           = 'tags'
+        synonyms['end']         = 'end'         # end
+        synonyms['e']           = 'end'
+        synonyms['endd']        = 'end'
+        synonyms['acronym']     = 'acronym'     # acronym
+        synonyms['acro']        = 'acronym'
+        synonyms['public']      = 'public'      # public
+        synonyms['p']           = 'public'
+        synonyms['country']     = 'country'     # country
+        synonyms['coun']        = 'country'
+        synonyms['c']           = 'country'
+        synonyms['city']        = 'city'        # city
+        synonyms['cc']          = 'city'
+        synonyms['postcode']    = 'postcode'    # postcode
+        synonyms['pp']          = 'postcode'
+        synonyms['zip']         = 'postcode'
+        synonyms['code']        = 'postcode'
+        synonyms['address']     = 'address'     # address
+        synonyms['addr']        = 'address'
+        synonyms['a']           = 'address'
+        synonyms['latitude']    = 'latitude'    # latitude
+        synonyms['lati']        = 'latitude'
+        synonyms['longitude']   = 'longitude'   # longitude
+        synonyms['long']        = 'longitude'
+        synonyms['timezone']    = 'timezone'    # timezone
+        synonyms['description'] = 'description' # description
+        synonyms['desc']        = 'description'
+        synonyms['des']         = 'description'
+        synonyms['de']          = 'description'
+        synonyms['groups']      = 'groups'      # groups (*)
+        synonyms['group']       = 'groups'
+        synonyms['g']           = 'groups'
+        synonyms['urls']        = 'urls'        # urls (*)
+        synonyms['u']           = 'urls'
+        synonyms['web']         = 'urls'
+        synonyms['Timechunks']  = 'Timechunks'  # Timechunks (*)
+        synonyms['time']        = 'Timechunks'
+        synonyms['t']           = 'Timechunks'
+        # (*) can have multi lines
+        return synonyms
+
+    @staticmethod
+    def is_event_viewable_by_user(event_id, user_id):
+        event = Event.objects.get(id=event_id)
+        if event.public:
+            return True
+        elif event.user == None:
+            return True
+        elif event.user.id == user_id:
+            return True
+        else:
+            # iterating over all groups that the event belongs to
+            for g in Group.objects.filter(events__id__exact=event_id):
+                if Group.is_user_in_group(user_id, g.id):
+                    return True
+            return False
+
+
 class EventUrl(models.Model):
     event = models.ForeignKey(Event, related_name='event_of_url')
-    url_name = models.CharField(_('URL Name'), blank=True, null=True, max_length=80, help_text=_("Example: information about accomodation"))
+    url_name = models.CharField(_('URL Name'), blank=True, null=True,
+            max_length=80, help_text=_(
+            "Example: information about accomodation"))
     url = models.URLField(_('URL'), blank=False, null=False)
     def __unicode__(self):
         return self.url
 
 class EventTimechunk(models.Model):
     event = models.ForeignKey(Event, related_name='event_of_timechunk')
-    timechunk_name = models.CharField(_('Timechunk name'), blank=True, null=True, max_length=80, help_text=_("Example: day 2 of the conference"))
-    timechunk_date = models.DateField(_('Timechunk day'), blank=False, null=False)
-    timechunk_starttime = models.TimeField(_('Timechunk start time'), blank=False, null=False)
+    timechunk_name = models.CharField(_('Timechunk name'), blank=True,
+            null=True, max_length=80, help_text=_(
+            "Example: day 2 of the conference"))
+    timechunk_date = models.DateField(_('Timechunk day'), blank=False,
+            null=False)
+    timechunk_starttime = models.TimeField(_('Timechunk start time'),
+            blank=False, null=False)
     timechunk_endtime = models.TimeField(_('Timechunk end time'), blank=False, null=False)
     def __unicode__(self):
         return self.timechunk_name
@@ -354,21 +583,18 @@ class EventDeadline(models.Model):
     def __unicode__(self):
         return self.deadline_name
 
-# TODO: add setting info to users. See the auth documentation because there is a method for adding
-# fields to User. E.g.
-#   - interesting locations
-#   - interesting tags
-#   - hidden: location and tags clicked before
-
-#TODO: events comment model. Check for already available django comment module
-
 class Filter(models.Model):
     user = models.ForeignKey(User, unique=False, verbose_name=_('User'))
-    modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
-    query = models.CharField(_('Query'), max_length=500, blank=False, null=False)
+    modification_time = models.DateTimeField(_('Modification time'),
+            editable=False, auto_now=True)
+    query = models.CharField(_('Query'), max_length=500, blank=False,
+            null=False)
     name = models.CharField(_('Name'), max_length=40, blank=False, null=False)
-    email = models.BooleanField(_('Email'), default=False, help_text=_('If set it sends an email to a user when a new event matches all fields set'))
-    maxevents_email = models.SmallIntegerField(_('Max events in e-mail'), blank=True, null=True, default=10, help_text=_("Maximum number of events you to show in a notification e-mail"))
+    email = models.BooleanField(_('Email'), default=False, help_text=
+            _('If set it sends an email to a user when a new event matches all fields set'))
+    maxevents_email = models.SmallIntegerField(_('Number of events in e-mail'),
+            blank=True, null=True, default=10, help_text=
+            _("Maximum number of events to show in a notification e-mail"))
     class Meta:
         ordering = ['modification_time']
         unique_together = ("user", "name")
@@ -380,30 +606,44 @@ class Filter(models.Model):
     def get_absolute_url(self):
         return ('filter_edit', (), { 'filter_id': self.id })
 
-
-SHA1_RE = re.compile('^[a-f0-9]{40}$')
-
 class Group(models.Model):
     name = models.CharField(_('Name'), max_length=80, unique=True)
     description = models.TextField(_('Description'))
-    members = models.ManyToManyField(User, through='Membership', verbose_name=_('Members'))
-    events = models.ManyToManyField(Event, through='Calendar', verbose_name=_('Events'))
-    creation_time = models.DateTimeField(_('Creation time'), editable=False, auto_now_add=True)
-    modification_time = models.DateTimeField(_('Modification time'), editable=False, auto_now=True)
+    members = models.ManyToManyField(User, through='Membership',
+            verbose_name=_('Members'))
+    events = models.ManyToManyField(Event, through='Calendar',
+            verbose_name=_('Events'))
+    creation_time = models.DateTimeField(_('Creation time'), editable=False,
+            auto_now_add=True)
+    modification_time = models.DateTimeField(_('Modification time'),
+            editable=False, auto_now=True)
+
     class Meta:
         ordering = ['creation_time']
         verbose_name = _('Group')
         verbose_name_plural = _('Groups')
+
     def __unicode__(self):
         return self.name
+
     @models.permalink
     def get_absolute_url(self):
         return ('list_events_group', (), { 'group_id': self.id })
 
+    @staticmethod
+    def is_user_in_group(user_id, group_id):
+        if len(Membership.objects.filter(user__id__exact=user_id,
+                group__id__exact=group_id)) == 1:
+            return True
+        else:
+            return False
+
 class Membership(models.Model):
+    """Relation between users and groups."""
     user = models.ForeignKey(User, verbose_name=_('User'))
     group = models.ForeignKey(Group, verbose_name=_('Group'))
-    is_administrator = models.BooleanField(_('Is administrator'), default=True) # TODO: default true, not used for the moment
+    is_administrator = models.BooleanField(_('Is administrator'), default=True)
+    """Not used at the moment. All members of a group are administrators."""
     new_event_email = models.BooleanField(_('New event email'), default=True)
     new_member_email = models.BooleanField(_('email_member_email'), default=True)
     date_joined = models.DateField(_('date_joined'), editable=False, auto_now_add=True)
@@ -412,8 +652,8 @@ class Membership(models.Model):
         verbose_name = _('Membership')
         verbose_name_plural = _('Memberships')
 
-# model "Calendar" is about which events are interesting for which group
 class Calendar(models.Model):
+    """Relation between events and groups."""
     event = models.ForeignKey(Event, verbose_name=_('Event'))
     group = models.ForeignKey(Group, verbose_name=_('Group'))
     date_added = models.DateField(_('Date added'), editable=False, auto_now_add=True)
@@ -422,24 +662,8 @@ class Calendar(models.Model):
         verbose_name = _('Calendar')
         verbose_name_plural = _('Calendars')
 
-# explained at
-# http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
-class MembershipInline(admin.TabularInline):
-    model = Membership
-    extra = 1
-class CalendarInline(admin.TabularInline):
-    model = Calendar
-    extra = 1
-class GroupAdmin(admin.ModelAdmin):
-    inlines = (MembershipInline, CalendarInline,)
-
-
-# They are already registered somehow
-# admin.site.register(Group, GroupAdmin)
-# register(Event)
-
 # Next code is an adaptation of some code in python-django-registration
-
+SHA1_RE = re.compile('^[a-f0-9]{40}$')
 class GroupInvitationManager(models.Manager):
     """
     Custom manager for the ``GroupInvitation`` model.
@@ -580,8 +804,6 @@ class GroupInvitationManager(models.Manager):
         for invitation in self.all():
             if invitation.activation_key_expired():
                 invitation.delete()
-
-
 class GroupInvitation(models.Model):
     """
     A simple class which stores an activation key for use during
@@ -640,3 +862,25 @@ class GroupInvitation(models.Model):
                (self.guest.date_joined + expiration_date <= datetime.datetime.now())
     # TODO: find out and explain here what this means:
     activation_key_expired.boolean = True
+
+
+# TODO: add setting info to users. See the auth documentation because there is a method for adding
+# fields to User. E.g.
+#   - interesting locations
+#   - interesting tags
+#   - hidden: location and tags clicked before
+
+
+#TODO: events comment model. Check for already available django comment module
+
+
+# Was a Miernik idea but he doesn't remember what is the advantage of using a
+# custom field for countries in the Event model:
+# class CountryField(models.CharField):
+#     def __init__(self, *args, **kwargs):
+#         kwargs.setdefault('max_length', 2)
+#         kwargs.setdefault('choices', COUNTRIES)
+#         super(CountryField, self).__init__(*args, **kwargs)
+#     def get_internal_type(self):
+#         return "CharField"
+

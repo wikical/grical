@@ -10,9 +10,9 @@ from django.contrib.auth.models import User
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 
 import settings
-from gridcal.models import Event, Filter, Group, Membership
-from gridcal.lists import list_search_get
-from gridcal.icalendar import ICalendarFeed, EVENT_ITEMS
+from events.models import Event, Filter, Group, Membership
+from events.lists import list_search_get
+from events.icalendar import ICalendarFeed, EVENT_ITEMS
 
 class FeedAllComingEvents(Feed):
     title = "All coming events"
@@ -21,6 +21,7 @@ class FeedAllComingEvents(Feed):
 
     def items(self):
         return Event.objects.order_by('start')[:settings.FEED_SIZE]
+        # FIXME: the above line seems to get all events into memory. Avoid!
 
 class FeedSearchEvents(Feed):
     title_template = 'rss/searchevents_title.html'

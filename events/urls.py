@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import *
 
-from gridcal import views, views_groups, rss
-from gridcal.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
+from events import views, views_groups, rss
+from events.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
 
 urlpatterns = patterns('',
     url(r'^$',                                                          views.root,                         name='root'),

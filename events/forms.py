@@ -6,8 +6,13 @@ from django.forms import CheckboxSelectMultiple, SelectMultiple
 
 from django.contrib.auth.models import User
 
-from gridcal.models import Event, Filter, Group, Membership, Calendar
+from events.models import Event, Filter, Group, Membership, Calendar
 
+def getEventForm(user):
+    """returns a simplied event form with or without the public field"""
+    if user.is_authenticated():
+        return SimplifiedEventForm()
+    return SimplifiedEventFormAnonymous()
 
 class FilterForm(ModelForm):
     class Meta:
@@ -15,12 +20,14 @@ class FilterForm(ModelForm):
         exclude = ('user',)
 
 class EventForm(ModelForm):
+    """Form to edit all fields except 'public'"""
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         self.fields['title'].widget.attrs["size"] = 60
         self.fields['tags'].widget.attrs["size"] = 60
     class Meta:
         model = Event
+        exclude = ('public',) # public field cannot be edited after creation
     def clean_tags(self):
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
@@ -28,15 +35,10 @@ class EventForm(ModelForm):
         # Always return the cleaned data, whether you have changed it or not.
         return data
 
-class EventFormAnonymous(EventForm):
-    class Meta:
-        model = Event
-        exclude = ('public_view', 'public_edit')
-
 class SimplifiedEventForm(EventForm):
     class Meta:
         model = Event
-        fields = ('title', 'start', 'tags', 'public_view', 'public_edit')
+        fields = ('title', 'start', 'tags', 'public')
 
 class SimplifiedEventFormAnonymous(EventForm):
     class Meta:
