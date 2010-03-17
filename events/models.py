@@ -405,11 +405,11 @@ class Event(models.Model):
         return to_return
 
     @staticmethod
-    def parse_text(text, pk=None):
+    def parse_text(input_text, pk=None):
         """It parses a text and saves it as one or more events in the data base.
 
         Events are separated by blank lines.
-        
+
         A text to be parsed as an event is of the form:
             title: a title
             tags: tag1 tag2 tag3
@@ -418,7 +418,7 @@ class Event(models.Model):
 
         There are synonyms for the names of the field like 't' for 'title'. See
         get_synonyms()
-        
+
         The text for the field 'urls' is of the form:
             urls: web_url
                 name1: name1_url
@@ -445,7 +445,7 @@ class Event(models.Model):
         # group 1 is the text after the colon
         # group 2 are all indented lines
         synonyms = get_synonyms()
-        for field_text in field_pattern.findall(text):
+        for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             field_name = synonyms[parts[0]]
             if field_name == 'groups':
@@ -473,7 +473,7 @@ class Event(models.Model):
     def get_synonyms():
         """Returns a dictionay with names (strings) and the fields (strings)
         they refer.
-        
+
         All values of the returned dictionary (except groups, urls and
         Timechunks) must be names of fields of the Event class.
 
@@ -482,6 +482,8 @@ class Event(models.Model):
         >>> synomyns_values_set.remove('groups')
         >>> assert ('urls' in synomyns_values_set)
         >>> synomyns_values_set.remove('urls')
+        >>> assert ('deadlines' in synomyns_values_set)
+        >>> synomyns_values_set.remove('deadlines')
         >>> assert ('Timechunks' in synomyns_values_set)
         >>> synomyns_values_set.remove('Timechunks')
         >>> assert (set(dir(Event)) >= synomyns_values_set)
@@ -534,6 +536,7 @@ class Event(models.Model):
         synonyms['Timechunks']  = 'Timechunks'  # Timechunks (*)
         synonyms['time']        = 'Timechunks'
         synonyms['t']           = 'Timechunks'
+        synonyms['deadlines']   = 'deadlines'   # deadlines (*)
         # (*) can have multi lines
         return synonyms
 
@@ -691,9 +694,9 @@ class GroupInvitationManager(models.Manager):
         If the key is valid but the ``host`` is not an administrator of
         the group, return False.
 
-        To prevent membership of a user who has been
-        removed by a group administrator after his activation, the activation key is reset to the
-        string ``ALREADY_ACTIVATED`` after successful activation.
+        To prevent membership of a user who has been removed by a group
+        administrator after his activation, the activation key is reset to the string
+        ``ALREADY_ACTIVATED`` after successful activation.
 
         """
         # Make sure the key we're trying conforms to the pattern of a

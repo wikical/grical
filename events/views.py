@@ -1,19 +1,13 @@
-import datetime
-from datetime import datetime
-
+#import datetime
+#from datetime import datetime
 from time import strftime
 import re
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q, Max
-
-#from django import forms
 from django.forms.models import inlineformset_factory
-
-#from django import http
 from django.http import HttpResponse, HttpResponseRedirect
-
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
@@ -48,7 +42,6 @@ def event_new(request):
             e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
                         tags=cd['tags'], public=public)
             e.save()
-#            return HttpResponseRedirect('/e/edit/' + str(e.id) + '/')
             return HttpResponseRedirect(reverse('event_edit', kwargs={'event_id': str(e.id)}))
             # TODO: look in a thread for all users who wants to receive an email notification and send it
         else:
@@ -104,7 +97,6 @@ def event_edit(request, event_id, raw):
                 ef_timechunk.save()
                 ef_deadline.save()
                 # TODO: look in a thread for all users who wants to receive an email notification and send it
-                #return HttpResponseRedirect('/e/show/' + event_id + '/')
                 return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
             else:
                 templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
@@ -175,7 +167,6 @@ def event_edit(request, event_id, raw):
                         #        ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
                         #        ed.save(force_insert=True)
                         event.save()
-                        #return HttpResponseRedirect('/e/show/' + event_id + '/')
                         return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
                     except Exception:
                         return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
@@ -183,7 +174,7 @@ def event_edit(request, event_id, raw):
                     return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
         else:
             event_textarea = generate_event_textarea(event)
-            templates = {'title': 'edit event as text', 'event_textarea': event_textarea, 'event_id': event_id }
+            templates = { 'title': 'edit event as text', 'event_textarea': event_textarea, 'event_id': event_id }
             return render_to_response('event_edit_raw.html', templates, context_instance=RequestContext(request))
 
 def event_show(request, event_id):
@@ -228,7 +219,6 @@ def event_show_raw(request, event_id):
 def query(request):
     if 'q' in request.GET and request.GET['q']:
         q = request.GET['q'].lower()
-        #return http.HttpResponseRedirect('/s/' + q + '/')
         return HttpResponseRedirect(reverse('list_events_search', kwargs={'query': q}))
 
 def list_events_search(request, query):
@@ -306,7 +296,6 @@ def filter_edit(request, filter_id):
             ssf = FilterForm(request.POST, instance=filter)
             if ssf.is_valid() :
                 ssf.save()
-                #return HttpResponseRedirect('/p/filters/')
                 return HttpResponseRedirect(reverse('list_filters_my'))
             else:
                 templates = {'title': 'edit event', 'form': ssf, 'filter_id': filter_id }
@@ -336,7 +325,6 @@ def filter_drop(request, filter_id):
             assert False
         else:
             filter.delete()
-            #return HttpResponseRedirect('/p/filters/')
             return HttpResponseRedirect(reverse('list_filters_my'))
 
 def list_filters_my(request):
