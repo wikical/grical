@@ -409,6 +409,8 @@ def list_events_my(request):
                 context_instance=RequestContext(request))
 
 def list_events_tag(request, tag):
+    """ returns a view with events having a tag
+    """
     from re import sub
     query_tag = Tag.objects.get(name=tag)
     events = TaggedItem.objects.get_by_model(Event, query_tag)
