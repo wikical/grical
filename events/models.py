@@ -451,8 +451,6 @@ class Event(models.Model):
         # group 2 are all indented lines
         synonyms = Event.get_synonyms()
 
-
-
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         input_text = input_text_in.replace('\r\n', '\n').replace('\r', '\n')
 
@@ -474,13 +472,17 @@ class Event(models.Model):
                         "keyword % unknown" % parts[0]))
                 data[synonyms[parts[0]]] = parts[1]
 
-
-
         from gridcalendar.events.forms import EventForm
-        event_form = EventForm(data)
         if (pk == None):
+            event_form = EventForm(data)
             event_form.save()
         else:
+            try:
+                event = Event.objects.get(pk=pk)
+            except Event.DoesNotExist:
+                raise ValidationError(_(
+                        "event '%' doesn't exist" % pk))
+            event_form = EventForm(data, instance=event)
             event_form.save()
         #FIXME: finish this function
 

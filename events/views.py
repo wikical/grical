@@ -166,7 +166,7 @@ def event_edit(request, event_id, raw):
                         #        line_attr_list = textline[3:].split("|",1)
                         #        ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
                         #        ed.save(force_insert=True)
-                        event.parse_text(t)
+                        event.parse_text(t, event_id)
                         return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
 #                    except Exception:
 #                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
