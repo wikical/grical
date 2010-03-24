@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import vobject
 from django.http import HttpResponse
 

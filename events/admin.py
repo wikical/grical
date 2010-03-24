@@ -1,4 +1,6 @@
-from gridcalendar.events.models import Event, Group, EventUrl, EventTimechunk, EventDeadline, Tag, Membership, Calendar
+# -*- coding: utf-8 -*-
+
+from gridcalendar.events.models import Event, Group, EventUrl, EventSession, EventDeadline, Tag, Membership, Calendar
 from django.contrib import admin
 
 # Add related data in the admin views.
@@ -17,8 +19,8 @@ class UrlInline(admin.StackedInline):
     model = EventUrl
     extra = 1
 
-class TimechunkInline(admin.StackedInline):
-    model = EventTimechunk
+class SessionInline(admin.StackedInline):
+    model = EventSession
     extra = 1
 
 class DeadlineInline(admin.StackedInline):
@@ -36,7 +38,7 @@ class EventAdmin(admin.ModelAdmin):
     list_filters = ['start', 'country']
     search_fields = ['title', 'tags', 'country', 'city']
     date_hierarchy = 'start'
-    inlines = [UrlInline, TimechunkInline, DeadlineInline, CalendarInline]
+    inlines = [UrlInline, SessionInline, DeadlineInline, CalendarInline]
 
 class GroupAdmin(admin.ModelAdmin):
     # FIXME: add the logged-in user in the group when saving a new group. See
@@ -46,7 +48,7 @@ class GroupAdmin(admin.ModelAdmin):
 admin.site.register(Event, EventAdmin)
 admin.site.register(Group, GroupAdmin)
 admin.site.register(EventUrl)
-admin.site.register(EventTimechunk)
+admin.site.register(EventSession)
 admin.site.register(EventDeadline)
 # admin.site.register(Tag)
 

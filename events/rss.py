@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 
 from django.utils.translation import ugettext as _
@@ -9,9 +11,9 @@ from django.contrib.auth.models import User
 
 import settings
 
-from events.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
-from events.forms import getEventForm
-from events.models import Group, Membership
+from gridcalendar.events.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
+from gridcalendar.events.forms import getEventForm
+from gridcalendar.events.models import Group, Membership
 
 def rss_for_search(request, query):
         f = feed(request = request, url = 's/' + query, feed_dict = {

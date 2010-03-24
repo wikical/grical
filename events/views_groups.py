@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 
 from django.core.urlresolvers import reverse
@@ -12,9 +14,9 @@ from tagging.models import TaggedItem, Tag
 
 from settings import SECRET_KEY
 
-from events.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
-from events.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
-from events.lists import all_events_in_user_groups
+from gridcalendar.events.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
+from gridcalendar.events.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
+from gridcalendar.events.lists import all_events_in_user_groups
 
 def group_new(request):
     if not request.user.is_authenticated():

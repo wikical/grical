@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# vim: ai ts=4 sts=4 et sw=4
 
 import datetime
 import random
@@ -19,6 +18,8 @@ from django.template.loader import render_to_string
 from tagging.models import Tag
 from tagging.fields import TagField
 from tagging import register
+
+#from gridcalendar.events.forms import EventForm
 
 COUNTRIES = (
     ('AF', _('Afghanistan')),
@@ -351,10 +352,10 @@ class Event(models.Model):
 
     def as_text(self):
         """ Returns a multiline string representation of the event."""
-        # TODO: add a test hier to create an event as a text with the output of
+        # TODO: add a test here to create an event as a text with the output of
         # this function
         to_return = ""
-        for keyword in synonyms().values():
+        for keyword in set(self.get_synonyms().values()):
             if keyword == 'title':
                 to_return += keyword + ": " + unicode(self.title) + "\n"
             elif keyword == 'start':
@@ -381,31 +382,35 @@ class Event(models.Model):
                 to_return += keyword + ": " + unicode(self.city) + "\n"
             elif keyword == 'code' and self.code:
                 to_return += keyword + ": " + unicode(self.code) + "\n"
-            elif keyword == 'urls' and self.urls:
+            elif keyword == 'urls':
+                # FIXME: add a test "and self.urls" to test if there are any URLs defined
                 urls = EventUrl.objects.filter(event=self.id)
                 if len(urls) > 0:
                     to_return += "urls:\n"
                     for url in urls:
                         to_return += "\t" + url.url_name + ': ' + url.url + "\n"
-            elif keyword == 'Timechunks' and self.Timechunks:
-                times = EventTimechunk.objects.filter(event=self.id)
-                if len(times) > 0:
-                    to_return += "Timechunks:\n"
-                    for time in times:
+            elif keyword == 'sessions':
+                # FIXME: add a test "and self.sessions" to test if there are any time sessions defined
+                time_sessions = EventSession.objects.filter(event=self.id)
+                if len(time_sessions) > 0:
+                    to_return += "sessions:\n"
+                    for time_session in time_sessions:
                         to_return = "".joint((to_return, "\t",
-                            self.timechunk_name, ": ",
-                            self.timechunk_date.strftime("%Y-%m-%d"), ": ",
-                            str(self.timechunk_starttime), "-",
-                            str(self.timechunk_endtime), '\n'))
+                            self.session_name, ": ",
+                            self.session_date.strftime("%Y-%m-%d"), ": ",
+                            str(self.session_starttime), "-",
+                            str(self.session_endtime), '\n'))
                         # TODO: use strftime instead of str in the lines above
-            elif keyword == 'groups' and self.groups:
+            elif keyword == 'groups':
+            #elif keyword == 'groups' and self.groups:
+                # FIXME: add a test "and self.sessions" to test if there are any time sessions defined
                 pass #FIXME
             elif keyword == 'description' and self.description:
                 pass #FIXME
         return to_return
 
     @staticmethod
-    def parse_text(input_text, pk=None):
+    def parse_text(input_text_in, pk=None):
         """It parses a text and saves it as one or more events in the data base.
 
         Events are separated by blank lines.
@@ -427,7 +432,7 @@ class Event(models.Model):
         The idented lines are optional. If web_url is present, it will be saved
         with the url_name 'web'
 
-        The text for the field 'Timechunks' is of the form:
+        The text for the field 'sessions' is of the form:
             FIXME: complete
 
         The text for the field 'groups' is of the form:
@@ -440,11 +445,17 @@ class Event(models.Model):
         field_pattern = re.compile(
                 r"^[^ :]+\s*:.*(?:(?:\n|\r\n?) .+)*", re.MULTILINE)
         parts_pattern = re.compile(
-                r"^([^ :]+\s*):(.*)((?:(?:\n|\r\n?) .+)*)", re.MULTILINE)
+                r"^([^ :]+\s*):\s*(.*)((?:(?:\n|\r\n?) .+)*)", re.MULTILINE)
         # group 0 is the text before the colon
         # group 1 is the text after the colon
         # group 2 are all indented lines
-        synonyms = get_synonyms()
+        synonyms = Event.get_synonyms()
+
+
+
+        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
+        input_text = input_text_in.replace('\r\n', '\n').replace('\r', '\n')
+
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             field_name = synonyms[parts[0]]
@@ -452,21 +463,25 @@ class Event(models.Model):
                 pass
             elif field_name == 'urls':
                 pass
-            elif field_name == 'Timechunks':
+            elif field_name == 'sessions':
                 pass
             else:
                 if not parts[2] == '': raise ValidationError(_(
                         "field '%' doesn't accept subparts" % parts[1]))
                 if parts[0] == '': raise ValidationError(_(
                         "a left part of a colon is empty"))
-                if not synomys.has_key(parts[0]): raise ValidationError(_(
+                if not synonyms.has_key(parts[0]): raise ValidationError(_(
                         "keyword % unknown" % parts[0]))
-                data[synomys[parts[0]]] = parts[1]
+                data[synonyms[parts[0]]] = parts[1]
+
+
+
+        from gridcalendar.events.forms import EventForm
         event_form = EventForm(data)
         if (pk == None):
-            pass
+            event_form.save()
         else:
-            pass
+            event_form.save()
         #FIXME: finish this function
 
     @staticmethod
@@ -475,7 +490,7 @@ class Event(models.Model):
         they refer.
 
         All values of the returned dictionary (except groups, urls and
-        Timechunks) must be names of fields of the Event class.
+        sessions) must be names of fields of the Event class.
 
         >>> synomyns_values_set = set(Event.get_synonyms().values())
         >>> assert ('groups' in synomyns_values_set)
@@ -484,8 +499,8 @@ class Event(models.Model):
         >>> synomyns_values_set.remove('urls')
         >>> assert ('deadlines' in synomyns_values_set)
         >>> synomyns_values_set.remove('deadlines')
-        >>> assert ('Timechunks' in synomyns_values_set)
-        >>> synomyns_values_set.remove('Timechunks')
+        >>> assert ('sessions' in synomyns_values_set)
+        >>> synomyns_values_set.remove('sessions')
         >>> assert (set(dir(Event)) >= synomyns_values_set)
         """
         # TODO: subclass dictionary to ensure you don't override a key
@@ -533,9 +548,9 @@ class Event(models.Model):
         synonyms['urls']        = 'urls'        # urls (*)
         synonyms['u']           = 'urls'
         synonyms['web']         = 'urls'
-        synonyms['Timechunks']  = 'Timechunks'  # Timechunks (*)
-        synonyms['time']        = 'Timechunks'
-        synonyms['t']           = 'Timechunks'
+        synonyms['sessions']    = 'sessions'    # sessions (*)
+        synonyms['time']        = 'sessions'
+        synonyms['t']           = 'sessions'
         synonyms['deadlines']   = 'deadlines'   # deadlines (*)
         # (*) can have multi lines
         return synonyms
@@ -566,18 +581,18 @@ class EventUrl(models.Model):
     def __unicode__(self):
         return self.url
 
-class EventTimechunk(models.Model):
-    event = models.ForeignKey(Event, related_name='event_of_timechunk')
-    timechunk_name = models.CharField(_('Timechunk name'), blank=True,
+class EventSession(models.Model):
+    event = models.ForeignKey(Event, related_name='event_of_session')
+    session_name = models.CharField(_('Session name'), blank=True,
             null=True, max_length=80, help_text=_(
             "Example: day 2 of the conference"))
-    timechunk_date = models.DateField(_('Timechunk day'), blank=False,
+    session_date = models.DateField(_('Session day'), blank=False,
             null=False)
-    timechunk_starttime = models.TimeField(_('Timechunk start time'),
+    session_starttime = models.TimeField(_('Session start time'),
             blank=False, null=False)
-    timechunk_endtime = models.TimeField(_('Timechunk end time'), blank=False, null=False)
+    session_endtime = models.TimeField(_('Session end time'), blank=False, null=False)
     def __unicode__(self):
-        return self.timechunk_name
+        return self.session_name
 
 class EventDeadline(models.Model):
     event = models.ForeignKey(Event, related_name='event_of_deadline')
@@ -807,6 +822,7 @@ class GroupInvitationManager(models.Manager):
         for invitation in self.all():
             if invitation.activation_key_expired():
                 invitation.delete()
+
 class GroupInvitation(models.Model):
     """
     A simple class which stores an activation key for use during

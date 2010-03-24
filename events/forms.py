@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 
 from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField
@@ -6,13 +8,16 @@ from django.forms import CheckboxSelectMultiple, SelectMultiple
 
 from django.contrib.auth.models import User
 
-from events.models import Event, Filter, Group, Membership, Calendar
+from gridcalendar.events.models import Event
+from gridcalendar.events.models import Filter, Group, Membership, Calendar
+
 
 def getEventForm(user):
     """returns a simplied event form with or without the public field"""
     if user.is_authenticated():
         return SimplifiedEventForm()
     return SimplifiedEventFormAnonymous()
+
 
 class FilterForm(ModelForm):
     class Meta:

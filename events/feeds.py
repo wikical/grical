@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import hashlib, vobject
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,9 +12,9 @@ from django.contrib.auth.models import User
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 
 import settings
-from events.models import Event, Filter, Group, Membership
-from events.lists import list_search_get
-from events.icalendar import ICalendarFeed, EVENT_ITEMS
+from gridcalendar.events.models import Event, Filter, Group, Membership
+from gridcalendar.events.lists import list_search_get
+from gridcalendar.events.icalendar import ICalendarFeed, EVENT_ITEMS
 
 class FeedAllComingEvents(Feed):
     title = "All coming events"
