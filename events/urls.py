@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 from django.conf.urls.defaults import *
 
-from events import views, views_groups, rss
-from events.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
+from gridcalendar.events import views, views_groups, rss, feeds
+#from events.feeds import ICalForEvent, ICalForGroupAuth, ICalForGroupHash, ICalForFilterAuth, ICalForFilterHash, ICalForSearchAuth, ICalForSearchHash
 
 urlpatterns = patterns('',
     url(r'^$',                                                          views.root,                         name='root'),
@@ -13,28 +15,28 @@ urlpatterns += patterns('', # views of a single event
     url(r'^e/edit/(?P<event_id>\d+)/raw/$',                             views.event_edit, { 'raw': True },  name='event_edit_raw'),
     url(r'^e/show/(?P<event_id>\d+)/$',                                 views.event_show,                   name='event_show'),
     url(r'^e/show/(?P<event_id>\d+)/raw/$',                             views.event_show_raw,               name='event_show_raw'),
-    url(r'^e/show/(?P<event_id>\d+)/ical/$',                            ICalForEvent(),                     name='event_show_ical'),
+    url(r'^e/show/(?P<event_id>\d+)/ical/$',                            feeds.ICalForEvent(),               name='event_show_ical'),
 )
 
 urlpatterns += patterns('', # events matching a filter
-    url(r'^f/(?P<filter_id>\d+)/ical/$',                                ICalForFilterAuth(),                name='list_events_filter_ical'),
-    url(r'^f/(?P<filter_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$', ICalForFilterHash(),                name='list_events_filter_ical_hashed'),
+    url(r'^f/(?P<filter_id>\d+)/ical/$',                                feeds.ICalForFilterAuth(),          name='list_events_filter_ical'),
+    url(r'^f/(?P<filter_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$', feeds.ICalForFilterHash(),          name='list_events_filter_ical_hashed'),
     url(r'^f/(?P<filter_id>\d+)/rss/$',                                 rss.rss_for_filter_auth,            name='list_events_filter_rss'),
     url(r'^f/(?P<filter_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',  rss.rss_for_filter_hash,            name='list_events_filter_rss_hashed'),
 )
 
 urlpatterns += patterns('', # events matching some query
     url(r'^q/',                                                         views.query,                        name='query'),
-    url(r'^s/(?P<query>.*)/ical/$',                                     ICalForSearchAuth(),                name='list_events_search_ical'),
-    url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',      ICalForSearchHash(),                name='list_events_search_ical_hashed'),
+    url(r'^s/(?P<query>.*)/ical/$',                                     feeds.ICalForSearchAuth(),          name='list_events_search_ical'),
+    url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',      feeds.ICalForSearchHash(),          name='list_events_search_ical_hashed'),
     url(r'^s/(?P<query>.*)/rss/$',                                      rss.rss_for_search,                 name='list_events_search_rss'),
     url(r'^s/(?P<query>.*)/$',                                          views.list_events_search,           name='list_events_search'),
     url(r'^t/(?P<tag>[ \-\w]*)/$' ,                                     views.list_events_tag,              name='list_events_tag'),
 )
 
 urlpatterns += patterns('', # events in a group
-    url(r'^g/(?P<group_id>\d+)/ical/$',                                 ICalForGroupAuth(),                 name='list_events_group_ical'),
-    url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',  ICalForGroupHash(),                 name='list_events_group_ical_hashed'),
+    url(r'^g/(?P<group_id>\d+)/ical/$',                                 feeds.ICalForGroupAuth(),           name='list_events_group_ical'),
+    url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',  feeds.ICalForGroupHash(),           name='list_events_group_ical_hashed'),
     url(r'^g/(?P<group_id>\d+)/rss/$',                                  rss.rss_for_group_auth,             name='list_events_group_rss'),
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',   rss.rss_for_group_hash,             name='list_events_group_rss_hashed'),
     url(r'^g/(?P<group_id>\d+)/$',                                      views_groups.list_events_group,     name='list_events_group'),

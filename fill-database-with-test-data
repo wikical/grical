@@ -1,4 +1,5 @@
 #! /usr/bin/python
+# -*- coding: utf-8 -*-
 
 import datetime
 from django.core.management import setup_environ
@@ -6,7 +7,7 @@ import settings
 setup_environ(settings)
 
 from django.contrib.auth.models import User
-from gridcalendar.events.models import Event, Group, Membership, Calendar, Filter
+from events.models import Event, Group, Membership, Calendar, Filter
 
 
 NUMBER_OF_EVENTS = 3

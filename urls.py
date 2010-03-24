@@ -1,13 +1,15 @@
+# -*- coding: utf-8 -*-
+
 from django.conf import settings
 from django.conf.urls.defaults import *
 from django.contrib import admin, databrowse
 
-from gridcalendar.events.models import Event, Group, EventUrl, EventTimechunk, EventDeadline
+from events.models import Event, Group, EventUrl, EventSession, EventDeadline
 
 # databrowse.site.register(Event)
 # databrowse.site.register(Group)
 # databrowse.site.register(EventUrl)
-# databrowse.site.register(EventTimechunk)
+# databrowse.site.register(EventSession)
 # databrowse.site.register(EventDeadline)
 
 admin.autodiscover()

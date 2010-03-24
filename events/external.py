@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail, BadHeaderError
@@ -5,14 +7,14 @@ from django.template.loader import render_to_string
 from django.utils.translation import ugettext as _
 from django.core.management.base import NoArgsCommand
 
-from events.models import Filter, GroupInvitation
-from events.views import list_search_get
+from gridcalendar.events.models import Filter, GroupInvitation
+from gridcalendar.events.views import list_search_get
 
 def mail_notif():
     site = Site.objects.get(pk=1)
 
-
-    # TODO: in production version uncomment the .all() and remove the "miernik"!
+    # FIXME: in production version uncomment the .all() and remove the "miernik"!
+    # FIXME: in production version do not pull lots of data into memory!
     # users = User.objects.all()
     users = User.objects.filter(username='miernik')
 
@@ -23,6 +25,7 @@ def mail_notif():
         # user_events will be a list of dictionaries containing event data
         user_events = list()
 
+        # FIXME: list_search_get is now different
         for fff in user_filters:
             search_results = list_search_get(fff.query)['list_of_events']
             search_error = list_search_get(fff.query)['errormessage']

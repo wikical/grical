@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # This is needed for example for: return render_to_response( ... , context_instance=RequestContext(request))
 
 def global_template_vars(request):

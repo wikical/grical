@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 from datetime import datetime, timedelta
 from time import strftime
@@ -21,8 +23,8 @@ from django.contrib.sites.models import Site
 from tagging.models import Tag, TaggedItem
 
 from settings import SECRET_KEY, DEBUG
-from events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm
-from events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm
+from gridcalendar.events.models import Event, Filter, Group, COUNTRIES
 from gridcalendar.events.models import Group
 from gridcalendar.events.models import Event
 

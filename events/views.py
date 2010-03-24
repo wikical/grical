@@ -1,5 +1,5 @@
-#import datetime
-#from datetime import datetime
+# -*- coding: utf-8 -*-
+
 from time import strftime
 import re
 
@@ -19,9 +19,9 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from events.models import Event, EventUrl, EventTimechunk, EventDeadline, Filter, Group, COUNTRIES
-from events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, getEventForm
-from events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
+from gridcalendar.events.models import Event, EventUrl, EventSession, EventDeadline, Filter, Group, COUNTRIES
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, getEventForm
+from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
 
@@ -84,34 +84,34 @@ def event_edit(request, event_id, raw):
 
     if (not raw):
         EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
-        EventTimechunkInlineFormSet = inlineformset_factory(Event, EventTimechunk, extra=1)
+        EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=1)
         EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=1)
         if request.method == 'POST':
-            ef_url = EventUrlInlineFormSet(request.POST, instance=event)
-            ef_timechunk = EventTimechunkInlineFormSet(request.POST, instance=event)
+            ef_url      = EventUrlInlineFormSet(request.POST, instance=event)
+            ef_session  = EventSessionInlineFormSet(request.POST, instance=event)
             ef_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
             ef = EventForm(request.POST, instance=event)
-            if ef.is_valid() & ef_url.is_valid() & ef_timechunk.is_valid() & ef_deadline.is_valid() :
+            if ef.is_valid() & ef_url.is_valid() & ef_session.is_valid() & ef_deadline.is_valid() :
                 ef.save()
                 ef_url.save()
-                ef_timechunk.save()
+                ef_session.save()
                 ef_deadline.save()
                 # TODO: look in a thread for all users who wants to receive an email notification and send it
                 return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
             else:
-                templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
+                templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
                 return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
         else:
             ef = EventForm(instance=event)
-            ef_url = EventUrlInlineFormSet(instance=event)
-            ef_timechunk = EventTimechunkInlineFormSet(instance=event)
+            ef_url      = EventUrlInlineFormSet(instance=event)
+            ef_session  = EventSessionInlineFormSet(instance=event)
             ef_deadline = EventDeadlineInlineFormSet(instance=event)
-            templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_timechunk': ef_timechunk, 'formset_deadline': ef_deadline, 'event_id': event_id }
+            templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
             return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
     elif (raw):
         if request.method == 'POST':
                 if 'event_astext' in request.POST:
-                    try:
+#                    try:
                         t = request.POST['event_astext'].replace(": ", ":")
                         #event_attr_list = t.splitlines()
                         #event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
@@ -151,7 +151,7 @@ def event_edit(request, event_id, raw):
                         #event.longitude   = event_long
                         #event.description = event_attr_dict['desc']
                         #EventUrl.objects.filter(event=event_id).delete()
-                        #EventTimechunk.objects.filter(event=event_id).delete()
+                        #EventSession.objects.filter(event=event_id).delete()
                         #EventDeadline.objects.filter(event=event_id).delete()
                         #for textline in event_attr_list:
                         #    if textline[0:4] == 'url:':
@@ -160,20 +160,20 @@ def event_edit(request, event_id, raw):
                         #        eu.save(force_insert=True)
                         #    if textline[0:5] == 'time:':
                         #        line_attr_list = textline[5:].split("|",3)
-                        #        et = EventTimechunk(event=event, timechunk_name=line_attr_list[0], timechunk_date=line_attr_list[1], timechunk_starttime=line_attr_list[2], timechunk_endtime=line_attr_list[3])
+                        #        et = EventSession(event=event, session_name=line_attr_list[0], session_date=line_attr_list[1], session_starttime=line_attr_list[2], session_endtime=line_attr_list[3])
                         #        et.save(force_insert=True)
                         #    if textline[0:3] == 'dl:':
                         #        line_attr_list = textline[3:].split("|",1)
                         #        ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
                         #        ed.save(force_insert=True)
-                        event.save()
+                        event.parse_text(t)
                         return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
-                    except Exception:
-                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+#                    except Exception:
+#                        return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
                 else:
                     return render_to_response('error.html', {'title': 'error', 'form': getEventForm(request.user), 'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
         else:
-            event_textarea = generate_event_textarea(event)
+            event_textarea = event.as_text()
             templates = { 'title': 'edit event as text', 'event_textarea': event_textarea, 'event_id': event_id }
             return render_to_response('event_edit_raw.html', templates, context_instance=RequestContext(request))
 
@@ -212,7 +212,7 @@ def event_show_raw(request, event_id):
                 _("Maybe it is because you are not logged in with the right account") + "."},
                 context_instance=RequestContext(request))
     else:
-        event_textarea = generate_event_textarea(event)
+        event_textarea = event.as_text()
         templates = {'title': 'view as text', 'event_textarea': event_textarea, 'event_id': event_id }
         return render_to_response('event_show_raw.html', templates, context_instance=RequestContext(request))
 
