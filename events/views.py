@@ -197,6 +197,7 @@ def list_events_search(request, query):
                 {'title': _("search results"), 'events': search_result, 'query': q},
                 context_instance=RequestContext(request))
 
+@login_required
 def filter_save(request):
     if 'q' in request.POST and request.POST['q']:
         q = request.POST['q'].lower()
@@ -229,6 +230,7 @@ def filter_save(request):
                 {'title': _("error"), 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
                 context_instance=RequestContext(request))
 
+@login_required
 def filter_edit(request, filter_id):
     try:
         filter = Filter.objects.get(pk=filter_id)
@@ -258,6 +260,7 @@ def filter_edit(request, filter_id):
             templates = {'title': 'edit event', 'form': ssf, 'filter_id': filter_id }
             return render_to_response('filter_edit.html', templates, context_instance=RequestContext(request))
 
+@login_required
 def filter_drop(request, filter_id):
     try:
         filter = Filter.objects.get(pk=filter_id)
@@ -280,6 +283,7 @@ def filter_drop(request, filter_id):
             filter.delete()
             return HttpResponseRedirect(reverse('list_filters_my'))
 
+@login_required
 def list_filters_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -333,6 +337,7 @@ def list_events_of_user(request, username):
                 {'title': _("error"), 'message_col1': _("User does not exist") + "."},
                 context_instance=RequestContext(request))
 
+@login_required
 def list_events_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -413,4 +418,4 @@ def settings_page(request):
     u = User(request.user)
     groups = Group.objects.filter(users_in_group__user=u)
     hash = hashlib.sha256("%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
-    return render_to_response('settings.html', {'title': _("settings"), 'filter_list': fl, 'groups': groups, 'user_id': request.user.id, 'hash': hash }, context_instance=RequestContext(request))
+    return render_to_response('settings.html', { 'title': _("settings"), 'filter_list': fl, 'groups': groups, 'user_id': request.user.id, 'hash': hash }, context_instance=RequestContext(request))
