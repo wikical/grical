@@ -425,10 +425,12 @@ class Event(models.Model):
                                 time_session.session_date.strftime("%Y-%m-%d"), ": ",
                                 time_session.session_starttime.strftime("%H:%M"), "-",
                                 time_session.session_endtime.strftime("%H:%M"), '\n'))
-#            elif keyword == 'groups' and self.groups:
-#                pass #FIXME
+            # FIXME: display groups
+            elif keyword == 'groups' and self.groups:
+                pass
             elif keyword == 'description' and self.description:
-                pass #FIXME
+                to_return += keyword + ": " + unicode(self.description) + "\n"
+                # TODO: support multiline descriptions
         return to_return
 
     @staticmethod
@@ -455,16 +457,20 @@ class Event(models.Model):
         with the url_name 'web'
 
         The text for the field 'deadlines' is of the form:
-            deadline: deadline_date
-                name1: name1_date
-                name2: name2_date
+            deadlines: deadline_date
+                deadline1_name: deadline1_date
+                deadline2_name: deadline2_date
                 ...
         The idented lines are optional. If deadline_date is present, it will be saved
         with the deadline_name 'deadline'
 
         The text for the field 'sessions' is of the form:
-            sessions:
-            FIXME: complete
+            sessions: session_date session_starttime session_endtime
+                session1_name: session1_date session1_starttime session1_endtime
+                session2_name: session2_date session2_starttime session2_endtime
+                ...
+        The idented lines are optional. If session_date is present, it will be saved
+        with the session_name 'session'
 
         The text for the field 'groups' is of the form:
             groups: group1 group2 ...
@@ -603,7 +609,7 @@ class Event(models.Model):
                 event_form.save()
             else:
                 raise ValidationError(_(
-                    "there is an error in the input data"))
+                    "there is an error in the input data: %s" % event_form.errors))
 
     @staticmethod
     def get_synonyms():

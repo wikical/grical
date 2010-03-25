@@ -112,70 +112,14 @@ def event_edit(request, event_id, raw):
     elif (raw):
         if request.method == 'POST':
                 if 'event_astext' in request.POST:
-#                    try:
-                        t = request.POST['event_astext'].replace(": ", ":")
-                        #event_attr_list = t.splitlines()
-                        #event_attr_dict = dict(item.split(":",1) for item in event_attr_list)
-
-                        #if re.match('\d\d\d\d\-\d\d\-\d\d$', event_attr_dict['endd']) is not None:
-                        #    event_end = event_attr_dict['endd']
-                        #else:
-                        #    event_end = None
-
-                        #if re.match('\d+\.\d*$', event_attr_dict['lati']) is not None:
-                        #    event_lati = event_attr_dict['lati']
-                        #else:
-                        #    event_lati = None
-
-                        #if re.match('\d+\.\d*$', event_attr_dict['long']) is not None:
-                        #    event_long = event_attr_dict['long']
-                        #else:
-                        #    event_long = None
-
-                        #if re.match('\d+$', event_attr_dict['tizo']) is not None:
-                        #    event_tizo = event_attr_dict['tizo']
-                        #else:
-                        #    event_tizo = None
-
-                        #event.acronym     = event_attr_dict['acro']
-                        #event.title       = event_attr_dict['titl']
-                        #event.start       = event_attr_dict['date']
-                        #event.end         = event_end
-                        #event.tags        = event_attr_dict['tags']
-                        #event.public      = StringToBool(event_attr_dict['publ'])
-                        #event.city        = event_attr_dict['city']
-                        #event.address     = event_attr_dict['addr']
-                        #event.postcode    = event_attr_dict['code']
-                        #event.country     = event_attr_dict['land']
-                        #event.timezone    = event_tizo
-                        #event.latitude    = event_lati
-                        #event.longitude   = event_long
-                        #event.description = event_attr_dict['desc']
-                        #EventUrl.objects.filter(event=event_id).delete()
-                        #EventSession.objects.filter(event=event_id).delete()
-                        #EventDeadline.objects.filter(event=event_id).delete()
-                        #for textline in event_attr_list:
-                        #    if textline[0:4] == 'url:':
-                        #        line_attr_list = textline[4:].split("|",1)
-                        #        eu = EventUrl(event=event, url_name=line_attr_list[0], url=line_attr_list[1])
-                        #        eu.save(force_insert=True)
-                        #    if textline[0:5] == 'time:':
-                        #        line_attr_list = textline[5:].split("|",3)
-                        #        et = EventSession(event=event, session_name=line_attr_list[0], session_date=line_attr_list[1], session_starttime=line_attr_list[2], session_endtime=line_attr_list[3])
-                        #        et.save(force_insert=True)
-                        #    if textline[0:3] == 'dl:':
-                        #        line_attr_list = textline[3:].split("|",1)
-                        #        ed = EventDeadline(event=event, deadline_name=line_attr_list[0], deadline=line_attr_list[1])
-                        #        ed.save(force_insert=True)
-                        try:
-                            event.parse_text(t, event_id)
-                            return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
-                        except ValidationError, error:
-                            return render_to_response('error.html',
-                                {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
-                                context_instance=RequestContext(request))
-#                    except Exception:
-#                        return render_to_response('error.html', {'title': _("error"), 'form': getEventForm(request.user), 'message_col1': _("Syntax error, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+                    t = request.POST['event_astext'].replace(": ", ":")
+                    try:
+                        event.parse_text(t, event_id)
+                        return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
+                    except ValidationError, error:
+                        return render_to_response('error.html',
+                            {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
+                            context_instance=RequestContext(request))
                 else:
                     return render_to_response('error.html', {'title': _("error"), 'form': getEventForm(request.user), 'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
         else:
