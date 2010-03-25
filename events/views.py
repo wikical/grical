@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import hashlib
 from time import strftime
 import re
 
@@ -17,6 +18,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
+
+from settings import SECRET_KEY
 
 from tagging.models import Tag, TaggedItem
 
@@ -409,4 +412,5 @@ def settings_page(request):
     fl = filter_list(request.user.id)
     u = User(request.user)
     groups = Group.objects.filter(membership__user=u)
-    return render_to_response('settings.html', {'title': _("settings"), 'filter_list': fl, 'groups': groups}, context_instance=RequestContext(request))
+    hash = hashlib.sha256("%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
+    return render_to_response('settings.html', {'title': _("settings"), 'filter_list': fl, 'groups': groups, 'user_id': request.user.id, 'hash': hash }, context_instance=RequestContext(request))

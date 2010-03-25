@@ -34,7 +34,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DEFAULT_FROM_EMAIL = 'helios'
+DEFAULT_FROM_EMAIL = 'django@miernik.name'
 SERVER_EMAIL = 'error-notify@example.com'
 
 EMAIL_SUBJECT_PREFIX = '[%s] ' % PROJECT_NAME

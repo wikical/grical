@@ -286,7 +286,7 @@ def filters_matching_event(events_filters_list, event_id):
             f_dict['user_id'] = f.user.id
             f_dict['name'] = f.name
             f_dict['query'] = f.query
-            f_dict['hash'] = hashlib.sha256("%s!%s!%s" % (SECRET_KEY, f.id, f.user.id)).hexdigest()
+            f_dict['hash'] = hashlib.sha256("%s!%s" % (SECRET_KEY, f.user.id)).hexdigest()
             l.append(f_dict)
     return l
 
