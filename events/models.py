@@ -357,6 +357,7 @@ class Event(models.Model):
         # TODO: add a test here to create an event as a text with the output of
         # this function
         to_return = ""
+        # TODO: have a constant sort order
         for keyword in set(self.get_synonyms().values()):
             if keyword == 'title':
                 to_return += keyword + ": " + unicode(self.title) + "\n"
@@ -390,7 +391,7 @@ class Event(models.Model):
                     to_return += "urls:"
                     for url in urls:
                         if url.url_name == 'web':
-                            to_return += " " + url.url
+                            to_return += " " + unicode(url.url)
                     to_return += "\n"
                     for url in urls:
                         if not url.url_name == 'web':
@@ -401,7 +402,7 @@ class Event(models.Model):
                     to_return += "deadlines:"
                     for deadline in deadlines:
                         if deadline.deadline_name == 'deadline':
-                            to_return += " " + deadline.deadline
+                            to_return += " " + unicode(deadline.deadline)
                     to_return += "\n"
                     for deadline in deadlines:
                         if not deadline.deadline_name == 'deadline':
@@ -409,14 +410,21 @@ class Event(models.Model):
             elif keyword == 'sessions' and self.sessions:
                 time_sessions = EventSession.objects.filter(event=self.id)
                 if len(time_sessions) > 0:
-                    to_return += "sessions:\n"
+                    to_return += "sessions:"
                     for time_session in time_sessions:
-                        to_return = "".joint((to_return, "    ",
-                            self.session_name, ": ",
-                            self.session_date.strftime("%Y-%m-%d"), ": ",
-                            str(self.session_starttime), "-",
-                            str(self.session_endtime), '\n'))
-                        # TODO: use strftime instead of str in the lines above
+                        if time_session.session_name == 'session':
+                            to_return = "".join((to_return, " ",
+                                time_session.session_date.strftime("%Y-%m-%d"), ": ",
+                                time_session.session_starttime.strftime("%H:%M"), "-",
+                                time_session.session_endtime.strftime("%H:%M")))
+                    to_return += "\n"
+                    for time_session in time_sessions:
+                        if not time_session.session_name == 'session':
+                            to_return = "".join((to_return, "    ",
+                                time_session.session_name, ": ",
+                                time_session.session_date.strftime("%Y-%m-%d"), ": ",
+                                time_session.session_starttime.strftime("%H:%M"), "-",
+                                time_session.session_endtime.strftime("%H:%M"), '\n'))
 #            elif keyword == 'groups' and self.groups:
 #                pass #FIXME
             elif keyword == 'description' and self.description:
@@ -447,8 +455,12 @@ class Event(models.Model):
         with the url_name 'web'
 
         The text for the field 'deadlines' is of the form:
-            deadline:
-            FIXME: complete
+            deadline: deadline_date
+                name1: name1_date
+                name2: name2_date
+                ...
+        The idented lines are optional. If deadline_date is present, it will be saved
+        with the deadline_name 'deadline'
 
         The text for the field 'sessions' is of the form:
             sessions:
@@ -475,6 +487,8 @@ class Event(models.Model):
 
         url_data = {}
         deadline_data = {}
+        session_data = {}
+        group_data = {}
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             try:
@@ -485,8 +499,8 @@ class Event(models.Model):
                 url_index = 0
                 url_data['urls-INITIAL_FORMS'] = u'0'
                 if not parts[1] == '':
-                    url_data['urls-0-url_name'] = u'web'
-                    url_data['urls-0-url'] = parts[1]
+                    url_data['urls-' + str(url_index) + '-url_name'] = u'web'
+                    url_data['urls-' + str(url_index) + '-url'] = parts[1].strip()
                     url_index += 1
                 if not parts[2] == '':
                     for url_line in parts[2].splitlines():
@@ -500,8 +514,8 @@ class Event(models.Model):
                 deadline_index = 0
                 deadline_data['deadlines-INITIAL_FORMS'] = u'0'
                 if not parts[1] == '':
-                    deadline_data['deadlines-0-deadline_name'] = u'deadline'
-                    deadline_data['deadlines-0-deadline'] = parts[1]
+                    deadline_data['deadlines-' + str(deadline_index) + '-deadline_name'] = u'deadline'
+                    deadline_data['deadlines-' + str(deadline_index) + '-deadline'] = parts[1].strip()
                     deadline_index += 1
                 if not parts[2] == '':
                     for deadline_line in parts[2].splitlines():
@@ -512,8 +526,30 @@ class Event(models.Model):
                             deadline_index += 1
                 deadline_data['deadlines-TOTAL_FORMS'] = str(deadline_index)
             elif field_name == 'sessions':
-                pass
+                session_index = 0
+                session_data['sessions-INITIAL_FORMS'] = u'0'
+                if not parts[1] == '':
+                    session_data['sessions-' + str(session_index) + '-session_name'] = u'session'
+                    session_str_parts = parts[1].split(":", 1)
+                    session_data['sessions-' + str(session_index) + '-session_date'] = session_str_parts[0].strip()
+                    session_str_times_parts = session_str_parts[1].split("-", 1)
+                    session_data['sessions-' + str(session_index) + '-session_starttime'] = session_str_times_parts[0].strip()
+                    session_data['sessions-' + str(session_index) + '-session_endtime'] = session_str_times_parts[1].strip()
+                    session_index += 1
+                if not parts[2] == '':
+                    for session_line in parts[2].splitlines():
+                        if not session_line == '':
+                            session_line_parts = session_line.split(":", 1)
+                            session_data['sessions-' + str(session_index) + '-session_name'] = session_line_parts[0].strip()
+                            session_str_parts = session_line_parts[1].split(":", 1)
+                            session_data['sessions-' + str(session_index) + '-session_date'] = session_str_parts[0].strip()
+                            session_str_times_parts = session_str_parts[1].split("-", 1)
+                            session_data['sessions-' + str(session_index) + '-session_starttime'] = session_str_times_parts[0].strip()
+                            session_data['sessions-' + str(session_index) + '-session_endtime'] = session_str_times_parts[1].strip()
+                            session_index += 1
+                session_data['sessions-TOTAL_FORMS'] = str(session_index)
             elif field_name == 'groups':
+                # TODO: implement groups
                 pass
             else:
                 if not parts[2] == '': raise ValidationError(_(
@@ -539,6 +575,7 @@ class Event(models.Model):
                 # TODO: would be nice if instead of deleting all URLs each time, it would update
                 EventUrl.objects.filter(event=pk).delete()
                 EventDeadline.objects.filter(event=pk).delete()
+                EventSession.objects.filter(event=pk).delete()
                 if len(url_data) > 0:
                     EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
                     ef_url = EventUrlInlineFormSet(url_data, instance=event)
@@ -555,6 +592,14 @@ class Event(models.Model):
                     else:
                         raise ValidationError(_(
                             "There is an error in the input data in the deadlines: %s" % ef_deadline.errors))
+                if len(session_data) > 0:
+                    EventSessionInlineFormSet = inlineformset_factory(Event, EventSession, extra=0)
+                    ef_session = EventSessionInlineFormSet(session_data, instance=event)
+                    if ef_session.is_valid():
+                        ef_session.save()
+                    else:
+                        raise ValidationError(_(
+                            "There is an error in the input data in the sessions: %s" % ef_session.errors))
                 event_form.save()
             else:
                 raise ValidationError(_(
