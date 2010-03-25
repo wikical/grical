@@ -352,6 +352,7 @@ class Event(models.Model):
                 or (self.public == Event.objects.get(pk=self.pk).public))
         super(Event, self).save(*args, **kwargs) # Call the "real" save() method.
 
+
     def as_text(self):
         """ Returns a multiline string representation of the event."""
         # TODO: add a test here to create an event as a text with the output of
@@ -425,9 +426,13 @@ class Event(models.Model):
                                 time_session.session_date.strftime("%Y-%m-%d"), ": ",
                                 time_session.session_starttime.strftime("%H:%M"), "-",
                                 time_session.session_endtime.strftime("%H:%M"), '\n'))
-            # FIXME: display groups
-            elif keyword == 'groups' and self.groups:
-                pass
+            elif keyword == 'groups' and self.event_in_groups:
+                calendars = Calendar.objects.filter(event=self.id)
+                if len(calendars) > 0:
+                    to_return += keyword + ":"
+                    for calendar in calendars:
+                        to_return += ' "' + str(calendar.group.name) + '"'
+                    to_return += '\n'
             elif keyword == 'description' and self.description:
                 to_return += keyword + ": " + unicode(self.description) + "\n"
                 # TODO: support multiline descriptions
@@ -435,9 +440,7 @@ class Event(models.Model):
 
     @staticmethod
     def parse_text(input_text_in, pk=None):
-        """It parses a text and saves it as one or more events in the data base.
-
-        Events are separated by blank lines.
+        """It parses a text and saves it as a single event in the data base.
 
         A text to be parsed as an event is of the form:
             title: a title
@@ -555,8 +558,7 @@ class Event(models.Model):
                             session_index += 1
                 session_data['sessions-TOTAL_FORMS'] = str(session_index)
             elif field_name == 'groups':
-                # TODO: implement groups
-                pass
+                event_groups_req_names_list = [p for p in re.split("( |\\\".*?\\\"|'.*?')", parts[1]) if p.strip()]
             else:
                 if not parts[2] == '': raise ValidationError(_(
                         "field '%s' doesn't accept subparts" % parts[1]))
@@ -577,6 +579,17 @@ class Event(models.Model):
                 raise ValidationError(_(
                         "event '%s' doesn't exist" % pk))
             event_form = EventForm(data, instance=event)
+            event_groups_cur_id_list = event.is_in_groups_id_list()
+            event_groups_req_id_list = list()
+            for group_name_quoted in event_groups_req_names_list:
+                group_name = group_name_quoted.strip('"')
+                g = Group.objects.get(name=group_name)
+                event_groups_req_id_list.append(g.id)
+                if g.id not in event_groups_cur_id_list:
+                    event.add_to_group(g.id)
+            for group_id in event_groups_cur_id_list:
+                if group_id not in event_groups_req_id_list:
+                    event.remove_from_group(group_id)
             if event_form.is_valid():
                 # TODO: would be nice if instead of deleting all URLs each time, it would update
                 EventUrl.objects.filter(event=pk).delete()
@@ -698,6 +711,24 @@ class Event(models.Model):
                     return True
             return False
 
+    def is_in_groups_list(self):
+        return Group.objects.filter(events=self)
+
+    def is_in_groups_id_list(self):
+        groups_id_list = list()
+        for g in Group.objects.filter(events=self):
+            groups_id_list.append(g.id)
+        return groups_id_list
+
+    def add_to_group(self, group_id):
+        g = Group.objects.get(id=group_id)
+        calentry = Calendar(event=self, group=g)
+        calentry.save()
+
+    def remove_from_group(self, group_id):
+        g = Group.objects.get(id=group_id)
+        calentry = Calendar.objects.get(event=self, group=g)
+        calentry.delete()
 
 class EventUrl(models.Model):
     event = models.ForeignKey(Event, related_name='urls')
@@ -764,6 +795,7 @@ class Filter(models.Model):
 
 class Group(models.Model):
     name = models.CharField(_('Name'), max_length=80, unique=True)
+    # TODO: disallow group names with spaces
     description = models.TextField(_('Description'))
     members = models.ManyToManyField(User, through='Membership',
             verbose_name=_('Members'))
@@ -788,16 +820,25 @@ class Group(models.Model):
 
     @staticmethod
     def is_user_in_group(user_id, group_id):
-        if len(Membership.objects.filter(user__id__exact=user_id,
-                group__id__exact=group_id)) == 1:
+        if Membership.objects.filter(user__id__exact=user_id,
+                group__id__exact=group_id).count() > 0:
             return True
         else:
             return False
 
+    def is_user_member_of(self, user):
+        if Membership.objects.filter(user__id__exact=user.id):
+            return True
+        else:
+            return False
+
+    def is_event_in_calendar(self, event):
+        return False
+
 class Membership(models.Model):
     """Relation between users and groups."""
-    user = models.ForeignKey(User, verbose_name=_('User'))
-    group = models.ForeignKey(Group, verbose_name=_('Group'))
+    user = models.ForeignKey(User, verbose_name=_('User'), related_name='user_in_groups')
+    group = models.ForeignKey(Group, verbose_name=_('Group'), related_name='users_in_group')
     is_administrator = models.BooleanField(_('Is administrator'), default=True)
     """Not used at the moment. All members of a group are administrators."""
     new_event_email = models.BooleanField(_('New event email'), default=True)
@@ -810,8 +851,8 @@ class Membership(models.Model):
 
 class Calendar(models.Model):
     """Relation between events and groups."""
-    event = models.ForeignKey(Event, verbose_name=_('Event'))
-    group = models.ForeignKey(Group, verbose_name=_('Group'))
+    event = models.ForeignKey(Event, verbose_name=_('Event'), related_name='event_in_groups')
+    group = models.ForeignKey(Group, verbose_name=_('Group'), related_name='calendar')
     date_added = models.DateField(_('Date added'), editable=False, auto_now_add=True)
     class Meta:
         unique_together = ("event", "group")

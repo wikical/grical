@@ -411,6 +411,6 @@ def settings_page(request):
     # user is logged in
     fl = filter_list(request.user.id)
     u = User(request.user)
-    groups = Group.objects.filter(membership__user=u)
+    groups = Group.objects.filter(users_in_group__user=u)
     hash = hashlib.sha256("%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
     return render_to_response('settings.html', {'title': _("settings"), 'filter_list': fl, 'groups': groups, 'user_id': request.user.id, 'hash': hash }, context_instance=RequestContext(request))

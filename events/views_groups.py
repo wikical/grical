@@ -30,7 +30,6 @@ def group_new(request):
             new_membership = Membership(user=request.user, group=new_group)
             new_membership.save()
             # TODO: notify all invited members of the group
-            #return HttpResponseRedirect('/p/groups/')
             return HttpResponseRedirect(reverse('list_groups_my'))
         else:
             return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
@@ -45,7 +44,7 @@ def list_groups_my(request):
                 context_instance=RequestContext(request))
     else:
         u = User(request.user)
-        groups = Group.objects.filter(membership__user=u)
+        groups = Group.objects.filter(users_in_group__user=u)
         if len(groups) == 0:
             return render_to_response('error.html',
                 {'title': 'error', 'message_col1': _("You are not a member of any group") + "."},
@@ -74,13 +73,11 @@ def group_quit(request, group_id, sure):
                 if (testsize > 0):
                     m = Membership.objects.get(user=request.user, group=g)
                     m.delete()
-                    #return HttpResponseRedirect('/p/groups/')
                     return HttpResponseRedirect(reverse('list_groups_my'))
                 elif (s == 1):
                     m = Membership.objects.get(user=request.user, group=g)
                     m.delete()
                     g.delete()
-                    #return HttpResponseRedirect('/p/groups/')
                     return HttpResponseRedirect(reverse('list_groups_my'))
                 else:
                     return render_to_response('groups/quit_group_confirm.html', {'group_id': group_id, 'group_name': g.name}, context_instance=RequestContext(request))
@@ -107,7 +104,6 @@ def group_add_event(request, event_id):
                 for g in f.cleaned_data['grouplist']:
                     calentry = Calendar(event=e, group=g)
                     calentry.save()
-                #return HttpResponseRedirect('/p/groups/')
                 return HttpResponseRedirect(reverse('list_groups_my'))
             else:
                 request.user.message_set.create(message='Please check your data.')
@@ -157,7 +153,6 @@ def group_invite(request, group_id):
                         context_instance=RequestContext(request))
                 GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
                 return HttpResponseRedirect(reverse('list_groups_my'))
-                #return HttpResponseRedirect('/p/groups/')
             else:
                 request.user.message_set.create(message='Please check your data.')
         else:
