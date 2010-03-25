@@ -62,11 +62,11 @@ def group_quit(request, group_id, sure):
     else:
         u = User(request.user)
         s = int(sure)
-        try:
+        if 1 == 1:
+#        try:
             try:
-                g = Group.objects.get(id=group_id, membership__user=u)
+                g = Group.objects.get(id=group_id, users_in_group__user=u)
             except Group.DoesNotExist:
-#               if (len(Membership.objects.filter(group=g).filter(user=u)) == 0):
                 return render_to_response('error.html', {'title': 'error', 'message_col1': _("There is no such group, or you are not a member of that group") + "."}, context_instance=RequestContext(request))
             else:
                 testsize = len(Membership.objects.filter(group=g).exclude(user=u))
@@ -81,8 +81,8 @@ def group_quit(request, group_id, sure):
                     return HttpResponseRedirect(reverse('list_groups_my'))
                 else:
                     return render_to_response('groups/quit_group_confirm.html', {'group_id': group_id, 'group_name': g.name}, context_instance=RequestContext(request))
-        except:
-            return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
+#        except:
+#            return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
 
 def group_quit_ask(request, group_id):
     return group_quit(request, group_id, 0)

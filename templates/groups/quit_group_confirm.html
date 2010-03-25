@@ -6,15 +6,16 @@
 
 <p>
 
-{% trans "You are the only member of the group now. If you quit, the group will be deleted. Are you sure you would like to quit the group"%} {{group_name}}?
+{% trans "You are the only member of the group now. If you quit, the group will be deleted. Are you sure you would like to quit the group"%} "{{group_name}}"?
 
 </p>
 
 <p>
-<a href="{% group_quit_confirm group_id %}">{% trans "confirm by clicking here" %}</a>
+<a href="{% url group_quit_sure group_id %}">{% trans "confirm by clicking here" %}</a>
 </p>
 <p>
 {% trans "Note: this operation is irreversable!" %}
+{% trans "You can not join a group by yourself, you can only be invited by someone who is a member of the group." %}
 </p>
 
 {% else %}
