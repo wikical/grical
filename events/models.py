@@ -12,6 +12,8 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
+from django.forms import ValidationError
+from django.forms.models import inlineformset_factory
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 
@@ -432,7 +434,12 @@ class Event(models.Model):
         The idented lines are optional. If web_url is present, it will be saved
         with the url_name 'web'
 
+        The text for the field 'deadlines' is of the form:
+            deadline:
+            FIXME: complete
+
         The text for the field 'sessions' is of the form:
+            sessions:
             FIXME: complete
 
         The text for the field 'groups' is of the form:
@@ -456,12 +463,25 @@ class Event(models.Model):
 
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
-            field_name = synonyms[parts[0]]
-            if field_name == 'groups':
-                pass
-            elif field_name == 'urls':
+            try:
+                field_name = synonyms[parts[0]]
+            except KeyError: raise ValidationError(_(
+                        "you used an invalid field name"))
+            # FIXME: accept urls, deadlines, sessions and groups
+            if field_name == 'urls':
+                if not parts[1] == '' and parts[2] == '':
+                    url_data = {}
+                    url_data['event_of_url-INITIAL_FORMS'] = 0
+                    url_data['event_of_url-TOTAL_FORMS'] = 1
+                    url_data['event_of_url-0-url_name'] = 'URL'
+                    url_data['event_of_url-0-url'] = parts[1]
+                if not parts[1] == '' and not parts[2] == '': raise ValidationError(_(
+                        "you can not put both simplified and subparts in URL field"))
+            elif field_name == 'deadlines':
                 pass
             elif field_name == 'sessions':
+                pass
+            elif field_name == 'groups':
                 pass
             else:
                 if not parts[2] == '': raise ValidationError(_(
@@ -483,8 +503,16 @@ class Event(models.Model):
                 raise ValidationError(_(
                         "event '%' doesn't exist" % pk))
             event_form = EventForm(data, instance=event)
-            event_form.save()
-        #FIXME: finish this function
+            if event_form.is_valid():
+                if len(url_data) > 0:
+                    EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
+                    #assert False
+                    ef_url = EventUrlInlineFormSet(url_data, instance=event)
+                    if event_form.is_valid() and ef_url.is_valid():
+                        ef_url.save()
+                        event_form.save()
+                else:
+                    event_form.save()
 
     @staticmethod
     def get_synonyms():
