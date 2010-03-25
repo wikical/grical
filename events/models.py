@@ -439,7 +439,7 @@ class Event(models.Model):
         return to_return
 
     @staticmethod
-    def parse_text(input_text_in, pk=None):
+    def parse_text(input_text_in, pk=None, user_id=None):
         """It parses a text and saves it as a single event in the data base.
 
         A text to be parsed as an event is of the form:
@@ -586,9 +586,16 @@ class Event(models.Model):
                 g = Group.objects.get(name=group_name)
                 event_groups_req_id_list.append(g.id)
                 if g.id not in event_groups_cur_id_list:
+                    if user_id is None or not g.is_user_in_group(user_id, g.id):
+                        raise ValidationError(_(
+                            "You are not a member of group: %s so you can not add any event to it." % g.name))
                     event.add_to_group(g.id)
             for group_id in event_groups_cur_id_list:
                 if group_id not in event_groups_req_id_list:
+                    if user_id is None or not g.is_user_in_group(user_id, group_id):
+                        g = Group.objects.get(id=group_id)
+                        raise ValidationError(_(
+                            "You are not a member of group: %s so you can not remove an event from it." % g.name))
                     event.remove_from_group(group_id)
             if event_form.is_valid():
                 # TODO: would be nice if instead of deleting all URLs each time, it would update
@@ -826,8 +833,8 @@ class Group(models.Model):
         else:
             return False
 
-    def is_user_member_of(self, user):
-        if Membership.objects.filter(user__id__exact=user.id):
+    def     is_user_member_of(self, user):
+        if Membership.objects.get(group=self, user=user):
             return True
         else:
             return False

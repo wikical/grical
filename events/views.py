@@ -117,7 +117,7 @@ def event_edit(request, event_id, raw):
                 if 'event_astext' in request.POST:
                     t = request.POST['event_astext'].replace(": ", ":")
                     try:
-                        event.parse_text(t, event_id)
+                        event.parse_text(t, event_id, request.user.id)
                         return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
                     except ValidationError, error:
                         return render_to_response('error.html',
@@ -212,13 +212,10 @@ def filter_save(request):
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
                     try:
-#                        f = Filter.objects.filter(user=request.user)
                         max = Filter.objects.aggregate(Max('id'))['id__max']
-#                        index = len(f) + 1
                         filter = Filter()
                         filter.user = request.user
                         filter.query = q
-#                        filter.name = str(request.user) + "'s filter " + str(index)
                         filter.name = str(request.user) + "'s filter " + str(max)
                         filter.save()
                         return HttpResponseRedirect(reverse('filter_edit', kwargs={'filter_id': filter.id}))
