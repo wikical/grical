@@ -9,6 +9,7 @@ from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 
 from tagging.models import TaggedItem, Tag
 
@@ -18,6 +19,7 @@ from gridcalendar.events.models import Event, Group, Membership, Calendar, Group
 from gridcalendar.events.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
 from gridcalendar.events.lists import all_events_in_user_groups
 
+@login_required
 def group_new(request):
     if not request.user.is_authenticated():
         return render_to_response('groups/no_authenticated.html', {}, context_instance=RequestContext(request))
@@ -37,6 +39,7 @@ def group_new(request):
         form = NewGroupForm()
         return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
 
+@login_required
 def list_groups_my(request):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -54,6 +57,7 @@ def list_groups_my(request):
                 {'title': 'list my groups', 'groups': groups},
                 context_instance=RequestContext(request))
 
+@login_required
 def group_quit(request, group_id, sure):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -84,12 +88,15 @@ def group_quit(request, group_id, sure):
 #        except:
 #            return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
 
+@login_required
 def group_quit_ask(request, group_id):
     return group_quit(request, group_id, 0)
 
+@login_required
 def group_quit_sure(request, group_id):
     return group_quit(request, group_id, 1)
 
+@login_required
 def group_add_event(request, event_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -118,6 +125,7 @@ def group_add_event(request, event_id):
                     'message_col1': _("This event is already in all groups that you are in, so you can't add it to any more groups.") },
                     context_instance=RequestContext(request))
 
+@login_required
 def list_events_group(request, group_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -131,6 +139,7 @@ def list_events_group(request, group_id):
                 {'title': 'group page', 'group_id': group_id, 'user_id': request.user.id, 'hash': hash, 'events': events},
                 context_instance=RequestContext(request))
 
+@login_required
 def group_invite(request, group_id):
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
@@ -166,6 +175,7 @@ def group_invite(request, group_id):
                 {'title': 'invite to group', 'group_id': group_id, 'form': form},
                 context_instance=RequestContext(request))
 
+@login_required
 def group_invite_activate(request, activation_key):
     """
     A user clicks on activation link
