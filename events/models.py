@@ -384,29 +384,41 @@ class Event(models.Model):
                 to_return += keyword + ": " + unicode(self.city) + "\n"
             elif keyword == 'code' and self.code:
                 to_return += keyword + ": " + unicode(self.code) + "\n"
-            elif keyword == 'urls':
-                # FIXME: add a test "and self.urls" to test if there are any URLs defined
+            elif keyword == 'urls' and self.urls:
                 urls = EventUrl.objects.filter(event=self.id)
                 if len(urls) > 0:
-                    to_return += "urls:\n"
+                    to_return += "urls:"
                     for url in urls:
-                        to_return += "\t" + url.url_name + ': ' + url.url + "\n"
-            elif keyword == 'sessions':
-                # FIXME: add a test "and self.sessions" to test if there are any time sessions defined
+                        if url.url_name == 'web':
+                            to_return += " " + url.url
+                    to_return += "\n"
+                    for url in urls:
+                        if not url.url_name == 'web':
+                            to_return += "    " + url.url_name + ': ' + url.url + "\n"
+            elif keyword == 'deadlines' and self.deadlines:
+                deadlines = EventDeadline.objects.filter(event=self.id)
+                if len(deadlines) > 0:
+                    to_return += "deadlines:"
+                    for deadline in deadlines:
+                        if deadline.deadline_name == 'deadline':
+                            to_return += " " + deadline.deadline
+                    to_return += "\n"
+                    for deadline in deadlines:
+                        if not deadline.deadline_name == 'deadline':
+                            to_return += "    " + deadline.deadline_name + ': ' + deadline.deadline + "\n"
+            elif keyword == 'sessions' and self.sessions:
                 time_sessions = EventSession.objects.filter(event=self.id)
                 if len(time_sessions) > 0:
                     to_return += "sessions:\n"
                     for time_session in time_sessions:
-                        to_return = "".joint((to_return, "\t",
+                        to_return = "".joint((to_return, "    ",
                             self.session_name, ": ",
                             self.session_date.strftime("%Y-%m-%d"), ": ",
                             str(self.session_starttime), "-",
                             str(self.session_endtime), '\n'))
                         # TODO: use strftime instead of str in the lines above
-            elif keyword == 'groups':
-            #elif keyword == 'groups' and self.groups:
-                # FIXME: add a test "and self.sessions" to test if there are any time sessions defined
-                pass #FIXME
+#            elif keyword == 'groups' and self.groups:
+#                pass #FIXME
             elif keyword == 'description' and self.description:
                 pass #FIXME
         return to_return
@@ -461,15 +473,15 @@ class Event(models.Model):
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         input_text = input_text_in.replace('\r\n', '\n').replace('\r', '\n')
 
+        url_data = {}
+        deadline_data = {}
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             try:
                 field_name = synonyms[parts[0]]
             except KeyError: raise ValidationError(_(
                         "you used an invalid field name in '%s'" % field_text))
-            # FIXME: accept urls, deadlines, sessions and groups
             if field_name == 'urls':
-                url_data = {}
                 url_index = 0
                 url_data['urls-INITIAL_FORMS'] = u'0'
                 if not parts[1] == '':
@@ -480,13 +492,25 @@ class Event(models.Model):
                     for url_line in parts[2].splitlines():
                         if not url_line == '':
                             url_line_parts = url_line.split(":", 1)
-                            url_data['urls-' + str(url_index) + '-url_name'] = url_line_parts[0]
-                            url_data['urls-' + str(url_index) + '-url'] = url_line_parts[1]
+                            url_data['urls-' + str(url_index) + '-url_name'] = url_line_parts[0].strip()
+                            url_data['urls-' + str(url_index) + '-url'] = url_line_parts[1].strip()
                             url_index += 1
                 url_data['urls-TOTAL_FORMS'] = str(url_index)
-
             elif field_name == 'deadlines':
-                pass
+                deadline_index = 0
+                deadline_data['deadlines-INITIAL_FORMS'] = u'0'
+                if not parts[1] == '':
+                    deadline_data['deadlines-0-deadline_name'] = u'deadline'
+                    deadline_data['deadlines-0-deadline'] = parts[1]
+                    deadline_index += 1
+                if not parts[2] == '':
+                    for deadline_line in parts[2].splitlines():
+                        if not deadline_line == '':
+                            deadline_line_parts = deadline_line.split(":", 1)
+                            deadline_data['deadlines-' + str(deadline_index) + '-deadline_name'] = deadline_line_parts[0].strip()
+                            deadline_data['deadlines-' + str(deadline_index) + '-deadline'] = deadline_line_parts[1].strip()
+                            deadline_index += 1
+                deadline_data['deadlines-TOTAL_FORMS'] = str(deadline_index)
             elif field_name == 'sessions':
                 pass
             elif field_name == 'groups':
@@ -512,17 +536,26 @@ class Event(models.Model):
                         "event '%s' doesn't exist" % pk))
             event_form = EventForm(data, instance=event)
             if event_form.is_valid():
+                # TODO: would be nice if instead of deleting all URLs each time, it would update
+                EventUrl.objects.filter(event=pk).delete()
+                EventDeadline.objects.filter(event=pk).delete()
                 if len(url_data) > 0:
                     EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
                     ef_url = EventUrlInlineFormSet(url_data, instance=event)
                     if ef_url.is_valid():
-                        event_form.save()
                         ef_url.save()
                     else:
                         raise ValidationError(_(
-                            "there is an error in the input data in the URLs"))
-                else:
-                    event_form.save()
+                            "There is an error in the input data in the URLs: %s" % ef_url.errors))
+                if len(deadline_data) > 0:
+                    EventDeadlineInlineFormSet = inlineformset_factory(Event, EventDeadline, extra=0)
+                    ef_deadline = EventDeadlineInlineFormSet(deadline_data, instance=event)
+                    if ef_deadline.is_valid():
+                        ef_deadline.save()
+                    else:
+                        raise ValidationError(_(
+                            "There is an error in the input data in the deadlines: %s" % ef_deadline.errors))
+                event_form.save()
             else:
                 raise ValidationError(_(
                     "there is an error in the input data"))
@@ -617,32 +650,43 @@ class Event(models.Model):
 
 class EventUrl(models.Model):
     event = models.ForeignKey(Event, related_name='urls')
-    url_name = models.CharField(_('URL Name'), blank=True, null=True,
+    url_name = models.CharField(_('URL Name'), blank=False, null=False,
             max_length=80, help_text=_(
             "Example: information about accomodation"))
     url = models.URLField(_('URL'), blank=False, null=False)
+    class Meta:
+        ordering = ['event', 'url_name']
+        unique_together = ("event", "url_name")
     def __unicode__(self):
         return self.url
 
+class EventDeadline(models.Model):
+    event = models.ForeignKey(Event, related_name='deadlines')
+    deadline_name = models.CharField(_('Deadline name'), blank=False, null=False,
+            max_length=80, help_text=_(
+            "Example: call for papers deadline"))
+    deadline = models.DateField(_('Deadline'), blank=False, null=False)
+    class Meta:
+        ordering = ['event', 'deadline', 'deadline_name']
+        unique_together = ("event", "deadline_name")
+    def __unicode__(self):
+        return unicode(self.deadline) + u' - ' + self.deadline_name
+
 class EventSession(models.Model):
     event = models.ForeignKey(Event, related_name='sessions')
-    session_name = models.CharField(_('Session name'), blank=True,
-            null=True, max_length=80, help_text=_(
+    session_name = models.CharField(_('Session name'), blank=False, null=False,
+            max_length=80, help_text=_(
             "Example: day 2 of the conference"))
     session_date = models.DateField(_('Session day'), blank=False,
             null=False)
     session_starttime = models.TimeField(_('Session start time'),
             blank=False, null=False)
     session_endtime = models.TimeField(_('Session end time'), blank=False, null=False)
+    class Meta:
+        ordering = ['event', 'session_date', 'session_starttime', 'session_endtime']
+        unique_together = ("event", "session_name")
     def __unicode__(self):
-        return self.session_name
-
-class EventDeadline(models.Model):
-    event = models.ForeignKey(Event, related_name='deadlines')
-    deadline_name = models.CharField(_('Deadline name'), blank=True, null=True, max_length=80, help_text=_("Example: call for papers deadline"))
-    deadline = models.DateField(_('Deadline'), blank=False, null=False)
-    def __unicode__(self):
-        return self.deadline_name
+        return unicode(self.session_date) + u' - ' + unicode(self.session_starttime) + u' - ' + unicode(self.session_endtime) + u' - ' + self.session_name
 
 class Filter(models.Model):
     user = models.ForeignKey(User, unique=False, verbose_name=_('User'))
