@@ -450,9 +450,9 @@ class Event(models.Model):
         # separate events
         # get fields
         field_pattern = re.compile(
-                r"^[^ :]+\s*:.*(?:(?:\n|\r\n?) .+)*", re.MULTILINE)
+                r"^[^ \t:]+[ \t]*:.*(?:\n(?:[ \t])+.+)*", re.MULTILINE)
         parts_pattern = re.compile(
-                r"^([^ :]+\s*):\s*(.*)((?:(?:\n|\r\n?) .+)*)", re.MULTILINE)
+                r"^([^ \t:]+[ \t]*)[ \t]*:[ \t]*(.*)((?:\n(?:[ \t])+.+)*)", re.MULTILINE)
         # group 0 is the text before the colon
         # group 1 is the text after the colon
         # group 2 are all indented lines
@@ -466,17 +466,25 @@ class Event(models.Model):
             try:
                 field_name = synonyms[parts[0]]
             except KeyError: raise ValidationError(_(
-                        "you used an invalid field name"))
+                        "you used an invalid field name in '%s'" % field_text))
             # FIXME: accept urls, deadlines, sessions and groups
             if field_name == 'urls':
-                if not parts[1] == '' and parts[2] == '':
-                    url_data = {}
-                    url_data['event_of_url-INITIAL_FORMS'] = 0
-                    url_data['event_of_url-TOTAL_FORMS'] = 1
-                    url_data['event_of_url-0-url_name'] = 'URL'
-                    url_data['event_of_url-0-url'] = parts[1]
-                if not parts[1] == '' and not parts[2] == '': raise ValidationError(_(
-                        "you can not put both simplified and subparts in URL field"))
+                url_data = {}
+                url_index = 0
+                url_data['urls-INITIAL_FORMS'] = u'0'
+                if not parts[1] == '':
+                    url_data['urls-0-url_name'] = u'web'
+                    url_data['urls-0-url'] = parts[1]
+                    url_index += 1
+                if not parts[2] == '':
+                    for url_line in parts[2].splitlines():
+                        if not url_line == '':
+                            url_line_parts = url_line.split(":", 1)
+                            url_data['urls-' + str(url_index) + '-url_name'] = url_line_parts[0]
+                            url_data['urls-' + str(url_index) + '-url'] = url_line_parts[1]
+                            url_index += 1
+                url_data['urls-TOTAL_FORMS'] = str(url_index)
+
             elif field_name == 'deadlines':
                 pass
             elif field_name == 'sessions':
@@ -485,11 +493,11 @@ class Event(models.Model):
                 pass
             else:
                 if not parts[2] == '': raise ValidationError(_(
-                        "field '%' doesn't accept subparts" % parts[1]))
+                        "field '%s' doesn't accept subparts" % parts[1]))
                 if parts[0] == '': raise ValidationError(_(
                         "a left part of a colon is empty"))
                 if not synonyms.has_key(parts[0]): raise ValidationError(_(
-                        "keyword % unknown" % parts[0]))
+                        "keyword %s unknown" % parts[0]))
                 data[synonyms[parts[0]]] = parts[1]
 
         from gridcalendar.events.forms import EventForm
@@ -501,18 +509,23 @@ class Event(models.Model):
                 event = Event.objects.get(pk=pk)
             except Event.DoesNotExist:
                 raise ValidationError(_(
-                        "event '%' doesn't exist" % pk))
+                        "event '%s' doesn't exist" % pk))
             event_form = EventForm(data, instance=event)
             if event_form.is_valid():
                 if len(url_data) > 0:
                     EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
-                    #assert False
                     ef_url = EventUrlInlineFormSet(url_data, instance=event)
-                    if event_form.is_valid() and ef_url.is_valid():
-                        ef_url.save()
+                    if ef_url.is_valid():
                         event_form.save()
+                        ef_url.save()
+                    else:
+                        raise ValidationError(_(
+                            "there is an error in the input data in the URLs"))
                 else:
                     event_form.save()
+            else:
+                raise ValidationError(_(
+                    "there is an error in the input data"))
 
     @staticmethod
     def get_synonyms():
@@ -603,7 +616,7 @@ class Event(models.Model):
 
 
 class EventUrl(models.Model):
-    event = models.ForeignKey(Event, related_name='event_of_url')
+    event = models.ForeignKey(Event, related_name='urls')
     url_name = models.CharField(_('URL Name'), blank=True, null=True,
             max_length=80, help_text=_(
             "Example: information about accomodation"))
@@ -612,7 +625,7 @@ class EventUrl(models.Model):
         return self.url
 
 class EventSession(models.Model):
-    event = models.ForeignKey(Event, related_name='event_of_session')
+    event = models.ForeignKey(Event, related_name='sessions')
     session_name = models.CharField(_('Session name'), blank=True,
             null=True, max_length=80, help_text=_(
             "Example: day 2 of the conference"))
@@ -625,7 +638,7 @@ class EventSession(models.Model):
         return self.session_name
 
 class EventDeadline(models.Model):
-    event = models.ForeignKey(Event, related_name='event_of_deadline')
+    event = models.ForeignKey(Event, related_name='deadlines')
     deadline_name = models.CharField(_('Deadline name'), blank=True, null=True, max_length=80, help_text=_("Example: call for papers deadline"))
     deadline = models.DateField(_('Deadline'), blank=False, null=False)
     def __unicode__(self):
