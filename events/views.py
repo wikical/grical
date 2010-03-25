@@ -115,16 +115,19 @@ def event_edit(request, event_id, raw):
     elif (raw):
         if request.method == 'POST':
                 if 'event_astext' in request.POST:
-                    t = request.POST['event_astext'].replace(": ", ":")
+                    event_textarea = request.POST['event_astext']
                     try:
-                        event.parse_text(t, event_id, request.user.id)
+                        event.parse_text(event_textarea, event_id, request.user.id)
                         return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
                     except ValidationError, error:
                         return render_to_response('error.html',
                             {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
                             context_instance=RequestContext(request))
                 else:
-                    return render_to_response('error.html', {'title': _("error"), 'form': getEventForm(request.user), 'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+                    return render_to_response('error.html', {'title': _("error"),
+                        'form': getEventForm(request.user),
+                        'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
+                        context_instance=RequestContext(request))
         else:
             event_textarea = event.as_text()
             templates = { 'title': _("edit event as text"), 'event_textarea': event_textarea, 'event_id': event_id }
