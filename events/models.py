@@ -439,7 +439,7 @@ class Event(models.Model):
         return to_return
 
     @staticmethod
-    def parse_text(input_text_in, pk=None, user_id=None):
+    def parse_text(input_text_in, event_id=None, user_id=None):
         """It parses a text and saves it as a single event in the data base.
 
         A text to be parsed as an event is of the form:
@@ -569,16 +569,18 @@ class Event(models.Model):
                 data[synonyms[parts[0]]] = parts[1]
 
         from gridcalendar.events.forms import EventForm
-        if (pk == None):
+        if (event_id == None):
             event_form = EventForm(data)
             event_form.save()
         else:
             try:
-                event = Event.objects.get(pk=pk)
+                event = Event.objects.get(id=event_id)
             except Event.DoesNotExist:
                 raise ValidationError(_(
-                        "event '%s' doesn't exist" % pk))
+                        "event '%s' doesn't exist" % event_id))
             event_form = EventForm(data, instance=event)
+
+
             event_groups_cur_id_list = event.is_in_groups_id_list()
             event_groups_req_id_list = list()
             for group_name_quoted in event_groups_req_names_list:
@@ -597,11 +599,13 @@ class Event(models.Model):
                         raise ValidationError(_(
                             "You are not a member of group: %s so you can not remove an event from it." % g.name))
                     event.remove_from_group(group_id)
+
+
             if event_form.is_valid():
                 # TODO: would be nice if instead of deleting all URLs each time, it would update
-                EventUrl.objects.filter(event=pk).delete()
-                EventDeadline.objects.filter(event=pk).delete()
-                EventSession.objects.filter(event=pk).delete()
+                EventUrl.objects.filter(event=event_id).delete()
+                EventDeadline.objects.filter(event=event_id).delete()
+                EventSession.objects.filter(event=event_id).delete()
                 if len(url_data) > 0:
                     EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
                     ef_url = EventUrlInlineFormSet(url_data, instance=event)
@@ -802,7 +806,6 @@ class Filter(models.Model):
 
 class Group(models.Model):
     name = models.CharField(_('Name'), max_length=80, unique=True)
-    # TODO: disallow group names with spaces
     description = models.TextField(_('Description'))
     members = models.ManyToManyField(User, through='Membership',
             verbose_name=_('Members'))
@@ -833,7 +836,7 @@ class Group(models.Model):
         else:
             return False
 
-    def     is_user_member_of(self, user):
+    def is_user_member_of(self, user):
         if Membership.objects.get(group=self, user=user):
             return True
         else:
