@@ -161,7 +161,7 @@ class ICalForSearchHash(ICalForSearch):
         cal = vobject.iCalendar()
         f = Filter.objects.filter(id=filter_id)
         u = User.objects.filter(id=user_id)
-        if (hash == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, filter_id, user_id)).hexdigest()) and (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
+        if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()) and (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
             for item in self.items(filter_id):
                 event = cal.add('vevent')
                 for vkey, key in EVENT_ITEMS:
@@ -235,7 +235,7 @@ class ICalForFilterHash(ICalForFilter):
         cal = vobject.iCalendar()
         f = Filter.objects.filter(id=filter_id)
         u = User.objects.filter(id=user_id)
-        if (hash == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, filter_id, user_id)).hexdigest()) and (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
+        if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()) and (len(Filter.objects.filter(id=filter_id).filter(user=u)) == 1):
             for item in self.items(filter_id):
                 event = cal.add('vevent')
                 for vkey, key in EVENT_ITEMS:
@@ -308,7 +308,7 @@ class ICalForGroupHash(ICalForGroup):
         cal = vobject.iCalendar()
         g = Group.objects.filter(id=group_id)
         u = User.objects.filter(id=user_id)
-        if (hash == hashlib.sha256("%s!%s!%s" % (settings.SECRET_KEY, group_id, user_id)).hexdigest()) and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
+        if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()) and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
             for item in self.items(group_id):
                 event = cal.add('vevent')
                 for vkey, key in EVENT_ITEMS:
