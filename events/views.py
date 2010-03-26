@@ -53,7 +53,7 @@ def event_new(request):
     else:
         return HttpResponseRedirect(reverse('root'))
 
-def event_edit(request, event_id, raw):
+def event_edit(request, event_id):
     # checks if the event exists
     try:
         event = Event.objects.get(pk=event_id)
@@ -86,52 +86,103 @@ def event_edit(request, event_id, raw):
                         " " + str(event_id) },
                         context_instance=RequestContext(request))
 
-    if (not raw):
-        EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
-        EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=1)
-        EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=1)
-        if request.method == 'POST':
-            ef_url      = EventUrlInlineFormSet(request.POST, instance=event)
-            ef_session  = EventSessionInlineFormSet(request.POST, instance=event)
-            ef_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
-            ef = EventForm(request.POST, instance=event)
-            if ef.is_valid() & ef_url.is_valid() & ef_session.is_valid() & ef_deadline.is_valid() :
-                ef.save()
-                ef_url.save()
-                ef_session.save()
-                ef_deadline.save()
-                # TODO: look in a thread for all users who wants to receive an email notification and send it
-                return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
-            else:
-                templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
-                return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
+    EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
+    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=1)
+    EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=1)
+    if request.method == 'POST':
+        ef_url      = EventUrlInlineFormSet(request.POST, instance=event)
+        ef_session  = EventSessionInlineFormSet(request.POST, instance=event)
+        ef_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
+        ef = EventForm(request.POST, instance=event)
+        if ef.is_valid() & ef_url.is_valid() & ef_session.is_valid() & ef_deadline.is_valid() :
+            ef.save()
+            ef_url.save()
+            ef_session.save()
+            ef_deadline.save()
+            # TODO: look in a thread for all users who wants to receive an email notification and send it
+            return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
         else:
-            ef = EventForm(instance=event)
-            ef_url      = EventUrlInlineFormSet(instance=event)
-            ef_session  = EventSessionInlineFormSet(instance=event)
-            ef_deadline = EventDeadlineInlineFormSet(instance=event)
             templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
             return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
-    elif (raw):
-        if request.method == 'POST':
-                if 'event_astext' in request.POST:
-                    event_textarea = request.POST['event_astext']
-                    try:
-                        event.parse_text(event_textarea, event_id, request.user.id)
-                        return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
-                    except ValidationError, error:
-                        return render_to_response('error.html',
-                            {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
-                            context_instance=RequestContext(request))
-                else:
-                    return render_to_response('error.html', {'title': _("error"),
-                        'form': getEventForm(request.user),
-                        'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
+    else:
+        ef = EventForm(instance=event)
+        ef_url      = EventUrlInlineFormSet(instance=event)
+        ef_session  = EventSessionInlineFormSet(instance=event)
+        ef_deadline = EventDeadlineInlineFormSet(instance=event)
+        templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
+        return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
+
+def event_new_raw(request):
+    if request.method == 'POST':
+            if 'event_astext' in request.POST:
+                event_textarea = request.POST['event_astext']
+                try:
+                    Event.parse_text(event_textarea, None, request.user.id)
+                    return HttpResponseRedirect(reverse('root'))
+                except ValidationError, error:
+                    return render_to_response('error.html',
+                        {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
                         context_instance=RequestContext(request))
+            else:
+                return render_to_response('error.html', {'title': _("error"),
+                    'form': getEventForm(request.user),
+                    'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
+                    context_instance=RequestContext(request))
+    else:
+        templates = { 'title': _("edit event as text") }
+        return render_to_response('event_new_raw.html', templates, context_instance=RequestContext(request))
+
+def event_edit_raw(request, event_id):
+    # checks if the event exists
+    try:
+        event = Event.objects.get(pk=event_id)
+    except Event.DoesNotExist:
+        return render_to_response('error.html',
+                    {'title': _("error"), 'form': getEventForm(request.user),
+                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
+                    context_instance=RequestContext(request))
+
+    # checks if the user is allowed to edit this event
+    # public events can be edited by anyone, otherwise only by the submitter
+    # and the group the event belongs to
+    if (not event.public):
+        # events submitted by anonymous users cannot be non-public:
+        assert (event.user != None)
+        if (not request.user.is_authenticated()):
+            return render_to_response('error.html',
+                    {'title': _("error"), 'form': getEventForm(request.user),
+                    'message_col1': _('You need to be logged-in to be able' +
+                    ' to edit the event with the number:') +
+                    " " + str(event_id) + "). " +
+                    _("Please log-in and try again") + "."},
+                    context_instance=RequestContext(request))
         else:
-            event_textarea = event.as_text()
-            templates = { 'title': _("edit event as text"), 'event_textarea': event_textarea, 'event_id': event_id }
-            return render_to_response('event_edit_raw.html', templates, context_instance=RequestContext(request))
+            if (not Event.is_event_viewable_by_user(event_id, request.user.id)):
+                return render_to_response('error.html',
+                        {'title': _("error"), 'form': getEventForm(request.user),
+                        'message_col1': _('You are not allowed to edit the' +
+                        ' event with the number:') +
+                        " " + str(event_id) },
+                        context_instance=RequestContext(request))
+    if request.method == 'POST':
+            if 'event_astext' in request.POST:
+                event_textarea = request.POST['event_astext']
+                try:
+                    event.parse_text(event_textarea, event_id, request.user.id)
+                    return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
+                except ValidationError, error:
+                    return render_to_response('error.html',
+                        {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
+                        context_instance=RequestContext(request))
+            else:
+                return render_to_response('error.html', {'title': _("error"),
+                    'form': getEventForm(request.user),
+                    'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
+                    context_instance=RequestContext(request))
+    else:
+        event_textarea = event.as_text()
+        templates = { 'title': _("edit event as text"), 'event_textarea': event_textarea, 'event_id': event_id }
+        return render_to_response('event_edit_raw.html', templates, context_instance=RequestContext(request))
 
 def event_show(request, event_id):
     try:

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Create a new event" %}:</p>
+<div id="event_textarea_form">
+
+    <form action="" method="post">
+        <table>
+            <TEXTAREA Name="event_astext" rows="25" cols="80"></TEXTAREA>
+        <input type="submit" value={% trans "Save" %}>
+        </table>
+    </form>
+
+</div>
+
+<p>
+
+{% trans "Example of event text sourcecode" %}:
+<pre>
+city: Berlin
+end: 2010-04-30
+description: This is a test description aaa.
+title: EVENT 2 future USERLESS PUBLIC
+acronym: ACRO
+country: DE
+longitude: 13.83245
+start: 2010-04-27
+address: Random Street 3
+latitude: 50.32323
+timezone: 60
+public: True
+tags: tag
+</pre>
+
+
+</p>
+
+
+
+{% endblock %}
+
+
+
+{% block column3 %}
+{% endblock %}
+

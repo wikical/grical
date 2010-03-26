@@ -11,8 +11,9 @@ urlpatterns = patterns('',
 
 urlpatterns += patterns('', # views of a single event
     url(r'^e/new/$',                                                    views.event_new,                    name='event_new'),
-    url(r'^e/edit/(?P<event_id>\d+)/$',                                 views.event_edit, { 'raw': False }, name='event_edit'),
-    url(r'^e/edit/(?P<event_id>\d+)/raw/$',                             views.event_edit, { 'raw': True },  name='event_edit_raw'),
+    url(r'^e/new/raw/$',                                                views.event_new_raw,                name='event_new_raw'),
+    url(r'^e/edit/(?P<event_id>\d+)/$',                                 views.event_edit,                   name='event_edit'),
+    url(r'^e/edit/(?P<event_id>\d+)/raw/$',                             views.event_edit_raw,               name='event_edit_raw'),
     url(r'^e/show/(?P<event_id>\d+)/$',                                 views.event_show,                   name='event_show'),
     url(r'^e/show/(?P<event_id>\d+)/raw/$',                             views.event_show_raw,               name='event_show_raw'),
     url(r'^e/show/(?P<event_id>\d+)/ical/$',                            feeds.ICalForEvent(),               name='event_show_ical'),
