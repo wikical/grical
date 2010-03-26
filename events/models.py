@@ -442,6 +442,8 @@ class Event(models.Model):
     def parse_text(input_text_in, event_id=None, user_id=None):
         """It parses a text and saves it as a single event in the data base.
 
+        It raises a ValidationError if there is an error.
+
         A text to be parsed as an event is of the form:
             title: a title
             tags: tag1 tag2 tag3
@@ -469,8 +471,8 @@ class Event(models.Model):
 
         The text for the field 'sessions' is of the form:
             sessions: session_date session_starttime session_endtime
-                session1_name: session1_date session1_starttime session1_endtime
-                session2_name: session2_date session2_starttime session2_endtime
+                session1_name: session1_date: session1_starttime-session1_endtime
+                session2_name: session2_date: session2_starttime-session2_endtime
                 ...
         The idented lines are optional. If session_date is present, it will be saved
         with the session_name 'session'
@@ -497,8 +499,7 @@ class Event(models.Model):
         url_data = {}
         deadline_data = {}
         session_data = {}
-        group_data = {}
-        event_groups_req_names_list = list()
+        event_groups_req_names_list = list() # list of group names
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             try:
@@ -597,29 +598,46 @@ class Event(models.Model):
                     event.remove_from_group(group_id)
 
         # at this moment we have data, url_data, deadline_data and session_data
+
+        url_data['urls-' + str(url_index) + '-id'] = '0'
+
+        data_all = data.copy()
+        data_all.update(url_data)
+        data_all.update(deadline_data)
+        data_all.update(session_data)
+
         from gridcalendar.events.forms import EventForm
         if (event_id == None):
-            event_form = EventForm(data)
+            event_form = EventForm(data_all)
             event = event_form.save(commit=False)
         else:
-            event_form = EventForm(data, instance=event)
-        EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
-        formset_url = EventUrlInlineFormSet(url_data, instance=event)
+            event_form = EventForm(data_all, instance=event)
 
-        EventDeadlineInlineFormSet = inlineformset_factory(Event, EventDeadline, extra=0)
-        formset_deadline = EventDeadlineInlineFormSet(deadline_data, instance=event)
+        if len(url_data) > 0:
+            EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
+            formset_url = EventUrlInlineFormSet(data_all, instance=event)
 
-        EventSessionInlineFormSet = inlineformset_factory(Event, EventSession, extra=0)
-        formset_session = EventSessionInlineFormSet(session_data, instance=event)
+        if len(deadline_data) > 0:
+            EventDeadlineInlineFormSet = inlineformset_factory(Event, EventDeadline, extra=0)
+            formset_deadline = EventDeadlineInlineFormSet(data_all, instance=event)
+
+        if len(session_data) > 0:
+            EventSessionInlineFormSet = inlineformset_factory(Event, EventSession, extra=0)
+            formset_session = EventSessionInlineFormSet(data_all, instance=event)
+
+
+        #p = unicode(formset_session)
+        assert False
 
         if not event_form.is_valid():
             raise ValidationError(_("there is an error in the input data: %s" % event_form.errors))
-        elif not formset_deadline.is_valid():
-            raise ValidationError(_("There is an error in the input data in the deadlines: %s" % formset_deadline.errors))
-        elif not formset_session.is_valid():
-            raise ValidationError(_("There is an error in the input data in the sessions: %s" % formset_session.errors))
-        elif not formset_url.is_valid():
+        elif len(url_data) > 0 and not formset_url.is_valid():
             raise ValidationError(_("There is an error in the input data in the URLs: %s" % formset_url.errors))
+        elif len(deadline_data) > 0 and not formset_deadline.is_valid():
+            raise ValidationError(_("There is an error in the input data in the deadlines: %s" % formset_deadline.errors))
+        elif len(session_data) > 0 and not formset_session.is_valid():
+            #assert False
+            raise ValidationError(_("There is an error in the input data in the sessions: %s" % formset_session.errors))
         else:
             if not (event_id == None):
                 EventUrl.objects.filter(event=event_id).delete()
@@ -628,9 +646,12 @@ class Event(models.Model):
                 event_form.save()
             else:
                 event.save()
-            formset_url.save()
-            formset_deadline.save()
-            formset_session.save()
+            if len(url_data) > 0:
+                formset_url.save()
+            if len(deadline_data) > 0:
+                formset_deadline.save()
+            if len(session_data) > 0:
+                formset_session.save()
             if (event_id == None):
                 event_form.save_m2m()
 
@@ -813,6 +834,7 @@ class Filter(models.Model):
         return ('filter_edit', (), { 'filter_id': self.id })
 
 class Group(models.Model):
+    # FIXME: groups only as lower case ascii (case insensitive). Validate everywhere including save method.
     name = models.CharField(_('Name'), max_length=80, unique=True)
     description = models.TextField(_('Description'))
     members = models.ManyToManyField(User, through='Membership',

@@ -87,29 +87,29 @@ def event_edit(request, event_id):
                         context_instance=RequestContext(request))
 
     EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
-    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=1)
     EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=1)
+    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=1)
     if request.method == 'POST':
-        ef_url      = EventUrlInlineFormSet(request.POST, instance=event)
-        ef_session  = EventSessionInlineFormSet(request.POST, instance=event)
-        ef_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
-        ef = EventForm(request.POST, instance=event)
-        if ef.is_valid() & ef_url.is_valid() & ef_session.is_valid() & ef_deadline.is_valid() :
-            ef.save()
-            ef_url.save()
-            ef_session.save()
-            ef_deadline.save()
+        formset_url      = EventUrlInlineFormSet(request.POST, instance=event)
+        formset_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
+        formset_session  = EventSessionInlineFormSet(request.POST, instance=event)
+        event_form = EventForm(request.POST, instance=event)
+        if event_form.is_valid() & formset_url.is_valid() & formset_session.is_valid() & formset_deadline.is_valid() :
+            event_form.save()
+            formset_url.save()
+            formset_session.save()
+            formset_deadline.save()
             # TODO: look in a thread for all users who wants to receive an email notification and send it
             return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
         else:
-            templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
+            templates = {'title': 'edit event', 'form': event_form, 'formset_url': formset_url, 'formset_session': formset_session, 'formset_deadline': formset_deadline, 'event_id': event_id }
             return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
     else:
-        ef = EventForm(instance=event)
-        ef_url      = EventUrlInlineFormSet(instance=event)
-        ef_session  = EventSessionInlineFormSet(instance=event)
-        ef_deadline = EventDeadlineInlineFormSet(instance=event)
-        templates = {'title': 'edit event', 'form': ef, 'formset_url': ef_url, 'formset_session': ef_session, 'formset_deadline': ef_deadline, 'event_id': event_id }
+        event_form = EventForm(instance=event)
+        formset_url      = EventUrlInlineFormSet(instance=event)
+        formset_deadline = EventDeadlineInlineFormSet(instance=event)
+        formset_session  = EventSessionInlineFormSet(instance=event)
+        templates = {'title': 'edit event', 'form': event_form, 'formset_url': formset_url, 'formset_session': formset_session, 'formset_deadline': formset_deadline, 'event_id': event_id }
         return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
 
 def event_new_raw(request):
