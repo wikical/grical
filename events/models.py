@@ -498,6 +498,7 @@ class Event(models.Model):
         deadline_data = {}
         session_data = {}
         group_data = {}
+        event_groups_req_names_list = list()
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             try:
@@ -570,6 +571,7 @@ class Event(models.Model):
 
         if (event_id == None):
             pass
+            # FIXME: groups cannot be added while creating a new event
         else:
             try:
                 event = Event.objects.get(id=event_id)
@@ -594,45 +596,52 @@ class Event(models.Model):
                             "You are not a member of group: %s so you can not remove an event from it." % g.name))
                     event.remove_from_group(group_id)
 
-
+        # at this moment we have data, url_data, deadline_data and session_data
         from gridcalendar.events.forms import EventForm
         if (event_id == None):
             event_form = EventForm(data)
+            event = event_form.save(commit=False)
         else:
             event_form = EventForm(data, instance=event)
-        if event_form.is_valid():
-            # TODO: would be nice if instead of deleting all URLs each time, it would update
-            EventUrl.objects.filter(event=event_id).delete()
-            EventDeadline.objects.filter(event=event_id).delete()
-            EventSession.objects.filter(event=event_id).delete()
-            if len(url_data) > 0:
-                EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
-                ef_url = EventUrlInlineFormSet(url_data, instance=event)
-                if ef_url.is_valid():
-                    ef_url.save()
-                else:
-                    raise ValidationError(_(
-                        "There is an error in the input data in the URLs: %s" % ef_url.errors))
-            if len(deadline_data) > 0:
-                EventDeadlineInlineFormSet = inlineformset_factory(Event, EventDeadline, extra=0)
-                ef_deadline = EventDeadlineInlineFormSet(deadline_data, instance=event)
-                if ef_deadline.is_valid():
-                    ef_deadline.save()
-                else:
-                    raise ValidationError(_(
-                        "There is an error in the input data in the deadlines: %s" % ef_deadline.errors))
-            if len(session_data) > 0:
-                EventSessionInlineFormSet = inlineformset_factory(Event, EventSession, extra=0)
-                ef_session = EventSessionInlineFormSet(session_data, instance=event)
-                if ef_session.is_valid():
-                    ef_session.save()
-                else:
-                    raise ValidationError(_(
-                        "There is an error in the input data in the sessions: %s" % ef_session.errors))
-            event_form.save()
+        EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
+        formset_url = EventUrlInlineFormSet(url_data, instance=event)
+
+        EventDeadlineInlineFormSet = inlineformset_factory(Event, EventDeadline, extra=0)
+        formset_deadline = EventDeadlineInlineFormSet(deadline_data, instance=event)
+
+        EventSessionInlineFormSet = inlineformset_factory(Event, EventSession, extra=0)
+        formset_session = EventSessionInlineFormSet(session_data, instance=event)
+
+        if not event_form.is_valid():
+            raise ValidationError(_("there is an error in the input data: %s" % event_form.errors))
+        elif not formset_deadline.is_valid():
+            raise ValidationError(_("There is an error in the input data in the deadlines: %s" % formset_deadline.errors))
+        elif not formset_session.is_valid():
+            raise ValidationError(_("There is an error in the input data in the sessions: %s" % formset_session.errors))
+        elif not formset_url.is_valid():
+            raise ValidationError(_("There is an error in the input data in the URLs: %s" % formset_url.errors))
         else:
-            raise ValidationError(_(
-                "there is an error in the input data: %s" % event_form.errors))
+            if not (event_id == None):
+                EventUrl.objects.filter(event=event_id).delete()
+                EventDeadline.objects.filter(event=event_id).delete()
+                EventSession.objects.filter(event=event_id).delete()
+                event_form.save()
+            else:
+                event.save()
+            formset_url.save()
+            formset_deadline.save()
+            formset_session.save()
+            if (event_id == None):
+                event_form.save_m2m()
+
+    """
+    bookform = BookForm(data)
+    b = bookform.save(commit=False)
+    formset = PadreFormSet(data, instance=b)
+    if formset.is_valid():
+        formset.save()
+        b.save()
+    """
 
     @staticmethod
     def get_synonyms():
