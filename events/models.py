@@ -407,7 +407,7 @@ class Event(models.Model):
                     to_return += "\n"
                     for deadline in deadlines:
                         if not deadline.deadline_name == 'deadline':
-                            to_return += "    " + deadline.deadline_name + ': ' + deadline.deadline + "\n"
+                            to_return += "    " + deadline.deadline_name + ': ' + unicode(deadline.deadline) + "\n"
             elif keyword == 'sessions' and self.sessions:
                 time_sessions = EventSession.objects.filter(event=self.id)
                 if len(time_sessions) > 0:
