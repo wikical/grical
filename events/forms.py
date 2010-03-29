@@ -8,7 +8,7 @@ from django.forms import CheckboxSelectMultiple, SelectMultiple
 
 from django.contrib.auth.models import User
 
-from gridcalendar.events.models import Event
+from gridcalendar.events.models import Event, EventUrl, EventDeadline, EventSession
 from gridcalendar.events.models import Filter, Group, Membership, Calendar
 
 
@@ -39,6 +39,18 @@ class EventForm(ModelForm):
             raise ValidationError("Punctuation marks are not allowed!")
         # Always return the cleaned data, whether you have changed it or not.
         return data
+
+class EventUrlForm(ModelForm):
+    class Meta:
+        model = EventUrl
+
+class EventDeadlineForm(ModelForm):
+    class Meta:
+        model = EventDeadline
+
+class EventSessionForm(ModelForm):
+    class Meta:
+        model = EventSession
 
 class SimplifiedEventForm(EventForm):
     class Meta:

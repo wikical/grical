@@ -6,6 +6,7 @@ import re
 import sha
 
 from django.db import models
+from django.db.models import Q
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -21,312 +22,310 @@ from tagging.models import Tag
 from tagging.fields import TagField
 from tagging import register
 
-#from gridcalendar.events.forms import EventForm
-
 COUNTRIES = (
-    ('AF', _('Afghanistan')),
+    ('AF', _(u'Afghanistan')),
     ('AX', _(u'Åland Islands')),
-    ('AL', _('Albania')),
-    ('DZ', _('Algeria')),
-    ('AS', _('American Samoa')),
-    ('AD', _('Andorra')),
-    ('AO', _('Angola')),
-    ('AI', _('Anguilla')),
-    ('AQ', _('Antarctica')),
-    ('AG', _('Antigua and Barbuda')),
-    ('AR', _('Argentina')),
-    ('AM', _('Armenia')),
-    ('AW', _('Aruba')),
-    ('AU', _('Australia')),
-    ('AT', _('Austria')),
-    ('AZ', _('Azerbaijan')),
-    ('BS', _('Bahamas')),
-    ('BH', _('Bahrain')),
-    ('BD', _('Bangladesh')),
-    ('BB', _('Barbados')),
-    ('BY', _('Belarus')),
-    ('BE', _('Belgium')),
-    ('BZ', _('Belize')),
-    ('BJ', _('Benin')),
-    ('BM', _('Bermuda')),
-    ('BT', _('Bhutan')),
-    ('BO', _('Bolivia, Plurinational State of')),
-    ('BA', _('Bosnia and Herzegovina')),
-    ('BW', _('Botswana')),
-    ('BV', _('Bouvet Island')),
-    ('BR', _('Brazil')),
-    ('IO', _('British Indian Ocean Territory')),
-    ('BN', _('Brunei Darussalam')),
-    ('BG', _('Bulgaria')),
-    ('BF', _('Burkina Faso')),
-    ('BI', _('Burundi')),
-    ('KH', _('Cambodia')),
-    ('CM', _('Cameroon')),
-    ('CA', _('Canada')),
-    ('CV', _('Cape Verde')),
-    ('KY', _('Cayman Islands')),
-    ('CF', _('Central African Republic')),
-    ('TD', _('Chad')),
-    ('CL', _('Chile')),
-    ('CN', _('China')),
-    ('CX', _('Christmas Island')),
-    ('CC', _('Cocos (Keeling) Islands')),
-    ('CO', _('Colombia')),
-    ('KM', _('Comoros')),
-    ('CG', _('Congo')),
-    ('CD', _('Congo, the Democratic Republic of the')),
-    ('CK', _('Cook Islands')),
-    ('CR', _('Costa Rica')),
+    ('AL', _(u'Albania')),
+    ('DZ', _(u'Algeria')),
+    ('AS', _(u'American Samoa')),
+    ('AD', _(u'Andorra')),
+    ('AO', _(u'Angola')),
+    ('AI', _(u'Anguilla')),
+    ('AQ', _(u'Antarctica')),
+    ('AG', _(u'Antigua and Barbuda')),
+    ('AR', _(u'Argentina')),
+    ('AM', _(u'Armenia')),
+    ('AW', _(u'Aruba')),
+    ('AU', _(u'Australia')),
+    ('AT', _(u'Austria')),
+    ('AZ', _(u'Azerbaijan')),
+    ('BS', _(u'Bahamas')),
+    ('BH', _(u'Bahrain')),
+    ('BD', _(u'Bangladesh')),
+    ('BB', _(u'Barbados')),
+    ('BY', _(u'Belarus')),
+    ('BE', _(u'Belgium')),
+    ('BZ', _(u'Belize')),
+    ('BJ', _(u'Benin')),
+    ('BM', _(u'Bermuda')),
+    ('BT', _(u'Bhutan')),
+    ('BO', _(u'Bolivia, Plurinational State of')),
+    ('BA', _(u'Bosnia and Herzegovina')),
+    ('BW', _(u'Botswana')),
+    ('BV', _(u'Bouvet Island')),
+    ('BR', _(u'Brazil')),
+    ('IO', _(u'British Indian Ocean Territory')),
+    ('BN', _(u'Brunei Darussalam')),
+    ('BG', _(u'Bulgaria')),
+    ('BF', _(u'Burkina Faso')),
+    ('BI', _(u'Burundi')),
+    ('KH', _(u'Cambodia')),
+    ('CM', _(u'Cameroon')),
+    ('CA', _(u'Canada')),
+    ('CV', _(u'Cape Verde')),
+    ('KY', _(u'Cayman Islands')),
+    ('CF', _(u'Central African Republic')),
+    ('TD', _(u'Chad')),
+    ('CL', _(u'Chile')),
+    ('CN', _(u'China')),
+    ('CX', _(u'Christmas Island')),
+    ('CC', _(u'Cocos (Keeling) Islands')),
+    ('CO', _(u'Colombia')),
+    ('KM', _(u'Comoros')),
+    ('CG', _(u'Congo')),
+    ('CD', _(u'Congo, the Democratic Republic of the')),
+    ('CK', _(u'Cook Islands')),
+    ('CR', _(u'Costa Rica')),
     ('CI', _(u'Côte d\'Ivoire')),
-    ('HR', _('Croatia')),
-    ('CU', _('Cuba')),
-    ('CY', _('Cyprus')),
-    ('CZ', _('Czech Republic')),
-    ('DK', _('Denmark')),
-    ('DJ', _('Djibouti')),
-    ('DM', _('Dominica')),
-    ('DO', _('Dominican Republic')),
-    ('EC', _('Ecuador')),
-    ('EG', _('Egypt')),
-    ('SV', _('El Salvador')),
-    ('GQ', _('Equatorial Guinea')),
-    ('ER', _('Eritrea')),
-    ('EE', _('Estonia')),
-    ('ET', _('Ethiopia')),
-    ('FK', _('Falkland Islands (Malvinas)')),
-    ('FO', _('Faroe Islands')),
-    ('FJ', _('Fiji')),
-    ('FI', _('Finland')),
-    ('FR', _('France')),
-    ('GF', _('French Guiana')),
-    ('PF', _('French Polynesia')),
-    ('TF', _('French Southern Territories')),
-    ('GA', _('Gabon')),
-    ('GM', _('Gambia')),
-    ('GE', _('Georgia')),
+    ('HR', _(u'Croatia')),
+    ('CU', _(u'Cuba')),
+    ('CY', _(u'Cyprus')),
+    ('CZ', _(u'Czech Republic')),
+    ('DK', _(u'Denmark')),
+    ('DJ', _(u'Djibouti')),
+    ('DM', _(u'Dominica')),
+    ('DO', _(u'Dominican Republic')),
+    ('EC', _(u'Ecuador')),
+    ('EG', _(u'Egypt')),
+    ('SV', _(u'El Salvador')),
+    ('GQ', _(u'Equatorial Guinea')),
+    ('ER', _(u'Eritrea')),
+    ('EE', _(u'Estonia')),
+    ('ET', _(u'Ethiopia')),
+    ('FK', _(u'Falkland Islands (Malvinas)')),
+    ('FO', _(u'Faroe Islands')),
+    ('FJ', _(u'Fiji')),
+    ('FI', _(u'Finland')),
+    ('FR', _(u'France')),
+    ('GF', _(u'French Guiana')),
+    ('PF', _(u'French Polynesia')),
+    ('TF', _(u'French Southern Territories')),
+    ('GA', _(u'Gabon')),
+    ('GM', _(u'Gambia')),
+    ('GE', _(u'Georgia')),
     ('DE', _(u'Germany')),
-    ('GH', _('Ghana')),
-    ('GI', _('Gibraltar')),
-    ('GR', _('Greece')),
-    ('GL', _('Greenland')),
-    ('GD', _('Grenada')),
-    ('GP', _('Guadeloupe')),
-    ('GU', _('Guam')),
-    ('GT', _('Guatemala')),
-    ('GG', _('Guernsey')),
-    ('GN', _('Guinea')),
-    ('GW', _('Guinea-Bissau')),
-    ('GY', _('Guyana')),
-    ('HT', _('Haiti')),
-    ('HM', _('Heard Island and McDonald Islands')),
-    ('VA', _('Holy See (Vatican City State)')),
-    ('HN', _('Honduras')),
-    ('HK', _('Hong Kong')),
-    ('HU', _('Hungary')),
-    ('IS', _('Iceland')),
-    ('IN', _('India')),
-    ('ID', _('Indonesia')),
-    ('IR', _('Iran, Islamic Republic of')),
-    ('IQ', _('Iraq')),
-    ('IE', _('Ireland')),
-    ('IM', _('Isle of Man')),
-    ('IL', _('Israel')),
-    ('IT', _('Italy')),
-    ('JM', _('Jamaica')),
-    ('JP', _('Japan')),
-    ('JE', _('Jersey')),
-    ('JO', _('Jordan')),
-    ('KZ', _('Kazakhstan')),
-    ('KE', _('Kenya')),
-    ('KI', _('Kiribati')),
-    ('KP', _('Korea, Democratic People\'s Republic of')),
-    ('KR', _('Korea, Republic of')),
-    ('KW', _('Kuwait')),
-    ('KG', _('Kyrgyzstan')),
-    ('LA', _('Lao People\'s Democratic Republic')),
-    ('LV', _('Latvia')),
-    ('LB', _('Lebanon')),
-    ('LS', _('Lesotho')),
-    ('LR', _('Liberia')),
-    ('LY', _('Libyan Arab Jamahiriya')),
-    ('LI', _('Liechtenstein')),
-    ('LT', _('Lithuania')),
-    ('LU', _('Luxembourg')),
-    ('MO', _('Macao')),
-    ('MK', _('Macedonia, the former Yugoslav Republic of')),
-    ('MG', _('Madagascar')),
-    ('MW', _('Malawi')),
-    ('MY', _('Malaysia')),
-    ('MV', _('Maldives')),
-    ('ML', _('Mali')),
-    ('MT', _('Malta')),
-    ('MH', _('Marshall Islands')),
-    ('MQ', _('Martinique')),
-    ('MR', _('Mauritania')),
-    ('MU', _('Mauritius')),
-    ('YT', _('Mayotte')),
-    ('MX', _('Mexico')),
-    ('FM', _('Micronesia, Federated States of')),
-    ('MD', _('Moldova, Republic of')),
-    ('MC', _('Monaco')),
-    ('MN', _('Mongolia')),
-    ('ME', _('Montenegro')),
-    ('MS', _('Montserrat')),
-    ('MA', _('Morocco')),
-    ('MZ', _('Mozambique')),
-    ('MM', _('Myanmar')),
-    ('NA', _('Namibia')),
-    ('NR', _('Nauru')),
-    ('NP', _('Nepal')),
-    ('NL', _('Netherlands')),
-    ('AN', _('Netherlands Antilles')),
-    ('NC', _('New Caledonia')),
-    ('NZ', _('New Zealand')),
-    ('NI', _('Nicaragua')),
-    ('NE', _('Niger')),
-    ('NG', _('Nigeria')),
-    ('NU', _('Niue')),
-    ('NF', _('Norfolk Island')),
-    ('MP', _('Northern Mariana Islands')),
-    ('NO', _('Norway')),
-    ('OM', _('Oman')),
-    ('PK', _('Pakistan')),
-    ('PW', _('Palau')),
-    ('PS', _('Palestinian Territory, Occupied')),
-    ('PA', _('Panama')),
-    ('PG', _('Papua New Guinea')),
-    ('PY', _('Paraguay')),
-    ('PE', _('Peru')),
-    ('PH', _('Philippines')),
-    ('PN', _('Pitcairn')),
-    ('PL', _('Poland')),
-    ('PT', _('Portugal')),
-    ('PR', _('Puerto Rico')),
-    ('QA', _('Qatar')),
+    ('GH', _(u'Ghana')),
+    ('GI', _(u'Gibraltar')),
+    ('GR', _(u'Greece')),
+    ('GL', _(u'Greenland')),
+    ('GD', _(u'Grenada')),
+    ('GP', _(u'Guadeloupe')),
+    ('GU', _(u'Guam')),
+    ('GT', _(u'Guatemala')),
+    ('GG', _(u'Guernsey')),
+    ('GN', _(u'Guinea')),
+    ('GW', _(u'Guinea-Bissau')),
+    ('GY', _(u'Guyana')),
+    ('HT', _(u'Haiti')),
+    ('HM', _(u'Heard Island and McDonald Islands')),
+    ('VA', _(u'Holy See (Vatican City State)')),
+    ('HN', _(u'Honduras')),
+    ('HK', _(u'Hong Kong')),
+    ('HU', _(u'Hungary')),
+    ('IS', _(u'Iceland')),
+    ('IN', _(u'India')),
+    ('ID', _(u'Indonesia')),
+    ('IR', _(u'Iran, Islamic Republic of')),
+    ('IQ', _(u'Iraq')),
+    ('IE', _(u'Ireland')),
+    ('IM', _(u'Isle of Man')),
+    ('IL', _(u'Israel')),
+    ('IT', _(u'Italy')),
+    ('JM', _(u'Jamaica')),
+    ('JP', _(u'Japan')),
+    ('JE', _(u'Jersey')),
+    ('JO', _(u'Jordan')),
+    ('KZ', _(u'Kazakhstan')),
+    ('KE', _(u'Kenya')),
+    ('KI', _(u'Kiribati')),
+    ('KP', _(u'Korea, Democratic People\'s Republic of')),
+    ('KR', _(u'Korea, Republic of')),
+    ('KW', _(u'Kuwait')),
+    ('KG', _(u'Kyrgyzstan')),
+    ('LA', _(u'Lao People\'s Democratic Republic')),
+    ('LV', _(u'Latvia')),
+    ('LB', _(u'Lebanon')),
+    ('LS', _(u'Lesotho')),
+    ('LR', _(u'Liberia')),
+    ('LY', _(u'Libyan Arab Jamahiriya')),
+    ('LI', _(u'Liechtenstein')),
+    ('LT', _(u'Lithuania')),
+    ('LU', _(u'Luxembourg')),
+    ('MO', _(u'Macao')),
+    ('MK', _(u'Macedonia, the former Yugoslav Republic of')),
+    ('MG', _(u'Madagascar')),
+    ('MW', _(u'Malawi')),
+    ('MY', _(u'Malaysia')),
+    ('MV', _(u'Maldives')),
+    ('ML', _(u'Mali')),
+    ('MT', _(u'Malta')),
+    ('MH', _(u'Marshall Islands')),
+    ('MQ', _(u'Martinique')),
+    ('MR', _(u'Mauritania')),
+    ('MU', _(u'Mauritius')),
+    ('YT', _(u'Mayotte')),
+    ('MX', _(u'Mexico')),
+    ('FM', _(u'Micronesia, Federated States of')),
+    ('MD', _(u'Moldova, Republic of')),
+    ('MC', _(u'Monaco')),
+    ('MN', _(u'Mongolia')),
+    ('ME', _(u'Montenegro')),
+    ('MS', _(u'Montserrat')),
+    ('MA', _(u'Morocco')),
+    ('MZ', _(u'Mozambique')),
+    ('MM', _(u'Myanmar')),
+    ('NA', _(u'Namibia')),
+    ('NR', _(u'Nauru')),
+    ('NP', _(u'Nepal')),
+    ('NL', _(u'Netherlands')),
+    ('AN', _(u'Netherlands Antilles')),
+    ('NC', _(u'New Caledonia')),
+    ('NZ', _(u'New Zealand')),
+    ('NI', _(u'Nicaragua')),
+    ('NE', _(u'Niger')),
+    ('NG', _(u'Nigeria')),
+    ('NU', _(u'Niue')),
+    ('NF', _(u'Norfolk Island')),
+    ('MP', _(u'Northern Mariana Islands')),
+    ('NO', _(u'Norway')),
+    ('OM', _(u'Oman')),
+    ('PK', _(u'Pakistan')),
+    ('PW', _(u'Palau')),
+    ('PS', _(u'Palestinian Territory, Occupied')),
+    ('PA', _(u'Panama')),
+    ('PG', _(u'Papua New Guinea')),
+    ('PY', _(u'Paraguay')),
+    ('PE', _(u'Peru')),
+    ('PH', _(u'Philippines')),
+    ('PN', _(u'Pitcairn')),
+    ('PL', _(u'Poland')),
+    ('PT', _(u'Portugal')),
+    ('PR', _(u'Puerto Rico')),
+    ('QA', _(u'Qatar')),
     ('RE', _(u'Réunion')),
-    ('RO', _('Romania')),
-    ('RU', _('Russian Federation')),
-    ('RW', _('Rwanda')),
+    ('RO', _(u'Romania')),
+    ('RU', _(u'Russian Federation')),
+    ('RW', _(u'Rwanda')),
     ('BL', _(u'Saint Barthélemy')),
-    ('SH', _('Saint Helena')),
-    ('KN', _('Saint Kitts and Nevis')),
-    ('LC', _('Saint Lucia')),
-    ('MF', _('Saint Martin (French part)')),
-    ('PM', _('Saint Pierre and Miquelon')),
-    ('VC', _('Saint Vincent and the Grenadines')),
-    ('WS', _('Samoa')),
-    ('SM', _('San Marino')),
-    ('ST', _('Sao Tome and Principe')),
-    ('SA', _('Saudi Arabia')),
-    ('SN', _('Senegal')),
-    ('RS', _('Serbia')),
-    ('SC', _('Seychelles')),
-    ('SL', _('Sierra Leone')),
-    ('SG', _('Singapore')),
-    ('SK', _('Slovakia')),
-    ('SI', _('Slovenia')),
-    ('SB', _('Solomon Islands')),
-    ('SO', _('Somalia')),
-    ('ZA', _('South Africa')),
-    ('GS', _('South Georgia and the South Sandwich Islands')),
-    ('ES', _('Spain')),
-    ('LK', _('Sri Lanka')),
-    ('SD', _('Sudan')),
-    ('SR', _('Suriname')),
-    ('SJ', _('Svalbard and Jan Mayen')),
-    ('SZ', _('Swaziland')),
-    ('SE', _('Sweden')),
-    ('CH', _('Switzerland')),
-    ('SY', _('Syrian Arab Republic')),
-    ('TW', _('Taiwan, Province of China')),
-    ('TJ', _('Tajikistan')),
-    ('TZ', _('Tanzania, United Republic of')),
-    ('TH', _('Thailand')),
-    ('TL', _('Timor-Leste')),
-    ('TG', _('Togo')),
-    ('TK', _('Tokelau')),
-    ('TO', _('Tonga')),
-    ('TT', _('Trinidad and Tobago')),
-    ('TN', _('Tunisia')),
-    ('TR', _('Turkey')),
-    ('TM', _('Turkmenistan')),
-    ('TC', _('Turks and Caicos Islands')),
-    ('TV', _('Tuvalu')),
-    ('UG', _('Uganda')),
-    ('UA', _('Ukraine')),
-    ('AE', _('United Arab Emirates')),
-    ('GB', _('United Kingdom')),
-    ('US', _('United States')),
-    ('UM', _('United States Minor Outlying Islands')),
-    ('UY', _('Uruguay')),
-    ('UZ', _('Uzbekistan')),
-    ('VU', _('Vanuatu')),
-    ('VE', _('Venezuela, Bolivarian Republic of')),
-    ('VN', _('Viet Nam')),
-    ('VG', _('Virgin Islands, British')),
-    ('VI', _('Virgin Islands, U.S.')),
-    ('WF', _('Wallis and Futuna')),
-    ('EH', _('Western Sahara')),
-    ('YE', _('Yemen')),
-    ('ZM', _('Zambia')),
-    ('ZW', _('Zimbabwe')),
+    ('SH', _(u'Saint Helena')),
+    ('KN', _(u'Saint Kitts and Nevis')),
+    ('LC', _(u'Saint Lucia')),
+    ('MF', _(u'Saint Martin (French part)')),
+    ('PM', _(u'Saint Pierre and Miquelon')),
+    ('VC', _(u'Saint Vincent and the Grenadines')),
+    ('WS', _(u'Samoa')),
+    ('SM', _(u'San Marino')),
+    ('ST', _(u'Sao Tome and Principe')),
+    ('SA', _(u'Saudi Arabia')),
+    ('SN', _(u'Senegal')),
+    ('RS', _(u'Serbia')),
+    ('SC', _(u'Seychelles')),
+    ('SL', _(u'Sierra Leone')),
+    ('SG', _(u'Singapore')),
+    ('SK', _(u'Slovakia')),
+    ('SI', _(u'Slovenia')),
+    ('SB', _(u'Solomon Islands')),
+    ('SO', _(u'Somalia')),
+    ('ZA', _(u'South Africa')),
+    ('GS', _(u'South Georgia and the South Sandwich Islands')),
+    ('ES', _(u'Spain')),
+    ('LK', _(u'Sri Lanka')),
+    ('SD', _(u'Sudan')),
+    ('SR', _(u'Suriname')),
+    ('SJ', _(u'Svalbard and Jan Mayen')),
+    ('SZ', _(u'Swaziland')),
+    ('SE', _(u'Sweden')),
+    ('CH', _(u'Switzerland')),
+    ('SY', _(u'Syrian Arab Republic')),
+    ('TW', _(u'Taiwan, Province of China')),
+    ('TJ', _(u'Tajikistan')),
+    ('TZ', _(u'Tanzania, United Republic of')),
+    ('TH', _(u'Thailand')),
+    ('TL', _(u'Timor-Leste')),
+    ('TG', _(u'Togo')),
+    ('TK', _(u'Tokelau')),
+    ('TO', _(u'Tonga')),
+    ('TT', _(u'Trinidad and Tobago')),
+    ('TN', _(u'Tunisia')),
+    ('TR', _(u'Turkey')),
+    ('TM', _(u'Turkmenistan')),
+    ('TC', _(u'Turks and Caicos Islands')),
+    ('TV', _(u'Tuvalu')),
+    ('UG', _(u'Uganda')),
+    ('UA', _(u'Ukraine')),
+    ('AE', _(u'United Arab Emirates')),
+    ('GB', _(u'United Kingdom')),
+    ('US', _(u'United States')),
+    ('UM', _(u'United States Minor Outlying Islands')),
+    ('UY', _(u'Uruguay')),
+    ('UZ', _(u'Uzbekistan')),
+    ('VU', _(u'Vanuatu')),
+    ('VE', _(u'Venezuela, Bolivarian Republic of')),
+    ('VN', _(u'Viet Nam')),
+    ('VG', _(u'Virgin Islands, British')),
+    ('VI', _(u'Virgin Islands, U.S.')),
+    ('WF', _(u'Wallis and Futuna')),
+    ('EH', _(u'Western Sahara')),
+    ('YE', _(u'Yemen')),
+    ('ZM', _(u'Zambia')),
+    ('ZW', _(u'Zimbabwe')),
 )
 
 class Event(models.Model):
     """ Event model. """
     user = models.ForeignKey(User, editable=False, related_name="owner",
-            blank=True, null=True, verbose_name=_('User'))
+            blank=True, null=True, verbose_name=_(u'User'))
     """The user who created the event or null if AnonymousUser"""
-    creation_time = models.DateTimeField(_('Creation time'), editable=False,
+    creation_time = models.DateTimeField(_(u'Creation time'), editable=False,
             auto_now_add=True)
     """Time stamp for event creation"""
-    modification_time = models.DateTimeField(_('Modification time'),
+    modification_time = models.DateTimeField(_(u'Modification time'),
             editable=False, auto_now=True)
     """Time stamp for event modification"""
-    acronym = models.CharField(_('Acronym'), max_length=20, blank=True,
-            null=True, help_text=_('Example: 26C3'))
-    title = models.CharField(_('Title'), max_length=200, blank=False,
-            help_text=_('Example: Demostration in Munich against software \
+    acronym = models.CharField(_(u'Acronym'), max_length=20, blank=True,
+            null=True, help_text=_(u'Example: 26C3'))
+    title = models.CharField(_(u'Title'), max_length=200, blank=False,
+            help_text=_(u'Example: Demostration in Munich against software \
                 patents organised by the German association FFII e.V.'))
-    start = models.DateField(_('Start'), blank=False, help_text=_("Examples \
+    start = models.DateField(_(u'Start'), blank=False, help_text=_("Examples \
             of valid dates: '2006-10-25' '10/25/2006' '10/25/06' 'Oct 25 \
             2006' 'Oct 25, 2006' '25 Oct 2006' '25 Oct, 2006' \
             'October 25 2006' 'October 25, 2006' '25 October 2006' '25 \
             October, 2006'"))
-    end = models.DateField(_('End'), null=True, blank=True)
-    tags = TagField(_('Tags'), blank=True, null=True, help_text=_(u"Tags are \
+    end = models.DateField(_(u'End'), null=True, blank=True)
+    tags = TagField(_(u'Tags'), blank=True, null=True, help_text=_(u"Tags are \
         case in-sensitive. Only letters (these can be international, like: \
         αöł), digits and hyphens (-) are allowed. Tags are separated with \
         spaces."))
-    public = models.BooleanField(_('Public'), default=True, help_text=_("A \
+    public = models.BooleanField(_(u'Public'), default=True, help_text=_("A \
         public event can be seen and edited by anyone, otherwise only by the \
         members of selected groups"))
-    country = models.CharField(_('Country'), blank=True, null=True,
+    country = models.CharField(_(u'Country'), blank=True, null=True,
             max_length=2, choices=COUNTRIES)
-    city = models.CharField(_('City'), blank=True, null=True, max_length=50)
-    postcode = models.CharField(_('Postcode'), blank=True, null=True,
+    city = models.CharField(_(u'City'), blank=True, null=True, max_length=50)
+    postcode = models.CharField(_(u'Postcode'), blank=True, null=True,
             max_length=16)
-    address = models.CharField(_('Street address'), blank=True, null=True,
+    address = models.CharField(_(u'Street address'), blank=True, null=True,
             max_length=100)
-    latitude = models.FloatField(_('Latitude'), blank=True, null=True,
+    latitude = models.FloatField(_(u'Latitude'), blank=True, null=True,
             help_text=_("In decimal degrees, not \
             degrees/minutes/seconds. Prefix with \"-\" for South, no sign for \
             North."))
-    longitude = models.FloatField(_('Longitude'), blank=True, null=True,
+    longitude = models.FloatField(_(u'Longitude'), blank=True, null=True,
             help_text=_("In decimal degrees, not \
                 degrees/minutes/seconds. Prefix with \"-\" for West, no sign \
                 for East."))
-    timezone = models.SmallIntegerField(_('Timezone'), blank=True, null=True,
+    timezone = models.SmallIntegerField(_(u'Timezone'), blank=True, null=True,
             help_text=_("Minutes relative to UTC (e.g. -60 means UTC-1"))
-    description = models.TextField(_('Description'), blank=True, null=True)
+    description = models.TextField(_(u'Description'), blank=True, null=True)
     # the relation event-group is now handle in group
     # groups = models.ManyToManyField(Group, blank=True, null=True,
     # help_text=_("Groups to be notified and allowed to see it if not public"))
 
     class Meta:
         ordering = ['start']
-        verbose_name = _('Event')
-        verbose_name_plural = _('Events')
+        verbose_name = _(u'Event')
+        verbose_name_plural = _(u'Events')
 
     def set_tags(self, tags):
         Tag.objects.update_tags(self, tags)
@@ -481,7 +480,7 @@ class Event(models.Model):
             groups: group1 group2 ...
         """
         # TODO: allow to put comments on events by email
-        data = {}
+        event_data = {}
         # separate events
         # get fields
         field_pattern = re.compile(
@@ -496,71 +495,82 @@ class Event(models.Model):
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         input_text = input_text_in.replace('\r\n', '\n').replace('\r', '\n')
 
-        url_data = {}
-        deadline_data = {}
-        session_data = {}
-        event_groups_req_names_list = list() # list of group names
+        event_url_data_list = list()
+        event_deadline_data_list = list()
+        event_session_data_list = list()
+
         for field_text in field_pattern.findall(input_text):
             parts = parts_pattern.match(field_text).groups()
             try:
                 field_name = synonyms[parts[0]]
             except KeyError: raise ValidationError(_(
                         "you used an invalid field name in '%s'" % field_text))
+
             if field_name == 'urls':
-                url_index = 0
-                url_data['urls-INITIAL_FORMS'] = u'0'
+                event_url_index = 0
                 if not parts[1] == '':
-                    url_data['urls-' + str(url_index) + '-url_name'] = u'web'
-                    url_data['urls-' + str(url_index) + '-url'] = parts[1].strip()
-                    url_index += 1
+                    event_url_data = {}
+                    event_url_data['url_name'] = u'web'
+                    event_url_data['url'] = parts[1].strip()
+                    event_url_data_list.append(event_url_data)
+                    event_url_index += 1
                 if not parts[2] == '':
-                    for url_line in parts[2].splitlines():
-                        if not url_line == '':
-                            url_line_parts = url_line.split(":", 1)
-                            url_data['urls-' + str(url_index) + '-url_name'] = url_line_parts[0].strip()
-                            url_data['urls-' + str(url_index) + '-url'] = url_line_parts[1].strip()
-                            url_index += 1
-                url_data['urls-TOTAL_FORMS'] = str(url_index)
+                    for event_url_line in parts[2].splitlines():
+                        if not event_url_line == '':
+                            event_url_line_parts = event_url_line.split(":", 1)
+                            event_url_data = {}
+                            event_url_data['url_name'] = event_url_line_parts[0].strip()
+                            event_url_data['url'] = event_url_line_parts[1].strip()
+                            event_url_data_list.append(event_url_data)
+                            event_url_index += 1
+
             elif field_name == 'deadlines':
-                deadline_index = 0
-                deadline_data['deadlines-INITIAL_FORMS'] = u'0'
+                event_deadline_index = 0
                 if not parts[1] == '':
-                    deadline_data['deadlines-' + str(deadline_index) + '-deadline_name'] = u'deadline'
-                    deadline_data['deadlines-' + str(deadline_index) + '-deadline'] = parts[1].strip()
-                    deadline_index += 1
+                    event_deadline_data = {}
+                    event_deadline_data['deadline_name'] = u'deadline'
+                    event_deadline_data['deadline'] = parts[1].strip()
+                    event_deadline_data_list.append(event_deadline_data)
+                    event_deadline_index += 1
                 if not parts[2] == '':
-                    for deadline_line in parts[2].splitlines():
-                        if not deadline_line == '':
-                            deadline_line_parts = deadline_line.split(":", 1)
-                            deadline_data['deadlines-' + str(deadline_index) + '-deadline_name'] = deadline_line_parts[0].strip()
-                            deadline_data['deadlines-' + str(deadline_index) + '-deadline'] = deadline_line_parts[1].strip()
-                            deadline_index += 1
-                deadline_data['deadlines-TOTAL_FORMS'] = str(deadline_index)
+                    for event_deadline_line in parts[2].splitlines():
+                        if not event_deadline_line == '':
+                            event_deadline_data = {}
+                            event_deadline_line_parts = event_deadline_line.split(":", 1)
+                            event_deadline_data['deadline_name'] = event_deadline_line_parts[0].strip()
+                            event_deadline_data['deadline'] = event_deadline_line_parts[1].strip()
+                            event_deadline_data_list.append(event_deadline_data)
+                            event_deadline_index += 1
+
             elif field_name == 'sessions':
-                session_index = 0
-                session_data['sessions-INITIAL_FORMS'] = u'0'
+                event_session_index = 0
                 if not parts[1] == '':
-                    session_data['sessions-' + str(session_index) + '-session_name'] = u'session'
-                    session_str_parts = parts[1].split(":", 1)
-                    session_data['sessions-' + str(session_index) + '-session_date'] = session_str_parts[0].strip()
-                    session_str_times_parts = session_str_parts[1].split("-", 1)
-                    session_data['sessions-' + str(session_index) + '-session_starttime'] = session_str_times_parts[0].strip()
-                    session_data['sessions-' + str(session_index) + '-session_endtime'] = session_str_times_parts[1].strip()
-                    session_index += 1
+                    event_session_data = {}
+                    event_session_data['session_name'] = u'session'
+                    event_session_str_parts = parts[1].split(":", 1)
+                    event_session_data['session_date'] = event_session_str_parts[0].strip()
+                    event_session_str_times_parts = event_session_str_parts[1].split("-", 1)
+                    event_session_data['session_starttime'] = event_session_str_times_parts[0].strip()
+                    event_session_data['session_endtime'] = event_session_str_times_parts[1].strip()
+                    event_session_data_list.append(event_session_data)
+                    event_session_index += 1
                 if not parts[2] == '':
-                    for session_line in parts[2].splitlines():
-                        if not session_line == '':
-                            session_line_parts = session_line.split(":", 1)
-                            session_data['sessions-' + str(session_index) + '-session_name'] = session_line_parts[0].strip()
-                            session_str_parts = session_line_parts[1].split(":", 1)
-                            session_data['sessions-' + str(session_index) + '-session_date'] = session_str_parts[0].strip()
-                            session_str_times_parts = session_str_parts[1].split("-", 1)
-                            session_data['sessions-' + str(session_index) + '-session_starttime'] = session_str_times_parts[0].strip()
-                            session_data['sessions-' + str(session_index) + '-session_endtime'] = session_str_times_parts[1].strip()
-                            session_index += 1
-                session_data['sessions-TOTAL_FORMS'] = str(session_index)
+                    for event_session_line in parts[2].splitlines():
+                        if not event_session_line == '':
+                            event_session_data = {}
+                            event_session_line_parts = event_session_line.split(":", 1)
+                            event_session_data['session_name'] = event_session_line_parts[0].strip()
+                            event_session_str_parts = event_session_line_parts[1].split(":", 1)
+                            event_session_data['session_date'] = event_session_str_parts[0].strip()
+                            event_session_str_times_parts = event_session_str_parts[1].split("-", 1)
+                            event_session_data['session_starttime'] = event_session_str_times_parts[0].strip()
+                            event_session_data['session_endtime'] = event_session_str_times_parts[1].strip()
+                            event_session_data_list.append(event_session_data)
+                            event_session_index += 1
+
             elif field_name == 'groups':
                 event_groups_req_names_list = [p for p in re.split("( |\\\".*?\\\"|'.*?')", parts[1]) if p.strip()]
+
             else:
                 if not parts[2] == '': raise ValidationError(_(
                         "field '%s' doesn't accept subparts" % parts[1]))
@@ -568,11 +578,12 @@ class Event(models.Model):
                         "a left part of a colon is empty"))
                 if not synonyms.has_key(parts[0]): raise ValidationError(_(
                         "keyword %s unknown" % parts[0]))
-                data[synonyms[parts[0]]] = parts[1]
+                event_data[synonyms[parts[0]]] = parts[1]
 
+        event_groups_req_names_list = list() # list of group names
         if (event_id == None):
             pass
-            # FIXME: groups cannot be added while creating a new event
+            # TODO: groups cannot be added while creating a new event
         else:
             try:
                 event = Event.objects.get(id=event_id)
@@ -597,72 +608,91 @@ class Event(models.Model):
                             "You are not a member of group: %s so you can not remove an event from it." % g.name))
                     event.remove_from_group(group_id)
 
-        # at this moment we have data, url_data, deadline_data and session_data
+        # at this moment we have event_data, event_url_data_list, event_deadline_data_list and event_session_data_list
 
-        url_data['urls-' + str(url_index) + '-id'] = '0'
-
-        data_all = data.copy()
-        data_all.update(url_data)
-        data_all.update(deadline_data)
-        data_all.update(session_data)
-
-        from gridcalendar.events.forms import EventForm
+        from gridcalendar.events.forms import EventForm, EventUrlForm, EventDeadlineForm, EventSessionForm
         if (event_id == None):
-            event_form = EventForm(data_all)
-            event = event_form.save(commit=False)
+            event_form = EventForm(event_data)
+            event = event_form.save()
+            final_event_id = event.id
         else:
-            event_form = EventForm(data_all, instance=event)
-
-        if len(url_data) > 0:
-            EventUrlInlineFormSet = inlineformset_factory(Event, EventUrl, extra=0)
-            formset_url = EventUrlInlineFormSet(data_all, instance=event)
-
-        if len(deadline_data) > 0:
-            EventDeadlineInlineFormSet = inlineformset_factory(Event, EventDeadline, extra=0)
-            formset_deadline = EventDeadlineInlineFormSet(data_all, instance=event)
-
-        if len(session_data) > 0:
-            EventSessionInlineFormSet = inlineformset_factory(Event, EventSession, extra=0)
-            formset_session = EventSessionInlineFormSet(data_all, instance=event)
-
-
-        #p = unicode(formset_session)
-        assert False
+            event_form = EventForm(event_data, instance=event)
+            final_event_id = event_id
 
         if not event_form.is_valid():
             raise ValidationError(_("there is an error in the input data: %s" % event_form.errors))
-        elif len(url_data) > 0 and not formset_url.is_valid():
-            raise ValidationError(_("There is an error in the input data in the URLs: %s" % formset_url.errors))
-        elif len(deadline_data) > 0 and not formset_deadline.is_valid():
-            raise ValidationError(_("There is an error in the input data in the deadlines: %s" % formset_deadline.errors))
-        elif len(session_data) > 0 and not formset_session.is_valid():
-            #assert False
-            raise ValidationError(_("There is an error in the input data in the sessions: %s" % formset_session.errors))
-        else:
-            if not (event_id == None):
-                EventUrl.objects.filter(event=event_id).delete()
-                EventDeadline.objects.filter(event=event_id).delete()
-                EventSession.objects.filter(event=event_id).delete()
-                event_form.save()
-            else:
-                event.save()
-            if len(url_data) > 0:
-                formset_url.save()
-            if len(deadline_data) > 0:
-                formset_deadline.save()
-            if len(session_data) > 0:
-                formset_session.save()
-            if (event_id == None):
-                event_form.save_m2m()
 
-    """
-    bookform = BookForm(data)
-    b = bookform.save(commit=False)
-    formset = PadreFormSet(data, instance=b)
-    if formset.is_valid():
-        formset.save()
-        b.save()
-    """
+        # now we will add the event ID's to the lists of dictionaries
+
+        event_url_data_list2 = list()
+        for event_url_data in event_url_data_list:
+            event_url_data['event'] = final_event_id
+            event_url_data_list2.append(event_url_data)
+
+        event_deadline_data_list2 = list()
+        for event_deadline_data in event_deadline_data_list:
+            event_deadline_data['event'] = final_event_id
+            event_deadline_data_list2.append(event_deadline_data)
+
+        event_session_data_list2 = list()
+        for event_session_data in event_session_data_list:
+            event_session_data['event'] = final_event_id
+            event_session_data_list2.append(event_session_data)
+
+        # now we will create forms out of the lists of URLs, deadlines and sessions, and check if these forms are valid
+
+        for event_url_data in event_url_data_list2:
+            try:
+                event_url = EventUrl.objects.get(Q(event=event_url_data['event']), Q(url_name__exact=event_url_data['url_name']))
+                event_url_form = EventUrlForm(event_url_data, instance=event_url)
+            except EventUrl.DoesNotExist:
+                event_url_form = EventUrlForm(event_url_data)
+            if not event_url_form.is_valid():
+                if (event_id == None):
+                    Event.objects.get(id=final_event_id).delete()
+                raise ValidationError(_("There is an error in the input data in the URLs: %s" % event_url_form.errors))
+
+        for event_deadline_data in event_deadline_data_list2:
+            try:
+                event_deadline = EventDeadline.objects.get(Q(event=event_deadline_data['event']), Q(deadline_name__exact=event_deadline_data['deadline_name']))
+                event_deadline_form = EventDeadlineForm(event_deadline_data, instance=event_deadline)
+            except EventDeadline.DoesNotExist:
+                event_deadline_form = EventDeadlineForm(event_deadline_data)
+            if not event_deadline_form.is_valid():
+                if (event_id == None):
+                    Event.objects.get(id=final_event_id).delete()
+                raise ValidationError(_("There is an error in the input data in the deadlines: %s" % event_deadline_form.errors))
+
+        for event_session_data in event_session_data_list2:
+            try:
+                event_session = EventSession.objects.get(Q(event=event_session_data['event']), Q(session_name__exact=event_session_data['session_name']))
+                event_session_form = EventSessionForm(event_session_data, instance=event_session)
+            except EventSession.DoesNotExist:
+                event_session_form = EventSessionForm(event_session_data)
+            if not event_session_form.is_valid():
+                if (event_id == None):
+                    Event.objects.get(id=final_event_id).delete()
+                raise ValidationError(_("There is an error in the input data in the sessions: %s" % event_session_form.errors))
+
+        if (event_id == None):
+            pass
+        else:
+            EventUrl.objects.filter(event=event_id).delete()
+            EventDeadline.objects.filter(event=event_id).delete()
+            EventSession.objects.filter(event=event_id).delete()
+
+        for event_url_data in event_url_data_list2:
+            event_url_form = EventUrlForm(event_url_data)
+            event_url_form.save()
+
+        for event_deadline_data in event_deadline_data_list2:
+            event_deadline_form = EventDeadlineForm(event_deadline_data)
+            event_deadline_form.save()
+
+        for event_session_data in event_session_data_list2:
+            event_session_form = EventSessionForm(event_session_data)
+            event_session_form.save()
+
 
     @staticmethod
     def get_synonyms():
@@ -726,12 +756,13 @@ class Event(models.Model):
         synonyms['group']       = 'groups'
         synonyms['g']           = 'groups'
         synonyms['urls']        = 'urls'        # urls (*)
+        synonyms['url']         = 'urls'
         synonyms['u']           = 'urls'
         synonyms['web']         = 'urls'
+        synonyms['deadlines']   = 'deadlines'   # deadlines (*)
         synonyms['sessions']    = 'sessions'    # sessions (*)
         synonyms['time']        = 'sessions'
         synonyms['t']           = 'sessions'
-        synonyms['deadlines']   = 'deadlines'   # deadlines (*)
         # (*) can have multi lines
         return synonyms
 
@@ -772,10 +803,10 @@ class Event(models.Model):
 
 class EventUrl(models.Model):
     event = models.ForeignKey(Event, related_name='urls')
-    url_name = models.CharField(_('URL Name'), blank=False, null=False,
+    url_name = models.CharField(_(u'URL Name'), blank=False, null=False,
             max_length=80, help_text=_(
             "Example: information about accomodation"))
-    url = models.URLField(_('URL'), blank=False, null=False)
+    url = models.URLField(_(u'URL'), blank=False, null=False)
     class Meta:
         ordering = ['event', 'url_name']
         unique_together = ("event", "url_name")
@@ -784,10 +815,10 @@ class EventUrl(models.Model):
 
 class EventDeadline(models.Model):
     event = models.ForeignKey(Event, related_name='deadlines')
-    deadline_name = models.CharField(_('Deadline name'), blank=False, null=False,
+    deadline_name = models.CharField(_(u'Deadline name'), blank=False, null=False,
             max_length=80, help_text=_(
             "Example: call for papers deadline"))
-    deadline = models.DateField(_('Deadline'), blank=False, null=False)
+    deadline = models.DateField(_(u'Deadline'), blank=False, null=False)
     class Meta:
         ordering = ['event', 'deadline', 'deadline_name']
         unique_together = ("event", "deadline_name")
@@ -796,14 +827,14 @@ class EventDeadline(models.Model):
 
 class EventSession(models.Model):
     event = models.ForeignKey(Event, related_name='sessions')
-    session_name = models.CharField(_('Session name'), blank=False, null=False,
+    session_name = models.CharField(_(u'Session name'), blank=False, null=False,
             max_length=80, help_text=_(
             "Example: day 2 of the conference"))
-    session_date = models.DateField(_('Session day'), blank=False,
+    session_date = models.DateField(_(u'Session day'), blank=False,
             null=False)
-    session_starttime = models.TimeField(_('Session start time'),
+    session_starttime = models.TimeField(_(u'Session start time'),
             blank=False, null=False)
-    session_endtime = models.TimeField(_('Session end time'), blank=False, null=False)
+    session_endtime = models.TimeField(_(u'Session end time'), blank=False, null=False)
     class Meta:
         ordering = ['event', 'session_date', 'session_starttime', 'session_endtime']
         unique_together = ("event", "session_name")
@@ -811,22 +842,22 @@ class EventSession(models.Model):
         return unicode(self.session_date) + u' - ' + unicode(self.session_starttime) + u' - ' + unicode(self.session_endtime) + u' - ' + self.session_name
 
 class Filter(models.Model):
-    user = models.ForeignKey(User, unique=False, verbose_name=_('User'))
-    modification_time = models.DateTimeField(_('Modification time'),
+    user = models.ForeignKey(User, unique=False, verbose_name=_(u'User'))
+    modification_time = models.DateTimeField(_(u'Modification time'),
             editable=False, auto_now=True)
-    query = models.CharField(_('Query'), max_length=500, blank=False,
+    query = models.CharField(_(u'Query'), max_length=500, blank=False,
             null=False)
-    name = models.CharField(_('Name'), max_length=40, blank=False, null=False)
-    email = models.BooleanField(_('Email'), default=False, help_text=
-            _('If set it sends an email to a user when a new event matches all fields set'))
-    maxevents_email = models.SmallIntegerField(_('Number of events in e-mail'),
+    name = models.CharField(_(u'Name'), max_length=40, blank=False, null=False)
+    email = models.BooleanField(_(u'Email'), default=False, help_text=
+            _(u'If set it sends an email to a user when a new event matches all fields set'))
+    maxevents_email = models.SmallIntegerField(_(u'Number of events in e-mail'),
             blank=True, null=True, default=10, help_text=
             _("Maximum number of events to show in a notification e-mail"))
     class Meta:
         ordering = ['modification_time']
         unique_together = ("user", "name")
-        verbose_name = _('Filter')
-        verbose_name_plural = _('Filters')
+        verbose_name = _(u'Filter')
+        verbose_name_plural = _(u'Filters')
     def __unicode__(self):
         return self.name
     @models.permalink
@@ -835,21 +866,21 @@ class Filter(models.Model):
 
 class Group(models.Model):
     # FIXME: groups only as lower case ascii (case insensitive). Validate everywhere including save method.
-    name = models.CharField(_('Name'), max_length=80, unique=True)
-    description = models.TextField(_('Description'))
+    name = models.CharField(_(u'Name'), max_length=80, unique=True)
+    description = models.TextField(_(u'Description'))
     members = models.ManyToManyField(User, through='Membership',
-            verbose_name=_('Members'))
+            verbose_name=_(u'Members'))
     events = models.ManyToManyField(Event, through='Calendar',
-            verbose_name=_('Events'))
-    creation_time = models.DateTimeField(_('Creation time'), editable=False,
+            verbose_name=_(u'Events'))
+    creation_time = models.DateTimeField(_(u'Creation time'), editable=False,
             auto_now_add=True)
-    modification_time = models.DateTimeField(_('Modification time'),
+    modification_time = models.DateTimeField(_(u'Modification time'),
             editable=False, auto_now=True)
 
     class Meta:
         ordering = ['creation_time']
-        verbose_name = _('Group')
-        verbose_name_plural = _('Groups')
+        verbose_name = _(u'Group')
+        verbose_name_plural = _(u'Groups')
 
     def __unicode__(self):
         return self.name
@@ -877,27 +908,27 @@ class Group(models.Model):
 
 class Membership(models.Model):
     """Relation between users and groups."""
-    user = models.ForeignKey(User, verbose_name=_('User'), related_name='user_in_groups')
-    group = models.ForeignKey(Group, verbose_name=_('Group'), related_name='users_in_group')
-    is_administrator = models.BooleanField(_('Is administrator'), default=True)
+    user = models.ForeignKey(User, verbose_name=_(u'User'), related_name='user_in_groups')
+    group = models.ForeignKey(Group, verbose_name=_(u'Group'), related_name='users_in_group')
+    is_administrator = models.BooleanField(_(u'Is administrator'), default=True)
     """Not used at the moment. All members of a group are administrators."""
-    new_event_email = models.BooleanField(_('New event email'), default=True)
-    new_member_email = models.BooleanField(_('email_member_email'), default=True)
-    date_joined = models.DateField(_('date_joined'), editable=False, auto_now_add=True)
+    new_event_email = models.BooleanField(_(u'New event email'), default=True)
+    new_member_email = models.BooleanField(_(u'email_member_email'), default=True)
+    date_joined = models.DateField(_(u'date_joined'), editable=False, auto_now_add=True)
     class Meta:
         unique_together = ("user", "group")
-        verbose_name = _('Membership')
-        verbose_name_plural = _('Memberships')
+        verbose_name = _(u'Membership')
+        verbose_name_plural = _(u'Memberships')
 
 class Calendar(models.Model):
     """Relation between events and groups."""
-    event = models.ForeignKey(Event, verbose_name=_('Event'), related_name='event_in_groups')
-    group = models.ForeignKey(Group, verbose_name=_('Group'), related_name='calendar')
-    date_added = models.DateField(_('Date added'), editable=False, auto_now_add=True)
+    event = models.ForeignKey(Event, verbose_name=_(u'Event'), related_name='event_in_groups')
+    group = models.ForeignKey(Group, verbose_name=_(u'Group'), related_name='calendar')
+    date_added = models.DateField(_(u'Date added'), editable=False, auto_now_add=True)
     class Meta:
         unique_together = ("event", "group")
-        verbose_name = _('Calendar')
-        verbose_name_plural = _('Calendars')
+        verbose_name = _(u'Calendar')
+        verbose_name_plural = _(u'Calendars')
 
 # Next code is an adaptation of some code in python-django-registration
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
@@ -1055,19 +1086,19 @@ class GroupInvitation(models.Model):
     """
     ACTIVATED = u"ALREADY_ACTIVATED"
 
-    host = models.ForeignKey(User, related_name="host", verbose_name=_('host'))
-    guest = models.ForeignKey(User, related_name="guest", verbose_name=_('host'))
-    group = models.ForeignKey(Group, verbose_name=_('group'))
-    as_administrator = models.BooleanField(_('as administrator'), default=False)
-    activation_key = models.CharField(_('activation key'), max_length=40)
+    host = models.ForeignKey(User, related_name="host", verbose_name=_(u'host'))
+    guest = models.ForeignKey(User, related_name="guest", verbose_name=_(u'host'))
+    group = models.ForeignKey(Group, verbose_name=_(u'group'))
+    as_administrator = models.BooleanField(_(u'as administrator'), default=False)
+    activation_key = models.CharField(_(u'activation key'), max_length=40)
 
     # see http://docs.djangoproject.com/en/1.0/topics/db/managers/
     objects = GroupInvitationManager()
 
     class Meta:
 #        unique_together = ("host", "guest", "group")
-        verbose_name = _('Group invitation')
-        verbose_name_plural = _('Group invitations')
+        verbose_name = _(u'Group invitation')
+        verbose_name_plural = _(u'Group invitations')
 
     def __unicode__(self):
         return u"group invitation information for group %s for user %s from user %s" % (self.group,
