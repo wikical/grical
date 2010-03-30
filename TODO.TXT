@@ -1,8 +1,10 @@
 
-IGNORE
-
 high priority
 -------------
+- security: when Django 1.2 is out: add {% csrf_token %} to all forms targetting internal urls
+  See http://docs.djangoproject.com/en/dev/intro/tutorial04/#write-a-simple-form
+- Implement optimistic looking and transactions when e.g. saving/changing an event as a text. See
+    http://stackoverflow.com/questions/320096/django-how-can-i-protect-against-concurrent-modification-of-data-base-entries
 - When committing remove and create new data base creating automatically a new super user to avoid
   the question:
       You just installed Django's auth system, which means you don't have any superusers defined.
@@ -23,9 +25,12 @@ high priority
 - add 'add group' and 'add tag' to an event
 - add to user profile an option for receiving notifications by email for group invitations.
 - program logic for group invitation after clicking url in email, write the email templates, etc.
+- Think of a most generic error page (404). See
+    http://stackoverflow.com/questions/1812470/django-custom-handler404-shows-404-but-gives-header-200
 
 medium priority
 ---------------
+- Check for bug http://code.djangoproject.com/ticket/11077
 - Check out http://code.djangoproject.com/wiki/GeoDjango
 - add message to user invited to a group
 - check hard wired urls like '/accounts/logout'
@@ -41,6 +46,7 @@ medium priority
 
 low priority
 ------------
+- Add future events of past events listed on http://www.guckes.net/cal/
 - Add RSS support. See
   http://docs.djangoproject.com/en/1.0//ref/contrib/syndication/#ref-contrib-syndication
 - look and replace hard coded server name like in: templates/registration/activation_email.txt
@@ -60,6 +66,8 @@ low priority
   http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
 - add in profiles an option to automatically add new entries inserted by a user in his external
   calendar like google calendar
+- code a plugin for OpenSocial:
+  http://www.heise.de/newsticker/meldung/OpenSocial-1-0-veroeffentlicht-955569.html
 - User profile can have external services attached. E.g.
     - Google Calendar
     - Facebook MyCalendar application
@@ -69,4 +77,48 @@ low priority
 - OpenID. See
   http://www.heise.de/newsticker/Identity-Management-OpenID-mit-openid4java--/meldung/139607
 - Develop a client for mobile devices, maybe one with JavaFX, as they run on Android, Desktops and
-  Java ME mobile devices
+  Java ME mobile devices. Idea from http://brightkite.com/
+     * Everywhere (default)
+     * Region (100 km)
+     * Metro (50 km)
+     * City (10 km)
+     * Area (4 km)
+     * Neighbornhood (2 km)
+     * Block (200 m)
+     * Close (20 m)
+
+- Idea for the main page:
+   
+    what happen  |   search: _________________________  (tag:xxx / group:xxx / location:continent/country/city user:xxx)
+    today        |                                                                 it should also work with e.g. "floss berlin"
+    (wikipedia)  |     2008                                           2009
+                 |   ---------                                    ------------
+    cloud tags   |
+    related to   |     januar             february
+    pass actions || | | | | | | |    | | | | | | | | 
+    of the user  || | | | | | | |    | | | | | | | |
+    (cooki or    || | | | | | | |    | | | | | | | |
+     login)      || | | | | | | |    | | | | | | | |
+                 || | | | | | | |    | | | | | | | |
+
+
+                    A number and color show how many entries for each square
+                    You can click on a square to see the entries and also to introduce a new entry
+                    You can mark more than one square like in Google calender
+
+
+- Possible tag: for:user
+    But the user must be in the system. Another option would be to have a list of contacts and for:user
+    will send an email to him. Or it conects with the contacts of e.g. Google.
+
+- To edit an entry, see example: http://www.djangosites.org/s/stopsoftwarepatents-eu/
+
+- icons for each entry as a icalc, add to google calender (the user can save its loggin data), etc.
+
+- icons for each entry to add an event to a group or to a personal list
+
+- offer to send a nice generated calender with selected events as pdf
+
+- use audio (netzsprecher or own VoIP) to
+    a) comment entries
+    b) automatic call for rememberings

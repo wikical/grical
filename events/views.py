@@ -29,6 +29,18 @@ from gridcalendar.events.lists import filter_list, all_events_in_user_filters, e
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
 
+def help(request):
+    """Just returns the help page."""
+    return render_to_response('help.html', {
+            'title': 'GridCalendar.net - help',
+            }, context_instance=RequestContext(request))
+
+def legal_notice(request):
+    """Just returns the legal notice page."""
+    return render_to_response('legal_notice.html', {
+            'title': 'GridCalendar.net - legal notice',
+            }, context_instance=RequestContext(request))
+
 def event_new(request):
     if request.method == 'POST':
         if request.user.is_authenticated():
@@ -86,15 +98,16 @@ def event_edit(request, event_id):
                         " " + str(event_id) },
                         context_instance=RequestContext(request))
 
-    EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=1)
-    EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=1)
-    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=1)
+    EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=4)
+    EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=4)
+    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=4)
     if request.method == 'POST':
         formset_url      = EventUrlInlineFormSet(request.POST, instance=event)
         formset_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
         formset_session  = EventSessionInlineFormSet(request.POST, instance=event)
         event_form = EventForm(request.POST, instance=event)
         if event_form.is_valid() & formset_url.is_valid() & formset_session.is_valid() & formset_deadline.is_valid() :
+            # TODO: use the session middleware to commit as an atom
             event_form.save()
             formset_url.save()
             formset_session.save()

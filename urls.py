@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from django.conf import settings
 from django.conf.urls.defaults import *
 from django.contrib import admin, databrowse
@@ -24,8 +22,14 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('',
-    #(r'^comments/', include('django.contrib.comments.urls')),
+        url(r'^h/help/', 'gridcalendar.events.views.help', name="help"),
+        url(r'^h/legal_notice/', 'gridcalendar.events.views.legal_notice',
+                name="legal_notice"),
 )
+
+#urlpatterns += patterns('',
+#    (r'^comments/', include('django.contrib.comments.urls')),
+#)
 
 urlpatterns += patterns('',
     (r'', include('events.urls')),

@@ -388,25 +388,21 @@ class Event(models.Model):
             elif keyword == 'urls' and self.urls:
                 urls = EventUrl.objects.filter(event=self.id)
                 if len(urls) > 0:
-                    to_return += "urls:"
+                    to_return += "urls:\n"
                     for url in urls:
-                        if url.url_name == 'web':
-                            to_return += " " + unicode(url.url)
-                    to_return += "\n"
-                    for url in urls:
-                        if not url.url_name == 'web':
-                            to_return += "    " + url.url_name + ': ' + url.url + "\n"
+                        to_return += "    " + url.url_name + ': ' + url.url + "\n"
             elif keyword == 'deadlines' and self.deadlines:
                 deadlines = EventDeadline.objects.filter(event=self.id)
                 if len(deadlines) > 0:
-                    to_return += "deadlines:"
+                    to_return += "deadlines:\n"
                     for deadline in deadlines:
-                        if deadline.deadline_name == 'deadline':
-                            to_return += " " + unicode(deadline.deadline)
-                    to_return += "\n"
-                    for deadline in deadlines:
-                        if not deadline.deadline_name == 'deadline':
-                            to_return += "    " + deadline.deadline_name + ': ' + unicode(deadline.deadline) + "\n"
+                        to_return += "".join([
+                                "    ",
+                                deadline.deadline_name,
+                                ': ',
+                                unicode(deadline.deadline),
+                                "\n",
+                                ])
             elif keyword == 'sessions' and self.sessions:
                 time_sessions = EventSession.objects.filter(event=self.id)
                 if len(time_sessions) > 0:
@@ -434,7 +430,7 @@ class Event(models.Model):
                     to_return += '\n'
             elif keyword == 'description' and self.description:
                 to_return += keyword + ": " + unicode(self.description) + "\n"
-                # TODO: support multiline descriptions
+                # FIXME: support multiline descriptions
         return to_return
 
     @staticmethod
@@ -583,7 +579,7 @@ class Event(models.Model):
         event_groups_req_names_list = list() # list of group names
         if (event_id == None):
             pass
-            # TODO: groups cannot be added while creating a new event
+            # FIXME
         else:
             try:
                 event = Event.objects.get(id=event_id)
@@ -702,67 +698,77 @@ class Event(models.Model):
         All values of the returned dictionary (except groups, urls and
         sessions) must be names of fields of the Event class.
 
-        >>> synomyns_values_set = set(Event.get_synonyms().values())
-        >>> assert ('groups' in synomyns_values_set)
-        >>> synomyns_values_set.remove('groups')
-        >>> assert ('urls' in synomyns_values_set)
-        >>> synomyns_values_set.remove('urls')
-        >>> assert ('deadlines' in synomyns_values_set)
-        >>> synomyns_values_set.remove('deadlines')
-        >>> assert ('sessions' in synomyns_values_set)
-        >>> synomyns_values_set.remove('sessions')
-        >>> assert (set(dir(Event)) >= synomyns_values_set)
+        >>> synonyms_values_set = set(Event.get_synonyms().values())
+        >>> assert ('groups' in synonyms_values_set)
+        >>> synonyms_values_set.remove('groups')
+        >>> assert ('urls' in synonyms_values_set)
+        >>> synonyms_values_set.remove('urls')
+        >>> assert ('deadlines' in synonyms_values_set)
+        >>> synonyms_values_set.remove('deadlines')
+        >>> assert ('sessions' in synonyms_values_set)
+        >>> synonyms_values_set.remove('sessions')
+        >>> field_names = [f.name for f in Event._meta.fields]
+        >>> field_names = set(field_names)
+        >>> assert(len(synonyms_values_set) == 14)
+        >>> assert (field_names >= synonyms_values_set)
         """
-        # TODO: subclass dictionary to ensure you don't override a key
+        if settings.DEBUG:
+            # ensure you don't override a key
+            def add(dictionary, key, value):
+                assert( not dictionary.has_key(key))
+                dictionary[key] = value
+        else:
+            def add(dictionary, key, value):
+                dictionary[key] = value
         synonyms = {}
-        synonyms['title']       = 'title'       # title
-        synonyms['t']           = 'title'
-        synonyms['titl']        = 'title'
-        synonyms['start']       = 'start'       # start
-        synonyms['date']        = 'start'
-        synonyms['d']           = 'start'
-        synonyms['tags']        = 'tags'        # tags
-        synonyms['subjects']    = 'tags'
-        synonyms['s']           = 'tags'
-        synonyms['end']         = 'end'         # end
-        synonyms['e']           = 'end'
-        synonyms['endd']        = 'end'
-        synonyms['acronym']     = 'acronym'     # acronym
-        synonyms['acro']        = 'acronym'
-        synonyms['public']      = 'public'      # public
-        synonyms['p']           = 'public'
-        synonyms['country']     = 'country'     # country
-        synonyms['coun']        = 'country'
-        synonyms['c']           = 'country'
-        synonyms['city']        = 'city'        # city
-        synonyms['cc']          = 'city'
-        synonyms['postcode']    = 'postcode'    # postcode
-        synonyms['pp']          = 'postcode'
-        synonyms['zip']         = 'postcode'
-        synonyms['code']        = 'postcode'
-        synonyms['address']     = 'address'     # address
-        synonyms['addr']        = 'address'
-        synonyms['a']           = 'address'
-        synonyms['latitude']    = 'latitude'    # latitude
-        synonyms['lati']        = 'latitude'
-        synonyms['longitude']   = 'longitude'   # longitude
-        synonyms['long']        = 'longitude'
-        synonyms['timezone']    = 'timezone'    # timezone
-        synonyms['description'] = 'description' # description
-        synonyms['desc']        = 'description'
-        synonyms['des']         = 'description'
-        synonyms['de']          = 'description'
-        synonyms['groups']      = 'groups'      # groups (*)
-        synonyms['group']       = 'groups'
-        synonyms['g']           = 'groups'
-        synonyms['urls']        = 'urls'        # urls (*)
-        synonyms['url']         = 'urls'
-        synonyms['u']           = 'urls'
-        synonyms['web']         = 'urls'
-        synonyms['deadlines']   = 'deadlines'   # deadlines (*)
-        synonyms['sessions']    = 'sessions'    # sessions (*)
-        synonyms['time']        = 'sessions'
-        synonyms['t']           = 'sessions'
+        add(synonyms, 'title', 'title')       # title
+        add(synonyms, 't', 'title')
+        add(synonyms, 'titl', 'title')
+        add(synonyms, 'start', 'start')       # start
+        add(synonyms, 'date', 'start')
+        add(synonyms, 'd', 'start')
+        add(synonyms, 'tags', 'tags')        # tags
+        add(synonyms, 'subjects', 'tags')
+        add(synonyms, 's', 'tags')
+        add(synonyms, 'end', 'end')         # end
+        add(synonyms, 'e', 'end')
+        add(synonyms, 'endd', 'end')
+        add(synonyms, 'acronym', 'acronym')     # acronym
+        add(synonyms, 'acro', 'acronym')
+        add(synonyms, 'public', 'public')      # public
+        add(synonyms, 'p', 'public')
+        add(synonyms, 'country', 'country')     # country
+        add(synonyms, 'coun', 'country')
+        add(synonyms, 'c', 'country')
+        add(synonyms, 'city', 'city')        # city
+        add(synonyms, 'cc', 'city')
+        add(synonyms, 'postcode', 'postcode')    # postcode
+        add(synonyms, 'pp', 'postcode')
+        add(synonyms, 'zip', 'postcode')
+        add(synonyms, 'code', 'postcode')
+        add(synonyms, 'address', 'address')     # address
+        add(synonyms, 'addr', 'address')
+        add(synonyms, 'a', 'address')
+        add(synonyms, 'latitude', 'latitude')    # latitude
+        add(synonyms, 'lati', 'latitude')
+        add(synonyms, 'longitude', 'longitude')   # longitude
+        add(synonyms, 'long', 'longitude')
+        add(synonyms, 'timezone', 'timezone')    # timezone
+        add(synonyms, 'description', 'description') # description
+        add(synonyms, 'desc', 'description')
+        add(synonyms, 'des', 'description')
+        add(synonyms, 'de', 'description')
+        add(synonyms, 'groups', 'groups')      # groups (*)
+        add(synonyms, 'group', 'groups')
+        add(synonyms, 'g', 'groups')
+        add(synonyms, 'urls', 'urls')        # urls (*)
+        add(synonyms, 'u', 'urls')
+        add(synonyms, 'web', 'urls')
+        add(synonyms, 'deadlines', 'deadlines')  # deadlines (*)
+        add(synonyms, 'deadline', 'deadlines')  # deadlines (*)
+        add(synonyms, 'sessions', 'sessions')    # sessions (*)
+        add(synonyms, 'times', 'sessions')
+        add(synonyms, 'time', 'sessions')
         # (*) can have multi lines
         return synonyms
 
@@ -783,6 +789,7 @@ class Event(models.Model):
             return False
 
     def is_in_groups_list(self):
+        # TODO: rename this function and make it return a True or False value
         return Group.objects.filter(events=self)
 
     def is_in_groups_id_list(self):
@@ -838,6 +845,8 @@ class EventSession(models.Model):
     class Meta:
         ordering = ['event', 'session_date', 'session_starttime', 'session_endtime']
         unique_together = ("event", "session_name")
+        verbose_name = _(u'Session')
+        verbose_name_plural = _(u'Sessions')
     def __unicode__(self):
         return unicode(self.session_date) + u' - ' + unicode(self.session_starttime) + u' - ' + unicode(self.session_endtime) + u' - ' + self.session_name
 
@@ -865,7 +874,7 @@ class Filter(models.Model):
         return ('filter_edit', (), { 'filter_id': self.id })
 
 class Group(models.Model):
-    # FIXME: groups only as lower case ascii (case insensitive). Validate everywhere including save method.
+    # FIXME: groups only as lowerDeadlines case ascii (case insensitive). Validate everywhere including save method.
     name = models.CharField(_(u'Name'), max_length=80, unique=True)
     description = models.TextField(_(u'Description'))
     members = models.ManyToManyField(User, through='Membership',
@@ -891,8 +900,11 @@ class Group(models.Model):
 
     @staticmethod
     def is_user_in_group(user_id, group_id):
-        if Membership.objects.filter(user__id__exact=user_id,
-                group__id__exact=group_id).count() > 0:
+        times_user_in_group = Membership.objects.filter(
+                user__id__exact=user_id,
+                group__id__exact=group_id)
+        if times_user_in_group.count() > 0:
+            assert(times_user_in_group == 1)
             return True
         else:
             return False

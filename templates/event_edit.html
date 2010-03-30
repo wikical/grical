@@ -14,15 +14,84 @@
         <table>
             {{ form.as_table }}
         </table>
-        <table>
-            {{ formset_url.as_table }}
-        </table>
-        <table>
-            {{ formset_session.as_table }}
-        </table>
-        <table>
-            {{ formset_deadline.as_table }}
-        </table>
+        <!-- urls -->
+        <div class="url_table">
+            {%for f in formset_url.management_form%}
+                {{f}}
+            {%endfor%}
+            <table>
+                <tr>
+                {% for field in formset_url.forms.0 %}
+                    {% if not field.is_hidden %}
+                        <th>{{field.label}}</th>
+                    {% endif %}
+                {% endfor %}
+                </tr>
+                {%for f in formset_url.forms%}
+                    <tr>
+                    {%for field in f%} 
+                        {% if not field.is_hidden %}
+                            <td valign="bottom">{{field}}</td>
+                        {%else%}
+                            {{field}}
+                        {% endif %}
+                    {%endfor%}
+                    </tr>
+                {%endfor%}
+            </table>
+        </div>
+        <!-- sessions -->
+        <div class="session_table">
+            {%for f in formset_session.management_form%}
+                {{f}}
+            {%endfor%}
+            <table>
+                <tr>
+                {% for field in formset_session.forms.0 %}
+                    {% if not field.is_hidden %}
+                        <th>{{field.label}}</th>
+                    {% endif %}
+                {% endfor %}
+                </tr>
+                {%for f in formset_session.forms%}
+                    <tr>
+                    {%for field in f%} 
+                        {% if not field.is_hidden %}
+                            <td valign="bottom">{{field}}</td>
+                        {%else%}
+                            {{field}}
+                        {% endif %}
+                    {%endfor%}
+                    </tr>
+                {%endfor%}
+            </table>
+        </div>
+        <!-- deadlines -->
+        <div class="deadline_table">
+            {%for f in formset_deadline.management_form%}
+                {{f}}
+            {%endfor%}
+            <table>
+                <tr>
+                {% for field in formset_deadline.forms.0 %}
+                    {% if not field.is_hidden %}
+                        <th>{{field.label}}</th>
+                    {% endif %}
+                {% endfor %}
+                </tr>
+                {%for f in formset_deadline.forms%}
+                    <tr>
+                    {%for field in f%} 
+                        {% if not field.is_hidden %}
+                            <td valign="bottom">{{field}}</td>
+                        {%else%}
+                            {{field}}
+                        {% endif %}
+                    {%endfor%}
+                    </tr>
+                {%endfor%}
+            </table>
+        </div>
         <input type="submit" value={% trans "Save" %}>
     </form>
 </div>
