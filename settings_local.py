@@ -2,6 +2,8 @@
 
 from settings import PROJECT_NAME
 
+VERSION = 'alpha'
+
 # ======================================================================
 # debug settings
 # ======================================================================
@@ -12,7 +14,6 @@ TEMPLATE_DEBUG = DEBUG
 INTERNAL_IPS = ('127.0.0.1',)
 if DEBUG:
     TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
-
 
 # ======================================================================
 # cache settings

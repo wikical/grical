@@ -10,6 +10,18 @@
     text-align: right;
 }
 
+.url_table {
+    background:#ccf
+}
+
+.timechunk_table {
+    background:#ffc
+}
+
+.deadline_table {
+    background:#fcc
+}
+
 #message_col1 {
     background:#d44;
     padding:5px;

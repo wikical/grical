@@ -32,5 +32,11 @@
     {% trans "Once you have an account, you can be a member of a private group and also create groups and invite others. Members of private groups can add events marked as private to be seen only by the group members. They can also mark public events as interesting for a group, so that the members of the group will be notified" %}.
     </p>
 
-    <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
+  <!--
+    TODO: use 'url' tag when the following bug is fixed: http://code.djangoproject.com/ticket/11077
+    The bug makes some django tests fail. When fixed, use:
+      url registration_register or url registration.views.register
+  -->
+  <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
+
 {% endif %}
