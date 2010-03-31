@@ -20,6 +20,9 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+# TODO: validate with test iCal and RSS output using validations like e.g.
+# http://arnout.engelen.eu/icalendar-validator/validate/
+
 import hashlib, vobject
 
 from django.core.exceptions import ObjectDoesNotExist
