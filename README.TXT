@@ -1,3 +1,36 @@
+
+============
+INTRODUCTION
+============
+
+GridCalendar is a free software providing information about events which can be stored and retrieved
+in different ways and formats.
+
+
+=======
+LICENSE
+=======
+
+GridCalendar is licensed under the GNU Affero General Public License. See the file LICENSE.TXT
+
+
+=======
+CONTACT
+=======
+
+GridMind Vorgründungsgesellschaft Iván Fernando Villanueva Barrio EU
+Malmöer Str. 6
+10439 Berlin
+Germany
+
+Tel. +49 3039820596
+E-Mail: info@gridmind.org
+
+
+=====
+NOTES
+=====
+
 ABOUT THE PUBLIC-FLAG IN EVENTS
 -------------------------------
 Public events can be edited by anyone, otherwise only by the submitter and the members of the group
@@ -25,15 +58,13 @@ INSTALLATION
 - Edit settings-TO-RENAME.py and set the variables accordingly to your installation. Then rename it
   to settings.py
 
-NOTES
------
-* events submitted by anonymous users can be edited by anyone, otherwise the submitter decides (only
-  he, all, some groups)
+MISCELANEOUS
+------------
+* events submitted by anonymous users can be edited by anyone, otherwise the submitter decides if
+  the event is private or public
 
-
-For development, in the /etc/apache2/apache2.conf file, this setting was included:
-
-MaxRequestsPerChild 1
-
-It makes the server reload every request, in order to be able to see changes immediately, but remove this in production version.
+* For development, in the /etc/apache2/apache2.conf file, this setting was included:
+  MaxRequestsPerChild 1
+  It makes the server reload every request, in order to be able to see changes immediately, but
+  remove this in production version.
 
