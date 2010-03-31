@@ -76,6 +76,7 @@ INSTALLED_APPS = (
     'django.contrib.comments',
     'tagging',
     'registration',
+    'django.contrib.markup', # used for rendering ReStructuredText
 )
 # at the end of this section additional applications are conditionaly
 # added

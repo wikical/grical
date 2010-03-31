@@ -1,65 +1,40 @@
-1. As root edit your vim /etc/postgresql/*/main/pg_hba.conf file to include:
+.. This file is written in ReStructuredText and used to generate the contenct of some web pages
 
-local   all         gridcalendar                      md5
+Installation instructions for Debian based systems
+==================================================
 
-2. Reload the configuration:
+1. Install the following packages: `python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip postgresql python-vobject binutils postgresql-8.3 python-psycopg2 python-setuptools`
 
-killall -HUP postgres
+1. Edit `settings_local.py`
 
-2a. Install vobject (needed for iCalendar):
-# aptitude install python-vobject
+1. As root edit your `/etc/postgresql/*/main/pg_hba.conf` file to include: `local all gridcalendar md5`
 
-3. Create the gridcalendar postgres user with password:
+1. Reload the configuration: `killall -HUP postgres`
 
-$ su
-# su postgres
-postgres$ createuser --pwprompt gridcalendar
-Enter password for new role:
-Enter it again:
-Shall the new role be a superuser? (y/n) n
-Shall the new role be allowed to create databases? (y/n) y
-Shall the new role be allowed to create more new roles? (y/n) n
-postgres$
+1. Create the GridCalendar `postgres` user with a password ::
+    $ su
+    # su postgres
+    postgres$ createuser --pwprompt gridcalendar
+    Enter password for new role:
+    Enter it again:
+    Shall the new role be a superuser? (y/n) n
+    Shall the new role be allowed to create databases? (y/n) y
+    Shall the new role be allowed to create more new roles? (y/n) n
 
-4. Create the gridcalendar database:
+1. Create the gridcalendar database: ::
+    postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
+    Password:
 
-postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
-Password:
-postgres$
+1. Install the Django tables: ::
+    $ cd /usr/local/gridcalendar/
+    $ python manage.py syncdb
+    ...
+    You just installed Django's auth system, which means you don't have any superusers defined.
+    Would you like to create one now? (yes/no): yes
+    ...
 
-5. Install the Django tables:
+1. If using Apache edit apache/django.wsgi and replace the path of the installation.
 
-$ cd ???.???/gridcalendar/
-$ python manage.py syncdb
-Creating table auth_permission
-Creating table auth_group
-Creating table auth_user
-Creating table auth_message
-Creating table django_content_type
-Creating table django_session
-Creating table django_site
-Creating table django_admin_log
-Creating table tagging_tag
-Creating table tagging_taggeditem
-Creating table registration_registrationprofile
-Creating table django_comments
-Creating table django_comment_flags
-
-You just installed Django's auth system, which means you don't have any superusers defined.
-Would you like to create one now? (yes/no): yes
-Username (Leave blank to use 'miernik'):
-E-mail address: django@miernik.name
-Password:
-Password (again):
-Superuser created successfully.
-Installing index for auth.Permission model
-Installing index for auth.Message model
-Installing index for admin.LogEntry model
-Installing index for tagging.TaggedItem model
-Installing index for comments.Comment model
-Installing index for comments.CommentFlag model
-$
-
-6. Install GeoIP and a python binding for guessing the country and continent from the
-client IP. In Debian based systems it can be installed with:
-    aptitude install geoip-bin geoip-database python-geoip
+1. If Apache is used, for development it is recommended to include the following line in `/etc/apache2/apache2.conf` ::
+        MaxRequestsPerChild 1
+   It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version.

@@ -48,7 +48,7 @@
         {% trans "Matches your filters" %}:
         {% for fil in event.filters %}
             <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
-            <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}/icallogo.png" width="14"></a>&nbsp;
+            <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}/ical-small.png" width="14"></a>&nbsp;
             <a href="{% url list_events_filter_rss_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
         {% endfor %}
         <br/>
@@ -86,20 +86,14 @@
     {% endfor %}
 {% endif %}
 
-
-
-
-
-
-
 {% endblock %}
+
 
 {% block column2 %}
 
 {% include "coming_events_in_my_groups.html" %}
 
 {% endblock %}
-
 
 
 {% block column3 %}

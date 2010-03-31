@@ -51,9 +51,13 @@ from gridcalendar.events.lists import filter_list, all_events_in_user_filters, e
 # notice that an anonymous user get a form without the 'public' field (simplified)
 
 def help(request):
-    """Just returns the help page."""
+    """Just returns the help page including documentation in the file USAGE.TXT"""
+    usage_text = open(settings.PROJECT_ROOT + '/USAGE.TXT','r').read()
+    about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
     return render_to_response('help.html', {
             'title': 'GridCalendar.net - help',
+            'usage_text': usage_text,
+            'about_text': about_text,
             }, context_instance=RequestContext(request))
 
 def legal_notice(request):
@@ -485,6 +489,8 @@ def root(request):
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list) - len(ip_continent_event_list)
         landless_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'landless')
 
+    about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
+
     return render_to_response('root.html', {
             'title': _("Welcome to GridCalendar"),
             'form': event_form,
@@ -493,6 +499,7 @@ def root(request):
             'ip_continent_event_list': ip_continent_event_list,
             'landless_event_list': landless_event_list,
             'group_events': all_events_in_user_groups(request.user.id, 5),
+            'about_text': about_text,
         }, context_instance=RequestContext(request))
 
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator
