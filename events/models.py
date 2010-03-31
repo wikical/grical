@@ -24,7 +24,7 @@
 import datetime
 import random
 import re
-import sha
+import hashlib
 
 from django.db import models
 from django.db.models import Q
@@ -1065,8 +1065,8 @@ class GroupInvitationManager(models.Manager):
             ``group`` will be the name of the gropu.
 
         """
-        salt = sha.new(str(random.random())).hexdigest()[:5]
-        activation_key = sha.new(salt+guest.username).hexdigest()
+        salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
+        activation_key = hashlib.sha1(salt+guest.username).hexdigest()
         self.create(host=host,guest=guest,group=group,as_administrator=as_administrator,
                            activation_key=activation_key)
 
