@@ -10,8 +10,8 @@
             &nbsp;
             <a href="{% url group_invite g.id %}">invite</a>
 
-            <a href="{% url list_events_group_ical_hashed g.id user_id hash %}"><img src="{{ MEDIA_URL }}/ical-small.png" width="14"></a>&nbsp;
-            <a href="{% url list_events_group_rss_hashed g.id user_id hash %}"><img src="{{ MEDIA_URL }}/rssicon.png" width="14"></a>
+            <a href="{% url list_events_group_ical_hashed g.id user_id hash %}"><img src="{{ MEDIA_URL }}icallogo.png" width="14"></a>&nbsp;
+            <a href="{% url list_events_group_rss_hashed g.id user_id hash %}"><img src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
     {% endfor %}
 </ul>
 {% else %}

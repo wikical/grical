@@ -1,42 +1,22 @@
 {% extends "header.html" %}
-{% load i18n %}
 
 {% block body %}
-<div class="colmask blogstyle">
-	<div class="colmid">
-		<div class="colleft">
-
-
-			<div class="col1">
-                {% if message_col1 %}
-                <div id="message_col1">
-                    {{ message_col1 }}
-                </div>
-                {% endif %}
-                {% block column1 %}
-		        {% endblock %}
-			</div>
-
-
-	        <div class="col2">
+<div class="colmask doublepage">
+    <div class="colleft">
+        <div class="col1">
+            <!-- Column 1 start -->
+            {% if message_col1 %}
+            <div id="message_col1">
+                {{ message_col1 }}
+            </div>
+            {% endif %}
+            {% block column1 %}
+            {% endblock %}
+        </div>
+        <div class="col2">
+            <!-- Column 2 start -->
             {% block column2 %}
             {% endblock %}
-		    </div>
-
-<!--
-		    <div class="col3">
-                {% block column3 %}
-                {% if user.username %}
-                <p class="info">{% trans "This column may contain advertisements" %}</p>
-                <h2>Interesting events</h2>
-                <p>TODO interesting events for logged user</p>
-                {% else %}
-                <p>TODO: tag cloud</p>
-                {% endif %}
-                {% endblock %}
-	        </div>
--->
-
         </div>
     </div>
 </div>
