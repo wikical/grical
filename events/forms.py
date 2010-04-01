@@ -23,7 +23,7 @@
 
 import re
 
-from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField
+from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField, URLField
 from django.forms import Form, ModelForm, ValidationError
 from django.forms import CheckboxSelectMultiple, SelectMultiple
 
@@ -74,11 +74,17 @@ class EventSessionForm(ModelForm):
         model = EventSession
 
 class SimplifiedEventForm(EventForm):
+    web = URLField(verify_exists=True)
+    # Use CSS instead of this kind of code:
+    #def __init__(self, *args, **kwargs):
+    #    super(EventForm, self).__init__(*args, **kwargs)
+    #    self.fields['web'].widget.attrs["size"] = 60
     class Meta:
         model = Event
         fields = ('title', 'start', 'tags', 'public')
 
 class SimplifiedEventFormAnonymous(EventForm):
+    web = URLField(verify_exists=True)
     class Meta:
         model = Event
         fields = ('title', 'start', 'tags')
