@@ -46,8 +46,6 @@ MAX_EVENTS_ON_ROOT_PAGE=20
 # auth settings
 # ======================================================================
 
-LOGIN_URL = '/a/accounts/login/'
-LOGOUT_URL = '/a/accounts/logout/'
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/a/accounts/login/'
 LOGOUT_URL = '/a/accounts/logout/'
