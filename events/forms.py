@@ -24,7 +24,7 @@
 import re
 
 from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField, URLField
-from django.forms import Form, ModelForm, ValidationError
+from django.forms import Form, ModelForm, ValidationError, TextInput
 from django.forms import CheckboxSelectMultiple, SelectMultiple
 
 from django.contrib.auth.models import User
@@ -70,6 +70,17 @@ class EventDeadlineForm(ModelForm):
         model = EventDeadline
 
 class EventSessionForm(ModelForm):
+    """ A ModelForm for an EventSession with small sizes for the widget of some
+        fields. """
+    # TODO: better use CSS: modify the widget to add a html css class name.
+    def __init__(self, *args, **kwargs):
+        super(EventSessionForm, self).__init__(*args, **kwargs)
+        assert(self.fields.has_key('session_date'))
+        self.fields['session_date'].widget=TextInput(attrs={'size':10})
+        assert(self.fields.has_key('session_starttime'))
+        self.fields['session_starttime'].widget=TextInput(attrs={'size':5})
+        assert(self.fields.has_key('session_endtime'))
+        self.fields['session_endtime'].widget=TextInput(attrs={'size':5})
     class Meta:
         model = EventSession
 
@@ -113,4 +124,3 @@ class InviteToGroupForm(Form):
         if len(user_in_group) > 0:
                 raise ValidationError("This user is already in this group.")
         return cleaned_data
-

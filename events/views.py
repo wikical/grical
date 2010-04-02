@@ -45,7 +45,7 @@ from settings import SECRET_KEY
 from tagging.models import Tag, TaggedItem
 
 from gridcalendar.events.models import Event, EventUrl, EventSession, EventDeadline, Filter, Group, COUNTRIES
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, getEventForm
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, getEventForm, EventSessionForm
 from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
@@ -55,7 +55,7 @@ def help(request):
     usage_text = open(settings.PROJECT_ROOT + '/USAGE.TXT','r').read()
     about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
     return render_to_response('help.html', {
-            'title': 'GridCalendar.net - help',
+            'title': _('GridCalendar.net - help'),
             'usage_text': usage_text,
             'about_text': about_text,
             }, context_instance=RequestContext(request))
@@ -63,7 +63,7 @@ def help(request):
 def legal_notice(request):
     """Just returns the legal notice page."""
     return render_to_response('legal_notice.html', {
-            'title': 'GridCalendar.net - legal notice',
+            'title': _('GridCalendar.net - legal notice'),
             }, context_instance=RequestContext(request))
 
 def event_new(request):
@@ -80,13 +80,18 @@ def event_new(request):
                 public = cd['public']
             else:
                 public = True
-            e = Event(user_id=request.user.id, title=cd['title'], start=cd['start'],
-                        tags=cd['tags'], public=public)
+            e = Event(user_id=request.user.id, title=cd['title'],
+                    start=cd['start'],
+                    tags=cd['tags'], public=public)
             e.save()
-            return HttpResponseRedirect(reverse('event_edit', kwargs={'event_id': str(e.id)}))
-            # TODO: look in a thread for all users who wants to receive an email notification and send it
+            return HttpResponseRedirect(reverse('event_edit',
+                    kwargs={'event_id': str(e.id)}))
+            # TODO: look in a thread for all users who wants to receive an
+            # email notification and send it
         else:
-            return render_to_response('index.html', {'title': _("edit step 1"), 'form': sef}, context_instance=RequestContext(request))
+            return render_to_response('root.html',
+                    {'title': _("GridCalendar.net"), 'form': sef},
+                    context_instance=RequestContext(request))
     else:
         return HttpResponseRedirect(reverse('root'))
 
@@ -95,10 +100,16 @@ def event_edit(request, event_id):
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
-                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-                    context_instance=RequestContext(request))
+        return render_to_response(
+                'error.html',
+                {
+                    'title': _("GridCalendar.net"),
+                    'form': getEventForm(request.user),
+                    'message_col1': "".join(
+                        _("The event with the following number doesn't exist"),
+                        ": ", str(event_id))
+                },
+                context_instance=RequestContext(request))
 
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
@@ -107,25 +118,38 @@ def event_edit(request, event_id):
         # events submitted by anonymous users cannot be non-public:
         assert (event.user != None)
         if (not request.user.is_authenticated()):
-            return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
-                    'message_col1': _('You need to be logged-in to be able' +
-                    ' to edit the event with the number:') +
-                    " " + str(event_id) + "). " +
-                    _("Please log-in and try again") + "."},
+            return render_to_response(
+                    'error.html',
+                    {
+                        'title': _("error"),
+                        'form': getEventForm(request.user),
+                        'message_col1': _(
+                            'You need to be logged-in to be able' +
+                            ' to edit the event with the number:') +
+                            " " + str(event_id) + "). " +
+                            _("Please log-in and try again") + "."
+                    },
                     context_instance=RequestContext(request))
         else:
             if (not Event.is_event_viewable_by_user(event_id, request.user.id)):
-                return render_to_response('error.html',
-                        {'title': _("error"), 'form': getEventForm(request.user),
-                        'message_col1': _('You are not allowed to edit the' +
-                        ' event with the number:') +
-                        " " + str(event_id) },
+                return render_to_response(
+                        'error.html',
+                        {
+                            'title': _("GridCalendar.net - error"),
+                            'form': getEventForm(request.user),
+                            'message_col1':
+                                _('You are not allowed to edit the' +
+                                ' event with the number:') +
+                                " " + str(event_id)
+                        },
                         context_instance=RequestContext(request))
 
-    EventUrlInlineFormSet       = inlineformset_factory(Event, EventUrl, extra=4)
-    EventDeadlineInlineFormSet  = inlineformset_factory(Event, EventDeadline, extra=4)
-    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession, extra=4)
+    EventUrlInlineFormSet       = inlineformset_factory(
+                                    Event, EventUrl, extra=4)
+    EventDeadlineInlineFormSet  = inlineformset_factory(
+                                    Event, EventDeadline, extra=4)
+    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession,
+                                    extra=4, form=EventSessionForm)
     if request.method == 'POST':
         formset_url      = EventUrlInlineFormSet(request.POST, instance=event)
         formset_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)

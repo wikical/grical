@@ -854,6 +854,8 @@ class EventDeadline(models.Model):
         return unicode(self.deadline) + u' - ' + self.deadline_name
 
 class EventSession(models.Model):
+    # TODO: check when submitting that session_dates are within the limits of
+    # start and end dates of the event.
     event = models.ForeignKey(Event, related_name='sessions')
     session_name = models.CharField(_(u'Session name'), blank=False, null=False,
             max_length=80, help_text=_(
