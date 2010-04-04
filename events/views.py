@@ -478,11 +478,33 @@ def list_events_tag(request, tag):
 
 def root(request):
     user_id = request.user.id
-
-    if request.user.is_authenticated():
-        event_form = SimplifiedEventForm()
+    if request.method == 'POST':
+        if request.user.is_authenticated():
+            event_form = SimplifiedEventForm(request.POST)
+        else:
+            event_form = SimplifiedEventFormAnonymous(request.POST)
+        if event_form.is_valid():
+            cleaned_data = event_form.cleaned_data
+            # create a new entry and saves the data
+            if request.user.is_authenticated():
+                public = cleaned_data['public']
+            else:
+                public = True
+            e = Event(user_id=request.user.id,
+                      title=cleaned_data['title'],
+                      start=cleaned_data['start'],
+                      tags=cleaned_data['tags'],
+                      public=public)
+            e.save()
+            # create the url data
+            e.urls.create(url_name="web", url=cleaned_data['web'])
+            return HttpResponseRedirect(reverse('event_edit',
+                    kwargs={'event_id': str(e.id)}))
     else:
-        event_form = SimplifiedEventFormAnonymous()
+        if request.user.is_authenticated():
+            event_form = SimplifiedEventForm()
+        else:
+            event_form = SimplifiedEventFormAnonymous()
 
     if request.user.is_authenticated():
         efl = events_with_user_filters(user_id)

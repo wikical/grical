@@ -31,6 +31,7 @@ from django.contrib.auth.models import User
 
 from gridcalendar.events.models import Event, EventUrl, EventDeadline, EventSession
 from gridcalendar.events.models import Filter, Group, Membership, Calendar
+from gridcalendar.settings_local import DEBUG
 
 
 def getEventForm(user):
@@ -85,7 +86,10 @@ class EventSessionForm(ModelForm):
         model = EventSession
 
 class SimplifiedEventForm(EventForm):
-    web = URLField(verify_exists=True)
+    if DEBUG:
+        web = URLField(verify_exists=False)
+    else:
+        web = URLField(verify_exists=True)
     # Use CSS instead of this kind of code:
     #def __init__(self, *args, **kwargs):
     #    super(EventForm, self).__init__(*args, **kwargs)
@@ -95,7 +99,12 @@ class SimplifiedEventForm(EventForm):
         fields = ('title', 'start', 'tags', 'public')
 
 class SimplifiedEventFormAnonymous(EventForm):
-    web = URLField(verify_exists=True)
+    if DEBUG:
+        web = URLField(verify_exists=False)
+    else:
+        web = URLField(verify_exists=True)
+    # TODO: try to subclass from SimplifiedEventForm to avoid repeating the
+    # code above
     class Meta:
         model = Event
         fields = ('title', 'start', 'tags')

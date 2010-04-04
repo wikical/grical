@@ -337,7 +337,7 @@ class Event(models.Model):
                 degrees/minutes/seconds. Prefix with \"-\" for West, no sign \
                 for East."))
     timezone = models.SmallIntegerField(_(u'Timezone'), blank=True, null=True,
-            help_text=_("Minutes relative to UTC (e.g. -60 means UTC-1"))
+            help_text=_("Minutes relative to UTC (e.g. -60 means UTC-1)"))
     description = models.TextField(_(u'Description'), blank=True, null=True)
     # the relation event-group is now handle in group
     # groups = models.ManyToManyField(Group, blank=True, null=True,
@@ -371,7 +371,6 @@ class Event(models.Model):
         assert ((self.pk == None) # true when it is a new event
                 or (self.public == Event.objects.get(pk=self.pk).public))
         super(Event, self).save(*args, **kwargs) # Call the "real" save() method.
-
 
     def as_text(self):
         """ Returns a multiline string representation of the event."""

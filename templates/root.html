@@ -59,10 +59,13 @@
 <div id="event_form">
     {% if form.errors %}
         <p style="color: red;">
-            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+        {% blocktrans count form.errors|length as counter %}
+        Please correct the following error
+        {% plural %}Please correct the following errors
+        {% endblocktrans %}:
         </p>
     {% endif %}
-    <form action="{% url event_new %}" method="post">
+    <form action="" method="post">
         <table>
             {{ form.as_table }}
         </table>
