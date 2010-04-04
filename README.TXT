@@ -34,6 +34,12 @@ See INSTALL.TXT
 NOTES FOR DEVELOPERS
 =====================
 
+* For strings to be translated in python code, use named-string interpolation (e.g., %(day)s)
+  instead of positional interpolation (e.g., %s or %d). Example:
+    output = _('Today is %(month)s, %(day)s.') % {'month': m, 'day': d}
+  For more about translations, see (after installing the package python-django-doc):
+  file:///usr/share/doc/python-django-doc/html/topics/i18n.html#topics-i18n
+
 * Using the Django Shell, an example ::
         ./manage shell
         from gridcalendar.events.models import *

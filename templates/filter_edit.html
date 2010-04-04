@@ -5,11 +5,13 @@
 
 <p>{% trans "Edit your filter" %}:</p>
 
-
 <div id="event_form">
     {% if form.errors %}
         <p style="color: red;">
-            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}
+            {% blocktrans count form.errors as counter %}
+            Please correct following error
+            {% plural %}Please correct following errors
+            {% endblocktrans %}
         </p>
     {% endif %}
     <form action="" method="post">
@@ -20,9 +22,4 @@
     </form>
 </div>
 
-
-{% endblock %}
-
-
-{% block column3 %}
 {% endblock %}
