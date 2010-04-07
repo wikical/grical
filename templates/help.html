@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load markup %}
+
+{% block column1 %}
+
+{{ usage_text|restructuredtext }}
+
+{% endblock %}
+
+{% block column2 %}
+
+{% include "coming_events_in_my_groups.html" %}
+
+{% endblock %}
+
+
+
+{% block column3 %}
+
+{% endblock %}
+
