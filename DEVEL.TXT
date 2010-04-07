@@ -1,8 +1,0 @@
-Info for developers
--------------------
-If you use Postgresql, and if you want to clone a data base for development porpuses, you can do
-something like:
-
-    createdb -U gridcalendar -O gridcalendar gridcalendar-dev
-    pg_dump -U gridcalendar gridcalendar | psql -U gridcalendar gridcalendar-dev
-    psql -U gridcalendar gridcalendar-dev -c "UPDATE django_site SET domain = 'dev.yourdomain.net' WHERE id = 1"
