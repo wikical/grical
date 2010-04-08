@@ -23,9 +23,6 @@
 
 import os
 
-PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
-PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
-
 try:
     from settings_local import *
 except ImportError:

@@ -46,7 +46,7 @@ NOTES FOR DEVELOPERS
         e = Event.objects.get(pk=1)
         g = e.group_set.all()
 
-* If you use Postgresql, and if you want to clone a data base for development porpuses, you can do * something like: ::
+* If you use Postgresql, and if you want to clone a data base for development purposes, you can do * something like: ::
         createdb -U gridcalendar -O gridcalendar gridcalendar-dev
         pg_dump -U gridcalendar gridcalendar | psql -U gridcalendar gridcalendar-dev
         psql -U gridcalendar gridcalendar-dev -c "UPDATE django_site SET domain = 'dev.yourdomain.net' WHERE id = 1"
@@ -62,9 +62,9 @@ NOTES FOR DEVELOPERS
         pip install incf.countryutils
     
 * There is a full-featured geographical application for django. In Debian based systems it can be installed with: ::
-        aptitute install libgdal1-1.5.0 postgresql-8.3-postgis postgresql-server-dev-8.3 python-geoip geoip-database
+        aptitude install libgdal1-1.5.0 postgresql-8.3-postgis postgresql-server-dev-8.3 python-geoip geoip-database
   For python-geoip a version higher then 1.2.1-2 is needed, for example 1.2.4-1, because 1.2.1 doesn't have continent support.
-  After instllation of PostGIS you must issue commands like these as root: ::
+  After installation of PostGIS you must issue commands like these as root: ::
         su postgres
         cd /usr/share/postgresql-8.3-postgis/
         createlang plpgsql gridcalendar
