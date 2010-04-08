@@ -10,19 +10,17 @@ Events
 ------
 
 An event can be public or private. Public events can be edited by anyone like pages of the
-Wikipedia_. You can *subscribe* to an event to get notified of any change. Private events can be
-seen and edited only by the submitter of the event and the groups the submitter chooses. When a
-private event is added to a group, the event is clone (i.e. a deep copy of the event is done) and
-is accessible and modifiable for all current and future members of the group.
+Wikipedia_. You can *subscribe* to an event to get notified of any change, comment, etc. Private
+events can be seen and edited only by the submitter of the event and the groups the submitter
+chooses. When a private event is added to a group, the event is clone (i.e. a deep copy of the event
+is done) and is accessible and modifiable for all current and future members of the group.
 
 The public/private flag of an event cannot be changed after creation, but an event can be cloned and
 the flag of the clone can be different.
 
 Events submitted by anonymous users are public.
 
-The public-flag of an event cannot be changed after the first submission.
-
-The rational of private events belonging only to a single group is also that events have comments,
+The main rational of private events belonging only to a single group is that events have comments,
 and members of a group commenting on an event might not want non-members to see their comments.
 
 When a private event is clone to another group, the comments are not copied.

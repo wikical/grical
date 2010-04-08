@@ -2,6 +2,7 @@ syntax: glob
 *.sqlite
 *.pyc
 .*.swp
+*.bak
 syntax: regexp
 settings_local.py
 apache/django.wsgi

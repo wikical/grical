@@ -20,10 +20,14 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-
-from settings import PROJECT_NAME
+import os
 
 VERSION = 'alpha'
+
+# absolute path to this directory
+PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
+# the name of the directory
+PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
 
 # ======================================================================
 # debug settings
@@ -52,19 +56,19 @@ if DEBUG:
 
 ADMINS = (
     ('ogai', 'iv@gridmind.org'),
+    ('miernik', 'ivan@miernik.name'),
 )
 
 MANAGERS = ADMINS
 
-DEFAULT_FROM_EMAIL = 'django@miernik.name'
-SERVER_EMAIL = 'error-notify@example.com'
+DEFAULT_FROM_EMAIL = 'GridCalendar Dev'
+SERVER_EMAIL = 'error-notify@gridcalendar.net'
 
-EMAIL_SUBJECT_PREFIX = '[%s] ' % PROJECT_NAME
-EMAIL_HOST = 'mail.ffii.org'
+EMAIL_HOST = 'alpha.gridmind.org'
 EMAIL_PORT = 25
-EMAIL_HOST_USER = 'llanueva'
-EMAIL_HOST_PASSWORD = 'ffii1971'
-EMAIL_USE_TLS = True
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
 
 # see http://docs.djangoproject.com/en/dev/howto/error-reporting/
 SEND_BROKEN_LINK_EMAILS = True
@@ -77,11 +81,11 @@ SEND_BROKEN_LINK_EMAILS = True
 # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_ENGINE   = 'sqlite3'
 # DB Name (or path to database file if using sqlite3)
-DATABASE_NAME     = 'gridcalendar.sqlite'
-DATABASE_USER     = 'gridcalendar'         # Not used with sqlite3.
-DATABASE_PASSWORD = 'the_password'         # Not used with sqlite3.
+DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
+DATABASE_USER     = ''                     # Not used with sqlite3.
+DATABASE_PASSWORD = ''                     # Not used with sqlite3.
 DATABASE_HOST     = ''                     # Not used with sqlite3.
 DATABASE_PORT     = ''                     # Not used with sqlite3.
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '(%3a@o3(oaz@1aa0o8qaw$zkij7apd)i84mvaua_f2dqa1lk+u'
+SECRET_KEY = '(%+a@o3aoaz@11a0o8paw$zkij7apd)i84mvaua_32dqb1lk_+'
