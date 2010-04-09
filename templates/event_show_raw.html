@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Event details" %}:</p>
+
+
+<p>
+
+<a href="{% url event_show_ical event.id %}">
+iCal {% trans "for this event" %}
+</a>
+
+</p>
+
+
+
+
+<div id="event_textarea_form">
+<pre>
+
+        <table>
+            <div>{{ event_textarea }}</div>
+        </table>
+
+</pre>
+</div>
+
+<a href="{% url event_edit event.id %}"><span class="field_title">{% trans "edit this event with webforms" %}</span></a>
+&nbsp;
+<a href="{% url event_edit_raw event.id %}"><span class="field_title">{% trans "edit this event as text" %}</span></a>
+&nbsp;
+<a href="{% url group_add_event event.id %}"><span class="field_title">{% trans "add this event to a group" %}</span></a>
+
+
+<p>
+
+
+</p>
+
+{% endblock %}
+
+{% block column3 %}
+{% endblock %}
+

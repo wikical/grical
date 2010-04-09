@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block column1 %}
+<h3> {% trans "My groups" %}:</h3>
+
+{% if groups %}
+<ul>
+    {% for g in groups %}
+        <li> {{ g.name }}
+        <br /><a href="{% url list_events_group g.id %}">events this group</a>
+        <br /><a href="{% url group_invite g.id %}">invite another user to this group</a>
+        <br /><a href="{% url group_quit_ask g.id %}">quit from this group</a>
+    {% endfor %}
+</ul>
+{% else %}
+        <p>{% trans "No groups found!" %}</p>
+{% endif %}
+
+{% endblock %}
+

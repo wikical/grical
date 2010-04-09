@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+registration_complete.html | {{ block.super }}
+{% endblock %}
+
+<h1>{% trans "Registration in progress" %}</h1>
+
+{% block column1 %}
+{% trans "Thank you for signing up. An email with the activation code has been sent to your inbox" %}.
+{% endblock %}
