@@ -33,7 +33,7 @@ from django.contrib.auth.models import User
 import settings
 
 from gridcalendar.events.feeds import FeedAllComingEvents, FeedGroupEvents, FeedSearchEvents, FeedFilterEvents
-from gridcalendar.events.forms import getEventForm
+from gridcalendar.events.forms import get_event_form
 from gridcalendar.events.models import Group, Membership
 
 def rss_for_search(request, query):
@@ -74,7 +74,7 @@ def rss_for_group_hash(request, group_id, user_id, hash):
         return rss_for_group(request, group_id)
     else:
         return render_to_response('error.html',
-                {'title': 'error', 'form': getEventForm(request.user),
+                {'title': 'error', 'form': get_event_form(request.user),
                 'message_col1': _("You are not allowed to see this RSS feed") + "."},
                 context_instance=RequestContext(request))
 

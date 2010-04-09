@@ -3,7 +3,7 @@
 Installation instructions for Debian based systems
 ==================================================
 
-1. Install the following packages: `python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip postgresql python-vobject binutils postgresql-8.3 python-psycopg2 python-setuptools`
+1. Install the following packages: `python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip postgresql python-vobject binutils postgresql-8.3 python-psycopg2 python-setuptools python-vobject`
 
 1. Edit `settings_local.py`
 

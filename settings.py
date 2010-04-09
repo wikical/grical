@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+""" Django configuration file """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
@@ -27,7 +28,7 @@ PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
 
 try:
-    from settings_local import *
+    from settings_local import * # pylint: disable-msg=W0401,W0614
 except ImportError:
     pass
 
@@ -39,7 +40,7 @@ except ImportError:
 # for RSS feeds
 FEED_SIZE = 10
 
-MAX_EVENTS_ON_ROOT_PAGE=20
+MAX_EVENTS_ON_ROOT_PAGE = 20
 
 
 # ======================================================================
@@ -97,7 +98,8 @@ if DEBUG:
     TEMPLATE_CONTEXT_PROCESSORS += ("django.core.context_processors.debug",)
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Put strings here, like "/home/html/django_templates" or
+    # "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(PROJECT_ROOT, "templates"),
@@ -114,7 +116,7 @@ TEMPLATE_LOADERS = (
 # und is availabe in Debian like systems as the package
 # python-django-debug-toolbar
 try:
-    debug_toolbar.middleware.DebugToolbarMiddleware
+    debug_toolbar.middleware.DebugToolbarMiddleware # pylint: disable-msg=E0602
 except NameError:
     pass
 else:
@@ -132,43 +134,61 @@ else:
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-try: TIME_ZONE
-except NameError: TIME_ZONE = 'Europe/Berlin'
+try:
+    TIME_ZONE
+except NameError:
+    TIME_ZONE = 'Europe/Berlin'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-try: LANGUAGE_CODE
-except NameError: LANGUAGE_CODE = 'en-us'
+try:
+    LANGUAGE_CODE
+except NameError:
+    LANGUAGE_CODE = 'en-us'
 
-try: LANGUAGES
-except NameError: LANGUAGES = (('en', 'English'),)
+try:
+    LANGUAGES
+except NameError:
+    LANGUAGES = (('en', 'English'),)
 
-try: DATE_FORMAT
-except NameError: DATE_FORMAT = 'Y-m-d'
+try:
+    DATE_FORMAT
+except NameError:
+    DATE_FORMAT = 'Y-m-d'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
 
-# This is used by the django.contrib.sites, which is needed by for instance the registration code we
-# are using from a Debian package (upstream is:
+# This is used by the django.contrib.sites, which is needed by for instance the
+# registration code we are using from a Debian package (upstream is:
 # http://bitbucket.org/ubernostrum/django-registration/wiki/Home )
-try: SITE_ID
-except NameError: SITE_ID = 1
+try:
+    SITE_ID
+except NameError:
+    SITE_ID = 1
 
 # Absolute path to the directory that holds media.
-try: MEDIA_ROOT
-except NameError: MEDIA_ROOT = os.path.join(PROJECT_ROOT, "media")
+try:
+    MEDIA_ROOT
+except NameError:
+    MEDIA_ROOT = os.path.join(PROJECT_ROOT, "media")
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-try: MEDIA_URL
-except NameError: MEDIA_URL = '/m/'
+try:
+    MEDIA_URL
+except NameError:
+    MEDIA_URL = '/m/'
 
-try: ADMIN_MEDIA_PREFIX
-except NameError: ADMIN_MEDIA_PREFIX = '/m/admin/'
+try:
+    ADMIN_MEDIA_PREFIX
+except NameError:
+    ADMIN_MEDIA_PREFIX = '/m/admin/'
 
-try: ROOT_URLCONF
-except NameError: ROOT_URLCONF = 'urls'
+try:
+    ROOT_URLCONF
+except NameError:
+    ROOT_URLCONF = 'urls'
 

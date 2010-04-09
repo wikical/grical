@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Adds variables to all templates """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
@@ -20,27 +20,22 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+""" A management command which deletes expired group invitations from the
+    database. """
 
-# This file is needed for example for:
-# return render_to_response( ... , context_instance=RequestContext(request))
+from django.core.management.base import NoArgsCommand
+from gridcalendar.events.model import GroupInvitation
 
-# TODO: think of (also) using TEMPLATE_CONTEXT_PROCESSORS =
-# ('django.core.context_processors.request',)
+class Command(NoArgsCommand):
+    """ A management command which deletes expired group invitations from the
+    database.
 
-from django.contrib.sites.models import Site
-from django.conf import settings
+    Calls ``GroupInvitation.objects.delete_expired_invitations()``, which
+    contains the actual logic for determining which invitations are deleted.
+    """
 
-def global_template_vars(request):
-    """ Adds variables to all templates. """
-    current_site = Site.objects.get_current()
-    if request.is_secure():
-        protocol = "https"
-    else:
-        protocol = "http"
-    return {
-            'PROTOCOL': protocol,
-            'DOMAIN': current_site.domain,
-            'media_url': settings.MEDIA_URL,
-            'user': request.user,
-            'VERSION': settings.VERSION,
-            }
+    help = "Delete expired group invitations from the database"
+
+    def handle_noargs(self, **options):
+        """ Executes the action. """
+        GroupInvitation.objects.delete_expired_invitations()

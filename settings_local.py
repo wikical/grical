@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+""" Variables belonging to settings which should be modified machine dependent.
+"""
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
@@ -56,8 +58,8 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DEFAULT_FROM_EMAIL = 'django@miernik.name'
-SERVER_EMAIL = 'error-notify@example.com'
+DEFAULT_FROM_EMAIL = 'noreply@gridcalendar.net'
+SERVER_EMAIL = 'noreply@gridcalendar.net'
 
 EMAIL_SUBJECT_PREFIX = '[%s] ' % PROJECT_NAME
 EMAIL_HOST = 'mail.ffii.org'
@@ -78,8 +80,8 @@ SEND_BROKEN_LINK_EMAILS = True
 DATABASE_ENGINE   = 'sqlite3'
 # DB Name (or path to database file if using sqlite3)
 DATABASE_NAME     = 'gridcalendar.sqlite'
-DATABASE_USER     = 'gridcalendar'         # Not used with sqlite3.
-DATABASE_PASSWORD = 'the_password'         # Not used with sqlite3.
+DATABASE_USER     = ''                     # Not used with sqlite3.
+DATABASE_PASSWORD = ''                     # Not used with sqlite3.
 DATABASE_HOST     = ''                     # Not used with sqlite3.
 DATABASE_PORT     = ''                     # Not used with sqlite3.
 

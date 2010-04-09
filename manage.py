@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+""" Django manage script """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
@@ -26,7 +27,7 @@ try:
     import settings # Assumed to be in the same directory.
 except ImportError:
     import sys
-    sys.stderr.write("Error: Can't find the file 'settings.py' in the directory containing %r. It appears you've customized things.\nYou'll have to run django-admin.py, passing it your settings module.\n(If the file settings.py does indeed exist, it's causing an ImportError somehow.)\n" % __file__)
+    sys.stderr.write("Error: Can't find the file 'settings.py' in the directory containing %r. It appears you've customized things.\nYou'll have to run django-admin.py, passing it your settings module.\n(If the file settings.py does indeed exist, it's causing an ImportError somehow.)\n" % __file__) # pylint: disable-msg=C0301
     sys.exit(1)
 
 if __name__ == "__main__":

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+""" Django admin definitions file adding related data in the admin views.
+See http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
+"""
 #############################################################################
 # Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
 #
@@ -20,34 +23,38 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-from gridcalendar.events.models import Event, Group, EventUrl, EventSession, EventDeadline, Tag, Membership, Calendar
+from models import Event, Group, EventUrl, EventSession
+from models import Membership, Calendar, EventDeadline
+
 from django.contrib import admin
 
-# Add related data in the admin views.
-# Explained at
-# http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
-
 class MembershipInline(admin.TabularInline):
+    """ Membership """
     model = Membership
     extra = 1
 
 class CalendarInline(admin.TabularInline):
+    """ Calendar """
     model = Calendar
     extra = 1
 
 class UrlInline(admin.StackedInline):
+    """ EventUrl """
     model = EventUrl
     extra = 1
 
 class SessionInline(admin.StackedInline):
+    """ EventSession """
     model = EventSession
     extra = 1
 
 class DeadlineInline(admin.StackedInline):
+    """ EventDeadline """
     model = EventDeadline
     extra = 1
 
-class EventAdmin(admin.ModelAdmin):
+class EventAdmin(admin.ModelAdmin): # pylint: disable-msg=R0904
+    """ ModelAdmin for Events """
     def save_model(self, request, obj, form, change):
         """Saves the user logged-in as user (owner) of the event when adding a
         new Event"""
@@ -60,7 +67,8 @@ class EventAdmin(admin.ModelAdmin):
     date_hierarchy = 'start'
     inlines = [UrlInline, SessionInline, DeadlineInline, CalendarInline]
 
-class GroupAdmin(admin.ModelAdmin):
+class GroupAdmin(admin.ModelAdmin): # pylint: disable-msg=R0904
+    """ ModelAdmin for Groups """
     # FIXME: add the logged-in user in the group when saving a new group. See
     # save_model in EventAdmin
     inlines = (MembershipInline, CalendarInline,)

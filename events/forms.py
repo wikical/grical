@@ -20,42 +20,41 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+""" Forms """
 
 import re
 
-from django.forms import CharField, IntegerField, HiddenInput, ModelMultipleChoiceField, URLField
-from django.forms import Form, ModelForm, ValidationError, TextInput
-from django.forms import CheckboxSelectMultiple, SelectMultiple
-
+from django.forms import (CharField, IntegerField, HiddenInput,
+        ModelMultipleChoiceField, URLField, ModelForm, ValidationError,
+        TextInput, CheckboxSelectMultiple, Form)
 from django.contrib.auth.models import User
 
-from gridcalendar.events.models import Event, EventUrl, EventDeadline, EventSession
-from gridcalendar.events.models import Filter, Group, Membership, Calendar
 from gridcalendar.settings_local import DEBUG
+from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
+        EventSession, Filter, Group, Membership)
 
-
-def getEventForm(user):
+def get_event_form(user):
     """returns a simplied event form with or without the public field"""
     if user.is_authenticated():
         return SimplifiedEventForm()
     return SimplifiedEventFormAnonymous()
 
-
 class FilterForm(ModelForm):
-    class Meta:
+    """ ModelForm using Filter excluding `user` """
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Filter
         exclude = ('user',)
 
 class EventForm(ModelForm):
-    """Form to edit all fields except 'public'"""
+    """ ModelForm for all editable fields of Event except `public` """
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         self.fields['title'].widget.attrs["size"] = 60
         self.fields['tags'].widget.attrs["size"] = 60
-    class Meta:
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         exclude = ('public',) # public field cannot be edited after creation
-    def clean_tags(self):
+    def clean_tags(self): # pylint: disable-msg=C0111
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
             raise ValidationError("Punctuation marks are not allowed!")
@@ -63,11 +62,13 @@ class EventForm(ModelForm):
         return data
 
 class EventUrlForm(ModelForm):
-    class Meta:
+    """ ModelForm for EventUrl """
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventUrl
 
 class EventDeadlineForm(ModelForm):
-    class Meta:
+    """ ModelForm for EventDeadline """
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventDeadline
 
 class EventSessionForm(ModelForm):
@@ -77,15 +78,17 @@ class EventSessionForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(EventSessionForm, self).__init__(*args, **kwargs)
         assert(self.fields.has_key('session_date'))
-        self.fields['session_date'].widget=TextInput(attrs={'size':10})
+        self.fields['session_date'].widget = TextInput(attrs = {'size':10})
         assert(self.fields.has_key('session_starttime'))
-        self.fields['session_starttime'].widget=TextInput(attrs={'size':5})
+        self.fields['session_starttime'].widget = TextInput(attrs = {'size':5})
         assert(self.fields.has_key('session_endtime'))
-        self.fields['session_endtime'].widget=TextInput(attrs={'size':5})
-    class Meta:
+        self.fields['session_endtime'].widget = TextInput(attrs = {'size':5})
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventSession
 
 class SimplifiedEventForm(EventForm):
+    """ ModelForm for Events with only the fields `title`, `start`, `tags`,
+    `public` """
     if DEBUG:
         web = URLField(verify_exists=False)
     else:
@@ -94,42 +97,53 @@ class SimplifiedEventForm(EventForm):
     #def __init__(self, *args, **kwargs):
     #    super(EventForm, self).__init__(*args, **kwargs)
     #    self.fields['web'].widget.attrs["size"] = 60
-    class Meta:
+    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'start', 'tags', 'public')
 
 class SimplifiedEventFormAnonymous(EventForm):
+    """ ModelForm for Events with only the fields `title`, `start`, `tags`
+    """
     if DEBUG:
         web = URLField(verify_exists=False)
     else:
         web = URLField(verify_exists=True)
     # TODO: try to subclass from SimplifiedEventForm to avoid repeating the
     # code above
-    class Meta:
+    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'start', 'tags')
 
 class NewGroupForm(ModelForm):
-    class Meta:
+    """ ModelForm for Group with only the fields `name` and `description` """
+    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Group
         fields = ('name', 'description',)
 
 class AddEventToGroupForm(Form):
-    grouplist = ModelMultipleChoiceField(queryset=Group.objects.none(), widget=CheckboxSelectMultiple())
-    def __init__(self, u, e, *args, **kwargs):
+    """ Form with a overriden constructor that takes an user and an event and
+    provides selectable group names in which the user is a member of and the
+    event is not already in the group. """
+    grouplist = ModelMultipleChoiceField(
+            queryset=Group.objects.none(), widget=CheckboxSelectMultiple())
+    def __init__(self, user, event, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)
-        self.fields["grouplist"].queryset = Group.objects.filter(members=u).exclude(events=e)
+        self.fields["grouplist"].queryset = \
+                Group.objects.filter(members=user).exclude(events=event)
 
 class InviteToGroupForm(Form):
+    """ Form for a user name to invite to a group """
     group_id = IntegerField(widget=HiddenInput)
-    username = CharField(max_length=30)
+    username = CharField(max_length=30) # TODO: use the CharField of the User
+                                        # Model if possible
     def clean(self):
+        """ Raises a `ValidationError` if the user is already in the group """
         cleaned_data = self.cleaned_data
         group_id = cleaned_data.get("group_id")
         username = cleaned_data.get("username")
-        g = Group.objects.get(id=group_id)
-        u = User.objects.filter(username=username)
-        user_in_group = Membership.objects.filter(user=u, group=g)
+        group = Group.objects.get(id=group_id)
+        user = User.objects.filter(username=username)
+        user_in_group = Membership.objects.filter(user=user, group=group)
         if len(user_in_group) > 0:
-                raise ValidationError("This user is already in this group.")
+            raise ValidationError("This user is already in this group.")
         return cleaned_data

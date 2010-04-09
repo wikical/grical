@@ -45,7 +45,7 @@ from settings import SECRET_KEY
 from tagging.models import Tag, TaggedItem
 
 from gridcalendar.events.models import Event, EventUrl, EventSession, EventDeadline, Filter, Group, COUNTRIES
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, getEventForm, EventSessionForm
+from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, get_event_form, EventSessionForm
 from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
 
 # notice that an anonymous user get a form without the 'public' field (simplified)
@@ -104,7 +104,7 @@ def event_edit(request, event_id):
                 'error.html',
                 {
                     'title': _("GridCalendar.net"),
-                    'form': getEventForm(request.user),
+                    'form': get_event_form(request.user),
                     'message_col1': "".join(
                         _("The event with the following number doesn't exist"),
                         ": ", str(event_id))
@@ -122,7 +122,7 @@ def event_edit(request, event_id):
                     'error.html',
                     {
                         'title': _("error"),
-                        'form': getEventForm(request.user),
+                        'form': get_event_form(request.user),
                         'message_col1': _(
                             'You need to be logged-in to be able' +
                             ' to edit the event with the number:') +
@@ -136,7 +136,7 @@ def event_edit(request, event_id):
                         'error.html',
                         {
                             'title': _("GridCalendar.net - error"),
-                            'form': getEventForm(request.user),
+                            'form': get_event_form(request.user),
                             'message_col1':
                                 _('You are not allowed to edit the' +
                                 ' event with the number:') +
@@ -183,11 +183,11 @@ def event_new_raw(request):
                     return HttpResponseRedirect(reverse('root'))
                 except ValidationError, error:
                     return render_to_response('error.html',
-                        {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
+                        {'title': _("validation error"), 'message_col1': error, 'form': get_event_form(request.user)},
                         context_instance=RequestContext(request))
             else:
                 return render_to_response('error.html', {'title': _("error"),
-                    'form': getEventForm(request.user),
+                    'form': get_event_form(request.user),
                     'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
                     context_instance=RequestContext(request))
     else:
@@ -200,7 +200,7 @@ def event_edit_raw(request, event_id):
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
         return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
+                    {'title': _("error"), 'form': get_event_form(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
 
@@ -212,7 +212,7 @@ def event_edit_raw(request, event_id):
         assert (event.user != None)
         if (not request.user.is_authenticated()):
             return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
+                    {'title': _("error"), 'form': get_event_form(request.user),
                     'message_col1': _('You need to be logged-in to be able' +
                     ' to edit the event with the number:') +
                     " " + str(event_id) + "). " +
@@ -221,7 +221,7 @@ def event_edit_raw(request, event_id):
         else:
             if (not Event.is_event_viewable_by_user(event_id, request.user.id)):
                 return render_to_response('error.html',
-                        {'title': _("error"), 'form': getEventForm(request.user),
+                        {'title': _("error"), 'form': get_event_form(request.user),
                         'message_col1': _('You are not allowed to edit the' +
                         ' event with the number:') +
                         " " + str(event_id) },
@@ -234,11 +234,11 @@ def event_edit_raw(request, event_id):
                     return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
                 except ValidationError, error:
                     return render_to_response('error.html',
-                        {'title': _("validation error"), 'message_col1': error, 'form': getEventForm(request.user)},
+                        {'title': _("validation error"), 'message_col1': error, 'form': get_event_form(request.user)},
                         context_instance=RequestContext(request))
             else:
                 return render_to_response('error.html', {'title': _("error"),
-                    'form': getEventForm(request.user),
+                    'form': get_event_form(request.user),
                     'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
                     context_instance=RequestContext(request))
     else:
@@ -251,12 +251,12 @@ def event_show(request, event_id):
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
         return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
+                    {'title': _("error"), 'form': get_event_form(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     if not Event.is_event_viewable_by_user(event_id, request.user.id):
         return render_to_response('error.html',
-                {'title': _("error"), 'form': getEventForm(request.user),
+                {'title': _("error"), 'form': get_event_form(request.user),
                 'message_col1': _("You are not allowed to view the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
@@ -270,12 +270,12 @@ def event_show_raw(request, event_id):
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
         return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
+                    {'title': _("error"), 'form': get_event_form(request.user),
                     'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
                     context_instance=RequestContext(request))
     if not Event.is_event_viewable_by_user(event_id, request.user.id):
         return render_to_response('error.html',
-                {'title': _("error"), 'form': getEventForm(request.user),
+                {'title': _("error"), 'form': get_event_form(request.user),
                 'message_col1': _("You are not allowed to view the event with the following number") +
                 ": " + str(event_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
@@ -319,12 +319,12 @@ def filter_save(request):
 
     if q == '':
         return render_to_response('error.html',
-                {'title': _("error"), 'form': getEventForm(request.user),
+                {'title': _("error"), 'form': get_event_form(request.user),
                 'message_col1': _("You are trying to save a search without any search terms") + "."},
                 context_instance=RequestContext(request))
     elif (not request.user.is_authenticated()):
         return render_to_response('error.html',
-                {'title': _("error"), 'form': getEventForm(request.user),
+                {'title': _("error"), 'form': get_event_form(request.user),
                 'message_col1': _("You are not allowed to save this search because you are not logged in") + "."},
                 context_instance=RequestContext(request))
     elif request.method == 'POST':
@@ -337,7 +337,7 @@ def filter_save(request):
                         filter.save()
                         return HttpResponseRedirect(reverse('filter_edit', kwargs={'filter_id': filter.id}))
                     except Exception:
-                        return render_to_response('error.html', {'title': _("error"), 'form': getEventForm(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+                        return render_to_response('error.html', {'title': _("error"), 'form': get_event_form(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
     else:
             return render_to_response('error.html',
                 {'title': _("error"), 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
@@ -349,12 +349,12 @@ def filter_edit(request, filter_id):
         filter = Filter.objects.get(pk=filter_id)
     except filter.DoesNotExist:
         return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
+                    {'title': _("error"), 'form': get_event_form(request.user),
                     'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
                     context_instance=RequestContext(request))
     if ((not request.user.is_authenticated()) or (filter.user.id != request.user.id)):
         return render_to_response('error.html',
-                {'title': _("error"), 'form': getEventForm(request.user),
+                {'title': _("error"), 'form': get_event_form(request.user),
                 'message_col1': _('You are not allowed to edit the saved search with the following number') +
                 ": " + str(filter_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
@@ -379,12 +379,12 @@ def filter_drop(request, filter_id):
         filter = Filter.objects.get(pk=filter_id)
     except Filter.DoesNotExist:
         return render_to_response('error.html',
-                    {'title': _("error"), 'form': getEventForm(request.user),
+                    {'title': _("error"), 'form': get_event_form(request.user),
                     'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
                     context_instance=RequestContext(request))
     if ((not request.user.is_authenticated()) or (filter.user.id != request.user.id)):
         return render_to_response('error.html',
-                {'title': _("error"), 'form': getEventForm(request.user),
+                {'title': _("error"), 'form': get_event_form(request.user),
                 'message_col1': _('You are not allowed to delete the saved search with the following number') +
                 ": " + str(Filter_id) + ". " +
                 _("Maybe it is because you are not logged in with the right account") + "."},
