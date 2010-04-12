@@ -336,7 +336,6 @@ def user_filters_events_list(user_id, events_filters_list):
     return event_list[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
 
 
-
 def filter_list(user_id):
     u = User.objects.get(id=user_id)
     f = Filter.objects.filter(user=u)

@@ -20,38 +20,53 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+""" VIEWS """
 
 import hashlib
-from time import strftime
-import re
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db.models import Q, Max
+from django.db.models import Max
 from django.forms import ValidationError
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.contrib.sites.models import Site
 
-from settings import SECRET_KEY
+from gridcalendar.settings_local import SECRET_KEY
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.models import Event, EventUrl, EventSession, EventDeadline, Filter, Group, COUNTRIES
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm, get_event_form, EventSessionForm
-from gridcalendar.events.lists import filter_list, all_events_in_user_filters, events_with_user_filters, user_filters_events_list, all_events_in_user_groups, uniq_events_list, list_up_to_max_events_ip_country_events, list_search_get
+from gridcalendar.events.models import (
+    Event, EventUrl, EventSession, EventDeadline, Filter, Group )
+from gridcalendar.events.forms import (
+    SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
+    get_event_form, EventSessionForm )
+from gridcalendar.events.lists import (
+    filter_list, events_with_user_filters,
+    user_filters_events_list, all_events_in_user_groups, uniq_events_list,
+    list_up_to_max_events_ip_country_events, list_search_get )
 
-# notice that an anonymous user get a form without the 'public' field (simplified)
+# notice that an anonymous user get a form without the 'public' field
+# (simplified form)
 
-def help(request):
-    """Just returns the help page including documentation in the file USAGE.TXT"""
+def _error(request, text):
+    """ Returns a view with the front page and an error message """
+    return render_to_response('error.html',
+            {
+                'title': _("GridCalendar.net - error"),
+                'form': get_event_form(request.user),
+                'message_col1': text
+            },
+            context_instance=RequestContext(request))
+
+def usage(request):
+    """ Just returns the usage page including the RST documentation in the file
+    USAGE.TXT"""
     usage_text = open(settings.PROJECT_ROOT + '/USAGE.TXT','r').read()
     about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
     return render_to_response('help.html', {
@@ -67,25 +82,26 @@ def legal_notice(request):
             }, context_instance=RequestContext(request))
 
 def event_new(request):
+    """ Expects a filled simplified event form and redirects to `event_edit`
+    """
     if request.method == 'POST':
         if request.user.is_authenticated():
             sef = SimplifiedEventForm(request.POST)
         else:
             sef = SimplifiedEventFormAnonymous(request.POST)
-
         if sef.is_valid():
-            cd = sef.cleaned_data
+            cleaned_data = sef.cleaned_data
             # create a new entry and saves the data
             if request.user.is_authenticated():
-                public = cd['public']
+                public = cleaned_data['public']
             else:
                 public = True
-            e = Event(user_id=request.user.id, title=cd['title'],
-                    start=cd['start'],
-                    tags=cd['tags'], public=public)
-            e.save()
+            event = Event(user_id=request.user.id, title=cleaned_data['title'],
+                    start=cleaned_data['start'],
+                    tags=cleaned_data['tags'], public=public)
+            event.save()
             return HttpResponseRedirect(reverse('event_edit',
-                    kwargs={'event_id': str(e.id)}))
+                    kwargs={'event_id': str(event.id)}))
             # TODO: look in a thread for all users who wants to receive an
             # email notification and send it
         else:
@@ -96,20 +112,14 @@ def event_new(request):
         return HttpResponseRedirect(reverse('root'))
 
 def event_edit(request, event_id):
+    """ Complete web-form to edit an event. """
     # checks if the event exists
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response(
-                'error.html',
-                {
-                    'title': _("GridCalendar.net"),
-                    'form': get_event_form(request.user),
-                    'message_col1': "".join(
-                        _("The event with the following number doesn't exist"),
-                        ": ", str(event_id))
-                },
-                context_instance=RequestContext(request))
+        return _error(request, ''.join(
+                _("The event with the following number doesn't exist"), ": ",
+                str(event_id)),)
 
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
@@ -118,92 +128,95 @@ def event_edit(request, event_id):
         # events submitted by anonymous users cannot be non-public:
         assert (event.user != None)
         if (not request.user.is_authenticated()):
-            return render_to_response(
-                    'error.html',
-                    {
-                        'title': _("error"),
-                        'form': get_event_form(request.user),
-                        'message_col1': _(
-                            'You need to be logged-in to be able' +
-                            ' to edit the event with the number:') +
-                            " " + str(event_id) + "). " +
-                            _("Please log-in and try again") + "."
-                    },
-                    context_instance=RequestContext(request))
+            return _error(request,
+                _( 'You need to be logged-in to be able to edit the event \
+                with the number:') + " " + str(event_id) +
+                _("Please log-in and try again") + ".")
         else:
             if (not Event.is_event_viewable_by_user(event_id, request.user.id)):
-                return render_to_response(
-                        'error.html',
-                        {
-                            'title': _("GridCalendar.net - error"),
-                            'form': get_event_form(request.user),
-                            'message_col1':
-                                _('You are not allowed to edit the' +
-                                ' event with the number:') +
-                                " " + str(event_id)
-                        },
-                        context_instance=RequestContext(request))
-
-    EventUrlInlineFormSet       = inlineformset_factory(
-                                    Event, EventUrl, extra=4)
-    EventDeadlineInlineFormSet  = inlineformset_factory(
-                                    Event, EventDeadline, extra=4)
-    EventSessionInlineFormSet   = inlineformset_factory(Event, EventSession,
-                                    extra=4, form=EventSessionForm)
+                return _error(request,
+                    _('You are not allowed to edit the event with the \
+                        number:') + " " + str(event_id))
+    event_urls_factory  = inlineformset_factory(
+            Event, EventUrl, extra=4)
+    evetn_deadlines_factory = inlineformset_factory(
+            Event, EventDeadline, extra=4)
+    event_sessions_factory = inlineformset_factory(
+            Event, EventSession, extra=4, form=EventSessionForm)
     if request.method == 'POST':
-        formset_url      = EventUrlInlineFormSet(request.POST, instance=event)
-        formset_deadline = EventDeadlineInlineFormSet(request.POST, instance=event)
-        formset_session  = EventSessionInlineFormSet(request.POST, instance=event)
-        event_form = EventForm(request.POST, instance=event)
-        if event_form.is_valid() & formset_url.is_valid() & formset_session.is_valid() & formset_deadline.is_valid() :
+        formset_url      = \
+                event_urls_factory(request.POST, instance=event)
+        formset_deadline = \
+                evetn_deadlines_factory(request.POST, instance=event)
+        formset_session  = \
+                event_sessions_factory(request.POST, instance=event)
+        event_form = \
+                EventForm(request.POST, instance=event)
+        if event_form.is_valid() & formset_url.is_valid() & \
+                formset_session.is_valid() & formset_deadline.is_valid() :
             # TODO: use the session middleware to commit as an atom
             event_form.save()
             formset_url.save()
             formset_session.save()
             formset_deadline.save()
-            # TODO: look in a thread for all users who wants to receive an email notification and send it
-            return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
+            # TODO: look in a thread for all users who wants to receive an
+            # email notification and send it
+            return HttpResponseRedirect(
+                    reverse('event_show', kwargs={'event_id': event_id}))
         else:
-            templates = {'title': 'edit event', 'form': event_form, 'formset_url': formset_url, 'formset_session': formset_session, 'formset_deadline': formset_deadline, 'event_id': event_id }
-            return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
-    else:
-        event_form = EventForm(instance=event)
-        formset_url      = EventUrlInlineFormSet(instance=event)
-        formset_deadline = EventDeadlineInlineFormSet(instance=event)
-        formset_session  = EventSessionInlineFormSet(instance=event)
-        templates = {'title': 'edit event', 'form': event_form, 'formset_url': formset_url, 'formset_session': formset_session, 'formset_deadline': formset_deadline, 'event_id': event_id }
-        return render_to_response('event_edit.html', templates, context_instance=RequestContext(request))
-
-def event_new_raw(request):
-    if request.method == 'POST':
-            if 'event_astext' in request.POST:
-                event_textarea = request.POST['event_astext']
-                try:
-                    Event.parse_text(event_textarea, None, request.user.id)
-                    return HttpResponseRedirect(reverse('root'))
-                except ValidationError, error:
-                    return render_to_response('error.html',
-                        {'title': _("validation error"), 'message_col1': error, 'form': get_event_form(request.user)},
-                        context_instance=RequestContext(request))
-            else:
-                return render_to_response('error.html', {'title': _("error"),
-                    'form': get_event_form(request.user),
-                    'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
+            templates = {
+                    'title': 'edit event',
+                    'form': event_form,
+                    'formset_url': formset_url,
+                    'formset_session': formset_session,
+                    'formset_deadline': formset_deadline,
+                    'event_id': event_id }
+            return render_to_response('event_edit.html', templates,
                     context_instance=RequestContext(request))
     else:
+        event_form = EventForm(instance=event)
+        formset_url      = event_urls_factory(instance=event)
+        formset_deadline = evetn_deadlines_factory(instance=event)
+        formset_session  = event_sessions_factory(instance=event)
+        templates = {
+                'title': 'edit event',
+                'form': event_form,
+                'formset_url': formset_url,
+                'formset_session': formset_session,
+                'formset_deadline': formset_deadline,
+                'event_id': event_id }
+        return render_to_response('event_edit.html', templates,
+                context_instance=RequestContext(request))
+
+def event_new_raw(request):
+    """ View to create an event as text. """
+    if request.method == 'POST':
+        if 'event_astext' in request.POST:
+            event_textarea = request.POST['event_astext']
+            try:
+                Event.parse_text(event_textarea, None, request.user.id)
+                # TODO: inform that the event was saved
+                return HttpResponseRedirect(reverse('root'))
+            except ValidationError, error:
+                return _error(request, error)
+        else:
+            return _error(request,
+                _("You submitted an empty form, nothing was saved. Click the \
+                back button in your browser and try again."))
+    else:
         templates = { 'title': _("edit event as text") }
-        return render_to_response('event_new_raw.html', templates, context_instance=RequestContext(request))
+        return render_to_response('event_new_raw.html', templates,
+                context_instance=RequestContext(request))
 
 def event_edit_raw(request, event_id):
+    """ View to edit an event as text. """
     # checks if the event exists
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': _("error"), 'form': get_event_form(request.user),
-                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-                    context_instance=RequestContext(request))
-
+        return _error(request,
+            _("The event with the following number \ doesn't exist") + ": " +
+            str(event_id))
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
@@ -211,272 +224,282 @@ def event_edit_raw(request, event_id):
         # events submitted by anonymous users cannot be non-public:
         assert (event.user != None)
         if (not request.user.is_authenticated()):
-            return render_to_response('error.html',
-                    {'title': _("error"), 'form': get_event_form(request.user),
-                    'message_col1': _('You need to be logged-in to be able' +
-                    ' to edit the event with the number:') +
-                    " " + str(event_id) + "). " +
-                    _("Please log-in and try again") + "."},
-                    context_instance=RequestContext(request))
+            return _error(request,
+                _('You need to be logged-in to be able to edit the event \
+                    with the number:') + " " + str(event_id) + ". " +
+                _("Please log-in and try again") + ".")
         else:
             if (not Event.is_event_viewable_by_user(event_id, request.user.id)):
-                return render_to_response('error.html',
-                        {'title': _("error"), 'form': get_event_form(request.user),
-                        'message_col1': _('You are not allowed to edit the' +
-                        ' event with the number:') +
-                        " " + str(event_id) },
-                        context_instance=RequestContext(request))
+                return _error(request,
+                    _('You are not allowed to edit the event with the \
+                    number:') + " " + str(event_id))
     if request.method == 'POST':
-            if 'event_astext' in request.POST:
-                event_textarea = request.POST['event_astext']
-                try:
-                    event.parse_text(event_textarea, event_id, request.user.id)
-                    return HttpResponseRedirect(reverse('event_show', kwargs={'event_id': event_id}))
-                except ValidationError, error:
-                    return render_to_response('error.html',
-                        {'title': _("validation error"), 'message_col1': error, 'form': get_event_form(request.user)},
-                        context_instance=RequestContext(request))
-            else:
-                return render_to_response('error.html', {'title': _("error"),
-                    'form': get_event_form(request.user),
-                    'message_col1': _("You submitted an empty form, nothing was saved. Click the back button in your browser and try again.")},
-                    context_instance=RequestContext(request))
+        if 'event_astext' in request.POST:
+            event_textarea = request.POST['event_astext']
+            try:
+                event.parse_text(event_textarea, event_id, request.user.id)
+                return HttpResponseRedirect(
+                        reverse('event_show', kwargs={'event_id': event_id}))
+            except ValidationError, error:
+                return _error(request, error)
+        else:
+            return _error(request,
+                _("You submitted an empty form, nothing was saved. Click the \
+                back button in your \ browser and try again."))
     else:
         event_textarea = event.as_text()
-        templates = { 'title': _("edit event as text"), 'event_textarea': event_textarea, 'event_id': event_id }
-        return render_to_response('event_edit_raw.html', templates, context_instance=RequestContext(request))
+        templates = {
+                'title': _("edit event as text"),
+                'event_textarea': event_textarea,
+                'event_id': event_id }
+        return render_to_response('event_edit_raw.html', templates,
+                context_instance=RequestContext(request))
 
 def event_show(request, event_id):
+    """ View that shows an event """
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': _("error"), 'form': get_event_form(request.user),
-                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-                    context_instance=RequestContext(request))
+        return _error(request,
+            _("The event with the following number doesn't exist") + ": " +
+            str(event_id))
     if not Event.is_event_viewable_by_user(event_id, request.user.id):
-        return render_to_response('error.html',
-                {'title': _("error"), 'form': get_event_form(request.user),
-                'message_col1': _("You are not allowed to view the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
+        return _error(request,
+            _("You are not allowed to view the event with the following \
+            number") + ": " + str(event_id))
     else:
         templates = {'title': _("view event detail"), 'event': event }
-        return render_to_response('event_show.html', templates, context_instance=RequestContext(request))
+        return render_to_response('event_show.html', templates,
+                context_instance=RequestContext(request))
 
 def event_show_raw(request, event_id):
+    """ View that shows an event as text """
     try:
         event = Event.objects.get(pk=event_id)
     except Event.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': _("error"), 'form': get_event_form(request.user),
-                    'message_col1': _("The event with the following number doesn't exist") + ": " + str(event_id)},
-                    context_instance=RequestContext(request))
+        return _error(request,
+            _("The event with the following number doesn't exist") + ": " +
+            str(event_id))
     if not Event.is_event_viewable_by_user(event_id, request.user.id):
-        return render_to_response('error.html',
-                {'title': _("error"), 'form': get_event_form(request.user),
-                'message_col1': _("You are not allowed to view the event with the following number") +
-                ": " + str(event_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
+        return _error(request,
+            _("You are not allowed to view the event with the following \
+                    number:") + " " + str(event_id))
     else:
         event_textarea = event.as_text()
-        templates = {'title': _("view as text"), 'event_textarea': event_textarea, 'event_id': event_id }
-        return render_to_response('event_show_raw.html', templates, context_instance=RequestContext(request))
+        templates = {
+                'title': _("view as text"),
+                'event_textarea': event_textarea,
+                'event_id': event_id }
+        return render_to_response('event_show_raw.html',
+                templates, context_instance=RequestContext(request))
 
 def query(request):
+    """ View to get the data of a search query calling `list_events_search` """
     if 'q' in request.GET and request.GET['q']:
-        q = request.GET['q'].lower()
-        return HttpResponseRedirect(reverse('list_events_search', kwargs={'query': q}))
+        query_lowercase = request.GET['q'].lower()
+        return HttpResponseRedirect(
+                reverse('list_events_search',
+                kwargs={'query': query_lowercase}))
 
 def list_events_search(request, query):
-        q = query.lower()
-        user_id = request.user.id
+    """ View to show the results of a search query """
+    query_lowercase = query.lower()
+    user_id = request.user.id
+    try:
+        search_result = list_search_get(query_lowercase, user_id, 0)
+    except ValueError, (errmsg):
+        return render_to_response('error.html',
+            {
+                'title': _("GridCalendar - search error"),
+                'message_col1': errmsg,
+                'query': query_lowercase,
+                'form': get_event_form(request.user)
+            },
+            context_instance=RequestContext(request))
 
-        try:
-            search_result = list_search_get(q, user_id, 0)
-        except ValueError, (errmsg):
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': errmsg, 'query': q},
-                context_instance=RequestContext(request))
-
-        if len(search_result) == 0:
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("Your search didn't get any result") + ".", 'query': q},
-                context_instance=RequestContext(request))
-        else:
-            return render_to_response('list_events_search.html',
-                {'title': _("search results"), 'events': search_result, 'query': q},
-                context_instance=RequestContext(request))
+    if len(search_result) == 0:
+        return render_to_response('error.html',
+            {
+                'title': _("GridCalendar - no search results"),
+                'message_col1': _("Your search didn't get any result"),
+                'query': query,
+                'form': get_event_form(request.user),
+            },
+            context_instance=RequestContext(request))
+    else:
+        return render_to_response('list_events_search.html',
+            {
+                'title': _("search results"),
+                'events': search_result,
+                'query': query
+            },
+            context_instance=RequestContext(request))
 
 @login_required
 def filter_save(request):
+    """ Saves a new filter """
     if 'q' in request.POST and request.POST['q']:
-        q = request.POST['q'].lower()
+        query_lowercase = request.POST['q'].lower()
     else:
-        q = ''
-
-    if q == '':
-        return render_to_response('error.html',
-                {'title': _("error"), 'form': get_event_form(request.user),
-                'message_col1': _("You are trying to save a search without any search terms") + "."},
-                context_instance=RequestContext(request))
-    elif (not request.user.is_authenticated()):
-        return render_to_response('error.html',
-                {'title': _("error"), 'form': get_event_form(request.user),
-                'message_col1': _("You are not allowed to save this search because you are not logged in") + "."},
-                context_instance=RequestContext(request))
-    elif request.method == 'POST':
-                    try:
-                        max = Filter.objects.aggregate(Max('id'))['id__max']
-                        filter = Filter()
-                        filter.user = request.user
-                        filter.query = q
-                        filter.name = str(request.user) + "'s filter " + str(max)
-                        filter.save()
-                        return HttpResponseRedirect(reverse('filter_edit', kwargs={'filter_id': filter.id}))
-                    except Exception:
-                        return render_to_response('error.html', {'title': _("error"), 'form': get_event_form(request.user), 'message_col1': _("An error has ocurred, nothing was saved. Click the back button in your browser and try again.")}, context_instance=RequestContext(request))
+        return _error(request,
+            _("You are trying to save a search without any search terms"))
+    if request.method == 'POST':
+        try:
+            maximum = Filter.objects.aggregate(Max('id'))['id__max']
+            efilter = Filter()
+            efilter.user = request.user
+            efilter.query = query_lowercase
+            efilter.name = str(request.user) + "'s filter " + str(maximum)
+            efilter.save()
+            return HttpResponseRedirect(
+                    reverse('filter_edit', kwargs={'filter_id': efilter.id}))
+        except Exception:
+            return _error(request,
+                    _("An error has ocurred, nothing was saved. Click the \
+                    back button in your browser and try \ again."))
     else:
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("You have submitted a GET request which is not a valid method for this function") + ".", 'query': q},
+        return render_to_response('error.html',
+                {
+                    'title': _("GridCalendar - error"),
+                    'message_col1': _("You have submitted a GET request which \
+                        is not a valid method for searching"),
+                    'query': query_lowercase
+                },
                 context_instance=RequestContext(request))
 
 @login_required
 def filter_edit(request, filter_id):
+    """ View to edit a filter """
     try:
-        filter = Filter.objects.get(pk=filter_id)
-    except filter.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': _("error"), 'form': get_event_form(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
-                    context_instance=RequestContext(request))
-    if ((not request.user.is_authenticated()) or (filter.user.id != request.user.id)):
-        return render_to_response('error.html',
-                {'title': _("error"), 'form': get_event_form(request.user),
-                'message_col1': _('You are not allowed to edit the saved search with the following number') +
-                ": " + str(filter_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
+        efilter = Filter.objects.get(pk=filter_id)
+    except efilter.DoesNotExist:
+        return _error(request,
+                _("The saved search with the following number doesn't exist:")
+                + " " + str(filter_id))
+    if ((not request.user.is_authenticated()) or \
+            (efilter.user.id != request.user.id)):
+        return _error('error.html',
+                _('You are not allowed to edit the saved search with the \
+                        following number:') + " " + str(filter_id))
     else:
         if request.method == 'POST':
-            ssf = FilterForm(request.POST, instance=filter)
+            ssf = FilterForm(request.POST, instance=efilter)
             if ssf.is_valid() :
                 ssf.save()
                 return HttpResponseRedirect(reverse('list_filters_my'))
             else:
-                templates = {'title': 'edit event', 'form': ssf, 'filter_id': filter_id }
-                return render_to_response('filter_edit.html', templates, context_instance=RequestContext(request))
+                templates = {
+                        'title': 'edit event',
+                        'form': ssf,
+                        'filter_id': filter_id }
+                return render_to_response('filter_edit.html',
+                        templates, context_instance=RequestContext(request))
         else:
-            ssf = FilterForm(instance=filter)
-            templates = {'title': 'edit event', 'form': ssf, 'filter_id': filter_id }
-            return render_to_response('filter_edit.html', templates, context_instance=RequestContext(request))
+            ssf = FilterForm(instance=efilter)
+            templates = {
+                    'title': 'edit event',
+                    'form': ssf,
+                    'filter_id': filter_id }
+            return render_to_response('filter_edit.html',
+                    templates, context_instance=RequestContext(request))
 
 @login_required
 def filter_drop(request, filter_id):
+    """ Delete a filter if the user is the owner """
     try:
-        filter = Filter.objects.get(pk=filter_id)
+        efilter = Filter.objects.get(pk=filter_id)
     except Filter.DoesNotExist:
-        return render_to_response('error.html',
-                    {'title': _("error"), 'form': get_event_form(request.user),
-                    'message_col1': _("The saved search with the following number doesn't exist") + ": " + str(filter_id)},
-                    context_instance=RequestContext(request))
-    if ((not request.user.is_authenticated()) or (filter.user.id != request.user.id)):
-        return render_to_response('error.html',
-                {'title': _("error"), 'form': get_event_form(request.user),
-                'message_col1': _('You are not allowed to delete the saved search with the following number') +
-                ": " + str(Filter_id) + ". " +
-                _("Maybe it is because you are not logged in with the right account") + "."},
-                context_instance=RequestContext(request))
+        return _error(request,
+                _("The saved search with the following number doesn't exist:") +
+                str(filter_id))
+    if ((not request.user.is_authenticated()) or \
+            (efilter.user.id != request.user.id)):
+        return _error(request,
+                _('You are not allowed to delete the saved search with the \
+                    following number:') + " " + str(Filter_id))
     else:
         if request.method == 'POST':
             assert False
         else:
-            filter.delete()
+            efilter.delete()
             return HttpResponseRedirect(reverse('list_filters_my'))
 
 @login_required
 def list_filters_my(request):
+    """ View that lists the filters of the logged-in user """
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
-        return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("Your search didn't get any result") + "."},
-                context_instance=RequestContext(request))
+        return _error(request,
+                _("Your search didn't get any result"))
     else:
         list_of_filters = filter_list(request.user.id)
         if len(list_of_filters) == 0:
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("You do not have any filters configured") + "."},
-                context_instance=RequestContext(request))
+            return _error(request,
+                _("You do not have any filters configured"))
         else:
             return render_to_response('filter_list_my.html',
                 {'title': 'list of my filters', 'filters': list_of_filters},
                 context_instance=RequestContext(request))
 
 def list_events_of_user(request, username):
+    """ View that lists the events of a user """
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         try:
-            u = User.objects.get(username__exact=username)
-            useridtmp = u.id
+            user = User.objects.get(username__exact=username)
+            useridtmp = user.id
             events = Event.objects.filter(user=useridtmp)
             events = Event.objects.filter(public=True)
             if len(events) == 0:
-                return render_to_response('error.html',
-                    {'title': _("error"), 'message_col1': _("Your search didn't get any result") + "."},
-                    context_instance=RequestContext(request))
+                return _error(request,
+                        _("Your search didn't get any result"))
             else:
                 return render_to_response('events/list_user.html',
                     {'events': events, 'username': username},
                     context_instance=RequestContext(request))
         except User.DoesNotExist:
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("User does not exist") + "."},
-                context_instance=RequestContext(request))
+            return _error(request, _("User does not exist"))
     else:
         try:
-            u = User.objects.get(username__exact=username)
-            useridtmp = u.id
+            user = User.objects.get(username__exact=username)
+            useridtmp = user.id
             events = Event.objects.filter(user=useridtmp)
             if len(events) == 0:
-                return render_to_response('error.html',
-                    {'title': _("error"), 'message_col1': _("Your search didn't get any result") + "."},
-                    context_instance=RequestContext(request))
+                return _error(request, _("Your search didn't get any result"))
             else:
                 return render_to_response('events/list_user.html',
                     {'events': events, 'username': username},
                     context_instance=RequestContext(request))
         except User.DoesNotExist:
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("User does not exist") + "."},
-                context_instance=RequestContext(request))
+            return _error(request, ("User does not exist"))
 
 @login_required
 def list_events_my(request):
+    """ View that lists the events the logged-in user is the owner of """
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
-        return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("Your search didn't get any result") + "."},
-                context_instance=RequestContext(request))
+        return _error(request, _("Your search didn't get any result"))
     else:
         events = Event.objects.filter(user=request.user)
         if len(events) == 0:
-            return render_to_response('error.html',
-                {'title': _("error"), 'message_col1': _("Your search didn't get any result") + "."},
-                context_instance=RequestContext(request))
+            return _error(request, _("Your search didn't get any result"))
         else:
             return render_to_response('list_events_my.html',
                 {'title': _("list my events"), 'events': events},
                 context_instance=RequestContext(request))
 
 def list_events_tag(request, tag):
-    """ returns a view with events having a tag
-    """
-    from re import sub
+    """ returns a view with events having a tag """
     query_tag = Tag.objects.get(name=tag)
     events = TaggedItem.objects.get_by_model(Event, query_tag)
     events = events.order_by('-start')
-    return render_to_response('list_events_tag.html', {'title': _("list by tag"), 'events': events, 'tag': tag}, context_instance=RequestContext(request))
+    return render_to_response('list_events_tag.html',
+            {
+                'title': _("list by tag"),
+                'events': events,
+                'tag': tag
+            },
+            context_instance=RequestContext(request))
 
 def root(request):
+    """ main view """
     user_id = request.user.id
     if request.method == 'POST':
         if request.user.is_authenticated():
@@ -490,16 +513,16 @@ def root(request):
                 public = cleaned_data['public']
             else:
                 public = True
-            e = Event(user_id=request.user.id,
+            event = Event(user_id=request.user.id,
                       title=cleaned_data['title'],
                       start=cleaned_data['start'],
                       tags=cleaned_data['tags'],
                       public=public)
-            e.save()
+            event.save()
             # create the url data
-            e.urls.create(url_name="web", url=cleaned_data['web'])
+            event.urls.create(url_name="web", url=cleaned_data['web'])
             return HttpResponseRedirect(reverse('event_edit',
-                    kwargs={'event_id': str(e.id)}))
+                    kwargs={'event_id': str(event.id)}))
     else:
         if request.user.is_authenticated():
             event_form = SimplifiedEventForm()
@@ -521,39 +544,61 @@ def root(request):
 
     if len(events) < settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events)
-        ip_country_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'country')
+        ip_country_event_list = list_up_to_max_events_ip_country_events(
+                request.META.get('REMOTE_ADDR'),
+                user_id, uel, add_thismany, 'country')
     else:
         ip_country_event_list = list()
 
-    if len(events) + len(ip_country_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
-        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list)
-        ip_continent_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'continent')
+    if (len(events) + len(ip_country_event_list)) < \
+            settings.MAX_EVENTS_ON_ROOT_PAGE :
+        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - \
+                len(ip_country_event_list)
+        ip_continent_event_list = list_up_to_max_events_ip_country_events(
+                request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany,
+                'continent')
     else:
         ip_continent_event_list = list()
 
-    if len(events) + len(ip_country_event_list) + len(ip_continent_event_list) < settings.MAX_EVENTS_ON_ROOT_PAGE :
-        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - len(ip_country_event_list) - len(ip_continent_event_list)
-        landless_event_list = list_up_to_max_events_ip_country_events(request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany, 'landless')
+    if (len(events) + len(ip_country_event_list) + \
+            len(ip_continent_event_list)) < settings.MAX_EVENTS_ON_ROOT_PAGE :
+        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len(events) - \
+                len(ip_country_event_list) - len(ip_continent_event_list)
+        landless_event_list = list_up_to_max_events_ip_country_events(
+                request.META.get('REMOTE_ADDR'), user_id, uel, add_thismany,
+                'landless')
 
     about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
 
-    return render_to_response('root.html', {
-            'title': _("Welcome to GridCalendar"),
-            'form': event_form,
-            'events': events,
-            'ip_country_event_list': ip_country_event_list,
-            'ip_continent_event_list': ip_continent_event_list,
-            'landless_event_list': landless_event_list,
-            'group_events': all_events_in_user_groups(request.user.id, 5),
-            'about_text': about_text,
-        }, context_instance=RequestContext(request))
+    return render_to_response('root.html',
+            {
+                'title': _("Welcome to GridCalendar"),
+                'form': event_form,
+                'events': events,
+                'ip_country_event_list': ip_country_event_list,
+                'ip_continent_event_list': ip_continent_event_list,
+                'landless_event_list': landless_event_list,
+                'group_events': all_events_in_user_groups(request.user.id, 5),
+                'about_text': about_text,
+            },
+            context_instance=RequestContext(request))
 
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator
 @login_required
 def settings_page(request):
-    # user is logged in
-    fl = filter_list(request.user.id)
-    u = User(request.user)
-    groups = Group.objects.filter(users_in_group__user=u)
-    hash = hashlib.sha256("%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
-    return render_to_response('settings.html', { 'title': _("settings"), 'filter_list': fl, 'groups': groups, 'user_id': request.user.id, 'hash': hash }, context_instance=RequestContext(request))
+    """ View to show the settings of a user """
+    # user is logged in because of decorator
+    list_of_filters = filter_list(request.user.id)
+    user = User(request.user)
+    groups = Group.objects.filter(users_in_group__user=user)
+    hashvalue = hashlib.sha256(
+            "%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
+    return render_to_response('settings.html',
+            {
+                'title': _("settings"),
+                'filter_list': list_of_filters,
+                'groups': groups,
+                'user_id': request.user.id,
+                'hash': hashvalue
+            },
+            context_instance=RequestContext(request))

@@ -20,30 +20,31 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+""" Groups related views """
 
 import hashlib
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 
-from tagging.models import TaggedItem, Tag
+from gridcalendar.settings import SECRET_KEY
 
-from settings import SECRET_KEY
-
-from gridcalendar.events.models import Event, Group, Membership, Calendar, GroupInvitation, GroupInvitationManager
-from gridcalendar.events.forms import NewGroupForm, AddEventToGroupForm, InviteToGroupForm
-from gridcalendar.events.lists import all_events_in_user_groups
+from gridcalendar.events.models import (
+        Event, Group, Membership, Calendar, GroupInvitation, )
+from gridcalendar.events.forms import (
+        NewGroupForm, AddEventToGroupForm, InviteToGroupForm )
 
 @login_required
 def group_new(request):
+    """ View to create a new group """
     if not request.user.is_authenticated():
-        return render_to_response('groups/no_authenticated.html', {}, context_instance=RequestContext(request))
+        return render_to_response('groups/no_authenticated.html',
+                {}, context_instance=RequestContext(request))
     if request.method == 'POST':
         form = NewGroupForm(request.POST)
         if form.is_valid():
@@ -55,136 +56,184 @@ def group_new(request):
             # TODO: notify all invited members of the group
             return HttpResponseRedirect(reverse('list_groups_my'))
         else:
-            return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
+            return render_to_response('groups/create.html',
+                    {'form': form}, context_instance=RequestContext(request))
     else:
         form = NewGroupForm()
-        return render_to_response('groups/create.html', {'form': form}, context_instance=RequestContext(request))
+        return render_to_response('groups/create.html',
+                {'form': form}, context_instance=RequestContext(request))
 
 @login_required
 def list_groups_my(request):
-    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+    """ view that lists all groups of the logged-in user """
+    # Theoretically not needed because of the decorator:
+    #if ((not request.user.is_authenticated()) or (request.user.id is None)):
+    #    return render_to_response('error.html',
+    #            {
+    #                'title': 'error',
+    #                'message_col1': _("You must be logged in to list your \
+    #                    groups")
+    #            },
+    #            context_instance=RequestContext(request))
+    #else:
+    user = User(request.user)
+    groups = Group.objects.filter(users_in_group__user=user)
+    if len(groups) == 0:
         return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You must be logged in to list your groups") + "."},
-                context_instance=RequestContext(request))
+            {
+                'title': 'error',
+                'message_col1': _("You are not a member of any group"),
+            },
+            context_instance=RequestContext(request))
     else:
-        u = User(request.user)
-        groups = Group.objects.filter(users_in_group__user=u)
-        if len(groups) == 0:
-            return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You are not a member of any group") + "."},
-                context_instance=RequestContext(request))
-        else:
-            return render_to_response('groups/list_my.html',
-                {'title': 'list my groups', 'groups': groups},
-                context_instance=RequestContext(request))
+        return render_to_response('groups/list_my.html',
+            {'title': 'list my groups', 'groups': groups},
+            context_instance=RequestContext(request))
 
 @login_required
 def group_quit(request, group_id, sure):
-    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+    """ remove the logged-in user from a group asking for confirmation if the
+    user is the last member of the group """
+    user = User(request.user)
+    try:
+        group = Group.objects.get(id=group_id, users_in_group__user=user)
+    except Group.DoesNotExist:
         return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You must be logged in to quit your groups") + "."},
+                {
+                    'title': 'error',
+                    'message_col1': _("There is no such group, or you \
+                        are not a member of that group")
+                },
                 context_instance=RequestContext(request))
+    testsize = len(
+            Membership.objects.filter(group=group).exclude(user=user))
+    if (testsize > 0):
+        membership = Membership.objects.get(user=request.user, group=group)
+        membership.delete()
+        return HttpResponseRedirect(reverse('list_groups_my'))
+    elif (sure):
+        membership = Membership.objects.get(user=request.user, group=group)
+        membership.delete()
+        group.delete()
+        return HttpResponseRedirect(reverse('list_groups_my'))
     else:
-        u = User(request.user)
-        s = int(sure)
-        if 1 == 1:
-#        try:
-            try:
-                g = Group.objects.get(id=group_id, users_in_group__user=u)
-            except Group.DoesNotExist:
-                return render_to_response('error.html', {'title': 'error', 'message_col1': _("There is no such group, or you are not a member of that group") + "."}, context_instance=RequestContext(request))
-            else:
-                testsize = len(Membership.objects.filter(group=g).exclude(user=u))
-                if (testsize > 0):
-                    m = Membership.objects.get(user=request.user, group=g)
-                    m.delete()
-                    return HttpResponseRedirect(reverse('list_groups_my'))
-                elif (s == 1):
-                    m = Membership.objects.get(user=request.user, group=g)
-                    m.delete()
-                    g.delete()
-                    return HttpResponseRedirect(reverse('list_groups_my'))
-                else:
-                    return render_to_response('groups/quit_group_confirm.html', {'group_id': group_id, 'group_name': g.name}, context_instance=RequestContext(request))
+        return render_to_response('groups/quit_group_confirm.html',
+                # TODO: show the user a list of all private events which will
+                # be lost for everyone
+                {
+                    'group_id': group_id,
+                    'group_name': group.name
+                },
+                context_instance=RequestContext(request))
 #        except:
-#            return render_to_response('error.html', {'title': 'error', 'message_col1': _("Quitting group failed") + "."}, context_instance=RequestContext(request))
+#            return render_to_response('error.html', {'title': 'error',
+#            'message_col1': _("Quitting group failed") + "."},
+#            context_instance=RequestContext(request))
 
 @login_required
 def group_quit_ask(request, group_id):
-    return group_quit(request, group_id, 0)
+    """ view to confirm of quiting a group """
+    return group_quit(request, group_id, False)
 
 @login_required
 def group_quit_sure(request, group_id):
-    return group_quit(request, group_id, 1)
+    """ view to confirm of quiting a group being sure"""
+    return group_quit(request, group_id, True)
 
 @login_required
 def group_add_event(request, event_id):
+    """ view to add an event to a group """
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You must be logged in to add an event to a group") + "."},
+                {
+                    'title': 'GridCalendar.net - error',
+                    'message_col1': _("You must be logged in to add an event \
+                            to a group")
+                },
                 context_instance=RequestContext(request))
-    e = Event.objects.get(id=event_id)
-    u = User(request.user)
-    if len(Group.objects.filter(members=u).exclude(events=e)) > 0:
+    event = Event.objects.get(id=event_id)
+    user = User(request.user)
+    if len(Group.objects.filter(members=user).exclude(events=event)) > 0:
         if request.POST:
-            f = AddEventToGroupForm(data=request.POST, u=u, e=e)
-            if f.is_valid():
-                for g in f.cleaned_data['grouplist']:
-                    calentry = Calendar(event=e, group=g)
+            form = AddEventToGroupForm(
+                    data=request.POST, user=user, event=event)
+            if form.is_valid():
+                for group in form.cleaned_data['grouplist']:
+                    calentry = Calendar(event=event, group=group)
                     calentry.save()
                 return HttpResponseRedirect(reverse('list_groups_my'))
             else:
-                request.user.message_set.create(message='Please check your data.')
+                request.user.message_set.create(
+                        message='Please check your data.')
         else:
-            f = AddEventToGroupForm(u=u, e=e)
+            form = AddEventToGroupForm(user=user, event=event)
         context = dict()
-        context['form'] = f
-        return render_to_response('groups/add_event_to_group.html', context_instance=RequestContext(request, context))
+        context['form'] = form
+        return render_to_response('groups/add_event_to_group.html',
+                context_instance=RequestContext(request, context))
     else:
         return render_to_response('error.html',
-                    {'title': 'error',
-                    'message_col1': _("This event is already in all groups that you are in, so you can't add it to any more groups.") },
+                    {
+                        'title': 'error',
+                        'message_col1': _("This event is already in all \
+                                groups that you are in, so you can't add it \
+                                to any more groups.")
+                    },
                     context_instance=RequestContext(request))
 
 @login_required
 def list_events_group(request, group_id):
-    if ((not request.user.is_authenticated()) or (request.user.id is None)):
-        return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You must be logged in to view events in a group") + "."},
-                context_instance=RequestContext(request))
-    else:
-        group = Group.objects.filter(id=group_id)
-        events = Event.objects.filter(group=group)
-        hash = hashlib.sha256("%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
-        return render_to_response('groups/group.html',
-                {'title': 'group page', 'group_id': group_id, 'user_id': request.user.id, 'hash': hash, 'events': events},
-                context_instance=RequestContext(request))
+    """ view that lists the events of group """
+    group = Group.objects.filter(id=group_id)
+    events = Event.objects.filter(group=group)
+    hashvalue = hashlib.sha256(
+            "%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
+    return render_to_response('groups/group.html',
+            {
+                'title': 'group page',
+                'group_id': group_id,
+                'user_id': request.user.id,
+                'hash': hashvalue,
+                'events': events
+            },
+            context_instance=RequestContext(request))
 
 @login_required
 def group_invite(request, group_id):
+    """ view to invite a user to a group """
     if ((not request.user.is_authenticated()) or (request.user.id is None)):
         return render_to_response('error.html',
-                {'title': 'error', 'message_col1': _("You must be logged in to invite someone to a group") + "."},
+                {
+                    'title': 'error',
+                    'message_col1': _("You must be logged in to invite \
+                            someone to a group")
+                },
                 context_instance=RequestContext(request))
     else:
-        g = Group.objects.get(id=group_id)
+        group = Group.objects.get(id=group_id)
         if request.POST:
-            username_dirty=request.POST['username']
+            username_dirty = request.POST['username']
             formdata = {'username': username_dirty,
                         'group_id': group_id}
             form = InviteToGroupForm(data=formdata)
             if form.is_valid():
                 username = form.cleaned_data['username']
                 try:
-                    u = User.objects.get(username=username)
+                    user = User.objects.get(username=username)
                 except User.DoesNotExist:
                     return render_to_response('error.html',
-                        {'title': 'error', 'message_col1': _("There is no user with the username: ") + username + "."},
+                        {
+                            'title': 'error',
+                            'message_col1': _("There is no user with the \
+                                username: ") + username
+                        },
                         context_instance=RequestContext(request))
-                GroupInvitation.objects.create_invitation(host=request.user, guest=u, group=g , as_administrator=True)
+                GroupInvitation.objects.create_invitation(host=request.user,
+                        guest=user, group=group , as_administrator=True)
                 return HttpResponseRedirect(reverse('list_groups_my'))
             else:
-                request.user.message_set.create(message='Please check your data.')
+                request.user.message_set.create(
+                        message='Please check your data.')
         else:
 #            form = InviteToGroupForm(instance=invitation)
 #            formdata = {
@@ -193,18 +242,20 @@ def group_invite(request, group_id):
 #            form = InviteToGroupForm(data=formdata)
             form = InviteToGroupForm()
         return render_to_response('groups/invite.html',
-                {'title': 'invite to group', 'group_id': group_id, 'form': form},
+                {
+                    'title': 'invite to group',
+                    'group_id': group_id,
+                    'form': form
+                },
                 context_instance=RequestContext(request))
 
 @login_required
 def group_invite_activate(request, activation_key):
-    """
-    A user clicks on activation link
-    """
-    i = GroupInvitation.objects.get(activation_key=activation_key)
-    group_id = i.id
-    a = GroupInvitation.objects.activate_invitation(activation_key)
-    if a:
+    """ A user clicks on activation link """
+    invitation = GroupInvitation.objects.get(activation_key=activation_key)
+    group_id = invitation.id
+    activation = GroupInvitation.objects.activate_invitation(activation_key)
+    if activation:
         return render_to_response('groups/invitation_activate.html',
                 {'title': 'activate invitation', 'group_id': group_id},
                 context_instance=RequestContext(request))

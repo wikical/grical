@@ -44,7 +44,7 @@ urlpatterns = patterns('', # pylint: disable-msg=C0103
 )
 
 urlpatterns += patterns('',
-        url(r'^h/help/', 'gridcalendar.events.views.help', name="help"),
+        url(r'^h/help/', 'gridcalendar.events.views.usage', name="help"),
         url(r'^h/legal_notice/', 'gridcalendar.events.views.legal_notice',
                 name="legal_notice"),
 )
