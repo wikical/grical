@@ -24,13 +24,22 @@
 
 import os
 
-# See how settings_local.py should look like at the end of this file
+# absolute path to this directory
+PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
+PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
 
+# See how settings_local.py should look like at the end of this file
 try:
     from settings_local import * # pylint: disable-msg=W0401,W0614
 except ImportError:
     pass
 
+# needed to avoid an error when running 'manage.py validate' complaining that
+# DEBUG is used in this file but not defined
+try:
+    DEBUG
+except NameError:
+    DEBUG = True
 
 # =====================================================================
 # specific GridCalendar settings
@@ -120,7 +129,8 @@ except NameError:
     pass
 else:
     if DEBUG:
-        MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+        MIDDLEWARE_CLASSES += \
+                ('debug_toolbar.middleware.DebugToolbarMiddleware',)
         INSTALLED_APPS += ('debug_toolbar',)
 
 
@@ -199,11 +209,6 @@ except NameError:
 #import os
 #
 #VERSION = 'alpha'
-#
-## absolute path to this directory
-#PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
-## the name of the directory
-#PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
 #
 ## ======================================================================
 ## debug settings
