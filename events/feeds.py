@@ -36,7 +36,7 @@ from django.template import RequestContext
 from django.contrib.auth.models import User
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 
-import gridcalendar.settings
+import gridcalendar.settings as settings
 from gridcalendar.events.models import Event, Filter, Group, Membership
 from gridcalendar.events.lists import list_search_get
 from gridcalendar.events.icalendar import ICalendarFeed, EVENT_ITEMS
