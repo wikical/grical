@@ -1,11 +1,10 @@
-.. This file is written in ReStructuredText, and is part of the generated web content
+.. This file is written in ReStructuredText, and is used for generating the web content
 
-**GridCalendar** (abbreviated as *gridcal*), is a web site where people store quickly a few information about interesting events, so that others can also easily know about it. Gridcal makes easy and fast for its users to store interesting events in its own external calendars.
+**GridCalendar** (abbreviated as *gridcal*), is an open web where people store quickly a few information about interesting events, so that others can also easily know about them. Gridcal makes easy and fast for its users to get notified and store interesting events in its own external calendars.
 
-Once you have an account, you can create a group and invite others. You can also become a member of an already created groups. Members of groups can add events to their groups, which are seen only by the group members if the event is marked as private. Anyon can also mark public events as interesting for a group, so that the members of the group will be notified.
+Gridcal also has groups. Once you have an account, you can create a group and invite others. You can also become a member of an already created group after you log in. Members of groups can add private events to their groups, which are seen only by the group members.
 
-This site offers its content as `Free content`_ except for events marked as private. This site is
-run by `Free Software`_ and respects the TIO_ guidelines of the FFII_
+This site offers its content as `Free content`_ except for events marked as private. This site is run by `Free Software`_ and respects the TIO_ guidelines of the FFII_
 
 .. _TIO:            http://tio.ffii.org/
 .. _FFII:           http://www.ffii.org
