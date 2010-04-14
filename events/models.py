@@ -411,7 +411,7 @@ class Event(models.Model):
             elif keyword == 'city' and self.city:
                 to_return += keyword + ": " + unicode(self.city) + "\n"
             elif keyword == 'postcode' and self.postcode:
-                to_return += keyword + ": " + unicode(self.code) + "\n"
+                to_return += keyword + ": " + unicode(self.postcode) + "\n"
             elif keyword == 'urls':
                 urls = EventUrl.objects.filter(event = self.id)
                 if len(urls) > 0:
