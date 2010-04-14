@@ -387,11 +387,11 @@ class Event(models.Model):
             if keyword == 'title':
                 to_return += keyword + ": " + unicode(self.title) + "\n"
             elif keyword == 'start':
-                to_return += ''.join(
-                        keyword, ": ", self.start.strftime("%Y-%m-%d"), "\n")
+                to_return += ''.join([
+                        keyword, ": ", self.start.strftime("%Y-%m-%d"), "\n"])
             elif keyword == 'end' and self.end:
-                to_return += ''.join(
-                        keyword, ": ", self.end.strftime("%Y-%m-%d"), "\n")
+                to_return += ''.join([
+                        keyword, ": ", self.end.strftime("%Y-%m-%d"), "\n"])
             elif keyword == 'country' and self.country:
                 to_return += keyword + ": " + unicode(self.country) + "\n"
             elif keyword == 'timezone' and self.timezone:
@@ -417,8 +417,8 @@ class Event(models.Model):
                 if len(urls) > 0:
                     to_return += "urls:\n"
                     for url in urls:
-                        to_return += ''.join(
-                                "    ", url.url_name, ': ', url.url, "\n")
+                        to_return += ''.join([
+                                "    ", url.url_name, ': ', url.url, "\n"])
             elif keyword == 'deadlines':
                 deadlines = EventDeadline.objects.filter(event = self.id)
                 if len(deadlines) > 0:
@@ -437,7 +437,7 @@ class Event(models.Model):
                     to_return += "sessions:"
                     for session in sessions:
                         if session.session_name == 'session':
-                            to_return = "".join(
+                            to_return = "".join([
                                 to_return,
                                 " ",
                                 session.session_date.strftime("%Y-%m-%d"),
@@ -445,10 +445,10 @@ class Event(models.Model):
                                 session.session_starttime.strftime("%H:%M"),
                                 "-",
                                 session.session_endtime.strftime("%H:%M"),
-                                '\n')
+                                '\n'])
                     for session in sessions:
                         if not session.session_name == 'session':
-                            to_return = "".join(
+                            to_return = "".join([
                                 to_return,
                                 "    ",
                                 session.session_name,
@@ -458,7 +458,7 @@ class Event(models.Model):
                                 session.session_starttime.strftime("%H:%M"),
                                 "-",
                                 session.session_endtime.strftime("%H:%M"),
-                                '\n')
+                                '\n'])
             elif keyword == 'groups' and self.event_in_groups:
                 calendars = Calendar.objects.filter(event = self.id)
                 if len(calendars) > 0:
