@@ -5,17 +5,17 @@
 # Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
-# 
+#
 # GridCalendar is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
-# 
+#
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License
 # for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
@@ -761,6 +761,7 @@ class Event(models.Model):
             EventUrl.objects.filter(event = event_id).delete()
             EventDeadline.objects.filter(event = event_id).delete()
             EventSession.objects.filter(event = event_id).delete()
+            event_form.save()
 
         for event_url_data in event_url_data_list2:
             event_url_form = EventUrlForm(event_url_data)
