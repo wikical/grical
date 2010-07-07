@@ -1056,7 +1056,8 @@ class Group(models.Model):
             return False
 
     def is_event_in_calendar(self, event):
-        return False
+        return False # TODO: what is this?!
+
 
 class Membership(models.Model):
     """Relation between users and groups."""
@@ -1067,15 +1068,20 @@ class Membership(models.Model):
     is_administrator = models.BooleanField(
             _(u'Is administrator'), default = True)
     """Not used at the moment. All members of a group are administrators."""
-    new_event_email = models.BooleanField(_(u'New event email'), default = True)
+    new_event_email = models.BooleanField(_(u'New event notification'), default = True)
+    """If True a notification email should be sent to the user when a new event
+    is added to the group"""
     new_member_email = models.BooleanField(
-            _(u'email_member_email'), default = True)
+            _(u'New member notification'), default = True)
+    """If True a notification email should be sent to the user when a new
+    member is added to the group"""
     date_joined = models.DateField(
             _(u'date_joined'), editable = False, auto_now_add = True)
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         unique_together = ("user", "group")
         verbose_name = _(u'Membership')
         verbose_name_plural = _(u'Memberships')
+
 
 class Calendar(models.Model):
     """Relation between events and groups."""
@@ -1089,6 +1095,7 @@ class Calendar(models.Model):
         unique_together = ("event", "group")
         verbose_name = _(u'Calendar')
         verbose_name_plural = _(u'Calendars')
+
 
 # Next code is an adaptation of some code in python-django-registration
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
