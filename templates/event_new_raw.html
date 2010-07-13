@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Create a new event" %}:</p>
+<div id="event_textarea_form">
+
+    <form action="" method="post">
+        <table>
+            <TEXTAREA Name="event_astext" rows="25" cols="80"></TEXTAREA>
+        <input type="submit" value={% trans "Save" %}>
+        </table>
+    </form>
+
+</div>
+
+<p>
+
+{% include "event_raw_example.html" %}
+
+</p>
+
+
+
+{% endblock %}
+
+
+
+{% block column3 %}
+{% endblock %}
+

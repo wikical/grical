@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block column1 %}
+{% trans "You have now joined the group" %}.
+
+
+<p>
+
+<a href="{% url list_events_group group_id %}">all events in this group</a>
+
+
+
+</p>
+
+
+{% endblock %}

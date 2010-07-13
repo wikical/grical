@@ -1,0 +1,40 @@
+.. This file is written in ReStructuredText and used to generate the contenct of some web pages
+
+Installation instructions for Debian based systems
+==================================================
+
+1. Install the following packages: `python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip postgresql python-vobject binutils postgresql-8.3 python-psycopg2 python-setuptools python-vobject`
+
+1. Edit `settings_local.py`
+
+1. As root edit your `/etc/postgresql/*/main/pg_hba.conf` file to include: `local all gridcalendar md5`
+
+1. Reload the configuration: `killall -HUP postgres`
+
+1. Create the GridCalendar `postgres` user with a password ::
+    $ su
+    # su postgres
+    postgres$ createuser --pwprompt gridcalendar
+    Enter password for new role:
+    Enter it again:
+    Shall the new role be a superuser? (y/n) n
+    Shall the new role be allowed to create databases? (y/n) y
+    Shall the new role be allowed to create more new roles? (y/n) n
+
+1. Create the gridcalendar database: ::
+    postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
+    Password:
+
+1. Install the Django tables: ::
+    $ cd /usr/local/gridcalendar/
+    $ python manage.py syncdb
+    ...
+    You just installed Django's auth system, which means you don't have any superusers defined.
+    Would you like to create one now? (yes/no): yes
+    ...
+
+1. If using Apache edit apache/django.wsgi and replace the path of the installation.
+
+1. If Apache is used, for development it is recommended to include the following line in `/etc/apache2/apache2.conf` ::
+        MaxRequestsPerChild 1
+   It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version.

@@ -1,0 +1,2741 @@
+
+url: http://www.blenderusers.at/
+title: Blender 3D UserDay 2010
+start: 2010-03-20
+tags: blender
+address: im Medienkunstlabor Graz (im Kunsthaus)
+
+t: Swiss Open Source Software Conference & Exposition
+acro: OpenExpo
+url: http://www.openexpo.ch/openexpo-2010-bern/
+start: 2010.03.24
+tags: linux oss floss foss community
+city: Bern
+
+start: April 27, 2010
+url: http://www.usenix.org/events/leet10/index.html
+t: 3rd USENIX Workshop on Large-Scale Exploits and Emergent Threats.
+tags: security software internet
+
+start: 2010-09-18
+t: Fros Camp
+url: http://www.froscamp.org/
+    call for projects: http://wiki.froscamp.org/2010:Call_for_Projects
+    call for papers: http://wiki.froscamp.org/2010:Call_for_Papers
+city: Zurich
+
+url: http://www.facebook.com/event.php?eid=213462013928&ref=nf
+title: Opendata Hackday : Hack the Government
+tags: hackday opendata opengovernment transparency participation
+comment: Gastgeber: Opendata Network (opendata-network.org)
+start: 2010-04-17+18
+city: Berlin
+
+#####################################################################
+#####################################################################
+#####################################################################
+
+https://eventioz.com/search?search=linux&commit=Search
+
+2010-04-30-01
+http://roflcon.org/
+cambridge, mass., usa
+
+2010-05-22-24
+SigInt
+http://www.facebook.com/event.php?eid=297465032748&ref=nf
+Koeln, KOMED
+
+2010-05-13-16
+https://lug-camp-2010.de/
+schwabach
+2010-04-03 deadline anmeldung LUG Camp
+orga: lugcamp-orga@lusc.de
+loca:
+  https://lug-camp-2010.de/location/
+  Otto-Schrimpff-Str. 4, 91154 Roth
+  (bei Festplatz, Bahnhof "Roth-Lohgarten"!)
+  GPS-Koordinaten: N: 49.24389, E: 11.09482
+
+2010-02-20 Sat 13h
+Budapest, Hungary
+Opening Party of H.A.C.K.
+http://hspbp.org/opening-party-en
+
+http://jandbeyond.org/
+Joomla and Beyond
+2010-05-31-01
+Wiesbaden
+
+2010-07-06-11
+http://2010.rmll.info/
+RMLL LSM Bordeaux
+
+2010-05-24-28
+UPA Conference
+http://www.upa2010.org
+Hotel Bayerischer Hof
+Munich, Germany
+"Embracing Cultural Diversity - User Experience Design for the World”
+registration is OPEN through 11:55pm ET, 4 February.
+
+FAST '10 Work-in-Progress Reports and Poster Session submissions
+deadline is Thursday, January 28, 2010. Find out more at:
+http://www.usenix.org/events/fast10/activities.html
+
+2010-07-13-16 Tue-Fri
+LinuxSymposium.org
+Ottawa, Canada
+
+2nd Open Source Data Center Conference,
+23-24 June 2010: Call for Papers!
+http://www.netways.de/en/osdc/y2010/cfp/
+
+2010-02-06+07
+FOSDEM 2010
+Brussels, Belgium
+http://www.fosdem.org/2010/
+
+2010-02-19-21
+SCALE 8x
+Los Angeles, California
+http://www.socallinuxexpo.org/scale8x/
+
+2010-02-23-26
+USENIX FAST '10
+San Jose, California
+http://www.usenix.org/events/fast10/
+
+2010-03-30-01
+Where 2.0
+San Jose, California
+http://en.oreilly.com/where2010
+
+2010-04-07
+IT360° Conference & Expo 2010
+Toronto, Ontario, Canada
+http://www.it360.ca/
+
+2010-04-10
+Texas Linux Fest
+Austin, Texas
+http://www.texaslinuxfest.org/
+
+http://ph-neutral.darklab.org/
+2010-05-28-30 Fri-Sun
+
+https://www.shmoocon.org/news.html
+
+Vienna.pm (vienna.pm.org) veranstaltet vom
+10. bis 12.4. den diesjaerigen Perl QA Hackathon
+(siehe http://qa-hackathon.org/ fuer Infos zum letzten Jahr).
+
+2010-04-02-05
+EasterHegg 2010 "follow the black rabbit"
+https://cccv.pentabarf.org/submission/EH2010/
+EineWeltHaus Muenchen
+Schwanthalerstr. 80, 80336 Muenchen
+http://tinyurl.com/muenchen-eine-welt-haus
+48.156582,11.543541
+deadline: 2010-02-21 So
+
+2010-05-03-07 Goettingen SambaXP CfP!
+http://www.linux-magazin.de/content/view/full/48490
+
+http://www.eth-0.nl/ !
+
+neue kalender:
+https://developer.berlios.de/calendar/
+www.webtermine.at
+
+alternative input via email to person:
+  Anmeldung Ihrer Veranstaltung über:
+  kalender(at)mauerfall09.de
+
+= www.eduvent.at =
+
+homepage:
+table with desc+loca+time+cats
+sorted by today and coming days
+where cats (categories) are bubbles
+which indicate the category.
+
+categories:
+Vortrag, Diskussion, Workshop/Seminar, Tagung,
+Kongress, Konferenz, Messe/Infoveranstaltung
+
+categories can be turned on/off by radio buttons.
+the automatic update is easy/fast/nice.
+
+the title/description has a link a page
+which is local to the site:
+http://www.eduvent.at/eduvents/NNN
+
+http://twitter.com/eduvent
+
+= BUGS =
+
+= TO Add =
+
+TOOLS:  http://codespeak.net/icalendar/
+SOURCE: http://opendesktop.org/events/
+SOURCE: http://www.linux.com/community/events/categoryevents/1
+SOURCE: http://www.kde-look.org/events/?mode=1
+
+= Special Days =
+
+http://www.talklikeapirate.com/
+sysadmin appreciation day
+software freedom day
+documentfreedomday
+towelday
+
+CLOCA BEGIN
+== Future ==
+
+=== 2010 Jul ===
+summ: 2010-07-14-16 in Vienna (AT): International Conference on Computers Helping People with Special Needs (ICCHP)
+titl: International Conference on Computers Helping People with Special Needs
+abbr: ICCHP
+time: 2010-07-14-16 Wed-Fri
+tags:
+city: Vienna (AT)
+addr: Vienna University of Technology.
+home: http://www.icchp.org
+call: http://www.icchp.org/call
+dead: http://www.icchp.org/node/197
+more:
+  2010-01-01      Deadline for submitting STS
+  2010-02-01      Deadline for Papers/Extended Abstracts
+  2010-03-01      Notification of Acceptance
+  2010-03-15      Preliminary Programme
+  2010-03-15      Deadline for Young Researchers Consortium
+  2010-04-15      Deadline for Camera Ready Papers
+  2010-05-15      Notification of Acceptance, Young Researchers Consortium
+  2010-06-01      Deadline for Workshops, Tutorials and Seminars
+  2010-06-15      Deadline Nomination for ICCHP Award
+  2010-07-01      Deadline for Meetings, Presentations and Posters
+  2010-07-12+13   ICCHP 2010 Pre-Conference
+  2010-07-14-16   ICCHP 2010
+sign:
+  www.icchp.com  July 14-16, 2010
+  (Preconference July 12+13, 2010)
+  International Conference on
+  Helping People with Special Needs
+  at the Vienna University of Technology.
+  http://www.icchp.org/files/firstAnnouncement2010.pdf
+
+=== 2010 May ===
+summ: 2010-05-28+29 in Eisenstadt (AT): Linuxwochen
+titl: Linuxwochen Eisenstadt
+time: 2010-05-28+29
+tags:
+city: Eisenstadt (AT)
+home: http://eisenstadt.linuxwochen.at
+
+=== 2010 Jun ===
+=== 2010 Apr ===
+=== 2010 Mar ===
+
+summ: 2010-03-27 in Augsburg (DE): Linux Infotag
+titl: ...
+time: 2010-03-27 Sat
+tags:
+city: Augsburg (DE)
+home: http://www.luga.de/Aktuelles/LIT-2010/ (?)
+links: http://wiki.luga.de/LinuxInfotag2010/Orga/Zeitplanung
+
+summ: 2010-03-13+14 in Chemnitz (DE): Chemnitzer Linux Tage
+titl: Chemnitzer Linux Tage
+time: 2010-03-13+14 Sat+Sun
+tags:
+http://chemnitzer.linux-tage.de/2009/info/
+
+=== 2010 Feb ===
+
+summ: 2010-02-06+07 in Klagenfurt (AT): BarCamp Kärnten 2010
+titl: BarCamp Kärnten 2010
+time: 2010-02-06+07
+tags:
+http://www.facebook.com/event.php?eid=138219204244&ref=nf
+Titel:      BarCamp Kärnten 2010
+Motto:      Wissen vermehrt sich durch Teilung
+Gastgeber:  SiliconAlps
+Art:        Ausbildung - Workshop
+Beginn:     Samstag, 6. Februar 2010 um 09:00
+Ende:       Sonntag, 7. Februar 2010 um 17:00
+Ort:        Universität Klagenfurt
+Straße:     Universitätsstraße 65-67
+Stadt/Ort:  Klagenfurt, Austria
+Preis:      0
+
+summ: 2010-02-06+07 in Brussels (BE): 10th FOSDEM
+titl: FOSDEM
+abbr: FOSDEM
+time: 2010-02-06+07 Sat+Sun
+tags:
+city: Brussels (BE)
+home: http://www.fosdem.org/2010/
+call: http://fosdem.org/2010/call_for_stands
+mail: devrooms@fosdem.org
+list: http://lists.fosdem.org/mailman/listinfo/dist2010
+
+=== 2010 Jan ===
+
+=== 2009 Dec ===
+summ: 2009-12-27-30 in Berlin (DE): 26th Chaos Communication Congress (26C3)
+titl: 26th Chaos Communication Congress
+abbr: 26C3
+time: 2009-12-27-30 Sun-Wed
+tags:
+city: Berlin (DE)
+motto: Here be Dragons
+home: http://events.ccc.de/congress/2009/
+call: https://cccv.pentabarf.org/submission/26C3
+timeline:
+  2009-10-09 Fri: Submission due
+  2009-11-08 Sun: Final notification of acceptance
+  2009-11-27 Fri: Final papers due
+
+summ: 2009-12-05 in Birmingham (UK): BRUMCON 9
+titl: BRUMCON 9
+time: 2009-12-05
+tags:
+city: Birmingham (UK)
+home: http://www.brum2600.net/brumcon9/
+mott: Stroke Of Darkness
+loca: Menzies Strathallan Hotel, 225 Hagley Road, Edgbaston, Birmingham, B16 9RY
+
+summ: 2009-12-10+11 in Berlin (DE): 4. Secure Linux Administration Conference (SLAC)
+titl: 4. Secure Linux Administration Conference (SLAC)
+time: 2009-12-10+11
+  Do 10.12.2009 09:00 -
+  Fr 11.12.2009 16:00
+tags:
+city: Berlin (DE)
+home: http://www.heinlein-support.de/web/akademie/slac-2009/
+prog: http://www.heinlein-support.de/media/slac09/BR_SLAC-2009_WEB_Doppelseiten.pdf
+addr: Golden Tulip Berlin "Hotel Hamburg" - Landgrafenstraße 4, 10787 Berlin
+      www.goldentulipberlin.de info@goldentulipberlin.de
+fon:  +49-30-26.477-0
+fax:  +49-30-26.29394
+
+summ: 2009-12-07-13 in Poitiers (FR): make art 2009
+titl: make art 2009
+time:
+tags:
+city: Poitiers (FR)
+home: http://makeart.goto10.org/call/index.en.html
+makeart2009@goto10.org
+call: http://makeart.goto10.org/call/makeart-submissionform.odt
+.
+Timeline:
+  2009-07-22  Deadline call for proposals
+  2009-09-NN  Selected projects announced
+
+=== 2009 Nov ===
+
+summ: 2009-11-28 in Dornbirn (AT): 11. LinuxDay 2009
+titl: LinuxDay 2009
+time: 2009-11-28
+tags:
+city: Dornbirn (AT)
+home: http://ld.lugv.eu/
+addr: HTL Dornbirn (Vorarlberg) http://www.htldornbirn.at/
+call: 2009-09-27 Sun http://linuxday.at/node/14
+mail: papers@linuxday.at
+
+summ: 2009-11-27-29 in Paris (FR): EDUCATICE 2009
+titl: EDUCATICE 2009
+time: 2009-11-27-29
+tags:
+city: Paris (FR)
+home: http://www.logiciels-libres-tice.org/
+      http://www.logiciels-libres-cndp.ac-versailles.fr/
+
+summ: 2009-11-26 in Berlin (DE): utopica konferenz 09
+titl: utopica konferenz 09
+time: 2009-11-26
+tags:
+city: Berlin (DE)
+home: http://konferenz.utopia.de/
+mail: presse(at)utopia.de
+prog: http://www.utopia.de/userfiles/download/redaktion/programm09_091009.pdf
+venu: no info! :-/
+
+summ: 2009-11-21 in Brandenburg (DE): 6. Brandenburger Linux-Infotag (BLIT)
+titl: 6. Brandenburger Linux-Infotag
+acro: BLIT
+time: 2009-11-21 Sat 9-18h
+tags:
+city: Brandenburg (DE)
+home: http://blit.org/
+mott: Freiheit zum Anfassen
+dead: 2009-10-21
+addr: Institut für Informatik, Uni Potsdam, Potsdam-Griebnitzsee
+      Haus 6, Institut für Informatik, Universität Potsdam
+      Prof.Dr.Helmert Strasse, 14482 Potsdam;
+      http://tinyurl.com/6bykmy Sbhf Griebnitzsee.
+call: http://blit.org/mitmachen/
+      https://pentabarf.blit.org:8042/submission
+      mitmachen@blit.org
+blog: http://blit.org/blog/
+links: communities:
+      http://www.linuxwiki.de/LinuxVeranstaltungen/2009-11-21
+      http://wiki.debian.org/DebianEventsDe/2009/BLIT
+
+summ: 2009-11-19+20 in Warsaw (PL): CONFidence 2009 2.0
+titl: CONFidence 2009 2.0
+time: 2009-11-19+20
+tags:
+city: Warsaw (PL)
+home: http://200920.confidence.org.pl/
+blog: http://blog.confidence.org.pl/
+prof: http://200902.confidence.org.pl/agenda/
+venu: TODO!
+cost: 2009-09-15: 128 EURO (100 EURO for students)
+      2009-11-06: 185 EURO (165 EURO for students)
+      2009-11-16: 300 EURO for a last minute ticket
+      anytime:    300 EURO Supporting ticket
+
+summ: 2009-11-17-20 in Vienna (AT): In-Depth Security Conference (DeepSec)
+titl: In-Depth Security Conference
+abbr: DeepSec
+time: 2009-11-17-20
+tags:
+  AJAX, Web2.0, JavaScript, Cloud Computing, Code Analysis,
+  Cryptographical Weaknesses, Digital Espionage, Digital
+  Forensics, eVoting, Incident Response, Malware Research,
+  Messaging Technologies, Network Protocols, Operating Systems,
+  Secure Software Development, Security Management,
+  Social Engineering, Virtualisation.
+city: Vienna (AT)
+home: https://deepsec.net
+call: https://deepsec.net/cfp/
+orga: https://deepsec.net/contact/
+prog: https://deepsec.net/schedule/
+regi: https://deepsec.net/register/
+venu: https://deepsec.net/venue/
+more:
+ blog: http://deepsec.soup.io
+ chat: irc://irc.freenode.org/deepsec
+ mail: mailto:deepsec@deepsec.net
+ list: deepsec@lists.luchs.at (internal)
+ wiki: todo
+ shirts: http://deepsec.spreadshirt.co.uk/
+more:
+ timeline:
+ Preliminary:
+ 2009-04-01 CfP Begin
+ 2009-07-15 CfP End
+ 2009-07-31 Notification of Speakers
+ 2009-??-?? Early Bird
+ Trainings+Conference:
+ 2009-11-17 Day1/2 Security Trainings
+ 2009-11-18 Day2/2 Security Trainings
+ 2009-11-19 Day1/2 Conference
+ 2009-11-20 Day2/2 Conference
+ 2009-11-20 Party at metalab
+
+  timeline:
+  2009-04-01 CfP Begin https://deepsec.net/cfp/
+  2009-07-15 CfP End   https://deepsec.net/cfp/
+  2009-07-31 Notification of Speakers
+  2009-??-?? Early Bird
+  2009-11-20 Party at metalab
+  links:
+  facebook flickr twitter upcoming
+  shirts: http://deepsec.spreadshirt.co.uk/
+
+
+
+summ: 2009-11-17+18 in London (UK): Mobile User Experience 2009
+titl: Mobile User Experience 2009
+time: 2009-11-17+18 Tue+Wed
+tags:
+city: London (UK)
+home: http://upcoming.yahoo.com/event/4420440/
+Mobile User Experience 2009
+addr: The Ambassador's Hotel - 12, Upper Woburn Place, London
+
+summ: 2009-11-15+16 in Karlsruhe (DE): Open Source Expo (OSE)
+titl: Open Source Expo 2009
+time:
+tags:
+city: Karlsruhe (DE)
+home: http://it-republik.de/konferenzen/openexpo/projects/
+abbr: OSE
+dead: 2009-10-31 Sat
+links: http://www.webtechcon.de/ http://www.phpconference.com/
+
+summ: 2009-11-14+15 Sa+So in Liechtenstein: BarCamp Liechtenstein 2009
+titl: BarCamp Liechtenstein 2009
+time: 2009-11-14+15 Sat+Sun
+tags: #bcli09
+city: Vaduz (LI)
+home: http://www.barcamp.li/
+      http://www.barcamp.li/index.php/BarCamp_Liechtenstein_2009
+addr: Hochschule Liechtenstein http://www.hochschule.li/
+      Fürst-Franz-Josef-Strasse, 9490 Vaduz, Liechtenstein
+fon:  +423-265-11.11
+fax:  +423-265-11.12
+mail: info@hochschule.li
+
+summ: 2009-11-13+14 in Hamburg (DE): Barcamp Hamburg 3
+titl: Barcamp Hamburg 3
+time: 2009-11-13+14
+tags: #bchh09
+city: Hamburg (DE)
+home: http://www.barcamp-hamburg.de/
+addr: Otto (GmbH & Co KG) ?
+face: http://www.facebook.com/inbox/readupdates.php?id=105901577494
+
+summ: 2009-11-13-15 in Goeteborg (SE): Free Society Conference and Nordic Summit (FSCONS)
+titl: Free Society Conference and Nordic Summit
+abbr: FSCONS
+time: 2009-11-13-15 Fri-Sun
+tags:
+city: Goeteborg (SE)
+home: http://www.fscons.org/
+addr: Department of Applied IT, Forskningsgången 6, Göteborg, Sweden.
+more: http://wiki.debian.org/DebianNordic/MiniDebconf2009
+    http://live.fscons.org/
+    https://twitter.com/fscons2009
+    http://planning.fscons.org/index.php/Address_change_09
+
+summ: 2009-11-10-12 in Frankfurt (DE): Enterprise 2.0 SUMMIT
+titl: Enterprise 2.0 SUMMIT
+time: 2009-11-10-12 Tue-Thu
+tags:
+city: Frankfurt (DE)
+home: http://www.e20summit.com/about.html
+
+summ: 2009-11-07+08 in Bottrop (DE): OpenRheinRuhr
+titl: OpenRheinRuhr
+time: 2009-11-07+08 Sat+Sun
+tags:
+city: Bottrop (DE)
+home: http://www.openrheinruhr.de
+
+summ: 2009-11-03+04 in Berlin (DE): DroidCamp
+titl: DroidCamp
+time: 2009-11-03+04 Tue+Wed (Tue: 9am-7pm)
+tags:
+city: Berlin (DE)
+home: http://droidcon.de/ http://androidcamp-berlin.mixxt.de/
+addr: Dahlem Cube, Takustraße 39, 14195 Berlin
+      http://www.tagcrumbs.com/cornelius/placemarks/androidcon-the-dahlem-cube-nov-3rd4th-2009
+
+=== 2009 Oct ===
+
+summ: 2009-10-31 in Vienna (AT): To The End of the Night
+titl: To The End of the Night
+time: 2009-10-31
+tags:
+city: Vienna (AT)
+home: http://totheendofthenight.com/halloween/
+
+summ: 2009-10-31 Sa + 2009-11-01 So in Berlin (DE): Communitycamp 2009
+titl: Communitycamp 2009
+time: 2009-10-31-01 Sat+Sun
+tags: ccb09
+city:
+Berlin (DE)
+home: http://communitycamp.mixxt.de/networks/forum/category.815
+      Sessions: http://communitycamp.mixxt.de/networks/wiki/index.Sessions09
+addr: Cimdata Medienakademie
+
+summ: 2009-10-30-01 in Berlin (DE): Odyssee Con
+titl: Odyssee Con
+time: 2009-10-30-01 Fri-Sun
+tags:
+city: Berlin (DE)
+home: http://www.odyssee-con.de
+von 30.10.2009 01:00
+bis 01.11.2009 01:00
+
+summ: 2009-10-29-01 in Barcelona (ES): Free Culture Forum (FCF)
+titl: Free Culture Forum
+abbr: FCF
+time: 2009-10-29-01
+tags:
+city: Barcelona (ES)
+home: http://fcforum.net/
+more:
+  stream: http://fcforum.net/live
+  prog: http://fcforum.net/programa
+  desc:
+  on copyright
+  on the privatization of culture
+  on barriers to the circulation of knowledge
+  on greedy interests over the internet
+  and on people's right to develop freely
+  through the benefits offered by the digital era
+  civil society, you and me, have something to say.
+  even if nobody has asked us about our opinion
+  .
+  Free Culture Forum
+  Organization and Action·
+  an open universal gathering
+  to set down our demands ad to build the tools
+  that will allow us to make them a reality
+  barcelona, October 29 - November 1, 2009
+  http://fcforum.net/
+
+summ: 2009-10-28-30 in Dresden (DE): Open Solaris Developer Conference
+titl: Open Solaris Developer Conference
+time: 2009-10-28-30 Wed-Fri
+tags:
+city: Dresden (DE)
+home: http://www.osdevcon.org/2009/
+cost: Attendance is free.
+timeline:
+  2009-08-31 Call for papers closes
+  2009-10-27 OSUG meeting
+  2009-10-27 Tue Tutorials
+  2009-10-28 Wed Tutorials + Technial Program
+  2009-10-30 Thu             Technial Program
+
+summ: 2009-10-28+29 in Nuernberg (DE): Open Source Monitoring Conference (on Nagios) (OSMC) 2009
+titl: Open Source Monitoring Conference
+abbr: OSMC
+time: 2009-10-28+29 Wed+Thu
+tags:
+city: Nuernberg (DE)
+home: http://www.netways.de/osmc/
+
+summ: 2009-10-27-30 in Dresden (DE): Linux Kongress
+titl: Linux Kongress
+time: 2009-10-27-30 Tue-Fri
+tags:
+city: Dresden (DE)
+home: http://www.linux-kongress.org/2009/
+timeline:
+  2009-08-31 Call for Papers closes
+  2009-09-04 Notification to speakers
+  2009-09-10 Publication of program
+  2009-10-05 Final papers due
+  ----------
+  2009-10-27 Tutorials
+  2009-10-28 Tutorials
+  2009-10-29 Technical sessions
+  2009-10-30 Technical sessions
+
+summ: 2009-10-23-25 in San Diego (US,CA): ToorCon 11
+titl: ToorCon 11
+time: 2009-10-23-25
+tags:
+city: San Diego (US,CA)
+home: http://sandiego.toorcon.org
+addr: San Diego Convention Center
+
+summ: 2009-10-17 in Vienna (AT): DIGIDAY09
+titl: DIGIDAY09
+time: 2009-10-17 Sat
+tags:
+city:
+Vienna (AT)
+home: http://www.digitalks.at/2009/06/17/digiday09/
+
+summ: 2009-10-16-18 in Goettingen (DE): Ubuntu Conference (UBUCON)
+titl: Ubuntu Conference (UBUCON)
+time: 2009-10-16-18 Fri-Sun
+tags: #ubcde09
+city: Goettingen (DE)
+addr: Georg-August Universität Göttingen
+home:   http://ubucon.de/
+prog:   http://ubucon.de/programm
+wiki:   http://wiki.ubuntuusers.de/LocoTeam/Ubucon
+email:  {helfer,idee,info,sponsor,team}@ubucon.de
+.
+facebook:   http://www.facebook.com/home.php?ref=logo#/event.php?eid=98716779717&ref=nf
+identica:   http://identi.ca/group/ubuconde
+twitter:    #ubcde09
+xing:       https://www.xing.com/events/366239
+
+summ: 2009-10-15 10-17h in Potsdam (DE): Teaching the Web
+titl: Teaching the Web
+time: 2009-10-15 Thu 10-17h
+tags:
+city: Potsdam (DE)
+home: http://www.w3c.de/Events/2009/office-opening.de.html
+addr: Fachhochschule Potsdam ...
+desc: Eröffungsevent des deutsch-österr. W3C Büros
+prog: http://www.w3c.de/Events/2009/teaching-web-flyer.pdf
+.
+Registration: http://www.w3c.de/Events/2009/office-opening-registration.de.php
+Contact: Felix Sasaki felix.sasaki@fh-potsdam.de
+Flyer:   ...
+
+summ: 2009-10-03+04 in Dresden (DE): DatenSpuren
+titl: DatenSpuren
+time: 2009-10-03+04 Sat+Sun
+tags:
+city: Dresden (DE)
+addr: Kulturzentrum Scheune, Alaunstr. 36-40, 01099 Dresden
+  Lat: 51:03:59N (51.0663)
+  Lon: 13:45:05E (13.7515)
+  http://tinyurl.com/dresden-scheune
+  http://www.openstreetmap.org/?mlat=51.0663&mlon=13.7515&zoom=16&layers
+  http://maps.google.com/maps?q=scheune+kulturzentrum+dresden
+home: http://www.datenspuren.de
+tags: #ds09 ds2k9
+mott: "Hands Off - Privacy On"
+prog: http://www.datenspuren.de/2009/events.de.html Events (Vortraege)
+cost: free!
+desc: Themen: Hacking, Rechtslage, Digital Resistance, Informationsfreiheit,
+      Missbrauch von Daten, Sicherheit und Prävention, Datenspuren im
+      täglichen Leben, Technikfolgenabschätzung, Aufklärung und Diskurs.
+call: https://cccv.pentabarf.org/submission/DS2009
+mail: datenspuren@cccv.de
+
+summ: 2009-10-03+04 in Berlin (DE): SocialCamp
+titl: SocialCamp
+time: 2009-10-03+04 Sat+Sun (Sun: 9-17h)
+tags:
+city: Berlin (DE)
+home: http://www.socialcamp-berlin.de/
+addr: SelfHub: Erkelenzdamm 59-61, 10999 Berlin -- Portal 1, 3. OG
+
+summ: 2009-10-03+04 in Eindhoven (NL): Technical Dutch Open Source Event (T-DOSE)
+titl: Technical Dutch Open Source Event
+abbr: T-DOSE
+time: 2009-10-03+04 Sat+Sun
+tags:
+city: Eindhoven (NL)
+home: http://www.t-dose.org
+dead: 2009-08-31 Mon
+call: abstracts@t-dose.org
+      http://www.t-dose.org/t-dose/2009/cfp
+      http://www.t-dose.org/t-dose/files/t-dose-2009.pdf
+
+=== 2009 Sep ===
+
+summ: 2009-09-25-27 in Furtwangen (DE): RegioWikiCamp 2009
+titl: RegioWikiCamp 2009
+time: 2009-09-25-27 Fri-Sun (Fri: 12h - Sun 16h)
+tags:
+city: Furtwangen (DE)
+home: http://regiowikicamp.mixxt.eu/
+decs: "for all people interested in RegioWikis all over Europe"
+kind: convention
+orga: European Regiowiki Society
+addr: Hochschule Furtwangen University
+
+summ: 2009-09-23+24 in Copenhagen (DK): European Conference on ICT and Privacy
+time: 2009-09-23+24
+home: www.ict-privacy.dk
+titl: "The Net will not forget" - European Conference on ICT and Privacy
+tags: ...
+addr: the "Pyramid" of the Confederation of Danish Industry Headquarters
+      Dansk Industri, H. C. Andersens Boulevard 18, 1553 København V
+...:          http://www.ambafrance-dk.org/spip.php?article3458
+Committee:    http://www.ambafrance-dk.org/spip.php?article3455
+PDF:          http://www.ambafrance-dk.org/IMG/pdf/ITST_Summary-the-net-will-not-forget.pdf
+Program:      http://www.ambafrance-dk.org/spip.php?article3468 (Sessions)
+Registration: http://www.ambafrance-dk.org/spip.php?article3532
+Venue:        http://www.ambafrance-dk.org/spip.php?article3501
+Contact:      http://www.ambafrance-dk.org/spip.php?article3615
+Speakers:     http://www.ambafrance-dk.org/spip.php?article3456
+
+summ: 2009-09-21-23 in Portland (US,OR): LinuxCon
+titl: LinuxCon
+time: 2009-09-21-23 Mon-Wed
+from: 2009-09-21 08:00
+unto: 2009-09-23 17:00
+tags:
+city: Portland (US,OR)
+home: http://events.linuxfoundation.org/events/linuxcon
+addr: Portland Marriott Waterfront -- 1401 SW Naito Parkway, Portland, OR
+face: http://www.facebook.com/ext/share.php?sid=60660188326&h=qKmcv&u=WWU3r
+more: http://events.linuxfoundation.org/events/linuxcon/speakers
+
+summ: 2009-09-18+19 in Berlin (DE): GlobalFutureCamp
+titl: GlobalFutureCamp
+time: 2009-09-18+19 Fri+Sat
+      2009-09-18 Fri 08:30-18:00
+      2009-09-19 Sat 08:30-17:00
+tags:
+city: Berlin (DE)
+home: http://www.globalfuturecamp.de
+addr: Kalkscheune - Johannisstr. 2, 10117 Berlin - http://www.kalkscheune.de/
+wiki: http://www.globalfuturecamp.de/networks/wiki/index
+face: http://www.facebook.com/FutureChallenges?ref=pymk
+more:
+  Maximale  Teilnehmer: 250
+  Momentane Teilnehmer:  18
+
+summ: 2009-09-17+18 in Hamburg: ScoopCamp
+http://www.scoopcamp.de/
+
+summ: 2009-09-17-20 Do-So in Nuernberg: OpenSuse Conference
+http://news.opensuse.org/2009/07/16/register-today-for-the-opensuse-conference/
+http://conference.opensuse.org/schedule/
+http://conference.opensuse.org/registration/
+Tagungszentrum BFW Nürnberg
+Schleswiger Str. 101, 90427 Nürnberg
+
+summ: 2009-09-15-18 in Berlin: all2gethernow
+http://www.a-2-n.de/about-1
+all2gethernow invites music business, Internet and web2.0 experts, publishers,
+distributors, labels, managements, promoters and organisers, musicians and
+composers, public, private sector and collecting agency representatives and
+music listeners and fans to exchange experiences and discuss new concepts.
+The time has come to abandon old conventions and oppositions – together
+we can develop sustainable and future oriented business models. This
+is a call to engage, think ahead and out of the box: All together now!
+
+=== 2009 Aug ===
+
+summ: 2009-08-31-04 in Den Haag (NL): 3rd International ConTEXt User Meeting
+2009-08-31 -- 2009-09-04
+http://meeting.contextgarden.net/
+3rd International ConTeXt User Meeting
+The Hague in The Netherlands
+
+=== 2009 Jul ===
+
+summ: 2009-07-17-19 in Malmoe (SE): Little Computer People (LCP)
+http://lcp.c64.org/
+Malmoe, Sweden
+C64/Amiga/Atari/etc copy party
+Little Computer People (LCP).
+
+summ: 2009-07-07-09 in Vienna (AT): PlumberCon
+http://plumbercon.org/
+@werkzeugH
+http://www.werkzeugh.at/
+
+CLOCA END
+
+=== TODO ===
+
+http://distributions.freedesktop.org/wiki/Fosdem2010>
+FOSDEM
+2010-02-06+07
+
+http://www.amaze-festival.de/
+
+http://2009.pgday.eu/
+
+http://androidcamp-berlin.mixxt.de/
+
+http://piksel.no/p09/workshops
+
+transHackmeeting Pula
+
+nachzutragen:
+https://www.opensourcepress.de/community.html
+https://www.opensourcepress.de/events.php
+.
+http://opendesktop.org/events/?PHPSESSID=f4e6e9b43269c33db040fd3dcaeaab3a
+  my events, newest events, popular events, search events, add event
+
+
+2009-12-03-06
+http://www.roboexotica.org/
+Drinkomathalle, Missindorfstraße 21, 1140 Wien
+just beside Okto TV)!
+Pretty close to "Sargfabrik" (@ Goldschlaggasse).
+U3 Hütteldorferstraße, tram 49 Breitensee or S45 Breitensee
+office@roboexotica.org
++43-676-7831453
+@roboexotica #roboe09
+
+http://www.facebook.com/hackathon
+
+http://www.univention.de/absolventenpreis.html
+deadline: 2010-04-06
+Univention Absolventenpreis
+poster:
+http://www.univention.de/fileadmin/univention/absolventenpreis/poster_univention_a3_rz2.pdf
+
+http://www.facebook.com/l.php?u=http%253A%252F%252Fgnome.asia%252Fen%252Fparticipants%252F&h=a9bc0a0dfcd5ca64f75a462e4a10a604
+titl: GNOME Asia Summit
+date: 2009-11-20-22
+date: 2009-11-20 10:00 start
+date: 2009-11-22 18:00 end
+addr: Quang Trung Software Park
+addr: Tan Chanh Hiep Ward
+addr: Ho Chi Minh City, Vietnam
+home: http://gnome.asia/en/participants/
+face: http://www.facebook.com/event.php?eid=137924586055&index=1
+fon:  841286380690
+mail: mbehling@lxdesystems.com
+
+titl: Bug-Squashing-Party
+acro: BSP
+time: 2009-11-27-29
+tags: Debian, Bug-Squashing-Party
+city: Munich (DE)
+addr: Sonnenstr. 25 (U-Sendlinger_Tor)
+      http://tinyurl.com/limux-hq
+home: http://wiki.debian.org/BSP2009/Munich
+mail: area-muc@teams.debian.net
+
+2009-11-23+24  in Stockholm (SE): Future of the Internet Conference
+http://www.facebook.com/note.php?note_id=186349396292
+http://www.fi-stockholm.eu
+
+2009-10-24 10-18h
+http://www.linuxvar.it/wiki/LinuxDay2009
+Sala Consiliare
+Piazza Mazzini 16, Besnate (VA)
+
+2009-11-04 Wed in Vienna (AT): Zukunftsweb
+http://www.zukunftsweb.at/aktuell/auftaktveranstaltung
+im Realraum des Museumsquartier
+freier Eintritt
+
+www.seacure.it
+
+2009-10-22 15-19h in Berlin (DE): NoSQL Meetup
+http://nosqlberlin.com/
+
+2009-12-01-...
+http://foss.in/news/fossincfp-2009.html
+http://foss.in/register/speaker-registration-2009
+2009-10-16 | Call for Participation and start of submissions
+2009-10-26 | End of submissions proposals (23:59 GMT+0530)
+2009-10-31 | List of accepted submissions published
+2009-11-15 | Due date for final slides & talk materials (23:59 GMT+0530)
+2009-12-01 | Conference begins
+
+2009-11-01-06 in Baltimore (US,MD): 23rd Large Installation System Administration Conference (LISA09)
+23rd Large Installation System Administration Conference (LISA09)
+abbr: LISA09
+http://www.usenix.org/events/lisa09/index.html
+Registration: 2009-10-26 http://www.usenix.org/events/lisa09/registration/
+
+2010-02-06+07
+FOSDEM
+
+2009-11-08+09
+http://openrheinruhr.de/
+
+2009-10-04 in .. (XY): OpenTech
+"Working on Stuff that Matters"
+time: 10:30-18:00
+http://www.ukuug.org/opentech/
+University of London Union (ULU), Malet Street, London WC1E 7HY
+
+http://michael-prokop.at/blog/2009/07/08/cfp-linuxday-dornbirn-und-linuxwochenende-wien-2009/
+2009-11-28      LinuxDay in Dornbirn/Vorarlberg http://ld.lugv.eu/node/14
+2009-10-24+25   Linuxwochenende in Wien         http://linuxwochenende2009.luga.at/
+
+Design Festival Berlin 2009
+http://dmy-berlin.com/
+
+2009-05-14-17
+http://subversivmesse.net/
+Hafenhalle 09
+Fachmesse fuer Gegenkultur und Widerstandstechnologien
+
+http://www.froscon.de/programm/call-for-papers.html
+aka http://bit.ly/ll7mf
+2009-05-23 END Call for Papers.
+2009-06-08 Notification acceptance/denial
+2009-06-22 Final acceptance. Consent by speaker.
+2009-08-01 Deadline Slides
+2009-08-22 Day1/2 FrOSCon
+2009-08-23 Day2/2 FrOSCon
+http://is.gd/sfbm Xing
+http://is.gd/sfbs Facebook
+http://is.gd/sf9a MeinVZ
+Live Streaming?
+
+http://educamp.mixxt.de/
+
+FOSS.IN/2009
+"Show me the Code'
+2009-12-01-05
+Bangalore, India
+
+rwc09 - RegioWikiCamp 2009
+"for all people interested in RegioWikis all over Europe."
+Diese Veranstaltung findet voraussichtlich am 25. September 2009
+um 12:00 in Hochschule Furtwangen University statt.
+
+Mozilla/Maemo Developer Weekend in Copenhagen, May 30-31.
+http://tinyurl.com/dzussc
+http://blog.mozilla.com/addons/2009/04/03/developer-call-mozillamaemo-danish-weekend/
+
+https://fedoraproject.org/wiki/FUDConBerlin2009
+FUDCon
+Jun 26-28 2009
+
+Name: OpenRheinRuhr
+Date: 7./8. Nov 2009
+Place: Saalbau Bottrop
+http://www.openrheinruhr.de
+
+http://ph-neutral.darklab.org/
+May 29+30+31 2009
+http://ph-neutral.darklab.org/cgi-bin/submit.pl application form
+
+2009-03-21 World Wide Hug Party
+www.worldwidehugparty.org
+
+2009-02-23 Internet Blackout Day
+
+https://wiki.mozilla.org/MozCamp
+
+2009-04-10-13 Do-Mo
+http://easterhegg2009.hamburg.ccc.de/
+2009-02-22 24:00 deadline for CFP
+http://easterhegg2009.hamburg.ccc.de/call-for-papers.html
+
+2009-05-21-24
+http://lugcamp.de/
+
+2009-02-20+21
+http://freed.in/2009
+Jawaharlal Nehru University (JNU) in Delhi.
+http://freed.in/2009/delegate-registration
+
+SIGINT
+http://tinyurl.com/d7pfl7
+
+http://www.grancanariadesktopsummit.org/index.php/Main_Page
+The official site of the event Gran Canaria Desktop Summit:
+GUADEC + Akademy 2009, that will take place in
+Gran Canaria, Canary Islands, Spain, from 3rd
+(arrival - registration day) to 11th of July 2009.
+
+2009-09-06-09
+Tagung Mensch und Computer "Grenzenlos Frei"
+http://www2.hu-berlin.de/mc2009/index.html
+
+2009-05-23+24
+UXcamp Berlin '09
+tyoe: BarCamp
+http://berlinwebweek.de/2008/12/22/uxcamp-berlin-09-2352009/
+
+2009-05-25
+webinale 09
+
+2009-06-22
+Berlin Open 2009
+
+MailServer Konferenz
+http://www.heinlein-support.de/cfp-mk
+deadline: 2009-03-15
+
+Creative Commons Europe Meeting in Zürich
+Date: January 23 2009
+Time: 21:00 Uhr
+Place: Walcheturm, Kanonengasse 20, 8004 Zürich
+
+http://camp.kde.org/
+
+2009-07-07-11
+RMLL, Nantes (France)
+CfP English: http://2009.rmll.info/Call-for-communication-2009-topic.html
+2009-03-01 deadline for RMLL
+
+https://eof.name/computerhackernacht/
+
+2009-01-17+18
+DrupalCamp, Köln
+http://drupalcamp.de/
+
+2009-01-24
+Swiss TYPO3 Usergroup Conference, Olten
+http://swiss-tug.ch/
+
+2009-01-27-29
+Open Source Meets Business, Nürnberg
+http://www.heise.de/events/2009/open_source_meets_business/
+
+2009-02-05
+Meet Magento, Leipzig
+http://www.meet-magento.de/
+
+2009-02-14
+Wordcamp 2009, Jena
+http://wordcamp.de/
+
+2009-02-17+18
+Social Media FORUM, Hamburg
+http://www.socialmediaforum.de/
+
+2009-03-03-08
+CeBIT 2009, Hannover
+http://www.cebit.de/
+
+2009-03-14+15
+Chemnitzer Linux-Tage, Chemnitz
+http://chemnitzer.linux-tage.de/2009/info/
+
+2009-03-28+29
+BarCampRuhr2, Essen
+http://www.barcampruhr.de/
+
+2009-04-01+02
+OpenExpo 2009, Bern
+http://www.openexpo.ch/openexpo-2009-bern/
+
+2009-04-01-03
+"Shift Happens"
+re:publica'09, Berlin
+http://www.re-publica.de/09/information/
+http://www.re-publica.de/09/mitmachen/ cfp
+
+2009-05-05+06
+next conference 2009, Hamburg
+http://www.next-conference.com/next09/
+
+2009-06-15-17
+IICO-Kongress, Berlin
+http://www.iico.de/
+
+2009-02-07+08
+2009-02-07 Day1/2 Klagenfurt.at: barcamp
+2009-02-06 Day2/2 Klagenfurt.at: barcamp
+http://www.barcamp.at/BarCamp_Klagenfurt_2009
+BarCamp Klagenfurt 2009 - barcamp.at
+
+2009 08 22 00 Day1/2 Bonn.de: FrOSCOn
+2009 08 23 00 Day2/2 Bonn.de: FrOSCOn
+http://de.wikipedia.org/wiki/FrOSCon#FrOSCon_2009
+
+2009-01-22 Do
+http://ubuntu-berlin.de/node/77
+Vortrag: Die tägliche Arbeit mit Ubuntu erledigen.
+
+MANIAC Challenge'09, March 8-9,
+PeerCom 2009 Galveston, Texas.
+http://www.maniacchallenge.org/
+
+2009-06-24-27
+http://www.linuxtag.org/2009/
+2009-01-31 deadline for LinuxTag 2009
+
+2009-08-22+23 Sa+So FrOSCon
+
+2009-01-27 KDE Release Party
+http://wiki.kde.org/tiki-index.php?page=KDE+4.2+Release+Party
+
+2008-12-20 DEADLINE for OpenExpo Schweiz
+2009-04-01 Day1/2 Bern.ch: OpenExpo Schweiz
+2009-04-02 Day2/2 Bern.ch: OpenExpo Schweiz
+Source Veranstaltung der Schweiz dabei sein? Noch bis *diesen Samstag,
+20. Dezember 2008* können Referate und Projektstände eingereicht und
+Firmenstände und Sponsoring-Packages erworben werden für die kommende
+OpenExpo am 1. und 2. April 2009 in Bern. Alle Informationen und
+Anmeldeformulare sind zu finden auf
+http://www.openexpo.ch/openexpo-2009-bern/
+
+2009-10-09+10
+"Alltagspraktiken und Überwachung - Überwachungspraxen im Alltag"
+2009-06-15 abstracts@surveillance-studies.org
+http://www.kultur.uni-hamburg.de/technikforschung/konsum/aktuell_tagung09.html
+cfp: http://www.kultur.uni-hamburg.de/technikforschung/konsum/callforpapers_tagung09.pdf
+Tagung am Institut für Volkskunde/Kulturanthropologie der Universität
+Hamburg, Forschungskolleg Kulturwissenschaftliche Technikforschung
+
+2009-07-02-04
+HyperKult 18 - "The Cloud"
+Rechenzentrum der Leuphana Universität Lüneburg
+21332 Lüneburg
+Fachgruppe "Computer als Medium" im Fachbereich
+"Informatik und Gesellschaft" der
+Gesellschaft für Informatik e.V.
+
+2009-01-24+25
+http://tagung.diegedankensindfrei.org/
+
+22./23. Juni 2009 im Marshall Haus, Messe Berlin
+http://www.berlin-open.org/presse.html
+2008-12-15 expose'
+2009-04-13 beitrag
+2009-06-22+23 Berlin Open
+
+
+DeepSec 2009:
+2009-01/02 Announcement of the exact date and location.
+2009-03    Call for papers
+2009-03/04 Pre-registration through online-booking.
+2009-09    CfP ends, Preliminary schedule
+2009-10    Final schedule
+2009-11-XX Vienna.at DeepSec
+
+hackmeet.org
+
+http://de.amiando.com/MBC09.html
+http://www.mbc09.de/
+
+ 7.- 8. Februar 2009 in Brüssel:    FOSDEM '09
+ 3.- 8. März    2009 in Hannover:   LinuxPark auf der CeBIT
+17.-18. März    2009 in Hamburg:    16. DFN-CERT Workshop
+23.-27. März    2009 in Amsterdam:  ApacheCon Europe
+29.-30. April   2009 in Nürnberg:   Open Source Data Center Conference
+
+
+2009-01-17-19
+drupalcamp
+http://drupalcamp.de/2009/cologne/location
+GFU Cyrus AG, Taubenholzweg Saal1, 51105 Köln
+http://www.gfu.net/
+
+Ein paar Hamburger werden dabei sein.
+Samstag, 24.-25.01.2009:
+9. Elmshorner Computertage
+http://ect.cceev.de/
+http://www.cceev.de/
+an der Gesamtschule Elmshorn
+
+http://www.re-publica.de/09/
+2009-04-01-03 Berlin kalkscheune.
+
+http://www.opensourcecamp.org/
+
+2009-01-17+18 http://drupalcamp.de/
+2009-03-28+29 LUGA
+
+http://www.ostc.de/events.html#Veranstaltungen2009
+
+http://www.begeistert.org/faq
+
+BeGeistert 019 11th & 12th October 2008.
+BeGeistert is open from 9:30 to 19:00.
+Youth Hostel in Düsseldorf in Germany.
+Düsseldorfer Straße 1, 40545 Düsseldorf.
+
+LinuxWochen 2009:
+2008-11-16 LinuxWochen 2009 CfP release
+2009-02-14 LinuxWochen 2009 CfP deadline
+2009-MM-DD LinuxWochen 2009 speaker notification
+2009-MM-DD LinuxWochen 2009 schedule online
+2009-04-16 LinuxWochen 2009 Day1/3
+2009-04-17 LinuxWochen 2009 Day2/3
+2009-04-18 LinuxWochen 2009 Day3/3
+
+2009-04-15    Wed     Krems an der Donau Uni
+2009-04-16-18 Thu-Sat Wien  im Rathaus deadline: 21.Feb
+2009-04-23-25 Thu-Sat Linz  an der Kunstuniversität
+2009-04-25    Sat     Graz  im FH Joanneum
+2009-05-08+09 Fri+Sat Eisenstadt an der FH
+
+http://www.jdll.org/
+
+2009 03 10 00 Tue Day1/4: Karlsruhe.de GUUG FFG
+2009 03 11 00 Wed Day2/4: Karlsruhe.de GUUG FFG
+2009 03 12 00 Thu Day3/4: Karlsruhe.de GUUG FFG
+2009 03 13 00 Fri Day4/4: Karlsruhe.de GUUG FFG
+GUUG FFG 2009
+http://guug.de/ffg/cfp.html -->
+http://www.guug.de/veranstaltungen/ffg2009/cfp.html
+Annahmeschluss für Abstracts: 14.12.2008
+Mitteilung über (nicht) akzeptierte Beiträge an die Autoren: 04.01.2009
+Letzter Abgabetermin für die druckfertigen Papers: 19.02.2009
+Tutorien:  10./11.03.2009
+Konferenz: 12./13.03.2009
+Ort: Hochschule karlsruhe.  http://www.hs-karlsruhe.de/
+
+2009:
+Elmshorner Computer Tage
+http://ect.cceev.de
+
+=== Lookup ===
+Lookup required.
+
+2009-10-15-17
+http://blogworldexpo.com/
+Las Vegas
+
+http://pumpcon.org/
+
+2009-10-17
+http://metalab.at/wiki/Journey_to_the_End_of_the_Night
+journeyvienna.at
+
+http://joomladays.nl
+http://www.visionsummit.org/362.html
+http://hackteria.cc
+http://www.opensqlcamp.org/
+http://lac.stackingdwarves.net
+http://bootstrap.pl/about-us/
+http://debconf9.debconf.org/
+http://pycon.fr
+http://codedcultures.com
+http://www.netaudioberlin.de/dayprogram/
+http://fosdem.org/2010/call_for_main_tracks
+http://www.openworldforum.org/
+http://debconf9.debconf.org/
+http://dyne.org/tcpc
+http://linuxwochenende2009.luga.at/
+http://musichackday.org/
+http://pycon.fr/
+http://r09.railsrumble.com/
+http://sandiego.toorcon.org/
+http://www.brucon.org/
+http://www.curucamp.org Central European Ruby Camp
+http://www.eth-0.nl/
+http://www.globalfuturecamp.de/
+http://www.hackerspace.be/hsf2009
+http://www.ukuug.org/events/eurobsdcon2009/
+http://www.warpstock.eu/
+
+2009-10-19-23
+http://www.openaccessweek.org/
+Open Access Week
+.
+http://open-access.net/de/aktivitaeten/internationale_open_access_week/
+
+Geneva
+Jun3-5
+LinuxDays
+
+== Past ==
+
+2009-05-15+16 in Krakow (PL): CONFidence 2009
+http://2009.confidence.org.pl/
+http://2009.confidence.org.pl/o-confidence
+
+2009-04-25+26 in Dresden (DE): mobile camp
+http://barcampdresden.mixxt.de/
+Nöthnitzer Str. 46, 01187 Dresden
+erste BarCamp mit Fokussierung auf mobile Technologien
+an der TU Universität Dresden, Fakultät Informatik
+
+2009-06-02-05 in San Francisco (US,CA): JavaOne
+Java (Tabaksmuseum) technology
+San Francisco
+http://p.sf.net/sfu/p
+http://java.sun.com/javaone/index.jsp?cid=J9JMT32
+
+2O00-06-06+07 in Dornbirn (AT): BarCamp Dornbirn
+http://www.barcamp.at/BarCamp_Dornbirn_2009
+Dornbirn, Voralberg (Österreich)
+tags: #bcd09
+
+2009-06-26-30 in Paris (FR): Hacker Space Festival (HSF)
+http://www.hackerspace.net/
+Hacker Space Festival (HSF)
+/tmp/lab # Paris # 26-30 June 2009
+2009-05-01 deadline http://www.hackerspace.net/cfp
+
+2009-05-25-27 im BCC: webinale.de
+business, design, development
+
+2009-07-10-12 in Amsterdam (NL): OSM State of the Map
+http://www.stateofthemap.org/
+2009-07-10 Fri Day1/3 Amsterdam.nl: OSM State of the Map
+2009-07-11 Sat Day2/3 Amsterdam.nl: OSM State of the Map
+2009-07-12 Sun Day3/3 Amsterdam.nl: OSM State of the Map
+
+2009-05-20-22 in Vienna (AT): Hackathon
+http://metalab.at/wiki/Hackathon
+
+2009-05-22-24 in Cologne (DE): SigInt
+SigInt
+http://events.ccc.de/sigint/2009/wiki/Hauptseite
+KOMED, Mediapark Cologne, Germany
+
+2009-05-15 in Vienna (AT): Fake IT
+2009-05-15 Fr 18-21h
+http://www.fakeit.at/
+loca: Missindorfstrasse 21 / Ecke Goldschlaggasse, 1140 Wien
+kind: barcamp
+mott: 14 days of high DIY
+tags: arduino barcamp creative_industries Digitalks
+      diy fortschritt kreative kreativwirtschaft pd
+      personal_branding poster processing projekte
+      timecode vinyl visuals xwax
+
+2009-07-26 in Oegstgeest (NL): OpenCommunityCamp 2009
+OpenCommunityCamp 2009
+http://opencommunitycamp.org/2009/
+Sunday July 26, 2009
+Terrain of Scouting Shawano's Oegstgeest
+Abtspoelweg 15, Oegstgeest, Zuid-Holland 2343 JB Get
+
+2009-06-03-06 in Skövde (DE): 5th International Conference on Open Source Systems
+http://oss2009.org/
+The 5th International Conference on Open Source Systems
+from: Wednesday June 3, 2009
+unto: Saturday  June 6, 2009 from 8:00pm - 11:00pm
+First Hotel Billingehus
+ALPHYDDEVÄGEN
+Skövde, Vastra Gotaland
+
+2009-05-23+24 in Berlin (DE): UXcamp Berlin 2009
+UXcamp Berlin 2009
+Saturday May 23, 2009
++ Sunday May 24, 2009
+Erwin Schrödinger-Zentrum Adlershof,
+Rudower Chaussee 26, 12489 Berlin
+.
+Das UXcamp Berlin 2009 (23.+24. Mai 2009)
+ist ein Barcamp (Themencamp) für
+User Experience mit den Schwerpunkten
+Information Architecture, Interaction Design,
+Usability Engineering, Visual Design,
+Prototype Engineering und Marketing.
+.
+Twitter: @UXCampBerlin09
+Offizieller tag: #uxcb09
+Website: http://uxcamp.mixxt.de/
+52.4406030273 13.531
+
+2009-05-28+29 in Berlin (DE): HardHack
+http://hardhack.org
+May 28+29
+location: c-base, rungestr. 20
+
+2009-06-25+26 in Copenhagen (DK): Reboot 11
+http://www.reboot.dk/
+Reboot 11
+from: Thursday June 25 2009
+unto: Friday   June 26 2009
+Kedel Hallen, Nyelandsvej 75A, Copenhagen, Hovedstaden 2000
+
+2009-05-25 in Stuttgart (DE): Stuttgarter Linux Day: Groupware und Mozilla
+Stuttgarter Linux Day: Groupware und Mozilla
+Am Montag, 25. Mai, lädt die Hochschule der Medien in Stuttgart
+zum zweiten Mal zu einem Linux Day mit Vorträgen und Workshops ein.
+http://linux-day.de/vortragsprogramm/
+http://opensource.region-stuttgart.de/
+
+2009-05-28+29
+http://www.ipv6-kongress.de/
+IPv6−Kongress
+28.−29. Mai 2009, Frankfurt/Main
+http://www.ipv6-kongress.de/agenda.php?konferenzid=52&st=Agenda
+
+2009-08-22 in St. Augustin (DE): Open SQL Camp Europe
+Open SQL Camp Europe
+on August 22, 2009 RSVP
+
+2009-08-29-31 in Cambridge (UK): Debian Party 2009
+http://wiki.earth.li/DebianParty2009
+
+2009-05-21-52 in Immenstadt/Bühl (DE): 10. Linux User Groups Camp 2009
+10. Linux User Groups Camp 2009  von: Do 21. Mai
+http://www.lug-camp.de/ 55Euros  bis: Mo 25. Mai
+Gschwend 1, 87509 Immenstadt/Bühl  +49-8323-3798
+http://tinyurl.com/lugcamp2009
+http://openstreetmap.org/?mlat=47.56463&mlon=10.17255&zoom=16&layers=0B00FTFTT
+vortraege: call4papers@lugal.org
+
+2009-05-22-24 in Berlin (DE): Freifunk Wireless Community Weekend
+http://logbuch.c-base.org/2009/05/21/wcw-2009/
+http://wiki.freifunk.net/Wireless_Community_Weekend_2009
+2009-05-22 Day1/3 berlin.de Freifunk Wireless Community Weekend
+2009-05-23 Day2/3 berlin.de Freifunk Wireless Community Weekend
+2009-05-24 Day3/3 berlin.de Freifunk Wireless Community Weekend
+
+2009-06-06+07
+http://barcampcologne.mixxt.de/
+#bcc3
+
+2009-05-16+17
+http://fossjam.in
+
+http://wiki.ssdev.org/wiki/Lockpicknick_Berlin-Tegel
+2009-05-21
+LockPickNick
+Sportsfreunde der Sperrtechnik
+
+2009-06-12 in Berlin (DE): Fachtag "Linux in der Kinder-, Jugend- und Bildungsarbeit"
+Termin      12. Juni 2009, 10-16 Uhr
+Ort         Jugendfreizeithaus "kubu", Rathenower Straße 17, 10559 Berlin
+Eintritt    LAG-Mitglieder: 6€; Schüler, Studenten, Erwerbslose: 6€;
+            Nicht-LAG-Mitglieder: 10€. - Eintritt beinhaltet ein Mittagessen!
+Info        http://kijux.wordpress.com
+            http://medienundso.de/blog
+Anmeldungen per e-mail an meko@jugendclubring-berlin.de -
+            oder über das Formular auf medienundso.de
+
+
+2009-06-14 in Berlin (DE): Flash Summer Camp Berlin 2009
+Flash Summer Camp Berlin 2009
+http://www.flex-labs.de/flashcamp/
+Elisabethhof, Portal 1, Erkelenzdamm 59 10999 Berlin
+
+2009-07-03-11 in Las Palmas, Gran Canaria (ES): "Gran Canaria Desktop Summit"
+Las Palmas, Gran Canaria
+GNOME+KDE
+http://www.grancanariadesktopsummit.org/index.php/Main_Page
+
+2009-06-29-03 in Birmingham (IK): EuroPython 2009
+EuroPython 2009
+europython.eu
+wiki.europython.eu
+2009-06-29 Mon Day1/5 Birmingham.uk: EuroPython
+2009-06-30 Tue Day2/5 Birmingham.uk: EuroPython
+2009-07-01 Wed Day3/5 Birmingham.uk: EuroPython
+2009-07-02 Thu Day4/5 Birmingham.uk: EuroPython
+2009-07-03 Fri Day5/5 Birmingham.uk: EuroPython
+Birmingham UK.
+
+2009-08-13-16 HAR
+2009 08 13 00 Vierhouten.nl: Day1/4 Hacking At Random (HAR)
+2009 08 14 00 Vierhouten.nl: Day2/4 Hacking At Random (HAR)
+2009 08 15 00 Vierhouten.nl: Day3/4 Hacking At Random (HAR)
+2009 08 16 00 Vierhouten.nl: Day4/4 Hacking At Random (HAR)
+  Hacking at Random
+  http://har2009.nl/
+  http://har2009.org/
+  http://wiki.har2009.org/index.php?title=FAQ
+2009 08 16 00 Deadline for KSP LinuxTag!
+
+2009 07 06-11 Mon-Sat RMLL in Nantes
+2009 06 24-27 Mi-Sa Berlin.de: LinuxTag
+
+= 2008 =
+
+2008-10-17 barcamp in berlin
+http://blog.amazee.com/barcamp_berlin_2008_im_kaiserlichen_telegraphenamt_by_gregory_gerhardt_2008_10_17
+
+http://wcc2008.wifisoft.org/
+
+http://www.bitspirits.de/2008/07/17/barcamp-in-stuttgart/
+http://bcstuttgart.mixxt.de/
+barcamp stuttgart
+
+WEB OF DATA PRACTITIONERS DAYS (WOD-PD 2008)
+22-23 October 2008, Vienna, Austria
+http://www.webofdata.info/
+
+http://oss2009.org/
+http://openfest.org/
+http://congreso.lliurex.net/index_en.html
+
+http://www.communitycamp.mixxt.de/
+2008 11 01 00 Sat Day1/2 Berlin.de: Community Camp
+2008 11 02 00 Sun Day2/2 Berlin.de: Community Camp
+Cimdata Medienakademie Berlin
+Windscheidstrasse 18, 10627 Berlin
+
+http://barcampberlin3.mixxt.org/
+2008 10 17 barcamp3
+2008 10 18 barcamp3
+2008 10 19 barcamp3
+
+http://live.gnome.org/SpeckHackFest2008
+2008 11 09
+2008 11 10
+2008 11 11
+2008 11 12
+2008 11 13
+2008 11 14
+
+2009 04 29 00 Wed Day1/2 Nuernberg.de: NETWAYS OSDC
+2009 04 29 00 Thu Day2/2 Nuernberg.de: NETWAYS OSDC
+2008 11 30 00 Sun Deadline for NETWAYS OSDC
+www.netways.de/de/units/events/osdc/cfp/
+Open Source Data Center Conference (OSDC)
+
+10-18 Linux Infotag in landau
+http://wiki.cacert.org/wiki/LinuxInfoTagLandau2008
+
+http://congres.lliurex.net/index_en.html
+
+http://conferences.yapceurope.org/tcpw2008/schedule
+2008 11 07 Fr Vienna: Twin City Perl Workshop
+
+Sep24+25 paris-libre.org
+
+http://artcamp.mixxt.de/networks/wiki/index.Wann_und_Wo
+
+2008 11 15 00 Sat Day1/1 11-18h Oldenburg.de: 3. Oldenburger Linux-Informationstag (OLIT)
+3. Oldenburger Linux-Informationstag
+http://www.lit-ol.de/
+Ort: Zweckverband Kommunalen Datenverarbeitung Oldenburg (KDO)
+Ort: Elsässer Straße 66, 26121 Oldenburg
+ flyer: http://www.lit-ol.de/2008/lit-ol08-flyer.jpg
+poster: http://www.lit-ol.de/2008/lit-ol08-poster.jpg
+
+2008 10 21 00 Tue Day1/4 Munich.de: Systems
+2008 10 22 00 Tue Day2/4 Munich.de: Systems
+2008 10 23 00 Tue Day3/4 Munich.de: Systems
+2008 10 24 00 Tue Day4/4 Munich.de: Systems
+
+http://it-republik.de/konferenzen/openexpo/projects/
+http://it-republik.de/konferenzen/openexpo/papers/
+
+2008 09 13 00 Sat Day1/2 4th Italian Debian Community Conference (DCC-IT)
+2008 09 14 00 Sun Day2/2 4th Italian Debian Community Conference (DCC-IT)
+13th and 14th September
+in Bracciano - near Rome, Italy - at the campsite "Il porticciolo"
+http://italiandebconf.debianizzati.org/
+http://maps.google.it/maps?oi=eu_map&q=Bracciano&hl=it
+http://www.porticciolo.it/languages/indexuk.html
+ksp:  http://italiandebconf.debianizzati.org/index.php/GPGSign
+wiki: http://italiandebconf.debianizzati.org/index.php/English_Info
+list: http://lists.debianizzati.org/cgi-bin/mailman/listinfo/italiandebconf
+
+2008 03 26 Document Freedom Day
+http://documentfreedom.org/
+
+http://webofdata.info/
+
+mac at camp ist Europas größtes Mac-User-Treffen.
+Vom 13. bis 17. August 2008 findet in Naumburg (Saale) zum
+dritten Mal in Folge  "mac at camp" statt. Integraler Bestandteil
+des Camps mit jeweils 150 Teilnehmern sind die fast 40 Workshops.
+Wie bereits im vergangenen Jahr findet auch 2008 wieder ein
+CAcert-Workshop statt.  Interessenten und Mac-User sind herzlich
+eingeladen sich auf unserer Webseite genauer zu Informieren.
+Der Link zur Seite: http://www.macatcamp.de
+
+
+Time      Title
+====      =====
+March     TOshare.it
+April 15  Linuxtag Krems
+May       LinuxWochen Vienna/Wien
+May 30+31 LinuxWochen Eisenstadt
+December  OpenCON
+Autumn    LinuxConf Europe im Herbst
+Summer    LDAPcon
+
+http://www.cloudcamp.com/resources.359.0.html
+Could Computing Camp
+
+http://www.webappsec.org/
+
+2008 08 25 00 Mon Day1/5 HackWeek
+2008 08 26 00 Tue Day2/5 HackWeek
+2008 08 27 00 Wed Day3/5 HackWeek
+2008 08 28 00 Thu Day4/5 HackWeek
+2008 08 29 00 Fri Day5/5 HackWeek
+HackWeek
+http://news.opensuse.org/2008/08/07/announcing-hack-week-iii/
+
+Next:
+*  Oct18+19 Berlin DE       http://barcampberlin3.mixxt.org/
+* BarCamp Helsinki FI       http://barcamp.org/BarCampHelsinki
+* PHPCamp Paris FR          http://barcamp.org/PhpCampParis
+* DemoCamp Szczyrk          http://democamp.pl/en
+* BarCamp Italia            http://democamp.pl/en
+* MediaBarCamp Lithuania    http://mediabarcamp.com/content/view/16/30/
+* Monetizing2.0Camp Berlin  http://monetization2.0barcamp.mixxt.com/
+
+* http://jdll.org/ Oct17+18 Fri+Sat a CPE Lyon.fr
+* http://wiki.cacert.org/wiki/BarCampStuttgart2008
+* http://wiki.earth.li/DebianParty2008
+* http://wiki.skolelinux.de/YoungsterMeeting2008
+
+* drupalcon.org
+* EOYFSE in Berlin
+* Evoke
+* HANGAR http://www.hangar.org/wikis/lab/doku.php?id=start:summerlab
+* Internetdagarna (.se) (usually late October, early November)
+* MindTrek - October
+* nanocon
+* LCE im Oktober in Hamburg
+* paraflows http://www.paraflows.net/
+* POS 2008 in Muenchen
+* RIPE Meeting http://www.ripe.net/ripe/meetings/ripe-56/
+* ToorCon http://www.toorcon.org/2007/intro.php
+* UKUUG in Manchester im November http://www.ukuug.org/events/linux2008/
+* http://gossip08.free-reality.net
+* http://malaga08.opensourceworldconference.com/ Malaga
+* http://www.lugv.eu/ "Der 10. Linuxday wird vermutlich in November 2008 stattfinden."
+* http://annalist.noblogs.org/post/2008/06/17/hacker-space-festival-2008
+* http://www.ph-burgenland.at/Newsansicht.179.0.html?&no_cache=1&tx_ttnews[tt_news]=62&tx_ttnews[backPid]=309&cHash=87973315e8
+
+* http://homelesshackers.net/ -> communities
+
+################
+# Nachzutragen #
+################
+
+http://lists.darklab.org/pipermail/darklab/2008-April/000332.html
+[Darklab] EUSecWest CFP Closes April 14th (conf May 21/22 2008)
+
+2008 02 09 00 Sa 10h bis
+2008 02 10 00 Su 16h
+YiGG GmbH, Johann-Clanze-Strasse 28c, 81369 München
+fon: +49-89-45227077
+http://kapsel.muc.ccc.de/doku.php/geekend-2008-02
+
+2008 02 22 00
+2008 02 24 00
+http://barcamphannover.mixxt.de/networks/wiki/index.When     Zeit
+http://barcamphannover.mixxt.de/networks/wiki/index.schedule Programm
+
+2008 03 11 00 Di
+http://wiki.openstreetmap.org/index.php/Hamburger_Mappertreffen
+
+2008 03 21 00
+2008 03 24 00
+breakpoint 2008
+Bingen am Rhein, DE
+http://breakpoint.untergrund.net/
+
+2008 04 08 00 Tu
+2008 04 09 00 We
+Go Open 2008
+Oslo, Norway
+http://friprog.no/ez/index.php?/nor/English
+Det Norske Teatret
+
+2008 04 14 00 ..
+2008 04 18 00 ..
+http://www.sambaxp.org/
+April 14th - 18th, 2008 - Hotel Freizeit In Goettingen - Germ
+
+2008 04 22 00
+2008 04 25 00
+2nd European Identity Conference 2008
+Muenchen, DE
+http://www.id-conf.com/
+
+2008 05 03 00 Sa
+2008 05 04 00 Su
+http://www.barcamp-leipzig.org/
+
+2008 05 20 00
+2008 05 23 00
+New Haven - Connecticut US
+http://www.cfp2008.org/wiki/index.php/Main_Pageo
+Omni New Haven Hotel at Yale
+155 Temple Street
+New Haven, Connecticut 06510
+deadline: 2008-04-17
+Subject:"CFP Essay" To:yjolt.submissions(at)gmail.com
+
+2008 05 26 00
+2008 05 28 00
+Webinale + DLW Europe 08 + Metaverse 08
+Kongresszentrum Karlsruhe
+http://createordie.de/webinale/
+
+2008 06 14 00 Sa
+2008 06 15 00 So
+Berlin, de
+SocialCamp
+http://www.socialcamp-berlin.org
+
+2008 06 27 00 Fri
+2008 06 29 00 Sun
+Stadtflucht
+Lindabrunn
+http://metalab.at/wiki/Stadtflucht
+
+= Pending Dates =
+
+http://www.informatica08.ch
+http://www.challenge24.org/
+http://toshare.it
+
+https://wiki.ubuntu.com/UDS-Intrepid
+
+2008 10 22-24 Wed-Fri
+hack.lu
+Kirchberg
+http://hack.lu/index.php/hl/2008/schedConf/timeline
+.
+http://hack.lu/index.php/CfP
+Abstract   submission : no later than 01 June 2007
+Full paper submission : no later than 15 July 2007
+Notification date : around end of July beginning of August
+http://wiki.hack.lu/index.php/Barcamp
+
+2008 12 06 00 Sat
+2008 12 07 00 Sun
+OpenCON 2008
+Erstes Dezemberwochenende 2008
+http://www.opencon.org/
+
+http://www.piksel.no/121#more
+Openlab Groningen Kickstart
+11, 13, 18, 20, 25 and 27 March 2008
+between 14.00 and 18.00
+Sign, Winschoterkade 10, Groningen
+Costs: Free!
+
+2008 06 13 00 Fri
+2008 06 14 00 Sat
+2008 06 15 00 Sun
+Berlin08
+2008 06 13 00 Fr Berlin08
+2008 06 14 00 Sa Berlin08
+2008 06 15 00 So Berlin08
+Berlin08 - Festival für junge Politik
+Berlin, DE
+http://www.bpb.de/veranstaltungen/T6B1C8,0,Berlin08_Das_Festival_f%FCr_junge_Politik_und_junge_Kultur
+.html
+
+= USA & Canada =
+
+04-04 Fr| 04-06 Su| deadline | NotACon5 (NAC5) | Cleveland | US | URL
+2008 04 04 00 Fri Day1/3 Cleveland.ohio.us: NotACon5 (NAC5)
+2008 04 05 00 Sat Day2/3 Cleveland.ohio.us: NotACon5 (NAC5)
+2008 04 06 00 Sun Day3/3 Cleveland.ohio.us: NotACon5 (NAC5)
+NotACon5 NAC5
+notacon.org
+Holiday Inn Select City Centre Lakeside.
+Cleveland, Ohio
+
+05-15 Sa| 05-18 Su| deadline | WhereCamp | Mountain View | US | http://wherecamp.pbwiki.com/
+2008 05 17 00 Sat Day1/2 MountainView.ca.us: WhereCamp
+2008 05 18 00 Sun Day2/2 MountainView.ca.us: WhereCamp
+WhereCamp
+at Googleplex in Mountain View, CA.
+http://wherecamp.pbwiki.com/
+
+LinuxSymposium
+
+05-12 Mo| 05-14 We| deadline | Where 2.0 | Burlington | US | http://en.oreilly.com/where2008/public/content/home
+2008 05 12 00 Mon Day1/3 Burlington.ca.us: Where 2.0
+2008 05 13 00 Tue Day2/3 Burlington.ca.us: Where 2.0
+2008 05 14 00 Wed Day3/3 Burlington.ca.us: Where 2.0
+Where 2.0
+Burlington, California
+http://en.oreilly.com/where2008/public/content/home
+
+07-18 Fr| 07-20 Su| deadline | HOPE | city | xy | url
+2008 07 18 00 Fri
+2008 07 19 00 Sat
+2008 07 20 00 Sun
+HOPE
+"The Last Hope"
+
+07-21 Mo| 07-22 Tu| deadline | IE08 | city | xy | url
+2008 07 21 00 Mon
+2008 07 22 00 Tue
+IE08
+
+07-20 Tu| --- | deadline | San Jose | US | http://www.usenix.org/events/hotsec08/
+2008 07 29 00 Tue Day1/1 SanJose.ca.us: HotSec
+3rd Usenix Workshop in Hot Topics in Security
+San Jose, CA, USA
+http://www.usenix.org/events/hotsec08/
+.
+HotSec '08 was co-located with the
+17th USENIX Security Symposium
+(USENIX Security '08),
+July 28¿August 1, 2008.
+
+08-08 Fr| 08-10 Su| deadline | city | XY | URL
+2008 08 08 00 Fri
+2008 08 09 00 Sat
+2008 08 10 00 Sun
+DefCon
+URL?
+
+10-11 Sa| 10-12 Su| deadline | NYCBSDCon | New York | US | URL
+2008 10 11 00 Sat NewYork.ny.us: NYCBSDCon
+2008 10 12 00 Sun NewYork.ny.us: NYCBSDCon
+NYCBSDCon
+New York, New York.
+URL?
+
+= Unclear =
+
+[aufnehmen?]
+2008 04 16-20
+Apr 16, 2008 - Apr 20, 2008
+Hobbytronic
+Westfalenhallen Congress Centre.
+Dortmund, Nordrhein Westfalen Germany
+
+[aufnehmen?]
+2008 04 26 00 Fr
+Ubuntu Hardy Heron Releaseparty.
+c-base
+(programm bis 16.3.2008)
+mailto:kontakt@ubuntu-berlin.de
+http://logbuch.c-base.org/2008/02/03/ubuntu-hardy-heron-releaseparty/
+2008 02 29 00 Fr deadline fuer Ubuntu Hardy Heron Releaseparty.
+
+=========================================================================
+=========================================================================
+=========================================================================
+
+= January =
+
+2008 01 29 00 Tue Day1/3 Solutions Linux in Paris.fr
+2008 01 31 00 Thu Day3/3 Solutions Linux in Paris.fr
+Solutions Linux in Paris.fr
+CNIT, Paris-La Défense
+http://www.solutionslinux.fr/en/
+
+= February =
+
+2008 02 08 00 Do deadline for rmll.info
+2008 02 15 00 Do deadline for linuxsymposium.org
+
+2008 02 15 00 Fr Day1/3 ShmooCon in Washington D.C.
+2008 02 17 00 Su Day3/3 ShmooCon in Washington D.C.
+MM-DD WD deadline
+ShmooCon in Washington D.C.
+http://www.shmoocon.org/
+Washington, D.C., at the Marriott Wardman Park Hotel,
+http://www.shmoocon.org/location.html
+
+2008 02 16 00 Sat Day1/2 Funkfeuer Community Weekend in Wien.at
+2008 02 17 00 Sun Day2/2 Funkfeuer Community Weekend in Wien.at
+http://convention.funkfeuer.at/
+Funkfeuer Community Weekend in Wien.at
+im metalab.at
+Sa+So 16.+17.Feb
+http://metalab.at/wiki/FunkFeuer_Community_Weekend
+
+2008 02 19 00 Tue Day1/2 LinuxDays 2007 in Luxembourg.lu
+2008 02 20 00 Wed Day2/2 LinuxDays 2007 in Luxembourg.lu
+LinuxDays 2007
+Luxembourg.lu
+http://www.linuxdays.lu/
+2007 11 30 00 Fri deadline
+
+2008 02 28 00 Thu Day1/3 LinuxAudioConference in Koeln.de
+2008 03 02 00 Sun Day1/3 LinuxAudioConference in Koeln.de
+LinuxAudioConference (LAC2008) in Koeln.de
+Academy of Media Arts (KHM), Cologne, DE
+http://lac.linuxaudio.org
+
+2008 02 29 00 Fri deadline fuer EH2008
+
+2008 02 29 00 Fri 20h Feier Ralraum.at in Graz.at
+https://realraum.at/wiki/doku.php
+Geburtstagsfeier RealRaum
+(wird wohl verschoben wegen CLT)
+
+= March =
+
+2008 03 01 00 Sat deadline for FOSSGIS
+2008 03 01 00 Sat deadline for FKFT
+
+2008 03 07 00 Fri deadline for EasterHegg2008 (EH08)
+2008 03 07 00 Fri deadline for Prix Art Electronica http://www.aec.at/en/prix/registration/index.asp
+2008 03 09 00 Sun deadline for BachoTeX in Poland
+2008 03 10 00 Mon deadline for Linuxtage.at in Graz
+
+2008 03 12 00 Wed Day1/2 OpenExpo in Bern.ch
+2008 03 13 00 Thu Day1/2 OpenExpo in Bern.ch
+OpenExpo
+Bern, Switzerland
+http://www.openexpo.ch/call-for-participation-openexpo-2008-bern/
+http://www.openexpo.ch/fileadmin/documents/2008Bern/OpenExpo_2008Bern_Prospekt.pdf
+
+2008 03 11 00 Tue Day1/4 GUUG-Frühjahrsfachgespräch 2008 (FFG 2008)
+2008 03 14 00 Fri Day4/4 GUUG-Frühjahrsfachgespräch 2008 (FFG 2008)
+GUUG-Frühjahrsfachgespräch 2008 (FFG 2008)
+Hochschule München
+http://www.guug.de/veranstaltungen/ffg2008/cfp.html
+deadline: 2007-12-09 Su
+
+2008 03 21 00 Fri Day1/4 EasterHegg 2008
+2008 03 24 00 Mon Day1/4 EasterHegg 2008
+EasterHegg 2008
+Motto "Follow the white rabbit"
+Fr-Mo 21.-24. März 2008 (Ostern)
+im Bürgerhaus Stollwerck in Köln
+Eintritt: 42Euro inklusive Frühstücksbuffet und Tasse
+deadline: vortraege+ workshops Fr 07.3.2008
+https://cccv.pentabarf.org/submission/EH2008
+kontakt: eh2008@koeln.ccc.de
+http://eh2008.koeln.ccc.de/
+
+2008 03 25 00 Tue deadline for Ars Electronica
+cfp: http://www.aec.at/en/prix/general_entry_regulations.asp
+
+2008 03 29 00 Sat Linux Info-Tag Augsburg 2008
+Linux Info-Tag Augsburg 2008
+Augsburg.de
+http://www.luga.de/Aktionen/LIT-2008/
+
+2008 03 31 00 Mon Day1/3 UKUUG Spring Conference 2008, Birmingham
+2008 04 02 00 Wed Day1/3 UKUUG Spring Conference 2008, Birmingham
+UKUUG Spring Conference 2008, Birmingham
+Virtual System + Dynamic Languages
+An event aimed at people with
+responsibility for large systems
+ Location:
+ The Birmingham Conservatoire
+ Birmingham City University
+ Paradise Place
+ Birmingham B3 3HG
+http://spring2008.ukuug.org/
+http://www.ukuug.org/events/spring2008/
+spring2008@ukuug.org
+
+= April =
+
+2008 04 01 00 Tue Day1/3 FOSSGIS 2008 Conference
+2008 04 03 00 Thu Day1/3 FOSSGIS 2008 Conference
+FOSSGIS 2008 Conference
+http://www.fossgis.de/wiki/index.php/Main_Page
+April 1st-3rd, 2008 Freiburg Germany
+Free entrance. Registration required
+http://www.fossgis.de/wiki/index.php/CFP_2008
+deadline: 2008-03-01 Sa
+
+2008 04 03 00 Thu Day1/2 E-Mail Systems Conference 2008
+2008 04 04 00 Fri Day1/2 E-Mail Systems Conference 2008
+E-Mail Systems Conference 2008
+(Exim and other mail systems)
+http://www.uit.co.uk/mail-conference/
+deadline: unclear.
+List:    exim08-subscribe@uit.co.uk
+Contact: exim08-speakers@uit.co.uk
+  UKUUG Secretariat PO Box 37
+  Buntingford Herts SG9 9UQ
+  Tel: 01763 273475
+  Fax: 01763 273255
+  office@ukuug.org
+  www.ukuug.org
+  A Company Limited by Guarantee
+  Registered Office: The Manor House
+  Buntingford Herts SG9 9AB Reg. No. 2506680
+
+2008 04 02 00 Wed Day1/3 Berlin.de: re-publica
+2008 04 04 00 Fri Day3/3 Berlin.de: re-publica
+http://re-publica.de/
+rp08 "die kritische masse"
+programm:
+http://programm.re-publica.de/2008/index.de.html
+Kalkscheune, Johannisstraße 2 in Berlin-Mitte
+http://re-publica.de/anfahrt/
+U-Bahnhof  Oranienburger Tor
+
+2008 04 02 00 Wed Day1/3 Berlin.de: Wireless Community Weekend 2008
+2008 04 04 00 Fri Day3/3 Berlin.de: Wireless Community Weekend 2008
+Fr-So 2.-4.Apr2008
+Wireless Community Weekend 2008 in Berlin
+https://wiki.freifunk.net/Wireless_Community_Weekend_2008_c-base_berlin
+
+2008 04 04 00 Fri 18h WIEN: CAcert
+CAcert Assuring
+http://www.htl-donaustadt.at/cacert/
+Vienna,AT
+htl donaustadt, Donaustadtstraße 45 (Eingang Deinleingasse 1), 1220 Wien
+Thomas Angermayer
+ange@htl-donaustadt.at
+http://www.htl-donaustadt.at
+
+2008 04 18 00 Fri Day1/3 Berlin.de: HardHack
+2008 04 20 00 Sun Day3/3 Berlin.de: HardHack
+HardHack
+http://www.hardhack.org/
+Berlin.de
+Location: not official yet
+
+2008 04 19 00 Sat Day1/1 Graz.at: Linuxtage
+Linuxtage.at
+http://www.linuxtage.at/cfl/
+deadline 2008-03-10 So
+
+2008 04 30 00 Wed Day1/5 Bacho (PL): BachoTeX
+2008 05 04 00 Sun Day1/5 Bacho (PL): BachoTeX
+BachoTeX
+Bachtek (Brodnica), PL
+http://www.gust.org.pl/BachoTeX/2008/
+Deadline: 2008-03-09 Abstract 9.3., fertiges Paper 31.3.
+
+= May =
+2008 05 01 00 Thu Day1/4: Flensburg.de: LinuxCamp
+2008 05 04 00 Sun Day4/4: Flensburg.de: LinuxCamp
+LinuxCamp
+Flensburg
+http://www.lug-camp-2008.de/
+call4paper@lug-camp-2008.de
+http://de.wikipedia.org/wiki/LUG-Camp
+--> http://www.lug-camp-howto.de/
+
+2008 05 08 00 Thu Day1/4 Wroclav.pl: Libre Graphics Meeting (LGM)
+2008 05 11 00 Sun Day4/4 Wroclav.pl: Libre Graphics Meeting (LGM)
+Libre Graphics Meeting (LGM) 2008
+Wroclav, Poland
+University of Technology
+http://www.libregraphicsmeeting.org/2008/index.php?lang=en&action=home
+3rd LGM
+
+2008 05 14 00 Wed Day1/5 Markelfingen.de: Freie-Radios-Camp
+2008 05 18 00 Sun Day1/5 Markelfingen.de: Freie-Radios-Camp
+Freie-Radios-Camp
+Radiocamp Markelfingen 2008
+auf dem DGB-Jugendcamp Markelfingen direkt am Bodensee
+http://www.aff-bawue.org/markelfingen08.htm
+
+2008 05 15 00 Thu Day1/1 Ede.nl: NLUUG Voorjaarsconferentie
+Voorjaarsconferentie
+http://www.nluug.nl/events/vj08/
+Ede (gelderland), NL
+deadline: 2007-12-31
+
+2008 05 15 00 Thu Day1/3 Wien.at: LinuxWochen
+2008 05 16 00 Fri Day2/3 Wien.at: LinuxWochen
+2008 05 17 00 Sat Day3/3 Wien.at: LinuxWochen
+LinuxWochen Wien
+Vienna, AT
+http://wien.linuxwochen.at/
+deadline: ...
+
+2008 05 16 00 deadline for HackLabs Summer Camp
+
+2008 05 21 00 Wed Day1/2 Geneva.ch: LinuxDays
+2008 05 22 00 Thu Day2/2 Geneva.ch: LinuxDays
+LinuxDays
+Geneva, CH
+http://www.linuxdays.ch
+
+2008 05 23 00 Fri Day1/3 Berlin.de: ph-neutral
+2008 05 24 00 Sat Day1/3 Berlin.de: ph-neutral
+2008 05 25 00 Sun Day3/3 Berlin.de: ph-neutral
+ph neutral
+berlin, DE
+http://ph-neutral.darklab.org/
+http://www.insel-berlin.net/
+http://tinyurl.com/5azlzg
+52°29'12.43" (N)
+13°28'51.19" (O)
+
+2008 05 25 00 Sun Day1/2 Karlsruhe.de: Open Source Expo 2008
+2008 05 26 00 Mon Day2/2 Karlsruhe.de: Open Source Expo 2008
+Open Source Expo 2008
+http://entwickler.com/konferenzen/opensourceexpo08/cf-project.php
+Karlsruhe, DE
+Kongresszentrum, Festplatz 9, 76137 Karlsruhe
+
+2008 05 28 00 Mit Day1/4 Berlin.de: LinuxTag
+2008 05 31 00 Sat Day4/4 Berlin.de: LinuxTag
+LinuxTag
+Berlin, DE
+http://www.linuxtag.org/
+
+2008 05 31 00 Sa
+Freiheit statt Angst
+
+2008 05 30 00 Fri Day1/2 Eisenstadt.at: LinuxWochen
+2008 05 31 00 Sat Day2/2 Eisenstadt.at: LinuxWochen
+LinuxWochen Eisenstadt
+http://eisenstadt.linuxwochen.at/
+
+2008 05 30 00 Fri Klagenfurt.at: LinuxTag
+09:00--16:00
+LinuxTag  Klagenfurt
+Universität Klagenfurt
+http://www.linuxday2008.tk/
+
+= June =
+
+2008 06 07 00 Sat Day1/2 Dresden.de: Datenspuren
+2008 06 08 00 Sun Day2/2 Dresden.de: Datenspuren
+Kulturzentrum Scheune, Alaunstr. 36-40, 01099 Dresden
+Lat: 51:03:59N (51.0663) Lon: 13:45:05E (13.7515)
+http://www.datenspuren.de/
+http://www.c3d2.de/datenspuren/files/ds2008-flyer.pdf
+
+2008 06 16 00 Mon Paris.fr: Hacker Space Festival
+2008 06 22 00 Sun Paris.fr: Hacker Space Festival
+Hacker SPace Festival at /tmp/lab
+Vitry-sur-Seine - near Paris, FR
+cfp: http://www.hackerspace.net/call-for-papers -> hsf2008-cfp@lists.tmplab.org
+2008 06 15 00 Sun Hacker Space Festival - Submission deadline
+2008 06 20 00 Fri Hacker Space Festival - Program publication
+
+2008 06 25 00 Wed Day1/4: Prague.cz OSDevCond
+2008 06 26 00 Thu Day2/4: Prague.cz OSDevCon
+2008 06 27 00 Fri Day3/4: Prague.cz OSDevCon
+2008 06 28 00 Sat Day4/4: Prague.cz OSDevCon
+OSDevCon 2008
+Prague CZ
+http://www.osdevcon.org/2008/
+Location:
+    Prague, the Czech Republic, Europe
+    Masarykova kolej, Thákurova 1, 16041 Praha 6
+Date:   Wed Jun 25 - Fri Jun 28, 2008
+    Call for Papers:
+    http://www.osdevcon.org/2008/cfp.html
+    Call for Presentations and Tutorials:
+    http://www.osdevcon.org/2008/submission.html
+timeline:
+2008-04-20 Call for papers closes
+2008-05-01 Notification to accepted speakers
+2008-06-12 Final papers due
+wiki: http://joomla.opensolaris.cz/
+
+2008 06 27 00 Fri Day1/3 Linz.at: LinuxTag
+2008 06 28 00 Sat Day2/3 Linz.at: LinuxTag
+2008 06 29 00 Sun Day3/3 Linz.at: LinuxTag
+LinuxTag Linz
+Linz, AT
+Kunstuniversität Linz, Hauptplatz 8, 4020 Linz
+http://www.linuxwochen.at/2008/index.php?option=com_content&task=view&id=33
+2008 05 31 00 Sa DEADLINE fuer Linuxtag Linz
+call08-linz@linuxwochen.at
+http://www.lugl.at/
+http://www.ufg.ac.at/wettbewerbe.17.0.html
+
+2008 04 15 00 Tue Day1/1 Krems.at: 13-17h LinuxTag
+LinuxTag Krems
+Di 13:00--17:00
+Donau-Universität Krems, AT
+http://lug.krems.cc/linuxtag2008/
+
+= July =
+
+2008 07 01 00 Tue Day1/5 Mont-de-Marsan.fr: RMLL
+2008 07 02 00 Wed Day2/5 Mont-de-Marsan.fr: RMLL
+2008 07 03 00 Thu Day3/5 Mont-de-Marsan.fr: RMLL
+2008 07 04 00 Fri Day4/5 Mont-de-Marsan.fr: RMLL
+2008 07 05 00 Sat Day2/5 Mont-de-Marsan.fr: RMLL
+RMLL
+http://2008.rmll.info/
+
+2008 07 04 00 Fri
+2008 07 06 00 Sun
+Gulasch Programmier Nacht #7 (GPN7)
+http://entropia.de/wiki/GPN7
+im AKK der Uni Karlsruhe http://www.akk.org
+Voranmeldung: https://entropia.de/gulasch/anmeldung.php
+
+2008 07 04 00 Fri Day1/3 Bremgarten.ch: Chaos Singularity (CoSin)
+2008 07 05 00 Sat Day2/3 Bremgarten.ch: Chaos Singularity (CoSin)
+2008 07 06 00 Sun Day3/3 Bremgarten.ch: Chaos Singularity (CoSin)
+Chaos Singularity (CoSin)
+Kulturzentrum Bremgarten (KuZeB)
+In Bremgarten im Aargau (Schweiz)
+http://cosin.chaostreff.ch/
+
+2008 07 04 00 Fri Day1/3 Sant Jaume de Llierca: HackLabs
+2008 07 05 00 Sat Day2/3 Sant Jaume de Llierca: HackLabs
+2008 07 06 00 Sun Day3/3 Sant Jaume de Llierca: HackLabs
+HackLabs
+Dates: July 04-06 Fr-So 2008
+Location: Sant Jaume de Llierca (Garrotxa), Spain
+GPS Location: Latitude 42.211070, Longitude 2.602550
+http://www.hacklabs.org/summercamp
+Call for Participation:
+http://associacio-aoe.org/scg/en/index.php/Call4participation
+deadline: 2008-05-16
+
+2008 07 05 00 Sat Den Oever.nl: Ethanol (ETH0)
+2008 07 06 00 Sun Den Oever.nl: Ethanol (ETH0)
+2008 07 07 00 Mon Den Oever.nl: Ethanol (ETH0)
+2008 07 08 00 Tue Den Oever.nl: Ethanol (ETH0)
+2008 07 09 00 Wed Den Oever.nl: Ethanol (ETH0)
+2008 07 10 00 Thu Den Oever.nl: Ethanol (ETH0)
+2008 07 11 00 Fri Den Oever.nl: Ethanol (ETH0)
+Ethanol
+Den Oever, NL [http://tinyurl.com/384tsj]
+http://www.eth-0.nl/
+ETH0 is an outdoor computer event..
+Het boshuis, Noorderdijkweg 23, 1771 MJ, Wieringerwerf - http://tinyurl.com/yupmmp
+irc://irc.eth-0.nl/eth0
+wiki: http://wiki.eth-0.nl/index.php/Main_Page
+
+2008 07 07 00 Mon Istanbul.tr: GUADEC
+2008 07 08 00 Mon Istanbul.tr: GUADEC
+2008 07 09 00 Mon Istanbul.tr: GUADEC
+2008 07 10 00 Mon Istanbul.tr: GUADEC
+2008 07 11 00 Mon Istanbul.tr: GUADEC
+2008 07 12 00 Sat Istanbul.tr: GUADEC
+GUADEC - The GNOME Conference 2008
+"Meet, Plan, Party!"
+Bahcesehir University, Istanbul, Turkey
+http://2008.guadec.org/
+http://guadec.org/guadec08/public/cfp/1
+Deadline: 2008-03-31 EEST
+
+2008 07 09 00 Wed Day1/4 Zaragoza.es: Nowhere
+2008 07 10 00 Thu Day2/4 Zaragoza.es: Nowhere
+2008 07 11 00 Fri Day3/4 Zaragoza.es: Nowhere
+2008 07 13 00 Sun Day4/4 Zaragoza.es: Nowhere
+Nowhere
+Zaragoza, ES
+http://en.goingnowhere.org/HomePage
+The nearest small towns are Castejon de Monegros (12km) and Sariñena (19km),
+from both directions the last 10km is on gravel roads.
+
+2008 07 15 00 Tue Day1/3 Barcelona.es: Free Knowledge, Free Technology (FKFT)
+2008 07 16 00 Wed Day2/3 Barcelona.es: Free Knowledge, Free Technology (FKFT)
+2008 07 17 00 Thu Day3/3 Barcelona.es: Free Knowledge, Free Technology (FKFT)
+Free Knowledge, Free Technology
+Education for a free information society
+SELF International Conference 2008
+First International Conference
+July 15-17, 2008
+Barcelona, Spain
+http://fkft.eu/
+http://fkft.eu/2008 -> Programm
+deadline: 2008-03-01
+Finance: Hinde ten Berge hinde[at]freeknowledge.eu
+InfoFon: Anne Sedee +34.622.400.715.
+Wouter's Sig:
+Free Knowledge Institute - http://FreeKnowledge.eu
+Office phone: +31.20.8910.319 - Fax: +31.877.844.107
+Free Knowledge, Free Technology Conference - http://FKFT.eu
+Be SELFish, Share Your Knowledge - http://SELFproject.eu
+Test the SELF Platform for collaborative production of education··
+materials: http://beta.selfplatform.eu
+
+2008 07 31 00 Thu deadline for Linux Wochenende at metalab Vienna.at
+
+= August =
+
+2008 08 08 00 Fri Day1/5 Moenchsteinach.de: ICMP
+2008 08 09 00 Sat Day2/5 Moenchsteinach.de: ICMP
+2008 08 10 00 Sun Day3/5 Moenchsteinach.de: ICMP
+2008 08 11 00 Mon Day4/5 Moenchsteinach.de: ICMP
+2008 08 12 00 Tue Day1/5 Moenchsteinach.de: ICMP
+International Club Mate Party
+ICMP4
+Moenchsteinach, DE
+https://icmp4.de/anmeldung/index
+am alten Sportplatz
+deadline: 2008-07-20
+https://icmp4.de/veranstaltungen/cfp
+"Back to Bluemchenwiese"
+
+2008 08 09 00 Sa Day1/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 10 00 Sa Day2/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 11 00 Sa Day3/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 12 00 Sa Day4/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 13 00 Sa Day5/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 14 00 Sa Day6/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 15 00 Sa Day7/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 16 00 Sa Day8/9 Samnaun.ch: Linux Bier Wanderung
+2008 08 17 00 So Day9/9 Samnaun.ch: Linux Bier Wanderung
+http://lbwreg.draiocht.net/
+Samnaun, Graubunden, Schweiz
+
+2008 08 09 00 Sat Day1/7 Sint-Katelijne-Waver.be: KDE aKademy
+2008 08 10 00 Sun Day2/7 Sint-Katelijne-Waver.be: KDE aKademy
+2008 08 11 00 Mon Day3/7 Sint-Katelijne-Waver.be: KDE aKademy
+2008 08 12 00 Tue Day4/7 Sint-Katelijne-Waver.be: KDE aKademy
+2008 08 13 00 Wed Day5/7 Sint-Katelijne-Waver.be: KDE aKademy
+2008 08 14 00 Thu Day6/7 Sint-Katelijne-Waver.be: KDE aKademy
+2008 08 15 00 Fri Day7/7 Sint-Katelijne-Waver.be: KDE aKademy
+http://akademy2008.kde.org/
+KDE aKademy
+De Nayer Institute
+Sint-Katelijne-Waver, BE
+
+2008 08 10 00 Sun Day1/7 MarDelPlata.ar: DebConf8
+2008 08 11 00 Mon Day2/7 MarDelPlata.ar: DebConf8
+2008 08 12 00 Tue Day3/7 MarDelPlata.ar: DebConf8
+2008 08 13 00 Wed Day4/7 MarDelPlata.ar: DebConf8
+2008 08 14 00 Thu Day5/7 MarDelPlata.ar: DebConf8
+2008 08 15 00 Fri Day6/7 MarDelPlata.ar: DebConf8
+2008 08 16 00 Sat Day7/7 MarDelPlata.ar: DebConf8
+DebConf8
+Mar del Plata, Argentina
+http://debconf8.debconf.org/
+
+2008 08 10 00 Sun Day1/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 11 00 Mon Day2/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 12 00 Tue Day3/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 13 00 Wed Day4/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 14 00 Thu Day5/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 15 00 Fri Day6/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 16 00 Sat Day7/8 Oestgeest.nl: Open Community Camp 2008
+2008 08 17 00 Sun Day8/8 Oestgeest.nl: Open Community Camp 2008
+http://opencommunitycamp.org/
+10.-17. August 2008
+Terrain of Scouting Shawano's Oegstgeest
+Abtspoelweg 15, 2343 JB Oegstgeest, The Netherlands
+http://maps.google.nl/maps?f=q&hl=nl&q=Abtspoelweg+15,+oegstgeest&sll=52.184728,4.488248&sspn=0.002888,0.010815&layer=&ie=UTF8&om=1&z=18&ll=52.184553,4.487438&spn=0.001444,0.005407&t=k&iwloc=addr
+
+2008 08 13 00 Wed Day1/3 Copenhagen.dk: Yet Another Perl Conference
+2008 08 14 00 Thu Day2/3 Copenhagen.dk: Yet Another Perl Conference
+2008 08 15 00 Fri Day1/3 Copenhagen.dk: Yet Another Perl Conference
+Perl Conference
+Copenhagen Denmark
+http://www.yapceurope2008.org/ye2008/wiki
+cfp: http://www.yapceurope2008.org/ye2008/cfp.html
+cfp: 2008-05-29 Thu deadline for Yet Another Perl Conference
+
+2008 08 21 00 Thu Day1/4 Pescara.it: 2nd Metro Olografix CAmp (MOCA)
+2008 08 22 00 Fri Day2/4 Pescara.it: 2nd Metro Olografix CAmp (MOCA)
+2008 08 23 00 Sat Day3/4 Pescara.it: 2nd Metro Olografix CAmp (MOCA)
+2008 08 24 00 Sun Day4/4 Pescara.it: 2nd Metro Olografix CAmp (MOCA)
+2nd Metro Olografix CAmp (MOCA)
+Pesacara, Italy, at the "ex Caserma Di Cocco" Park.
+MOCA is a hacker
+cfp: 2008-08-01 Fri deadline
+http://camp.olografix.org/home.php?lng=en
+Submit  your proposals  to: moca-cfp@olografix.org
+Mailing list for attendees: camp-user@olografix.org
+
+2008 08 23 00 Sat Day1/2 Bonn.de: FrOSCon
+2008 08 24 00 Sun Day2/2 Bonn.de: FrOSCon
+Free and Open Source Conference
+FrOSCon
+Bonn, Germany
+23./24.08.08
+http://de.wikipedia.org/wiki/Froscon
+2008 06 02 00 Mo FrOSCon End of the Call for Papers.   All contributions need to be submitted by this date in order to qualify.
+2008 06 16 00 Mo FrOSCon Notification of acceptance of all contributions
+2008 06 28 00 Sa FrOSCon Final acceptance. We ask all invited speakers to give their final acceptance by this date.
+2008 08 01 00 Fr FrOSCon Last date for submitting slides
+
+= September =
+
+2008 09 04 00 Thu Day1/6 Linz.at: Ars Electronica
+2008 09 05 00 Tue Day2/6 Linz.at: Ars Electronica
+2008 09 06 00 Tue Day3/6 Linz.at: Ars Electronica
+2008 09 07 00 Tue Day4/6 Linz.at: Ars Electronica
+2008 09 08 00 Tue Day4/6 Linz.at: Ars Electronica
+2008 09 09 00 Tue Day6/6 Linz.at: Ars Electronica
+http://www.aec.at/en/prix/
+2008 03 25 00 Tu deadline March 25
+cfp: http://www.aec.at/en/prix/general_entry_regulations.asp
+
+2008 09 05 00 Fri Day1/3 Darmstadt.de: mrmcd111b
+2008 09 06 00 Sat Day2/3 Darmstadt.de: mrmcd111b
+2008 09 07 00 Sun Day3/3 Darmstadt.de: mrmcd111b
+MetaRheinMain
+mrmcd111b - "Connecting the dots"
+Darmstadt, DE
+http://www.metarheinmain.de/
+cfp: http://mrmcd.metarheinmain.de/mrmcd111b_cfp.pdf
+cfp: https://pentabarf.cccv.de/submission/mrmcd111b/
+.
+Hochschulgruppe Chaos Darmstadt e.V.
+Hochschulstrasse 10
+64289 Darmstadt
+mail: info@chaos-darmstadt.de
+
+2008 09 06 00 Sat Day1/2 9-17h Stuttgart.de: Workshop Hack&learn
+2008 09 07 00 Sun Day2/2 9-17h Stuttgart.de: Workshop Hack&learn
+Workshop "Hack & Learn"
+http://www.hdm-stuttgart.de/view_news?ident=news20080728105451
+http://www.hacking-lab.com
+
+2008 09 18 00 Thu IT_kom in Mainz
+http://www.itkom-mainz.de/
+
+2008 09 19 00 Fri Day1/3 Hohenberg.de: Huettenwochenende
+2008 09 20 00 Sat Day2/3 Hohenberg.de: Huettenwochenende
+2008 09 21 00 Sun Day3/3 Hohenberg.de: Huettenwochenende
+http://www.in-ulm.de/verein/huette/
+http://wiki.in-ulm.de/wiki/H%C3%BCttenwochenende
+http://www.in-ulm.de/cgi-bin/huettenanmeldung
+Hohenberg (nahe Ellwangen)
+
+2008 09 19 00 Fri Day1/2 Berlin.de: Maemo Summit 2008
+2008 09 20 00 Sat Day2/2 Berlin.de: Maemo Summit 2008
+Maemo Summit 2008
+https://wiki.maemo.org/Maemo_Summit_2008
+http://www.linux-magazin.de/content/view/full/24235
+at c-base.org
+
+2008 09 20 00 Sat Software Freedom Day
+http://softwarefreedomday.org/
+
+2008 09 20 00 Sat Day1/2 Wien.at: Linux Wochenende
+2008 09 21 00 Sun Day2/2 Wien.at: Linux Wochenende
+Linux Wochenende
+Metalab, Vienna, AT
+http://metalab.at/wiki/Linuxwochenende_2008
+http://linuxwochenende2008.luga.at/
+deadline: 31. Juli Do
+
+2008 09 24 00 Wed Day1/2 Zuerich.ch: OpenExpo
+2008 09 25 00 Thu Day2/2 Zuerich.ch: OpenExpo
+OpenExpo
+Zürich, CH
+24.+25. September 2008
+
+2008 09 30 00 Wed deadline for T-DOSE - extended!
+
+= October =
+
+2008 10 01 00 We Day1/1 London.uk: LinuxWorld Expo UK 2008
+LinuxWorld Expo UK 2008
+Olympia, London, UK
+http://www.linuxworldexpo.co.uk/ - dead?
+http://www.confabb.com/conferences/53504-linuxworld-expo-uk
+
+2008 10 03 00 Fri Day1/2 Copenhagen.dk: OpenSourceDays
+2008 10 04 00 Sat Day2/2 Copenhagen.dk: OpenSourceDays
+OpenSourceDays "Meet - Share - Experience - Learn"
+IT University of Denmark, Rued Langgaards Vej 7, 2300 Copenhagen S.
+Copenhagen, DK
+http://www.opensourcedays.org/
+cfP: http://opensource.dk/pipermail/announce-opensource-dk/2008-April/000019.html
+deadline: 2008-07-01 Tue deadline for OpenSourceDays in Copenhagen.dk
+
+2008 10 07 00 Tue Day1/4 Hamburg.de: LinuxKongress
+2008 10 08 00 Wed Day2/4 Hamburg.de: LinuxKongress
+2008 10 09 00 Thu Day3/4 Hamburg.de: LinuxKongress
+2008 10 10 00 Fri Day4/4 Hamburg.de: LinuxKongress
+Linux Kongress
+Hamburg, DE
+http://www.linux-kongress.org/2008/
+cfp: http://www.linux-kongress.org/2008/cfp.html
+2008-08-04 Call for Papers closes
+2008-08-11 Notification to speakers
+2008-08-18 Publication of program
+2008-09-15 Final papers due
+----------
+2008-10-07 Tutorials
+2008-10-08 Tutorials
+2008-10-09 Technical sessions
+2008-10-10 Technical sessions
+
+2008 10 10 00 Fri Day1/2 Kiel.de: Kieler LinuxTage
+2008 10 11 00 Sat Day2/2 Kiel.de: Kieler LinuxTage
+Kieler LinuxTage
+Kiel, DE
+http://www.kieler-linuxtage.de/
+wiki: http://wiki.kilux.de/2008/KielerLinuxtage
+blog: http://kilux.wordpress.com/
+
+2008 10 10 00 Fri Day1/5 Gernika.es: Hackelarre
+2008 10 14 00 Tue Day5/5 Gernika.es: Hackelarre
+Hackelarre
+Hackmeeting
+Gernika
+Astra Gernikeko Gaztetxea CSOA - Euskal Herria (Biscay - Spain)
+http://www.sindominio.net/hackmeeting/index.php/2007/Traducciones/en
+43º19' N
+ 2º40' W
+list: http://listas.sindominio.net/mailman/listinfo/hackmeeting
+website almost in spanish. looks geeky, but not very well structured.
+
+2008 10 11 00 Sat
+Freedom Not Fear
+http://wiki.vorratsdatenspeicherung.de/Freedom_Not_Fear_2008
+http://metalab.at/wiki/Freedom_Not_Fear_2008
+
+2008 10 11 00 Sat Day1/1 Magdeburg.de: Open Source Tag
+Open Source Tag - "Entwicklung trifft Anwendung"
+http://www.Open-Source-Tag.de
+Otto-von-Guericke-Universität
+Magdeburg, DE
+deadline:
+2008-09-07 abstracts
+2008-10-20 papers
+OLD Call for Participation: 01. Mai - 30. Juni
+NEW Call for Participation: 01. Mai - 31. August
+cfp: http://www.open-source-tag.de/cfp/index.html
+
+2008 10 16 00 Thu Day1/4 Strasbourg.fr: EuroBSDCon
+2008 10 17 00 Fri Day2/4 Strasbourg.fr: EuroBSDCon
+2008 10 18 00 Sat Day3/4 Strasbourg.fr: EuroBSDCon
+2008 10 19 00 Sun Day4/4 Strasbourg.fr: EuroBSDCon
+deadline 2008-06-01 Su
+EuroBSDCon 2008
+Strasbourg, FR
+http://www.eurobsdcon.org/
+http://2008.eurobsdcon.org/calendar.html timeline!
+deadline 2008-06-01
+
+2008 10 17 00 Fri Day1/3 Goettingen.de: UbuCon 2008
+2008 10 17 00 Sat Day2/3 Goettingen.de: UbuCon 2008
+2008 10 17 00 Sun Day3/3 Goettingen.de: UbuCon 2008
+Ubucon 2008
+Goettingen, DE
+http://www.ubucon.de/
+cfp: 2008-08-15 Fri idee@ubucon.de
+http://www.ubucon.de/index.php/component/content/article/1-aktuelle-nachrichten/57-cfp
+deadline extended from Aug01 to Aug15
+
+2008 10 18 00 Sat 23:59 deadline for BoF Sessions for Web 2.0 Expo
+
+2008 10 21 00 Tue Day1/3 Berlin.de: Web 2.0 Expo
+2008 10 22 00 Wed Day2/3 Berlin.de: Web 2.0 Expo
+2008 10 23 00 Thu Day3/3 Berlin.de: Web 2.0 Expo
+Web 2.0 Expo
+Berliner Congress Center -> http://tinyurl.com/56l6aa
+http://en.oreilly.com/webexberlin2008/public/content/home
+http://maps.google.com/maps?f=q&hl=en&geocode=&q=berliner+congress+center,+berlin+germany&ie=UTF8&ll=52.52254,13.414907&spn=0.009479,0.028667&t=k&z=16
+2008 10 18 00 Sat 23:59 deadline for BoF Sessions for Web 2.0 Expo
+
+2008 10 24 Fri Day1/3 Gothenburg.se: FSCONS
+2008 10 25 Sat Day2/3 Gothenburg.se: FSCONS
+2008 10 26 Sun Day3/3 Gothenburg.se: FSCONS
+FSCONS
+Gothenburg, Sweden
+http://www.fscons.org/
+http://www.facebook.com/event.php?eid=18711028763
+
+2008 10 25 00 Sat Day1/2 Eindhoven.nl: T-DOSE
+2008 10 26 00 Sun Day2/2 Eindhoven.nl: T-DOSE
+2008 07 30 00 Wed deadline for T-DOSE
+2008 09 30 00 Wed deadline for T-DOSE - extended!
+T-DOSE:  Technical Dutch Open Source Event!
+Eindhoven, NL
+http://www.t-dose.org
+cfp: http://www.t-dose.org/t-dose/abstracts
+cfp: http://www.t-dose.org/t-dose/files/t-dose-2008.pdf
+cfp: abstracts@t-dose.org
+
+= November =
+
+2008 11 01 00 Sa Day1/1 Potsdam.de: Brandenburger Linux Info Tag (BLIT)
+Brandenburger Linux Info Tag (BLIT)
+"Mikrowelten"
+http://www.blit.org/
+Potsdam, DE
+http://www.uni-potsdam.de/
+http://www.linuxtag-brb.de/
+
+2008 11 03 00 Mon Day1/6 Ljubljana.si: HAIP
+2008 11 04 00 Tue Day2/6 Ljubljana.si: HAIP
+2008 11 05 00 Wed Day3/6 Ljubljana.si: HAIP
+2008 11 06 00 Thu Day4/6 Ljubljana.si: HAIP
+2008 11 07 00 Fri Day5/6 Ljubljana.si: HAIP
+2008 11 08 00 Sat Day6/6 Ljubljana.si: HAIP
+hack+act+interact+progress (HAIP)
+Festival
+Ljubljana, Slovenia,
+3-8 November 2008
+http://www.kiberpipa.org/haip/
+deadline: 2008-04-21
+deadline: 21st April 2008.
+Kiberpipa (Cyberpipe)
+third edition of biennial festival of open
+technologies and modern-art practice HAIP.
+Theme: "Hacktopia"
+
+2008 11 06 00 Thu DeReehorst.nl: NLUUG Fall Conference 2008
+NLUUG Fall Conference 2008
+De Reehorst, Ede (Gelderland, The Netherlands)
+http://www.nluug.nl/events/nj08/
+cfp: http://www.nluug.nl/events/nj08/CfP-EN.html
+2008 06 29 00 Sun NLUUG Conf: Abstract deadline - http://www.nluug.nl/events/nj08/CfP-EN.html
+2008 07 10 00 Thu NLUUG Conf: Notification to the speakers
+2008 09 07 00 Sun NLUUG Conf: Paper deadline
+2008 11 06 00 Thu NLUUG Conf: Conference
+
+2008 11 08 00 Sat Day1/1 Dresden.de: Linux Info Tag
+Linux Info Tag
+Dresden, DE
+http://linux-info-tag.de/
+
+2008 11 11 00 Tue Day1/4 Vienna.at: DeepSec IDSC 2008 Europe
+2008 11 12 00 Wed Day2/4 Vienna.at: DeepSec IDSC 2008 Europe
+2008 11 13 00 Thu Day3/4 Vienna.at: DeepSec IDSC 2008 Europe
+2008 11 14 00 Fri Day4/4 Vienna.at: DeepSec IDSC 2008 Europe
+2008 07 15 00 Tue deadline for DeepSec IDSC 2008 Europe
+DeepSec IDSC 2008 Europe
+Vienna, Austria
+https://deepsec.net/
+Renaissance Penta Vienna Hotel
+The Imperial Riding School Vienna.
+Ungargasse 60, Vienna, 1030 Austria
+
+2008 11 13 00 Thu Day1/1  Berlin.de: World Usability Day (WUD08)
+World Usability Day (WUD08)
+http://www.wud-berlin.de/2008/index.php
+http://www.worldusabilityday.org/
+cfp: http://www.wud-berlin.de/2008/mitgestalten.php
+
+2008 11 15 00 Sat Day1/2 Essen.de: come2linux
+2008 11 16 00 Sun Day2/2 Essen.de: come2linux
+come2linux
+http://www.come2linux.org/
+2008-08-07: kein cfp, keine deadline
+im Glaspavillon (R12) der
+Universität Duisburg-Essen
+Universitätsstr. 2, 45141 Essen
+http://www.uni-essen.de/plan/campus-plan.html
+
+2008 11 24 00 Mon Day1/7 Poitiers.fr: OpenOS
+2008 11 25 00 Tue Day2/7 Poitiers.fr: OpenOS
+2008 11 26 00 Wed Day3/7 Poitiers.fr: OpenOS
+2008 11 27 00 Thu Day4/7 Poitiers.fr: OpenOS
+2008 11 28 00 Fri Day5/7 Poitiers.fr: OpenOS
+2008 11 29 00 Sat Day6/7 Poitiers.fr: OpenOS
+2008 11 30 00 Sun Day7/7 Poitiers.fr: OpenOS
+3rd MAKE ART 2008 - OpenOS
+Poitiers (FR)
+http://makeart.goto10.org/call
+Make Art is an international festival
+dedicated to the integration of Free/Libre
+Open Source Software (FLOSS) in digital art.
+cfp: http://makeart.goto10.org/call/makeart-submissionform.odt
+2008 08 08 00 Fri deadline for Make Art
+
+= December =
+
+2008 12 04 00 Thu Day1/4 Bergen.no: Piksel "code dreams"
+2008 12 05 00 Fri Day2/4 Bergen.no: Piksel "code dreams"
+2008 12 06 00 Sat Day3/4 Bergen.no: Piksel "code dreams"
+2008 12 07 00 Sun Day4/4 Bergen.no: Piksel "code dreams"
+http://piksel.no/piksel08
+"code dreams"
+Bergen, Norway
+PIKSEL08
+http://piksel.no/piksel08/call_html
+
+2008 12 10 00 Wed Day1/3 Magdeburg.de: SLAC Rechtsprobleme fuer Administratoren
+2008 12 11 00 Thu Day2/3 Magdeburg.de: SLAC
+2008 12 12 00 Fri Day3/3 Magdeburg.de: SLAC
+3. Secure Linux Administration Conference (SLAC)
+
+2008 12 27 00 Sat Day1/4 Berlin.de: 25th Chaos Communication Congress
+2008 12 28 00 Sun Day2/4 Berlin.de: 25th Chaos Communication Congress
+2008 12 29 00 Mon Day3/4 Berlin.de: 25th Chaos Communication Congress
+2008 12 30 00 Tue Day4/4 Berlin.de: 25th Chaos Communication Congress
+25C3
+25th Chaos Communication Congress
+Berlin, DE
+http://www.ccc.de/congress/2008/
+http://events.ccc.de/congress/2008/:
+https://cccv.pentabarf.org/submission/25C3
+2008-10-05 23:59UTC Submissions due
+2008-11-07 23:59UTC Final notification of acceptance (or earlier)
+2008-11-28 23:59UTC Final papers due
+2008-12-27 25C3 Day1/4
+2008-12-28 25C3 Day2/4
+2008-12-29 25C3 Day3/4
+2008-12-30 25C3 Day4/4
+
+
+====================================================================
+also interesting, but not for this calendar:
+====================================================================
+
+2008 04 20 00
+http://criticalmass.hu/
+
+2008 08 30 00 Sat
+2008 09 14 00 Sun
+http://www.mars-rocks.de/
+Koeln, Kolbhalle
+http://www.mars-rocks.de/2008:start
+
+NEW 11-27 Th| 11-30 Su| deadline | DreamHack | Joenkoeping | SE | http://www.dreamhack.se/dhskII08/
+2008 11 27 00 Thu Day1/4 Joenkoeping.se: DreamHack
+2008 11 28 00 Fri Day2/4 Joenkoeping.se: DreamHack
+2008 11 29 00 Sat Day3/4 Joenkoeping.se: DreamHack
+2008 11 30 00 Sun Day4/4 Joenkoeping.se: DreamHack
+2008 06 14 00 Sat
+2008 06 17 00 Tue
+DreamHack
+ELMIA, Jönköping, Sweden
+http://tinyurl.com/69aach
+http://web.dreamhack.se/
+http://www.dreamhack.se/dhskII08/
+"The World's Largest Computer Festivala"
+http://www.dreamhack.se/dhs08 DreamHack Summer '08
+http://www.dreamhack.se/dhs08/facts.php?id=44 schedule
+
+====================================================================
+OLD Conferences
+====================================================================
+
+2006 09 29 00 Fri Day1/3
+2006 09 30 00 Sat Day2/3
+2006 10 01 00 Sun Day3/3
+OpenEXP
+Percorsi attraverso l¿ Open Source.
+http://www.openexp.it/index.php?option=com_content&task=view&id=5&Itemid=6
+
+2nd International Conference on Open Source Systems
+Seconda Conferenza Internazionale sui Sistemi Open Source
+08-10 Giugno 2006, Grand Hotel, Como, Italia
+http://oss2006.dti.unimi.it/
+
+3rd International Conference on Open Source Systems
+June 11-14 2007, Limerick, Ireland
+http://oss2007.dti.unimi.it/
+
+4th International Conference on Open Source Systems
+7-10 September 2008, Milan, Italy
+http://oss2008.dti.unimi.it/
+
+http://www.osacademy.it/
+
+EOF

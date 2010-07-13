@@ -1,0 +1,28 @@
+{% load i18n %}
+{% load markup %}
+
+{% if user.username %}
+    <p align="right"><a href="{% url group_new %}">{% trans "Create a new group" %}</a></p>
+    <h2 align="center">{% trans "Coming events in my groups" %}</h2>
+    {% if group_events %}
+        {% for g in group_events %}
+            Group: {{g.group_name}}<br>
+            {% for event in g.el %}
+            <p>
+            <div class="field">
+                <a href="{% url event_show event.id %}">{{ event.title }}</a><br />
+                <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
+                </span>
+            </div>
+            </p>
+            {% endfor %}
+        <hr />
+        {% endfor %}
+    {% else %}
+        <p>{% trans "No events in your groups." %}</p>
+    {% endif %}
+{% else %}
+    <h2>{% trans "What is GridCalendar.net?" %}</h2>
+    {{ about_text|restructuredtext }}
+    <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
+{% endif %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Edit your filter" %}:</p>
+
+<div id="event_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% blocktrans count form.errors as counter %}
+            Please correct following error
+            {% plural %}Please correct following errors
+            {% endblocktrans %}
+        </p>
+    {% endif %}
+    <form action="" method="post">
+        <table>
+            {{ form.as_table }}
+        </table>
+        <input type="submit" value={% trans "Save" %}>
+    </form>
+</div>
+
+{% endblock %}
