@@ -10,3 +10,6 @@ apache/django.wsgi
 gridcalendar.sqlite
 .project
 .pydevproject
+syntax: regexp
+(.*/)?\#[^/]*\#$
+.*\~
