@@ -158,6 +158,8 @@ def group_add_event(request, event_id):
             form = AddEventToGroupForm(
                     data=request.POST, user=user, event=event)
             if form.is_valid():
+                event=event.get_public()
+                assert(event.public)
                 for group in form.cleaned_data['grouplist']:
                     calentry = Calendar(event=event, group=group)
                     calentry.save()
