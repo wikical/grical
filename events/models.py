@@ -39,6 +39,7 @@ from django.forms import ValidationError
 from django.forms.models import inlineformset_factory
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
+from django.db.models.query import CollectedObjects
 
 from tagging.models import Tag
 from tagging.fields import TagField
@@ -343,14 +344,72 @@ class Event(models.Model):
             _(u'Timezone'), blank = True, null = True,
             help_text = _("Minutes relative to UTC (e.g. -60 means UTC-1)"))
     description = models.TextField(_(u'Description'), blank = True, null = True)
+    
+    
+    clone_of=models.ForeignKey('self', editable = False, blank = True, null = True)
+    """ Relation to orginal object, or null if this is orginal """
+    
     # the relation event-group is now handle in group. The old code was:
     # groups = models.ManyToManyField(Group, blank = True, null = True,
     # help_text=_("Groups to be notified and allowed to see it if not public"))
-
+    
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['start']
         verbose_name = _(u'Event')
         verbose_name_plural = _(u'Events')
+    
+    def clone(self):
+        """
+        Make, save and return clone of object.
+        Also make copy of all related objects, 
+        and relate then to clone.
+        Set in clone relation to orginal.
+        """
+        collected_objs = CollectedObjects()
+        self._collect_sub_objects(collected_objs)
+        related_models = collected_objs.keys()
+        new = None
+        # Traverse the related models in reverse deletion order.    
+        for model in reversed(related_models):
+            # Find all FKs on `model` that point to a `related_model`.
+            fks = []
+            for f in model._meta.fields:
+                if isinstance(f, models.ForeignKey) and f.rel.to in related_models:
+                    fks.append(f)
+            # Replace each `sub_obj` with a duplicate.
+            sub_obj = collected_objs[model]
+            for pk_val, obj in sub_obj.iteritems():
+                for fk in fks:
+                    fk_value = getattr(obj, "%s_id" % fk.name)
+                    # If this FK has been duplicated then point to the duplicate.
+                    if fk_value in collected_objs[fk.rel.to]:
+                        dupe_obj = collected_objs[fk.rel.to][fk_value]
+                        setattr(obj, fk.name, dupe_obj)
+                # Duplicate the object and save it.
+                obj.id = None
+                if new is None:
+                    new = obj
+                    new.public=True
+                    new.clone_of_id=self.pk
+                    new.save()
+                else:
+                    obj.save()
+        return new
+
+    def get_clone(self):
+        clones=Event.objects.filter(clone_of=self)
+        if clones:
+            assert(len(clones)==1)
+            return clones[0]
+        else:
+            return self.clone()
+
+    def get_public(self):
+        if self.public:
+            return self
+        else:
+            clone=self.get_clone()
+            return clone
 
     def set_tags(self, tags):
         Tag.objects.update_tags(self, tags)
@@ -1044,7 +1103,7 @@ class Group(models.Model):
                 user__id__exact = user_id,
                 group__id__exact = group_id)
         if times_user_in_group.count() > 0:
-            assert(times_user_in_group == 1)
+            assert(times_user_in_group.count() == 1)
             return True
         else:
             return False

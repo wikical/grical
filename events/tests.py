@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2010 Adam Beret Manczuk <beret@hipisi.org.pl>,
 # Ivan Villanueva <iv@gridmind.org>
@@ -25,8 +27,10 @@ import datetime
 from django.contrib.auth.models import User
 from events.models import Event, Group, Membership, Calendar, Filter
 from django.test import TestCase
+from django.core.urlresolvers import reverse
+from django.core import mail
 
-class EventTestCase(TestCase):
+class EventTestCase(TestCase):              #pylint: disable-msg=R0904
     """testing case for event application"""
 
     @staticmethod
@@ -130,50 +134,48 @@ class EventTestCase(TestCase):
             )
             cal1.save()
 
-    def test_event(self):
-        """testing sites for event"""
-        response = self.client.get('/e/new/')
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get('/e/new/raw/')
-        self.failUnlessEqual(response.status_code, 200)
-        for event in Event.objects.all():
-            response = self.client.get("/e/edit/%d/" % event.id)
-            self.failUnlessEqual(response.status_code, 200)
-            response = self.client.get("/e/edit/%d/raw/" % event.id)
-            self.failUnlessEqual(response.status_code, 200)
-            response = self.client.get("/e/show/%d/" % event.id)
-            self.failUnlessEqual(response.status_code, 200)
-            response = self.client.get("/e/show/%d/raw/" % event.id)
-            self.failUnlessEqual(response.status_code, 200)
-            response = self.client.get("/e/show/%d/ical/" % event.id)
-            self.failUnlessEqual(response.status_code, 200)
-
-    def test_filter(self):
-        "testing sites for filter"
-        for event_filter in Filter.objects.all():
-            response = self.client.get("/f/%d/ical/" % event_filter.id)
-            self.failUnlessEqual(response.status_code, 200)
-
-    def test_queries(self):
-        "testing sites for queries"
-        response = self.client.get('/q/')
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get('/s/berlin/ical/')
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get('/s/berlin/')
-        self.failUnlessEqual(response.status_code, 200)
+#    def test_event(self):
+#        """testing sites for event"""
+#        response = self.client.get('/e/new/')
+#        self.failUnlessEqual(response.status_code, 200)
+#        response = self.client.get('/e/new/raw/')
+#        self.failUnlessEqual(response.status_code, 200)
+#        for event in Event.objects.all():
+#            response = self.client.get("/e/edit/%d/" % event.id)
+#            self.failUnlessEqual(response.status_code, 200)
+#            response = self.client.get("/e/edit/%d/raw/" % event.id)
+#            self.failUnlessEqual(response.status_code, 200)
+#            response = self.client.get("/e/show/%d/" % event.id)
+#            self.failUnlessEqual(response.status_code, 200)
+#            response = self.client.get("/e/show/%d/raw/" % event.id)
+#            self.failUnlessEqual(response.status_code, 200)
+#            response = self.client.get("/e/show/%d/ical/" % event.id)
+#            self.failUnlessEqual(response.status_code, 200)
+#
+#    def test_filter(self):
+#        "testing sites for filter"
+#        for event_filter in Filter.objects.all():
+#            response = self.client.get("/f/%d/ical/" % event_filter.id)
+#            self.failUnlessEqual(response.status_code, 200)
+#
+#    def test_queries(self):
+#        "testing sites for queries"
+#        response = self.client.get('/q/')
+#        self.failUnlessEqual(response.status_code, 200)
+#        response = self.client.get('/s/berlin/ical/')
+#        self.failUnlessEqual(response.status_code, 200)
+#        response = self.client.get('/s/berlin/')
+#        self.failUnlessEqual(response.status_code, 200)
 
     def test_login(self):
         "testing for login"
         for user_id in range(1, 5):
             login = self.client.login(username='u' + str(user_id), password='p')
             self.failUnless(login, 'Could not log in')
+            response = self.client.get(reverse('group_new'))
+            self.failUnlessEqual(response.status_code, 200)
 
     # TODO: test that a notification email is sent to all members of a group
     # when a new event is added to the group. See class Membership in
-    # events/models.py
-
-    # TODO: test that a notification email is sent to all members of a group
-    # when a new member is added to the group. See class Membership in
     # events/models.py
 

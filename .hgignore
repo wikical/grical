@@ -13,3 +13,6 @@ gridcalendar.sqlite
 syntax: regexp
 (.*/)?\#[^/]*\#$
 .*\~
+
+syntax: regexp
+^fixtures$

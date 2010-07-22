@@ -22,7 +22,7 @@
 #############################################################################
 
 from django.conf import settings
-from django.conf.urls.defaults import patterns, include, url, include
+from django.conf.urls.defaults import patterns, include, url, handler500, handler404
 from django.contrib import admin, databrowse
 
 # databrowse.site.register(Event)
