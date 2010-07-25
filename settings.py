@@ -92,6 +92,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'gridcalendar.events.middleware.SendAuthMiddleware',
 )
 # at the end of this section additional middleware are conditionaly
 # added

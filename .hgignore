@@ -16,3 +16,7 @@ syntax: regexp
 
 syntax: regexp
 ^fixtures$
+syntax: regexp
+^gridcalendar$
+syntax: regexp
+^data\.json$

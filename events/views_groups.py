@@ -30,7 +30,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from gridcalendar.events.decorators import login_required
 
 from gridcalendar.settings import SECRET_KEY
 
@@ -158,8 +158,8 @@ def group_add_event(request, event_id):
             form = AddEventToGroupForm(
                     data=request.POST, user=user, event=event)
             if form.is_valid():
-                event=event.get_public()
-                assert(event.public)
+                if not event.public:
+                    event = event.get_clone()
                 for group in form.cleaned_data['grouplist']:
                     calentry = Calendar(event=event, group=group)
                     calentry.save()
