@@ -70,7 +70,8 @@ def rss_for_group_auth(request, group_id):
 def rss_for_group_hash(request, group_id, user_id, hash):
     g = Group.objects.filter(id=group_id)
     u = User.objects.filter(id=user_id)
-    if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()) and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
+    if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest())\
+     and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
         return rss_for_group(request, group_id)
     else:
         return render_to_response('error.html',

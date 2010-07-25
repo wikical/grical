@@ -34,6 +34,21 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
     """testing case for event application"""
 
     @staticmethod
+    def user_name(user_nr):
+        "cereate user name for nr"
+        return 'u' + str(user_nr)
+
+    @staticmethod
+    def user_email(user_nr):
+        "cereate user email for nr"
+        return 'test' + str(user_nr) + '@gridcalendar.net'
+
+    @classmethod
+    def get_user(cls, user_nr):
+        "get user instance for nr"
+        return User.objects.get(username=cls.user_name(user_nr))
+
+    @staticmethod
     def create_event(user=None, number_of_events=3):
         """helper function to create events for user"""
         for event_c in range(number_of_events):
@@ -76,6 +91,12 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                     if user:
                         event.user = user
                     event.save()
+    
+    def login_user(self, user_id):
+        "login user for id"
+        login = self.client.login(username=self.user_name(user_id), \
+                                  password='p')
+        return login
 
     def setUp(self):                            # pylint: disable-msg=C0103
         """models value initiation"""
@@ -86,8 +107,8 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         # create some users and let them create some filters and events
         for user_id in range(1, 5):
             user = User.objects.create_user(
-                    username='u' + str(user_id),
-                    email='test' + str(user_id) + '@gridcalendar.net',
+                    username=self.user_name(user_id),
+                    email=self.user_email(user_id),
                     password='p',
                     )
             user.save()
@@ -109,8 +130,9 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                 description='test description' + str(group_id),
                 )
             group.save()
-            for user_id in group_data[group_id - 1]:
-                user = User.objects.get(id=user_id)
+            for user_nr in group_data[group_id - 1]:
+                print user_nr
+                user = self.get_user(user_nr)
                 member1 = Membership(
                     group=group,
                     user=user,
@@ -133,48 +155,20 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                 group=group,
             )
             cal1.save()
-
-#    def test_event(self):
-#        """testing sites for event"""
-#        response = self.client.get('/e/new/')
-#        self.failUnlessEqual(response.status_code, 200)
-#        response = self.client.get('/e/new/raw/')
-#        self.failUnlessEqual(response.status_code, 200)
-#        for event in Event.objects.all():
-#            response = self.client.get("/e/edit/%d/" % event.id)
-#            self.failUnlessEqual(response.status_code, 200)
-#            response = self.client.get("/e/edit/%d/raw/" % event.id)
-#            self.failUnlessEqual(response.status_code, 200)
-#            response = self.client.get("/e/show/%d/" % event.id)
-#            self.failUnlessEqual(response.status_code, 200)
-#            response = self.client.get("/e/show/%d/raw/" % event.id)
-#            self.failUnlessEqual(response.status_code, 200)
-#            response = self.client.get("/e/show/%d/ical/" % event.id)
-#            self.failUnlessEqual(response.status_code, 200)
-#
-#    def test_filter(self):
-#        "testing sites for filter"
-#        for event_filter in Filter.objects.all():
-#            response = self.client.get("/f/%d/ical/" % event_filter.id)
-#            self.failUnlessEqual(response.status_code, 200)
-#
-#    def test_queries(self):
-#        "testing sites for queries"
-#        response = self.client.get('/q/')
-#        self.failUnlessEqual(response.status_code, 200)
-#        response = self.client.get('/s/berlin/ical/')
-#        self.failUnlessEqual(response.status_code, 200)
-#        response = self.client.get('/s/berlin/')
-#        self.failUnlessEqual(response.status_code, 200)
-
+    
     def test_login(self):
         "testing for login"
         for user_id in range(1, 5):
-            login = self.client.login(username='u' + str(user_id), password='p')
+            login = self.login_user(user_id)
             self.failUnless(login, 'Could not log in')
             response = self.client.get(reverse('group_new'))
             self.failUnlessEqual(response.status_code, 200)
 
+    def test_event_rules(self):
+        "testing crate and behavior of public and private events"
+        mail.outbox = []
+        login = self.login_user(1)
+        print login
     # TODO: test that a notification email is sent to all members of a group
     # when a new event is added to the group. See class Membership in
     # events/models.py

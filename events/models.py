@@ -31,7 +31,7 @@ from django.db import models
 from django.db.models import Q
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
@@ -40,6 +40,7 @@ from django.forms.models import inlineformset_factory
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db.models.query import CollectedObjects
+from gridcalendar.events.signals import user_auth_signal
 
 from tagging.models import Tag
 from tagging.fields import TagField
@@ -294,7 +295,47 @@ COUNTRIES = (
     ('ZW', _(u'Zimbabwe')),
 )
 
-class Event(models.Model):
+class EventManager(models.Manager):# pylint: disable-msg=R0904
+    """let event can show only public models for all
+    and private model only for group members and owner"""
+    
+    _user = False
+    
+    @classmethod
+    def set_auth_user(cls, sender, user, **kwargs):# pylint: disable-msg=W0613
+        "set _user value after auth"
+        cls.set_user(user)
+
+    @classmethod
+    def set_user(cls, user):
+        "set user for queries"
+        if type(user) != AnonymousUser:
+            cls._user = user
+        else:
+            cls._user = False
+
+    @classmethod
+    def get_user(cls):
+        "get user for queries"
+        return cls._user
+    
+    def get_query_set(self):
+        user = self.get_user()
+        if user:
+            groups = Group.objects.filter(users_in_group__user=user)
+            query_set = super(EventManager, self)\
+            .get_query_set().filter(\
+                                    Q(public=True) \
+                                    | Q(user=user )\
+                                    | Q(group__in=groups))
+        else:
+            query_set =  super(EventManager, self)\
+            .get_query_set().filter(public=True)
+        return query_set
+
+user_auth_signal.connect(EventManager.set_auth_user)
+
+class Event(models.Model):# pylint: disable-msg=R0904
     """ Event model. """
     user = models.ForeignKey(User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _(u'User'))
@@ -346,8 +387,13 @@ class Event(models.Model):
     description = models.TextField(_(u'Description'), blank = True, null = True)
     
     
-    clone_of=models.ForeignKey('self', editable = False, blank = True, null = True)
-    """ Relation to orginal object, or null if this is orginal """
+    clone_of = models.ForeignKey('self', \
+                               editable = False, \
+                               blank = True, \
+                               null = True)
+    " Relation to orginal object, or null if this is orginal "
+    
+    objects = EventManager()
     
     # the relation event-group is now handle in group. The old code was:
     # groups = models.ManyToManyField(Group, blank = True, null = True,
@@ -358,7 +404,7 @@ class Event(models.Model):
         verbose_name = _(u'Event')
         verbose_name_plural = _(u'Events')
     
-    def clone(self):
+    def clone(self, public=False):
         """
         Make, save and return clone of object.
         Also make copy of all related objects, 
@@ -371,26 +417,27 @@ class Event(models.Model):
         new = None
         # Traverse the related models in reverse deletion order.    
         for model in reversed(related_models):
-            # Find all FKs on `model` that point to a `related_model`.
-            fks = []
-            for f in model._meta.fields:
-                if isinstance(f, models.ForeignKey) and f.rel.to in related_models:
-                    fks.append(f)
+            # Find all field keys on `model` that point to a `related_model`.
+            field_keys = []
+            for field in model._meta.fields:
+                if isinstance(field, models.ForeignKey) \
+                and field.rel.to in related_models:
+                    field_keys.append(field)
             # Replace each `sub_obj` with a duplicate.
             sub_obj = collected_objs[model]
             for pk_val, obj in sub_obj.iteritems():
-                for fk in fks:
-                    fk_value = getattr(obj, "%s_id" % fk.name)
-                    # If this FK has been duplicated then point to the duplicate.
-                    if fk_value in collected_objs[fk.rel.to]:
-                        dupe_obj = collected_objs[fk.rel.to][fk_value]
-                        setattr(obj, fk.name, dupe_obj)
+                for field_key in field_keys:
+                    field_key_value = getattr(obj, "%s_id" % field_key.name)
+                    if field_key_value in collected_objs[field_key.rel.to]:
+                        dupe_obj = \
+                        collected_objs[field_key.rel.to][field_key_value]
+                        setattr(obj, field_key.name, dupe_obj)
                 # Duplicate the object and save it.
                 obj.id = None
                 if new is None:
                     new = obj
-                    new.public=True
-                    new.clone_of_id=self.pk
+                    new.clone_of_id = self.pk
+                    new.public = public
                     new.save()
                 else:
                     obj.save()
@@ -403,13 +450,6 @@ class Event(models.Model):
             return clones[0]
         else:
             return self.clone()
-
-    def get_public(self):
-        if self.public:
-            return self
-        else:
-            clone=self.get_clone()
-            return clone
 
     def set_tags(self, tags):
         Tag.objects.update_tags(self, tags)
