@@ -24,6 +24,9 @@
 from django.conf import settings
 from django.conf.urls.defaults import patterns, include, url, include
 from django.contrib import admin, databrowse
+from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
+# previous pylint directive is needed because of a bug in Django:
+# http://code.djangoproject.com/ticket/5350
 
 # databrowse.site.register(Event)
 # databrowse.site.register(Group)
