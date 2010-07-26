@@ -394,7 +394,7 @@ class Event(models.Model):# pylint: disable-msg=R0904
                                editable = False, \
                                blank = True, \
                                null = True)
-    " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105
+    " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105,C0301
     
     objects = EventManager()
     
@@ -428,11 +428,9 @@ class Event(models.Model):# pylint: disable-msg=R0904
                     field_keys.append(field)
             # Replace each `sub_obj` with a duplicate.
             sub_obj = collected_objs[model]
-            print sub_obj
-            for pk_val, obj in sub_obj.iteritems():# pylint: disable-msg=W0612e/edit/2/
+            for pk_val, obj in sub_obj.iteritems():# pylint: disable-msg=W0612
                 for field_key in field_keys:
                     field_key_value = getattr(obj, "%s_id" % field_key.name)
-                    print field_key.name, field_key_value
                     if field_key_value in collected_objs[field_key.rel.to]:
                         dupe_obj = \
                         collected_objs[field_key.rel.to][field_key_value]
@@ -449,7 +447,8 @@ class Event(models.Model):# pylint: disable-msg=R0904
         return new
 
     def get_clones(self):
-        clones=Event.objects.filter(clone_of=self)
+        "get all clones of event"
+        clones = Event.objects.filter(clone_of=self)
         return clones
 #        if clones:
 #            assert(len(clones)==1)
@@ -1158,9 +1157,8 @@ class Group(models.Model):
     def groups_for_add_event(cls, user, event):
         "return grups for event to add"
         groups = cls.objects.filter(members = user)
-        if event.public:
-            groups.exclude(events = event)
-        else:
+        groups.exclude(events = event)
+        if not event.public:
             for clone in event.get_clones():
                 groups.exclude(events = clone)
         return groups

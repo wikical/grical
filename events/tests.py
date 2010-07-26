@@ -25,13 +25,16 @@
 
 import datetime
 from django.contrib.auth.models import User
-from events.models import Event, Group, Membership, Calendar, Filter
+from events.models import Event, Group, Filter
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
-import time
-import threading
-import random
+import re
+#import time
+#import threading
+#import random
+
+USERS_COUNT = 10
 
 class EventTestCase(TestCase):              #pylint: disable-msg=R0904
     """testing case for event application"""
@@ -121,7 +124,7 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         EventTestCase.create_event(False)
         
         # create some users and let them create some filters and events
-        for user_nr in range(100):
+        for user_nr in range(USERS_COUNT):
             user = User.objects.create_user(
                     username=self.user_name(user_nr),
                     email=self.user_email(user_nr),
@@ -155,7 +158,7 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         txt = response.content
         self.assertTrue(public_event.title in txt)
         self.assertTrue(private_event.title in txt)
-        for nr in range(100):
+        for nr in range(USERS_COUNT):# pylint: disable-msg=C0103
             if nr != user_nr:
                 public_title = self.event_title(self.get_user(nr), True, True)
                 private_title = self.event_title(self.get_user(nr), False, True)
@@ -163,14 +166,87 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                                 "not visible public event: %s" % private_title)
                 self.assertFalse(private_title in txt, \
                                  "visible private event: %s" % private_title)
+        self.client.logout()
+
+    def user_group_visibility(self, user_nr):
+        "tests visibility private and public events for user \
+        after add this to group"
+        login = self.login_user(user_nr)
+        self.assertTrue(login)
+        response = self.client.get(reverse('list_events_tag', \
+                                         kwargs = {'tag':'tag'}))
+        txt = response.content
+        for nr in range(USERS_COUNT):# pylint: disable-msg=C0103
+            if nr != user_nr:
+                public_title = self.event_title(self.get_user(nr), True, True)
+                private_title = self.event_title(self.get_user(nr), False, True)
+                self.assertTrue(public_title in txt, \
+                                "not visible public event: %s" % private_title)
+                self.assertTrue(private_title in txt, \
+                                 "not visible private event from group: %s" \
+                                 % private_title)
+        self.client.logout()
+
+
+    def user_create_groups(self, user_nr):
+        "create groups and send invitive to all users"
+        login = self.login_user(user_nr)
+        self.assertTrue(login)
+        user = self.get_user(user_nr)
+        self.client.post(reverse('group_new'), \
+                                    {'name':user.username, 
+                                     'description':user.username})
+        group = Group.objects.get(users_in_group=user)
+        self.assertEqual(group, Group.objects.get(name=user.username))
+        for nr in range(USERS_COUNT):# pylint: disable-msg=C0103
+            self.client.post(reverse('group_invite', \
+                                            kwargs={'group_id': group.id}), \
+                        {'username': self.user_name(nr),
+                        'group_id': group.id})
+
+    def user_add_event(self, user_nr):
+        "add event to user's group"
+        mail.outbox = []
+        login = self.login_user(user_nr)
+        self.assertTrue(login)
+        user = self.get_user(user_nr)
+        public_event = self.get_event(user, True, True)
+        private_event = self.get_event(user, False, True)
+        group = Group.objects.get(name=user.username)
+        for event in (public_event, private_event):
+            self.client.post(reverse('group_add_event', \
+                                            kwargs = {'event_id':event.id}), \
+                                    {'grouplist': group.id})
+#        is no message after add new event to group
+#        print map(lambda x: (x.to[0],x.body), mail.outbox)
 
     def test_visibility(self):
         "testing visibility public and private events"
-        mail.outbox = []
-        for user_nr in range(100):
+        for user_nr in range(USERS_COUNT):
             self.user_test_visibility(user_nr)
 
-#This test can't work with sqlite, because sqlite not support multiusers, is recomendet to use this with postgresql
+    def test_groups(self):
+        "test groups behavior"
+        mail.outbox = []
+        re_inv_code = re.compile(r'g\/invite\/confirm\/([0-9a-f]+)\/')
+        for user_nr in range(USERS_COUNT):
+            self.user_create_groups(user_nr)
+        for code, email in \
+        map(lambda x: (re_inv_code.findall(x.body)[0], x.to[0]), mail.outbox):# pylint: disable-msg=W0141,C0301
+            user = User.objects.get(email=email)
+            self.client.login(username=user.username, password='p')
+            self.client.get(reverse('group_invite_activate', \
+                                    kwargs={'activation_key':code}))
+            self.client.logout()
+        mail.outbox = []
+        for user_nr in range(USERS_COUNT):
+            self.user_add_event(user_nr)
+        for user_nr in range(USERS_COUNT):
+            self.user_group_visibility(user_nr)
+
+
+#This test can't work with sqlite, because sqlite not support multiusers, 
+#is recomendet to use this in future
 #    def test_visibility_in_thread(self):
 #        "testing visibility public and private events in thread"
 #        class TestThread(threading.Thread):
@@ -182,7 +258,7 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
 #            def run(self):
 #                time.sleep(random.randint(0, 100)/100.0)
 #                self.test.user_test_visibility(self.user_nr)
-#        for user_nr in range(2):
+#        for user_nr in range(USERS_COUNT):
 #            thread = TestThread(self, user_nr)
 #            thread.start()
 #        for second in range(20, 0, -1):

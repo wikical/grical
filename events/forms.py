@@ -129,7 +129,7 @@ class AddEventToGroupForm(Form):
     def __init__(self, user, event, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)
         self.fields["grouplist"].queryset = \
-                Group.objects.filter(members=user).exclude(events=event)
+                Group.groups_for_add_event(user, event)
 
 class InviteToGroupForm(Form):
     """ Form for a user name to invite to a group """
