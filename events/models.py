@@ -321,7 +321,10 @@ class EventManager(models.Manager):# pylint: disable-msg=R0904
     
     def get_query_set(self):
         user = self.get_user()
+        
         if user:
+            if user.is_staff:
+                return super(EventManager, self).get_query_set()
             groups = Group.objects.filter(users_in_group__user=user)
             query_set = super(EventManager, self)\
             .get_query_set().filter(\
@@ -391,7 +394,7 @@ class Event(models.Model):# pylint: disable-msg=R0904
                                editable = False, \
                                blank = True, \
                                null = True)
-    " Relation to orginal object, or null if this is orginal "
+    " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105
     
     objects = EventManager()
     
@@ -419,15 +422,17 @@ class Event(models.Model):# pylint: disable-msg=R0904
         for model in reversed(related_models):
             # Find all field keys on `model` that point to a `related_model`.
             field_keys = []
-            for field in model._meta.fields:
+            for field in model._meta.fields:# pylint: disable-msg=W0212
                 if isinstance(field, models.ForeignKey) \
                 and field.rel.to in related_models:
                     field_keys.append(field)
             # Replace each `sub_obj` with a duplicate.
             sub_obj = collected_objs[model]
-            for pk_val, obj in sub_obj.iteritems():
+            print sub_obj
+            for pk_val, obj in sub_obj.iteritems():# pylint: disable-msg=W0612e/edit/2/
                 for field_key in field_keys:
                     field_key_value = getattr(obj, "%s_id" % field_key.name)
+                    print field_key.name, field_key_value
                     if field_key_value in collected_objs[field_key.rel.to]:
                         dupe_obj = \
                         collected_objs[field_key.rel.to][field_key_value]
@@ -443,13 +448,14 @@ class Event(models.Model):# pylint: disable-msg=R0904
                     obj.save()
         return new
 
-    def get_clone(self):
+    def get_clones(self):
         clones=Event.objects.filter(clone_of=self)
-        if clones:
-            assert(len(clones)==1)
-            return clones[0]
-        else:
-            return self.clone()
+        return clones
+#        if clones:
+#            assert(len(clones)==1)
+#            return clones[0]
+#        else:
+#            return self.clone()
 
     def set_tags(self, tags):
         Tag.objects.update_tags(self, tags)
@@ -951,7 +957,7 @@ class Event(models.Model):# pylint: disable-msg=R0904
         add(synonyms, 'web', 'urls')
         add(synonyms, 'deadlines', 'deadlines')  # deadlines (*)
         add(synonyms, 'deadline', 'deadlines')  # deadlines (*)
-        add(synonyms, 'sessions', 'sessions')    # sessions (*)
+        add(synonyms, 'sessions', 'sessions')    # sessions (*)Group
         add(synonyms, 'times', 'sessions')
         add(synonyms, 'time', 'sessions')
         # (*) can have multi lines
@@ -1147,6 +1153,17 @@ class Group(models.Model):
             return True
         else:
             return False
+
+    @classmethod
+    def groups_for_add_event(cls, user, event):
+        "return grups for event to add"
+        groups = cls.objects.filter(members = user)
+        if event.public:
+            groups.exclude(events = event)
+        else:
+            for clone in event.get_clones():
+                groups.exclude(events = clone)
+        return groups
 
     def is_user_member_of(self, user):
         if Membership.objects.get(group = self, user = user):
