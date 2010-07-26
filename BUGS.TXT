@@ -13,12 +13,12 @@ New user activation url in email doesn't work
 
 - Notice that in this testing environment the first SITE is automatically set to example.com, which needs to be changed in the URL of the email to gridcalendar.net
 
-----------------------------------------
-Invitation email for a group is not sent
-----------------------------------------
+-----------------------------------------
+Invitation email for a group doesn't work
+-----------------------------------------
 
 - Mon Jul 26 16:18:27 CEST 2010
-- An email for activating an account is sent, but not the invitation email to a group.
+- Request URL: http://gridcalendar.net/g/invite/confirm/7344331001e22ad6c251d3d400fa1e0b02e9c157/
 
 ------------------------------------------------------
 First URL ist not removed when using the web interface
