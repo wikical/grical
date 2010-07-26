@@ -95,9 +95,9 @@ class FeedFilterEvents(Feed):
         return "events for filter %s" % obj
 
     def items(self, obj): # pylint: disable-msg=C0111
-        f = Filter.objects.get(id=obj)
-        l = list_search_get(f.query)['list_of_events']
-        return l
+        events_filter = Filter.objects.get(id=obj)
+        list = list_search_get(events_filter.query)['list_of_events']
+        return list
 
 class FeedGroupEvents(Feed):
     """ Used for a feed for events of a group """
@@ -125,6 +125,7 @@ class FeedGroupEvents(Feed):
             return obj.get_absolute_url()
 
     def description(self, obj):
+        """ feed description """
         if obj is None: # pylint: disable-msg=C0111
             return "You are not allowed to view this feed."
         else:
@@ -155,8 +156,8 @@ class ICalForSearch(ICalendarFeed):
         return response
 
     def items(self, query): # pylint: disable-msg=C0111
-        l = list_search_get(query)['list_of_events']
-        return l
+        list = list_search_get(query)['list_of_events']
+        return list
 
     def item_uid(self, item): # pylint: disable-msg=C0111
         return str(item.id)
@@ -201,10 +202,10 @@ class ICalForSearchHash(ICalForSearch):
         else:
             return render_to_response('error.html',
                 {'title': 'error',
-                'message_col1': ''.join(
+                'message_col1': ''.join([
                     _("You are not allowed to fetch the iCalendar for the " +
                         "filter with the following number:"), " ",
-                    str(filter_id))
+                    str(filter_id)])
                 },
                 context_instance=RequestContext(request))
 
@@ -253,10 +254,10 @@ class ICalForFilterAuth(ICalForFilter):
         else:
             return render_to_response('error.html',
                 {'title': 'error',
-                'message_col1': ''.join(
+                'message_col1': ''.join([
                     _("You are not allowed to fetch the iCalendar for the " +
                         "filter with the following number:"), " ",
-                    str(filter_id))
+                    str(filter_id)])
                 },
                 context_instance=RequestContext(request))
 
@@ -280,10 +281,10 @@ class ICalForFilterHash(ICalForFilter):
         else:
             return render_to_response('error.html',
                 {'title': 'error',
-                'message_col1': ''.join(
+                'message_col1': ''.join([
                     _("You are not allowed to fetch the iCalendar for the " +
                         "filter with the following number:"), " ",
-                    str(group_id))
+                    str(group_id)])
                 },
                 context_instance=RequestContext(request))
 
@@ -331,10 +332,10 @@ class ICalForGroupAuth(ICalForGroup):
         else:
             return render_to_response('error.html',
                 {'title': 'error',
-                'message_col1': ''.join(
+                'message_col1': ''.join([
                     _("You are not allowed to fetch the iCalendar for the " +
                         "group with the following number") +
-                    str(group_id))
+                    str(group_id)])
                 },
                 context_instance=RequestContext(request))
 
@@ -358,10 +359,10 @@ class ICalForGroupHash(ICalForGroup):
         else:
             return render_to_response('error.html',
                 {'title': 'error',
-                'message_col1': ''.join(
+                'message_col1': ''.join([
                     _("You are not allowed to fetch the iCalendar for the " +
                         "group with the following number") +
-                    str(group_id))
+                    str(group_id)])
                 },
                 context_instance=RequestContext(request))
 
