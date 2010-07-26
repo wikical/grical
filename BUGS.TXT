@@ -2,20 +2,6 @@
 Open bugs
 =========
 
--------------------------------------------------------
-First URLs ist not removed when using the web interface
--------------------------------------------------------
-
-- Date: Mon Jul 26 13:16:19 CEST 2010
-- Steps to reproduce the bug:
-
-    - Create a new event with a URL
-    - add a second new URL
-    - save
-    - edit the event in the web interface and remove the first URL
-    - save
-    - edit the event as text (the removed URL is still there)
-
 ---------------------------------------------
 New user activation url in email doesn't work
 ---------------------------------------------
@@ -26,6 +12,27 @@ New user activation url in email doesn't work
     http://gridcalendar.net/a/accounts/activate/<activation_code>/
 
 - Notice that in this testing environment the first SITE is automatically set to example.com, which needs to be changed in the URL of the email to gridcalendar.net
+
+----------------------------------------
+Invitation email for a group is not sent
+----------------------------------------
+
+- Mon Jul 26 16:18:27 CEST 2010
+- An email for activating an account is sent, but not the invitation email to a group.
+
+------------------------------------------------------
+First URL ist not removed when using the web interface
+------------------------------------------------------
+
+- Date: Mon Jul 26 13:16:19 CEST 2010
+- Steps to reproduce the bug:
+
+    - Create a new event with a URL
+    - add a second new URL
+    - save
+    - edit the event in the web interface and remove the first URL
+    - save
+    - edit the event as text (the removed URL is still there)
 
 ===========
 Closed bugs

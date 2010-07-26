@@ -51,6 +51,16 @@ NOTES FOR DEVELOPERS
         pg_dump -U gridcalendar gridcalendar | psql -U gridcalendar gridcalendar-dev
         psql -U gridcalendar gridcalendar-dev -c "UPDATE django_site SET domain = 'dev.yourdomain.net' WHERE id = 1"
 
+* If you use sqlite (e.g. for testing porpuses), install the package `sqlite3`. Example after
+  issuing `./manage syncdb` for making *all users* active::
+
+    > sqlite3 gridcalendar.sqlite
+    sqlite> .tables
+    sqlite> .schema auth_user
+    sqlite> .headers ON
+    sqlite> select * from auth_user ;
+    sqlite> update auth_user set is_active=1 ;
+    
 * There is an interesting package: incf.countryutils * (http://pypi.python.org/pypi/incf.countryutils/1.0) ::
         >>> from incf.countryutils import transformations
         >>> transformations.cca2_to_ccn('de')
