@@ -153,15 +153,17 @@ def group_add_event(request, event_id):
                 context_instance=RequestContext(request))
     event = Event.objects.get(id=event_id)
     user = User(request.user)
-    if len(Group.objects.filter(members=user).exclude(events=event)) > 0:
+    if len(Group.groups_for_add_event(user, event)) > 0:
         if request.POST:
             form = AddEventToGroupForm(
                     data=request.POST, user=user, event=event)
             if form.is_valid():
-                if not event.public:
-                    event = event.get_clone()
                 for group in form.cleaned_data['grouplist']:
-                    calentry = Calendar(event=event, group=group)
+                    if event.public:
+                        event_for_group = event
+                    else:
+                        event_for_group = event.clone()
+                    calentry = Calendar(event=event_for_group, group=group)
                     calentry.save()
                 return HttpResponseRedirect(reverse('list_groups_my'))
             else:
