@@ -43,8 +43,9 @@ from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
-from settings import SECRET_KEY, DEBUG
-from gridcalendar.events.forms import SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm
+from gridcalendar.settings_local import SECRET_KEY, DEBUG
+from gridcalendar.events.forms import ( SimplifiedEventForm,
+        SimplifiedEventFormAnonymous, EventForm, FilterForm )
 from gridcalendar.events.models import Event, Filter, Group, COUNTRIES
 from gridcalendar.events.models import Group
 from gridcalendar.events.models import Event
