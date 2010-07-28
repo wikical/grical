@@ -77,9 +77,9 @@ def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_eve
     while events_appended < max_events :
         try:
             if mode == 'continent':
-                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[2:max_events]
+                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country__in=other_countries_on_continent) & Q(clone_of__isnull=True)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[2:max_events]
             else:
-                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
+                e_list = Event.objects.filter(Q(start__gte=datetime.now()) & Q(country=country) & Q(clone_of__isnull=True)).exclude(id__in=inital_exclude_event_id_list).order_by('start')[0:max_events]
             if len(e_list) > 0:
                 for e in e_list:
                     inital_exclude_event_id_list.append(e.id)
@@ -275,6 +275,7 @@ def events_with_user_filters(user_id):
                 event_dict = {}
                 event_dict['filter_id'] = filter.id
                 event_dict['event_id'] = event.id
+                event_dict['clone_of'] = event.clone_of
                 finlist.append(event_dict)
         return finlist
 

@@ -414,6 +414,7 @@ class Event(models.Model):# pylint: disable-msg=R0904
         and relate then to clone.
         Set in clone relation to orginal.
         """
+        orginal_pk=self.pk
         collected_objs = CollectedObjects()
         self._collect_sub_objects(collected_objs)
         related_models = collected_objs.keys()
@@ -437,9 +438,11 @@ class Event(models.Model):# pylint: disable-msg=R0904
                         setattr(obj, field_key.name, dupe_obj)
                 # Duplicate the object and save it.
                 obj.id = None
+                print obj
                 if new is None:
                     new = obj
-                    new.clone_of_id = self.pk
+                    new.clone_of_id = orginal_pk
+                    print orginal_pk
                     new.public = public
                     new.save()
                 else:
@@ -450,11 +453,11 @@ class Event(models.Model):# pylint: disable-msg=R0904
         "get all clones of event"
         clones = Event.objects.filter(clone_of=self)
         return clones
-#        if clones:
-#            assert(len(clones)==1)
-#            return clones[0]
-#        else:
-#            return self.clone()
+    
+    @classmethod
+    def set_user(cls, user):
+        "set user context for class"
+        cls.objects.set_user(user)
 
     def set_tags(self, tags):
         Tag.objects.update_tags(self, tags)
@@ -1156,11 +1159,11 @@ class Group(models.Model):
     @classmethod
     def groups_for_add_event(cls, user, event):
         "return grups for event to add"
+        if event.clone_of:
+            event = event.clone_of
         groups = cls.objects.filter(members = user)
-        groups.exclude(events = event)
-        if not event.public:
-            for clone in event.get_clones():
-                groups.exclude(events = clone)
+        groups = groups.exclude(events = event)
+        groups = groups.exclude(events__in=event.get_clones())
         return groups
 
     def is_user_member_of(self, user):
