@@ -1,0 +1,23 @@
+{% extends "header.html" %}
+
+{% block body %}
+<div class="colmask doublepage">
+    <div class="colleft">
+        <div class="col1">
+            <!-- Column 1 start -->
+            {% if message_col1 %}
+            <div id="message_col1">
+                {{ message_col1 }}
+            </div>
+            {% endif %}
+            {% block column1 %}
+            {% endblock %}
+        </div>
+        <div class="col2">
+            <!-- Column 2 start -->
+            {% block column2 %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Invite a member to the group" %}.</p>
+<p>{% trans "Please enter the members username" %}:</p>
+<div id="invite_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+        </p>
+    {% endif %}
+    <form action="" method="post">
+        <table>
+            {{ form.as_table }}
+        </table>
+        <input type="submit" value={% trans "Invite" %}>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block column3 %}
+{% endblock %}

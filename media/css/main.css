@@ -1,0 +1,246 @@
+/* This file is based on
+ * http://matthewjamestaylor.com/blog/perfect-2-column-double-page.htm
+ * */
+
+/* General styles */
+body {
+    margin:0;
+    padding:0;
+    border:0;           /* This removes the border around the viewport in old versions of IE */
+    width:100%;
+    background:#fff;
+    min-width:600px;    /* Minimum width of layout - remove line if not required */
+                        /* The min-width property does not work in old versions of Internet Explorer */
+    font-size:90%;
+}
+a {
+    color:#548;
+    text-decoration:none;
+}
+a:hover {
+    color:#fff;
+    background:#369;
+    text-decoration:none;
+}
+h1, h2, h3 {
+    margin:.8em 0 .2em 0;
+    padding:0;
+    color:#855;
+}
+p {
+    margin:.4em 0 .8em 0;
+    padding:0;
+}
+img {
+    margin:10px 0 5px;
+    border: 0;
+}
+/* Header styles */
+#header {
+    clear:both;
+    float:left;
+    width:100%;
+}
+#header {
+    border-bottom:2px solid #855;
+}
+#header p,
+#header h1,
+#header h2 {
+    padding:.4em 15px 0 15px;
+    margin:0;
+}
+#header ul {
+    clear:left;
+    float:left;
+    width:100%;
+    list-style:none;
+    margin:10px 0 0 0;
+    padding:0;
+}
+#header ul li {
+    display:inline;
+    list-style:none;
+    margin:0;
+    padding:0;
+}
+#header ul li a {
+    display:block;
+    float:left;
+    margin:0 0 0 1px;
+    padding:3px 10px;
+    text-align:center;
+    background:#ccd;
+    color:#000;
+    text-decoration:none;
+    position:relative;
+    left:15px;
+    line-height:1.3em;
+}
+#header ul li a:hover {
+    background:#369;
+    color:#fff;
+}
+#header ul li a.active,
+#header ul li a.active:hover {
+    color:#fff;
+    background:#000;
+    font-weight:bold;
+}
+#header ul li a span {
+    display:block;
+}
+#header img {
+    float:left;
+    border: 0;
+    padding: 0 2em 0 0 ;
+    text-align:center;
+}
+
+#navigation {
+    clear:both;
+    background:#ccd; /* color of the line behing the logo */
+    border-top:4px solid #855;
+    margin:0;
+    padding:6px 15px !important;
+    text-align:left;
+}
+#navigation form { display:inline }
+#userlinks { display:inline ; padding:0 1em 0 1em }
+#sitelinks { display:inline ; padding:0 1em 0 1em }
+
+/* column container */
+.colmask {
+    clear:both;
+    float:left;
+    width:100%;         /* width of whole page */
+    overflow:hidden;        /* This chops off any overhanging divs */
+}
+/* common column settings */
+.colright,
+.colmid,
+.colleft {
+    float:left;
+    width:100%;
+    position:relative;
+}
+.col1,
+.col2,
+.col3 {
+    float:left;
+    position:relative;
+    padding:0 0 1em 0;
+    overflow:hidden;
+}
+/* 2 Column (double page) settings */
+.doublepage {
+    background:#ccd;        /* right column background colour */
+}
+.doublepage .colleft {
+    right:50%;          /* right column width */
+    background:#fff;        /* left column background colour */
+}
+.doublepage .col1 {
+    width:46%;          /* left column content width (column width minus left and right padding) */
+    left:52%;           /* right column width plus left column left padding */
+}
+.doublepage .col2 {
+    width:46%;          /* right column content width (column width minus left and right padding) */
+    left:56%;           /* (right column width) plus (left column left and right padding) plus (right column left padding) */
+}
+/* Footer styles */
+#footer {
+    clear:both;
+    float:left;
+    width:100%;
+    border-top:1px solid #000;
+}
+#footer p {
+    padding:10px;
+    margin:0;
+}
+
+.tags {
+    font-size:0.8em
+}
+
+/* Web application (Django) specific */
+
+/* errors produces by wrong entries in forms */
+.errorlist {
+    font-size:90%;
+    color:red;
+}
+
+.info {
+    font-size: 0.8em;
+    color: #808080;
+    text-align: right;
+}
+
+/* table of URLs of an Event */
+.url_table {
+    background:#ccf
+}
+
+/* table of sessions (times) of an Event */
+.session_table {
+    background:#ffc
+}
+
+/* table of deadlines of an Event */
+.deadline_table {
+    background:#fcc
+}
+
+/* messages displayed on the first column */
+#message_col1 {
+    background:#d44;
+    padding:5px;
+    margin:5px;
+}
+
+#event_form {
+    background:#ccd;
+    color:gray;
+    font-size:80%;
+    border:1px solid #000;
+    padding:5px ;
+}
+#event_form label {
+    color:black;
+    font-size:120%;
+    font-weight:bold;
+}
+#event_form th {
+    vertical-align: top;
+    text-align: left;
+}
+
+input#id_web, input#id_tags, input#id_title {
+    width: 100%
+}
+
+.event_medium {
+    background:#ccd;
+    padding:5px;
+    border:0px solid white;
+}
+.event_medium_ical_logo {
+    vertical-align: middle ;
+}
+.event_medium_ical_logo img {
+    vertical-align: middle ;
+    margin: 0px 0px;
+    border: 0px ;
+}
+.event_medium_title {
+    vertical-align: middle ;
+}
+.event_medium_commands, .event_medium_commands a, .event_medium_commands p {
+    font-size: 0.9em;
+    color: #808080;
+    text-align: right;
+    text-decoration:none;
+    margin: 0px 0px ;
+}

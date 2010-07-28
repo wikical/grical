@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+<p>{% trans "These are your filters" %}:</p>
+<ul>
+    {% for fil in filters %}
+    <li>
+    <a href="{% url list_events_search fil.query|urlencode %}/">
+        {{ fil.name }}
+    </a>
+    &nbsp;
+    ({{ fil.results }})
+    &nbsp;
+    <a href="{% filter_edit fil.id %}">edit</a>
+    &nbsp;
+    <a href="{% filter_drop fil.id %}">delete</a>
+
+    {% if fil.errormessage %}
+    <p>
+    <div id="message_col1">
+    {{ fil.errormessage }}
+    </div>
+    </p>
+    {% endif %}
+
+        <ul>
+        {% for event in fil.list_of_events %}
+        <li>
+            <a href="{% url event_show_raw event.id %}">{{event.title}}</a>
+        </li>
+        {% endfor %}
+        </ul>
+
+<!--
+        <form action="{% url query %}" method="get">
+            <input type="hidden" name="q" value="{{ fil.query }}">
+            <input type="submit" value="{% trans "Run a full search using this filter" %}">
+        </form>
+-->
+
+    <p>
+    </p>
+
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
