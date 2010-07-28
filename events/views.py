@@ -569,7 +569,7 @@ def root(request):
                 'landless')
 
     about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
-
+    print events
     return render_to_response('root.html',
             {
                 'title': _("Welcome to GridCalendar"),
