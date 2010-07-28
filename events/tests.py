@@ -14,7 +14,7 @@
 # 
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License
+# FITNESS FOR A PARTICULAR PURPOSE. See the Affero GNU Generevent.idal Public License
 # for more details.
 # 
 # You should have received a copy of the GNU Affero General Public License
@@ -22,10 +22,9 @@
 #############################################################################
 
 """ testing events application """
-
 import datetime
 from django.contrib.auth.models import User
-from events.models import Event, Group, Filter
+from events.models import Event, Group, Filter, EventUrl
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
@@ -220,6 +219,189 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
 #        is no message after add new event to group
 #        print map(lambda x: (x.to[0],x.body), mail.outbox)
 
+    def test_event_url(self):
+        "test editing adding and deleting event's url"
+        for user_nr in range(USERS_COUNT):
+            self.assertTrue(self.login_user(user_nr))
+            user = self.get_user(user_nr)
+            for public in (True, False):
+                event = self.get_event(user, public, True)
+                self.client.post(reverse('event_edit',
+                                         kwargs = {'event_id':event.id})
+                ,{'urls-3-url_name':    '',
+                'urls-2-url':    '',
+                'sessions-1-id':    '',
+                'postcode':    '',
+                'title':    'test',
+                'deadlines-3-deadline_name':    '',
+                'sessions-0-id':    '',
+                'urls-3-event':    event.id,
+                'sessions-3-id':    '',
+                'latitude':    '',
+                'sessions-0-session_starttime':    '',
+                'urls-TOTAL_FORMS':    '4',
+                'sessions-2-session_name':    '',
+                'deadlines-1-event':    event.id,
+                'deadlines-2-id':    '',
+                'deadlines-3-deadline':    '',
+                'deadlines-0-event':    event.id,
+                'sessions-3-session_name':    '',
+                'sessions-2-session_endtime':    '',
+                'urls-0-event':    event.id,
+                'urls-3-id':    '',
+                'urls-3-url':    '',
+                'deadlines-MAX_NUM_FORMS':    '',
+                'sessions-3-session_endtime':    '',
+                'tags':    'tag',
+                'acronym':    'LALA',
+                'address':    '',
+                'deadlines-0-id':    '',
+                'sessions-0-session_date':    '',
+                'deadlines-INITIAL_FORMS':    '0',
+                'country':    '',
+                'urls-INITIAL_FORMS':    '0',
+                'deadlines-3-event':    event.id,
+                'sessions-0-session_endtime':    '',
+                'deadlines-2-deadline_name':    '',
+                'sessions-1-session_starttime':    '',
+                'deadlines-0-deadline':    '',
+                'urls-0-url':    'http://onet.pl',
+                'deadlines-1-deadline_name':    '',
+                'sessions-3-session_starttime':    '',
+                'sessions-2-session_starttime':    '',
+                'sessions-INITIAL_FORMS':    '0',
+                'urls-2-event':    event.id,
+                'city':    '',
+                'urls-1-url_name':    'wp',
+                'urls-0-url_name':    'onet',
+                'start':    '2010-10-10',
+                'sessions-TOTAL_FORMS':    '4',
+                'sessions-3-session_date':    '',
+                'deadlines-2-deadline':    '',
+                'urls-1-event':    event.id,
+                'deadlines-1-id':    '',
+                'sessions-0-event':    event.id,
+                'deadlines-0-deadline_name':    '',
+                'longitude':    '',
+                'sessions-0-session_name':    '',
+                'deadlines-2-event':    event.id,
+                'deadlines-TOTAL_FORMS':    '4',
+                'timezone':    '',
+                'sessions-MAX_NUM_FORMS':    '',
+                'sessions-1-session_date':    '',
+                'deadlines-3-id':    '',
+                'sessions-2-id':    '',
+                'sessions-1-event':    event.id,
+                'end':    '',
+                'deadlines-1-deadline':    '',
+                'sessions-2-session_date':    '',
+                'sessions-1-session_name':    '',
+                'urls-0-id':    '',
+                'description':    '',
+                'urls-1-url':    'http://wp.pl',
+                'sessions-3-event':    event.id,
+                'urls-2-url_name':    '',
+#                'urls-0-DELETE':    'on',
+                'urls-2-id':    '',
+                'urls-1-id':    '',
+                'sessions-1-session_endtime':    '',
+                'urls-MAX_NUM_FORMS':    '4',
+                'sessions-2-event':    event.id
+                })
+                response = self.client.get(reverse('event_edit_raw', 
+                                         kwargs = {'event_id':event.id}))
+                self.assertTrue('http://onet.pl' in response.content)
+                self.assertTrue('http://wp.pl' in response.content)
+                url0 = EventUrl.objects.get(event=event, url_name='onet')
+                url1 = EventUrl.objects.get(event=event, url_name='wp')
+                
+                self.client.post(reverse('event_edit',
+                                         kwargs = {'event_id':event.id})
+                ,{'urls-3-url_name':    '',
+                'urls-2-url':    '',
+                'sessions-1-id':    '',
+                'postcode':    '',
+                'title':    'test',
+                'deadlines-3-deadline_name':    '',
+                'sessions-0-id':    '',
+                'urls-3-event':    event.id,
+                'sessions-3-id':    '',
+                'latitude':    '',
+                'sessions-0-session_starttime':    '',
+                'urls-TOTAL_FORMS':    '4',
+                'sessions-2-session_name':    '',
+                'deadlines-1-event':    event.id,
+                'deadlines-2-id':    '',
+                'deadlines-3-deadline':    '',
+                'deadlines-0-event':    event.id,
+                'sessions-3-session_name':    '',
+                'sessions-2-session_endtime':    '',
+                'urls-0-event':    event.id,
+                'urls-3-id':    '',
+                'urls-3-url':    '',
+                'deadlines-MAX_NUM_FORMS':    '',
+                'sessions-3-session_endtime':    '',
+                'tags':    'tag',
+                'acronym':    'LALA',
+                'address':    '',
+                'deadlines-0-id':    '',
+                'sessions-0-session_date':    '',
+                'deadlines-INITIAL_FORMS':    '0',
+                'country':    '',
+                'urls-INITIAL_FORMS':    '2',
+                'deadlines-3-event':    event.id,
+                'sessions-0-session_endtime':    '',
+                'deadlines-2-deadline_name':    '',
+                'sessions-1-session_starttime':    '',
+                'deadlines-0-deadline':    '',
+                'urls-0-url':    'http://onet.pl',
+                'deadlines-1-deadline_name':    '',
+                'sessions-3-session_starttime':    '',
+                'sessions-2-session_starttime':    '',
+                'sessions-INITIAL_FORMS':    '0',
+                'urls-2-event':    event.id,
+                'city':    '',
+                'urls-1-url_name':    'wp',
+                'urls-0-url_name':    'onet',
+                'start':    '2010-10-10',
+                'sessions-TOTAL_FORMS':    '4',
+                'sessions-3-session_date':    '',
+                'deadlines-2-deadline':    '',
+                'urls-1-event':    event.id,
+                'deadlines-1-id':    '',
+                'sessions-0-event':    event.id,
+                'deadlines-0-deadline_name':    '',
+                'longitude':    '',
+                'sessions-0-session_name':    '',
+                'deadlines-2-event':    event.id,
+                'deadlines-TOTAL_FORMS':    '4',
+                'timezone':    '',
+                'sessions-MAX_NUM_FORMS':    '',
+                'sessions-1-session_date':    '',
+                'deadlines-3-id':    '',
+                'sessions-2-id':    '',
+                'sessions-1-event':    event.id,
+                'end':    '',
+                'deadlines-1-deadline':    '',
+                'sessions-2-session_date':    '',
+                'sessions-1-session_name':    '',
+                'urls-0-id':    url0.id,
+                'description':    '',
+                'urls-1-url':    'http://wp.pl',
+                'sessions-3-event':    event.id,
+                'urls-2-url_name':    '',
+                'urls-0-DELETE':    'on',
+                'urls-2-id':    '',
+                'urls-1-id':    url1.id,
+                'sessions-1-session_endtime':    '',
+                'urls-MAX_NUM_FORMS':    '4',
+                'sessions-2-event':    event.id
+                })
+                response = self.client.get(reverse('event_edit_raw', 
+                                         kwargs = {'event_id':event.id}))
+                self.assertFalse('http://onet.pl' in response.content)
+                self.assertTrue('http://wp.pl' in response.content)
+
     def test_visibility(self):
         "testing visibility public and private events"
         for user_nr in range(USERS_COUNT):
@@ -264,7 +446,6 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
 #        for second in range(20, 0, -1):
 #            print "wait %d seconds     \r" % second,
 #            time.sleep(1)
-
 
 
     # TODO: test that a notification email is sent to all members of a group
