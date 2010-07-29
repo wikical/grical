@@ -388,29 +388,29 @@ class Event(models.Model):# pylint: disable-msg=R0904
             _(u'Timezone'), blank = True, null = True,
             help_text = _("Minutes relative to UTC (e.g. -60 means UTC-1)"))
     description = models.TextField(_(u'Description'), blank = True, null = True)
-    
-    
+
+
     clone_of = models.ForeignKey('self', \
                                editable = False, \
                                blank = True, \
                                null = True)
     " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105,C0301
-    
+
     objects = EventManager()
-    
+
     # the relation event-group is now handle in group. The old code was:
     # groups = models.ManyToManyField(Group, blank = True, null = True,
     # help_text=_("Groups to be notified and allowed to see it if not public"))
-    
+
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['start']
         verbose_name = _(u'Event')
         verbose_name_plural = _(u'Events')
-    
+
     def clone(self, public=False):
         """
         Make, save and return clone of object.
-        Also make copy of all related objects, 
+        Also make copy of all related objects,
         and relate then to clone.
         Set in clone relation to orginal.
         """
@@ -910,56 +910,104 @@ class Event(models.Model):# pylint: disable-msg=R0904
         else:
             def add(dictionary, key, value):
                 dictionary[key] = value
+        # NOTE: if you modify the following dictionary, update
+        # http://code.gridcalendar.net/wiki/DataFormats
+        # and the online documentation under e.g. gridcalendar.net/h/
+        # TODO: implement a system for using translations for tags (maybe
+        # related to a preferred language user-based)
         synonyms = {}
         add(synonyms, 'title', 'title')       # title
-        add(synonyms, 't', 'title')
+        add(synonyms, 'ti', 'title')
         add(synonyms, 'titl', 'title')
         add(synonyms, 'start', 'start')       # start
+        add(synonyms, 'st', 'start')
+        add(synonyms, 'starts', 'start')
         add(synonyms, 'date', 'start')
-        add(synonyms, 'd', 'start')
+        add(synonyms, 'da', 'start')
+        add(synonyms, 'start date', 'start')
+        add(synonyms, 'start-date', 'start')
+        add(synonyms, 'start_date', 'start')
+        add(synonyms, 'sd', 'start')
         add(synonyms, 'tags', 'tags')        # tags
+        add(synonyms, 'ta', 'tags')
+        add(synonyms, 'tag', 'tags')
         add(synonyms, 'subjects', 'tags')
-        add(synonyms, 's', 'tags')
+        add(synonyms, 'subject', 'tags')
+        add(synonyms, 'su', 'tags')
+        add(synonyms, 'subj', 'tags')
         add(synonyms, 'end', 'end')         # end
-        add(synonyms, 'e', 'end')
+        add(synonyms, 'en', 'end')
+        add(synonyms, 'ends', 'end')
+        add(synonyms, 'finish', 'end')
+        add(synonyms, 'finishes', 'end')
+        add(synonyms, 'fi', 'end')
+        add(synonyms, 'enddate', 'end')
+        add(synonyms, 'end date', 'end')
+        add(synonyms, 'end-date', 'end')
+        add(synonyms, 'end_date', 'end')
+        add(synonyms, 'ed', 'end')
         add(synonyms, 'endd', 'end')
         add(synonyms, 'acronym', 'acronym')     # acronym
+        add(synonyms, 'ac', 'acronym')
         add(synonyms, 'acro', 'acronym')
         add(synonyms, 'public', 'public')      # public
-        add(synonyms, 'p', 'public')
+        add(synonyms, 'pu', 'public')
+        add(synonyms, 'open', 'public')
+        add(synonyms, 'op', 'public')
         add(synonyms, 'country', 'country')     # country
+        add(synonyms, 'co', 'country')
         add(synonyms, 'coun', 'country')
-        add(synonyms, 'c', 'country')
+        add(synonyms, 'nation', 'country')
+        add(synonyms, 'nati', 'country')
+        add(synonyms, 'na', 'country')
         add(synonyms, 'city', 'city')        # city
-        add(synonyms, 'cc', 'city')
+        add(synonyms, 'ci', 'city')
+        add(synonyms, 'town', 'city')
+        add(synonyms, 'to', 'city')
         add(synonyms, 'postcode', 'postcode')    # postcode
-        add(synonyms, 'pp', 'postcode')
+        add(synonyms, 'po', 'postcode')
         add(synonyms, 'zip', 'postcode')
+        add(synonyms, 'zi', 'postcode')
         add(synonyms, 'code', 'postcode')
         add(synonyms, 'address', 'address')     # address
+        add(synonyms, 'ad', 'address')
         add(synonyms, 'addr', 'address')
-        add(synonyms, 'a', 'address')
+        add(synonyms, 'street', 'address')
         add(synonyms, 'latitude', 'latitude')    # latitude
         add(synonyms, 'lati', 'latitude')
+        add(synonyms, 'la', 'latitude')
         add(synonyms, 'longitude', 'longitude')   # longitude
+        add(synonyms, 'lo', 'longitude')
         add(synonyms, 'long', 'longitude')
         add(synonyms, 'timezone', 'timezone')    # timezone
+        add(synonyms, 'tz', 'timezone')
         add(synonyms, 'description', 'description') # description
+        add(synonyms, 'de', 'description')
         add(synonyms, 'desc', 'description')
         add(synonyms, 'des', 'description')
-        add(synonyms, 'de', 'description')
+        add(synonyms, 'info', 'description')
+        add(synonyms, 'infos', 'description')
+        add(synonyms, 'in', 'description')
         add(synonyms, 'groups', 'groups')      # groups (*)
+        add(synonyms, 'gr', 'groups')
         add(synonyms, 'group', 'groups')
-        add(synonyms, 'g', 'groups')
         add(synonyms, 'urls', 'urls')        # urls (*)
-        add(synonyms, 'u', 'urls')
+        add(synonyms, 'ur', 'urls')
+        add(synonyms, 'url', 'urls')
         add(synonyms, 'web', 'urls')
+        add(synonyms, 'webs', 'urls')
+        add(synonyms, 'we', 'urls')
         add(synonyms, 'deadlines', 'deadlines')  # deadlines (*)
-        add(synonyms, 'deadline', 'deadlines')  # deadlines (*)
-        add(synonyms, 'sessions', 'sessions')    # sessions (*)Group
+        add(synonyms, 'de', 'deadlines')
+        add(synonyms, 'deadline', 'deadlines')
+        add(synonyms, 'dl', 'deadlines')
+        add(synonyms, 'sessions', 'sessions')    # sessions (*)
+        add(synonyms, 'se', 'sessions')
+        add(synonyms, 'session', 'sessions')
         add(synonyms, 'times', 'sessions')
         add(synonyms, 'time', 'sessions')
-        # (*) can have multi lines
+        add(synonyms, 'ti', 'sessions')
+        # (*) can have multi-lines and are not simple text fields
         return synonyms
 
     @staticmethod
