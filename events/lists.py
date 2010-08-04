@@ -94,7 +94,7 @@ def list_up_to_max_events_ip_country_events(ip_addr, user_id, inital_exclude_eve
     return list_of_events
 
 
-def list_search_get(q, user_id, only_future):
+def list_search_get(q, user_id=None, only_future=1):
     """ Takes a query entered into the search field as an argument and
     returns a list of events.
     """
@@ -243,8 +243,8 @@ def list_search_get(q, user_id, only_future):
     # filter to display only events that the user is allowed to see
     final_list_of_events = list()
     for e in list_of_events:
-        if Event.is_event_viewable_by_user(e.id, user_id):
-            final_list_of_events.append(e)
+#        if Event.is_event_viewable_by_user(e.id, user_id):
+        final_list_of_events.append(e)
 
     final_list_of_events = list_of_events
 
@@ -382,8 +382,7 @@ def all_events_in_user_filters(user_id):
                 dle = {}
                 dle['filter_name'] = f.name
                 el = list()
-                s = list_search_get(f.query, user_id, 1)
-                events = s['list_of_events']
+                events = list_search_get(f.query, user_id, 1)
                 for e in events:
                     el.append(e)
                 dle['el'] = el

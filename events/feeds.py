@@ -72,7 +72,7 @@ class FeedSearchEvents(Feed):
         return "events for search %s" % obj
 
     def items(self, obj): # pylint: disable-msg=C0111
-        return list_search_get(obj)['list_of_events']
+        return list_search_get(obj)
 
 class FeedFilterEvents(Feed):
     """ Used for a feed for filter results. """
@@ -96,7 +96,7 @@ class FeedFilterEvents(Feed):
 
     def items(self, obj): # pylint: disable-msg=C0111
         events_filter = Filter.objects.get(id=obj)
-        list = list_search_get(events_filter.query)['list_of_events']
+        list = list_search_get(events_filter.query)
         return list
 
 class FeedGroupEvents(Feed):
@@ -156,7 +156,7 @@ class ICalForSearch(ICalendarFeed):
         return response
 
     def items(self, query): # pylint: disable-msg=C0111
-        list = list_search_get(query)['list_of_events']
+        list = list_search_get(query)
         return list
 
     def item_uid(self, item): # pylint: disable-msg=C0111
@@ -224,7 +224,7 @@ class ICalForFilter(ICalendarFeed):
 
     def items(self, filter_id):
         f = Filter.objects.get(id=filter_id)
-        l = list_search_get(f.query)['list_of_events']
+        l = list_search_get(f.query)
         return l
 
     def item_uid(self, item):
