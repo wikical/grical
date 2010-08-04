@@ -438,11 +438,9 @@ class Event(models.Model):# pylint: disable-msg=R0904
                         setattr(obj, field_key.name, dupe_obj)
                 # Duplicate the object and save it.
                 obj.id = None
-                print obj
                 if new is None:
                     new = obj
                     new.clone_of_id = orginal_pk
-                    print orginal_pk
                     new.public = public
                     new.save()
                 else:

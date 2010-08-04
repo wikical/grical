@@ -48,6 +48,20 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         "cereate user email for nr"
         return "u_%02d_test@gridcalendar.net" % user_nr
 
+    def validate_ical(self, url):
+        "validate iCalendar url"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content
+
+
+    def validate_rss(self, url):
+        "validate rss feed data"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content
+
+
     @classmethod
     def get_user(cls, user_nr):
         "get user instance for nr"
@@ -426,6 +440,26 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         for user_nr in range(USERS_COUNT):
             self.user_group_visibility(user_nr)
 
+    def test_group_rss(self):
+        "test for one rss.xml icon for each group"
+        groups = Group.objects.all()
+        for group in groups:
+            self.validate_rss(reverse('list_events_group_rss',
+                                      kwargs = {'group_id':group.id}))
+
+    def test_group_ical(self):
+        "test for one ical file for each group"
+        groups = Group.objects.all()
+        for group in groups:
+            self.validate_rss(reverse('list_events_group_ical',
+                                      kwargs = {'group_id':group.id}))
+
+    def test_event_ical(self):
+        "test for one ical file for each event"
+        events = Event.objects.all()
+        for event in events:
+            self.validate_rss(reverse('event_show_ical',
+                                      kwargs = {'event_id':event.id}))
 
 #This test can't work with sqlite, because sqlite not support multiusers, 
 #is recomendet to use this in future

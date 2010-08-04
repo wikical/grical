@@ -12,9 +12,9 @@
     &nbsp;
     ({{ fil.results }})
     &nbsp;
-    <a href="{% filter_edit fil.id %}">edit</a>
+    <a href="{% url filter_edit fil.id %}">edit</a>
     &nbsp;
-    <a href="{% filter_drop fil.id %}">delete</a>
+    <a href="{% url filter_drop fil.id %}">delete</a>
 
     {% if fil.errormessage %}
     <p>

@@ -436,7 +436,7 @@ def list_filters_my(request):
             return _error(request,
                 _("You do not have any filters configured"))
         else:
-            return render_to_response('filter_list_my.html',
+            return render_to_response('list_filters_my.html',
                 {'title': 'list of my filters', 'filters': list_of_filters},
                 context_instance=RequestContext(request))
 
@@ -569,7 +569,6 @@ def root(request):
                 'landless')
 
     about_text = open(settings.PROJECT_ROOT + '/ABOUT.TXT','r').read()
-    print events
     return render_to_response('root.html',
             {
                 'title': _("Welcome to GridCalendar"),
