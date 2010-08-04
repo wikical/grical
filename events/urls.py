@@ -75,7 +75,7 @@ urlpatterns += patterns('', # events matching some query
 
 urlpatterns += patterns('', # events in a group
     url(r'^g/(?P<group_id>\d+)/ical/$',
-        feeds.ICalForGroupAuth(),       name='list_events_group_ical'),
+        feeds.ICalForGroup(),       name='list_events_group_ical'),
     url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         feeds.ICalForGroupHash(),       name='list_events_group_ical_hashed'),
     url(r'^g/(?P<group_id>\d+)/rss/$',
