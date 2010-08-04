@@ -29,6 +29,9 @@ from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
 import re
+import httplib, urllib
+import hashlib
+import settings
 #import time
 #import threading
 #import random
@@ -53,13 +56,26 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         content = response.content
-
+        headers = {"Content-type": "application/x-www-form-urlencoded",
+                   "Accept": "text/plain"}
+        params = urllib.urlencode({'snip':content})
+        conn = httplib.HTTPConnection("severinghaus.org")
+        conn.request("POST", "/projects/icv/", params, headers)
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue('Congratulations' in result, content)
 
     def validate_rss(self, url):
         "validate rss feed data"
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         content = response.content
+        params = urllib.urlencode({'fragment':content})
+        conn = httplib.HTTPConnection("validator.w3.org")
+        conn.request("POST", "/check", params)
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue('Congratulations' in result, content)
 
 
     @classmethod
@@ -449,17 +465,76 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
 
     def test_group_ical(self):
         "test for one ical file for each group"
+        for user_nr in range(USERS_COUNT):
+            self.user_create_groups(user_nr)
+        for user_nr in range(USERS_COUNT):
+            self.user_add_event(user_nr)
         groups = Group.objects.all()
         for group in groups:
-            self.validate_rss(reverse('list_events_group_ical',
+            self.validate_ical(reverse('list_events_group_ical',
                                       kwargs = {'group_id':group.id}))
 
     def test_event_ical(self):
         "test for one ical file for each event"
         events = Event.objects.all()
         for event in events:
-            self.validate_rss(reverse('event_show_ical',
+            self.validate_ical(reverse('event_show_ical',
                                       kwargs = {'event_id':event.id}))
+
+    def test_search_ical(self):
+        "test for ical search"
+        self.validate_ical(reverse('list_events_search_ical',
+                                      kwargs = {'query':'belin'}))
+
+    def test_filter_rss(self):
+        "test for one rss.xml icon for each filter"
+        for user_nr in range(USERS_COUNT):
+            self.login_user(user_nr)
+            user = self.get_user(user_nr)
+            filters = Filter.objects.filter(user=user)
+            for filer in filters:
+                self.validate_rss(reverse('list_events_filter_rss',
+                                      kwargs = {'filter_id':filer.id}))
+
+    def test_filter_ical(self):
+        "test for one iCalendar file for each filter"
+        for user_nr in range(USERS_COUNT):
+            self.login_user(user_nr)
+            user = self.get_user(user_nr)
+            filters = Filter.objects.filter(user=user)
+            for filer in filters:
+                self.validate_ical(reverse('list_events_filter_ical',
+                                      kwargs = {'filter_id':filer.id}))
+
+    @staticmethod
+    def user_hash(user_id):
+        "return correct hash for user_id"
+        return hashlib.sha256("%s!%s" % 
+                              (settings.SECRET_KEY, user_id)).hexdigest()
+
+    def test_hash_filter_rss(self):
+        "test for one rss.xml icon for each filter"
+        for user_nr in range(USERS_COUNT):
+            user = self.get_user(user_nr)
+            filters = Filter.objects.filter(user=user)
+            user_hash = self.user_hash(user.id)
+            for filer in filters:
+                self.validate_rss(reverse('list_events_filter_rss_hashed',
+                                      kwargs = {'filter_id':filer.id,
+                                                'user_id':user.id,
+                                                'hash':user_hash}))
+
+    def test_hash_filter_ical(self):
+        "test for one iCalendar file for each filter"
+        for user_nr in range(USERS_COUNT):
+            user = self.get_user(user_nr)
+            filters = Filter.objects.filter(user=user)
+            user_hash = self.user_hash(user.id)
+            for filer in filters:
+                self.validate_ical(reverse('list_events_filter_ical_hashed',
+                                      kwargs = {'filter_id':filer.id,
+                                                'user_id':user.id,
+                                                'hash':user_hash}))
 
 #This test can't work with sqlite, because sqlite not support multiusers, 
 #is recomendet to use this in future
