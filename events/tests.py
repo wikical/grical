@@ -84,9 +84,11 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
         return User.objects.get(username=cls.user_name(user_nr))
 
     @classmethod
-    def get_event(cls, user, public, future):
+    def get_event(cls, user, public, future, contest=False):
         "find and return event for params"
-        if user:
+        if contest:
+            Event.objects.set_user(contest)
+        else:
             Event.objects.set_user(user)
         event = Event.objects.get(title = cls.event_title(user, public, future))
         return event
@@ -192,10 +194,38 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                 public_title = self.event_title(self.get_user(nr), True, True)
                 private_title = self.event_title(self.get_user(nr), False, True)
                 self.assertTrue(public_title in txt, \
-                                "not visible public event: %s" % private_title)
+                                "not visible public event: %s" % public_title)
                 self.assertFalse(private_title in txt, \
                                  "visible private event: %s" % private_title)
         self.client.logout()
+
+    def user_group_edit(self, user_nr):
+        "tests edit private and public events for user \
+        after add this to group"
+        user = self.get_user(user_nr)
+        for nr in range(USERS_COUNT):# pylint: disable-msg=C0103
+            if nr != user_nr:
+                public_event = self.get_event(user, True, True, 
+                                              self.get_user(nr))
+                private_event = self.get_event(user, False, True, 
+                                               self.get_user(nr))
+                login = self.login_user(nr)
+                self.assertTrue(login)
+                response = self.client.get(reverse('event_edit', \
+                                                 kwargs = {'event_id':
+                                                           public_event.id}))
+                txt = response.content
+                self.assertTrue(public_event.title in txt, \
+                                "can't edit public event: %s\n %s" % 
+                                (public_event.title, txt))
+                response = self.client.get(reverse('event_edit', \
+                                                 kwargs = {'event_id':
+                                                           private_event.id}))
+                txt = response.content
+                self.assertTrue(private_event.title in txt, \
+                                "can't edit private event: %s\n %s" % 
+                                (private_event.title, txt))
+                self.client.logout()
 
     def user_group_visibility(self, user_nr):
         "tests visibility private and public events for user \
@@ -210,12 +240,11 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                 public_title = self.event_title(self.get_user(nr), True, True)
                 private_title = self.event_title(self.get_user(nr), False, True)
                 self.assertTrue(public_title in txt, \
-                                "not visible public event: %s" % private_title)
+                                "not visible public event: %s" % public_title)
                 self.assertTrue(private_title in txt, \
                                  "not visible private event from group: %s" \
                                  % private_title)
         self.client.logout()
-
 
     def user_create_groups(self, user_nr):
         "create groups and send invitive to all users"
@@ -455,6 +484,7 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
             self.user_add_event(user_nr)
         for user_nr in range(USERS_COUNT):
             self.user_group_visibility(user_nr)
+            self.user_group_edit(user_nr)
 
     def test_group_rss(self):
         "test for one rss.xml icon for each group"
@@ -535,6 +565,26 @@ class EventTestCase(TestCase):              #pylint: disable-msg=R0904
                                       kwargs = {'filter_id':filer.id,
                                                 'user_id':user.id,
                                                 'hash':user_hash}))
+
+    def test_private_to_public(self):
+        "A private event cannot be made public"
+        for user_nr in range(USERS_COUNT):
+            self.login_user(user_nr)
+            user = self.get_user(user_nr)
+            private_event = self.get_event(user, False, True)
+            private_event.public = True
+            self.assertRaises(AssertionError, private_event.save)
+
+    def test_public_to_private(self):
+        "A public event cannot be made private"
+        for user_nr in range(USERS_COUNT):
+            self.login_user(user_nr)
+            user = self.get_user(user_nr)
+            public_event = self.get_event(user, True, True)
+            public_event.public = False
+            self.assertRaises(AssertionError, public_event.save)
+
+
 
 #This test can't work with sqlite, because sqlite not support multiusers, 
 #is recomendet to use this in future
