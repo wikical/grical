@@ -983,7 +983,7 @@ class Event(models.Model):# pylint: disable-msg=R0904
         add(synonyms, 'timezone', 'timezone')    # timezone
         add(synonyms, 'tz', 'timezone')
         add(synonyms, 'description', 'description') # description
-#        add(synonyms, 'de', 'description')
+        add(synonyms, 'de', 'description')
         add(synonyms, 'desc', 'description')
         add(synonyms, 'des', 'description')
         add(synonyms, 'info', 'description')
@@ -999,7 +999,7 @@ class Event(models.Model):# pylint: disable-msg=R0904
         add(synonyms, 'webs', 'urls')
         add(synonyms, 'we', 'urls')
         add(synonyms, 'deadlines', 'deadlines')  # deadlines (*)
-        add(synonyms, 'de', 'deadlines')
+#        add(synonyms, 'de', 'deadlines')
         add(synonyms, 'deadline', 'deadlines')
         add(synonyms, 'dl', 'deadlines')
         add(synonyms, 'sessions', 'sessions')    # sessions (*)
