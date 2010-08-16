@@ -40,7 +40,9 @@ from django.forms.models import inlineformset_factory
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db.models.query import CollectedObjects
+#from django.db.models.signals import pre_save, post_save
 from gridcalendar.events.signals import user_auth_signal
+from gridcalendar.events.decorators import autoconnect
 
 from tagging.models import Tag
 from tagging.fields import TagField
@@ -338,6 +340,7 @@ class EventManager( models.Manager ):# pylint: disable-msg=R0904
 
 user_auth_signal.connect( EventManager.set_auth_user )
 
+@autoconnect
 class Event( models.Model ):# pylint: disable-msg=R0904
     """ Event model. """
     user = models.ForeignKey( User, editable = False, related_name = "owner",
@@ -472,15 +475,62 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         #return (reverse('event_show', kwargs ={'event_id': str(self.id)}))
         return ( 'event_show', (), { 'event_id': self.id } )
 
+#    def pre_save( self ):
+#        old_event = None
+#        old = None
+#        if self.pk != None:
+#            try:
+#                old_event = Event.objects.get( pk = self.pk )
+#                old = old_event.as_text()
+#                user = Event.objects.get_user()
+#                history = EventHistory( \
+#                        event = old_event,
+#                        user = user if user else None, \
+#                        new = None, \
+#                        old = old )
+#                history.save()
+#            except Event.DoesNotExist:
+#                pass
+
     def save( self, *args, **kwargs ):
         """ Call the real 'save' function after some assertions. """
         # It is not allowed to have a non-public event without owner:
         assert not ( ( self.public == False ) and ( self.user == None ) )
-        # It is not allowed to modify the 'public' field:
-        assert ( ( self.pk == None ) # true when it is a new event
-                or ( self.public == Event.objects.get( pk = self.pk ).public ) )
+        old_event = None
+        if self.pk != None:
+            try:
+                old_event = Event.objects.get( pk = self.pk )
+                # It is not allowed to modify the 'public' field:
+                assert ( self.public == old_event.public )
+            except Event.DoesNotExist:
+                pass
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
+
+#    def post_save( self ):
+#        #save history
+#        try:
+#            new_event = Event.objects.get( pk = self.pk )
+#            new = new_event.as_text()
+##            date = EventHistory.objects.latest( 'date' )
+#            try:
+#                date = EventHistory.objects.filter( event = new_event )\
+#                .latest( 'date' )
+#                history = EventHistory.objects.get( event = new_event, \
+#                                                     date = date )
+#                history.new = new
+#
+#            except EventHistory.DoesNotExist:
+#                user = Event.objects.get_user()
+#                history = EventHistory( \
+#                                        event = new_event,
+#                                        user = Event.objects.get_user() \
+#                                        if Event.objects.get_user() \
+#                                        else None, \
+#                                        new = new, old = None )
+#            history.save()
+#        except Event.DoesNotExist:
+#            pass
 
     def as_text( self ):
         """ Returns a multiline string representation of the event."""
@@ -523,7 +573,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                     to_return += "urls:\n"
                     for url in urls:
                         to_return += ''.join( [
-                                "    ", url.url_name, ': ', url.url, "\n"] )
+                                "    ", url.url_name, ' ', url.url, "\n"] )
             elif keyword == 'deadlines':
                 deadlines = EventDeadline.objects.filter( event = self.id )
                 if len( deadlines ) > 0:
@@ -531,9 +581,9 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                     for deadline in deadlines:
                         to_return += "".join( [
                                 "    ",
-                                deadline.deadline_name,
-                                ': ',
                                 unicode( deadline.deadline ),
+                                ' ',
+                                deadline.deadline_name,
                                 "\n",
                                 ] )
             elif keyword == 'sessions':
@@ -546,7 +596,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                 to_return,
                                 " ",
                                 session.session_date.strftime( "%Y-%m-%d" ),
-                                ": ",
+                                " ",
                                 session.session_starttime.strftime( "%H:%M" ),
                                 "-",
                                 session.session_endtime.strftime( "%H:%M" ),
@@ -556,13 +606,13 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                             to_return = "".join( [
                                 to_return,
                                 "    ",
-                                session.session_name,
-                                ": ",
                                 session.session_date.strftime( "%Y-%m-%d" ),
-                                ": ",
+                                " ",
                                 session.session_starttime.strftime( "%H:%M" ),
                                 "-",
                                 session.session_endtime.strftime( "%H:%M" ),
+                                " ",
+                                session.session_name,
                                 '\n'] )
             elif keyword == 'groups' and self.event_in_groups:
                 calendars = Calendar.objects.filter( event = self.id )
@@ -572,8 +622,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                         to_return += ' "' + str( calendar.group.name ) + '"'
                     to_return += '\n'
             elif keyword == 'description' and self.description:
-                to_return += keyword + ": " + unicode( self.description ) + "\n"
-                # FIXME: support multiline descriptions
+                to_return += keyword + ": " + unicode( \
+                            self.description ) + "\n"
         return to_return
 
     @classmethod
@@ -667,145 +717,155 @@ class Event( models.Model ):# pylint: disable-msg=R0904
             except KeyError:
                 raise ValidationError( _( 
                         "you used an invalid field name %s'" % field_data[0] ) )
-            if parts[1] and parts[2]:
-                # for mixed data after colon and in indented lines
-                new_parts = ( parts[0],
-                             '',
-                             "%s%s" % parts[1:] )
-                parts = new_parts
-            if field_name == 'urls':
-                event_url_index = 0
-                if not parts[1] == '':
-                    event_url_data = {}
-                    event_url_line_parts = \
-                                filter( lambda x: x, \
-                                parts[1].strip().replace( '\t', ' ' )\
-                                .split( " " ) )
-                    if len( event_url_line_parts ) == 1:
-                        event_url_data['url_name'] = u'web'
-                    else:
-                        event_url_data['url_name'] = \
-                        ' '.join( event_url_line_parts[:-1] )
-                    event_url_data['url'] = event_url_line_parts[-1].strip()
-                    event_url_data_list.append( event_url_data )
-                    event_url_index += 1
-                if not parts[2] == '':
-                    for event_url_line in parts[2].splitlines():
-                        if not event_url_line == '':
-                            event_url_line_parts = \
-                                filter( lambda x: x, \
-                                event_url_line.strip().replace( '\t', ' ' )\
-                                .split( " " ) )
-                            event_url_data = {}
-                            if len( event_url_line_parts ) == 1:
-                                event_url_data['url_name'] = u'web'
-                            else:
-                                event_url_data['url_name'] = \
-                                ' '.join( event_url_line_parts[:-1] )
-                            event_url_data['url'] = \
-                                    event_url_line_parts[-1].strip()
-                            event_url_data_list.append( event_url_data )
-                            event_url_index += 1
-
-            elif field_name == 'deadlines':
-                event_deadline_index = 0
-                if not parts[1] == '':
-                    event_deadline_data = {}
-                    event_deadline_line_parts = \
-                                filter( lambda x: x, \
-                                parts[1].strip().replace( '\t', ' ' )\
-                                .split( " " ) )
-                    if len( event_deadline_line_parts ) == 1:
-                        event_deadline_data['deadline_name'] = u'deadline'
-                    else:
-                        event_deadline_data['deadline_name'] = \
-                        ' '.join( event_deadline_line_parts[1:] )
-                    event_deadline_data['deadline'] = \
-                                        event_deadline_line_parts[0].strip()
-                    event_deadline_data_list.append( event_deadline_data )
-                    event_deadline_index += 1
-                if not parts[2] == '':
-                    for event_deadline_line in parts[2].splitlines():
-                        if not event_deadline_line == '':
-                            event_deadline_data = {}
-                            event_deadline_line_parts = \
+            try:
+                if parts[1] and parts[2]:
+                    # for mixed data after colon and in indented lines
+                    new_parts = ( parts[0],
+                                 '',
+                                 "%s%s" % parts[1:] )
+                    parts = new_parts
+                if field_name == 'urls':
+                    event_url_index = 0
+                    if not parts[1] == '':
+                        event_url_data = {}
+                        event_url_line_parts = \
                                     filter( lambda x: x, \
-                                    event_deadline_line.\
-                                    strip().replace( '\t', ' ' ).split( " " ) )
+                                    parts[1].strip().replace( '\t', ' ' )\
+                                    .split( " " ) )
+                        if len( event_url_line_parts ) == 1:
+                            event_url_data['url_name'] = u'web'
+                        else:
+                            event_url_data['url_name'] = \
+                            ' '.join( event_url_line_parts[:-1] )
+                        event_url_data['url'] = event_url_line_parts[-1].strip()
+                        event_url_data_list.append( event_url_data )
+                        event_url_index += 1
+                    if not parts[2] == '':
+                        for event_url_line in parts[2].splitlines():
+                            if not event_url_line == '':
+                                event_url_line_parts = \
+                                    filter( lambda x: x, \
+                                    event_url_line.strip().replace( '\t', ' ' )\
+                                    .split( " " ) )
+                                event_url_data = {}
+                                if len( event_url_line_parts ) == 1:
+                                    event_url_data['url_name'] = u'web'
+                                else:
+                                    event_url_data['url_name'] = \
+                                    ' '.join( event_url_line_parts[:-1] )
+                                event_url_data['url'] = \
+                                        event_url_line_parts[-1].strip()
+                                event_url_data_list.append( event_url_data )
+                                event_url_index += 1
+
+                elif field_name == 'deadlines':
+                    event_deadline_index = 0
+                    if not parts[1] == '':
+                        event_deadline_data = {}
+                        event_deadline_line_parts = \
+                                    filter( lambda x: x, \
+                                    parts[1].strip().replace( '\t', ' ' )\
+                                    .split( " " ) )
+                        if len( event_deadline_line_parts ) == 1:
+                            event_deadline_data['deadline_name'] = u'deadline'
+                        else:
                             event_deadline_data['deadline_name'] = \
-                                ' '.join( event_deadline_line_parts[1:] )\
-                                .strip()
-                            event_deadline_data['deadline'] = \
-                                    event_deadline_line_parts[0].strip()
-                            event_deadline_data_list\
-                            .append( event_deadline_data )
-                            event_deadline_index += 1
+                            ' '.join( event_deadline_line_parts[1:] )
+                        event_deadline_data['deadline'] = \
+                                            event_deadline_line_parts[0].strip()
+                        event_deadline_data_list.append( event_deadline_data )
+                        event_deadline_index += 1
+                    if not parts[2] == '':
+                        for event_deadline_line in parts[2].splitlines():
+                            if not event_deadline_line == '':
+                                event_deadline_data = {}
+                                event_deadline_line_parts = \
+                                        filter( lambda x: x, \
+                                        event_deadline_line.\
+                                        strip().replace( '\t', ' ' )\
+                                        .split( " " ) )
+                                event_deadline_data['deadline_name'] = \
+                                    ' '.join( event_deadline_line_parts[1:] )\
+                                    .strip()
+                                event_deadline_data['deadline'] = \
+                                        event_deadline_line_parts[0].strip()
+                                event_deadline_data_list\
+                                .append( event_deadline_data )
+                                event_deadline_index += 1
 
-            elif field_name == 'sessions':
-                event_session_index = 0
-                if not parts[1] == '':
-                    event_session_data = {}
+                elif field_name == 'sessions':
+                    event_session_index = 0
+                    if not parts[1] == '':
+                        event_session_data = {}
 
-                    event_session_line_parts = \
-                                    filter( lambda x: x, \
-                                    parts[1].\
-                                    strip().replace( '\t', ' ' ).split( " " ) )
-                    if len( event_session_line_parts ) < 3:
-                        event_session_data['session_name'] = u'session'
-                    else:
-                        event_session_data['session_name'] = \
-                            ' '.join( event_session_line_parts[2:] ).strip()
-                    event_session_data['session_date'] = \
-                            event_session_line_parts[0].strip()
-                    event_session_str_times_parts = \
-                            event_session_line_parts[1].split( "-", 1 )
-                    event_session_data['session_starttime'] = \
-                            event_session_str_times_parts[0].strip()
-                    event_session_data['session_endtime'] = \
-                            event_session_str_times_parts[1].strip()
-                    event_session_data_list.append( event_session_data )
-                    event_session_index += 1
-                if not parts[2] == '':
-                    for event_session_line in parts[2].splitlines():
-                        if not event_session_line == '':
-                            event_session_data = {}
-                            event_session_line_parts = \
-                                    filter( lambda x: x, \
-                                    event_session_line.\
-                                    strip().replace( '\t', ' ' ).split( " " ) )
+                        event_session_line_parts = \
+                                        filter( lambda x: x, \
+                                        parts[1].\
+                                        strip().replace( '\t', ' ' )\
+                                        .split( " " ) )
+                        if len( event_session_line_parts ) < 3:
+                            event_session_data['session_name'] = u'session'
+                        else:
                             event_session_data['session_name'] = \
                                 ' '.join( event_session_line_parts[2:] ).strip()
-                            event_session_data['session_date'] = \
-                                    event_session_line_parts[0].strip()
-                            event_session_str_times_parts = \
-                                    event_session_line_parts[1].split( "-", 1 )
-                            event_session_data['session_starttime'] = \
-                                    event_session_str_times_parts[0].strip()
-                            event_session_data['session_endtime'] = \
-                                    event_session_str_times_parts[1].strip()
-                            event_session_data_list.append( event_session_data )
-                            event_session_index += 1
+                        event_session_data['session_date'] = \
+                                event_session_line_parts[0].strip()
+                        event_session_str_times_parts = \
+                                event_session_line_parts[1].split( "-", 1 )
+                        event_session_data['session_starttime'] = \
+                                event_session_str_times_parts[0].strip()
+                        event_session_data['session_endtime'] = \
+                                event_session_str_times_parts[1].strip()
+                        event_session_data_list.append( event_session_data )
+                        event_session_index += 1
+                    if not parts[2] == '':
+                        for event_session_line in parts[2].splitlines():
+                            if not event_session_line == '':
+                                event_session_data = {}
+                                event_session_line_parts = \
+                                        filter( lambda x: x, \
+                                        event_session_line.\
+                                        strip().replace( '\t', ' ' )\
+                                        .split( " " ) )
+                                event_session_data['session_name'] = \
+                                    ' '.join( event_session_line_parts[2:] )\
+                                    .strip()
+                                event_session_data['session_date'] = \
+                                        event_session_line_parts[0].strip()
+                                event_session_str_times_parts = \
+                                        event_session_line_parts[1]\
+                                        .split( "-", 1 )
+                                event_session_data['session_starttime'] = \
+                                        event_session_str_times_parts[0].strip()
+                                event_session_data['session_endtime'] = \
+                                        event_session_str_times_parts[1].strip()
+                                event_session_data_list\
+                                .append( event_session_data )
+                                event_session_index += 1
 
-            elif field_name == 'groups':
-                event_groups_req_names_list = \
-                        [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-                        parts[1] ) if p.strip()]
+                elif field_name == 'groups':
+                    event_groups_req_names_list = \
+                            [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
+                            parts[1] ) if p.strip()]
 
-            elif field_name == 'description':
-                event_data['description'] = field_data[1]
-            else:
-                if not parts[2] == '':
+                elif field_name == 'description':
+                    event_data['description'] = field_data[1]
+                else:
+                    if not parts[2] == '':
 
-                    raise ValidationError( _( 
-                        "field '%s' doesn't accept subparts" % parts[0] ) )
-                if parts[0] == '':
-                    raise \
-                    ValidationError( _( "a left part of a colon is empty" ) )
-                if not synonyms.has_key( parts[0] ):
-                    raise \
-                    ValidationError( _( "keyword %s unknown" % parts[0] ) )
-                event_data[synonyms[parts[0]]] = parts[1]
-
+                        raise ValidationError( _( 
+                            "field '%s' doesn't accept subparts" % parts[0] ) )
+                    if parts[0] == '':
+                        raise \
+                        ValidationError\
+                        ( _( "a left part of a colon is empty" ) )
+                    if not synonyms.has_key( parts[0] ):
+                        raise \
+                        ValidationError( _( "keyword %s unknown" % parts[0] ) )
+                    event_data[synonyms[parts[0]]] = parts[1]
+            except IndexError:
+                raise \
+                ValidationError( _( "Validation error in %s" % field_data[1] ) )
 
         # at this moment we have event_data, event_url_data_list,
         # event_deadline_data_list and event_session_data_list
@@ -1168,6 +1228,19 @@ class EventSession( models.Model ):
         return unicode( self.session_date ) + u' - ' + \
                 unicode( self.session_starttime ) + u' - ' + \
                 unicode( self.session_endtime ) + u' - ' + self.session_name
+
+class EventHistory( models.Model ):
+    event = models.ForeignKey( Event )
+    user = models.ForeignKey( User, unique = False, \
+                            verbose_name = _( u'User' ), \
+                            blank = True, null = True )
+    date = models.DateTimeField( _( u'Creation time' ), editable = False,
+            auto_now_add = True )
+    """Time stamp when the change was done"""
+    old = models.TextField( _( u'Old data' ), blank = True, null = True )
+    """the event as text before the change"""
+    new = models.TextField( _( u'New data' ), blank = True, null = True )
+    """ the event as text after the change """
 
 class Filter( models.Model ):
     user = models.ForeignKey( User, unique = False, verbose_name = _( u'User' ) )
