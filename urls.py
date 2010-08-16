@@ -36,36 +36,43 @@ from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
 
 admin.autodiscover()
 
-urlpatterns = patterns('', # pylint: disable-msg=C0103
-    (r'^a/admin/doc/', include('django.contrib.admindocs.urls')),
+urlpatterns = patterns( '', # pylint: disable-msg=C0103
+    ( r'^a/admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
     #(r'^a/admin/(.*)', admin.site.root),
-    (r'^a/admin/', admin.site.urls),
-    (r'^a/db/(.*)', databrowse.site.root),
-    (r'^a/accounts/', include('registration.urls')),
-    (r'^a/accounts/logout/$',
-        'django.contrib.auth.views.logout', {'next_page': '/'}),
-)
+    ( r'^a/admin/', admin.site.urls ),
+    ( r'^a/db/(.*)', databrowse.site.root ),
+    ( r'^a/accounts/', include( 'registration.urls' ) ),
+    ( r'^a/accounts/logout/$',
+        'django.contrib.auth.views.logout', {'next_page': '/'} ),
+ )
 
-urlpatterns += patterns('',
-        url(r'^h/help/', 'gridcalendar.events.views.usage', name="help"),
-        url(r'^h/legal_notice/', 'gridcalendar.events.views.legal_notice',
-                name="legal_notice"),
-)
+urlpatterns += patterns( '',
+        url( r'^h/help/', 'gridcalendar.events.views.usage', name = "help" ),
+        url( r'^h/legal_notice/', 'gridcalendar.events.views.legal_notice',
+                name = "legal_notice" ),
+ )
+#
+#urlpatterns += patterns( '',
+#    ( r'^comments/postfree/$', 'recaptcha_views.free_comment_wrapper' ),
+#    ( r'^comments/', include( 'django.contrib.comments.urls.comments' ) ),
+# )
 
-#urlpatterns += patterns('',
-#    (r'^comments/', include('django.contrib.comments.urls')),
-#)
-
-urlpatterns += patterns('',
-    (r'', include('events.urls')),
-)
+urlpatterns += patterns( '',
+    ( r'', include( 'events.urls' ) ),
+ )
 
 # see http://docs.djangoproject.com/en/1.0/howto/static-files/
 if settings.DEBUG:
-    urlpatterns += patterns('',
-        (
+    urlpatterns += patterns( '',
+        ( 
             '^' + settings.MEDIA_URL[1:] + '(?P<path>.*)$',
             'django.views.static.serve',
             {'document_root': settings.MEDIA_ROOT, 'show_indexes': True},
         ),
     )
+
+#recaptcha
+#urlpatterns += patterns( '',
+#        ( r'^contact/$', 'gridcalendar.events.views.contact' ),
+# )
+

@@ -25,8 +25,8 @@
 import os
 
 # absolute path to this directory
-PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
-PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
+PROJECT_ROOT = os.path.realpath( os.path.dirname( __file__ ) )
+PROJECT_NAME = os.path.split( PROJECT_ROOT )[-1]
 
 # See how settings_local.py should look like at the end of this file
 try:
@@ -70,7 +70,7 @@ ACCOUNT_ACTIVATION_DAYS = 10
 # application and middleware settings
 # ======================================================================
 
-INSTALLED_APPS = (
+INSTALLED_APPS = ( 
     'gridcalendar.events',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -84,42 +84,42 @@ INSTALLED_APPS = (
     'tagging',
     'registration',
     'django.contrib.markup', # used for rendering ReStructuredText
-)
+ )
 # at the end of this section additional applications are conditionaly
 # added
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE_CLASSES = ( 
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'gridcalendar.events.middleware.SendAuthMiddleware',
-)
+ )
 # at the end of this section additional middleware are conditionaly
 # added
 
-TEMPLATE_CONTEXT_PROCESSORS = (
+TEMPLATE_CONTEXT_PROCESSORS = ( 
     "django.core.context_processors.auth",
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
     "context_processors.global_template_vars",
-)
+ )
 if DEBUG:
-    TEMPLATE_CONTEXT_PROCESSORS += ("django.core.context_processors.debug",)
+    TEMPLATE_CONTEXT_PROCESSORS += ( "django.core.context_processors.debug", )
 
-TEMPLATE_DIRS = (
+TEMPLATE_DIRS = ( 
     # Put strings here, like "/home/html/django_templates" or
     # "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_ROOT, "templates"),
-)
+    os.path.join( PROJECT_ROOT, "templates" ),
+ )
 
 # List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
+TEMPLATE_LOADERS = ( 
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
 #     'django.template.loaders.eggs.load_template_source',
-)
+ )
 
 # If possible install a utility for debugging, which is # called debug_toolbar
 # und is availabe in Debian like systems as the package
@@ -131,8 +131,8 @@ except NameError:
 else:
     if DEBUG:
         MIDDLEWARE_CLASSES += \
-                ('debug_toolbar.middleware.DebugToolbarMiddleware',)
-        INSTALLED_APPS += ('debug_toolbar',)
+                ( 'debug_toolbar.middleware.DebugToolbarMiddleware', )
+        INSTALLED_APPS += ( 'debug_toolbar', )
 
 
 # ======================================================================
@@ -159,7 +159,7 @@ except NameError:
 try:
     LANGUAGES
 except NameError:
-    LANGUAGES = (('en', 'English'),)
+    LANGUAGES = ( ( 'en', 'English' ), )
 
 try:
     DATE_FORMAT
@@ -182,7 +182,7 @@ except NameError:
 try:
     MEDIA_ROOT
 except NameError:
-    MEDIA_ROOT = os.path.join(PROJECT_ROOT, "media")
+    MEDIA_ROOT = os.path.join( PROJECT_ROOT, "media" )
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -202,7 +202,8 @@ try:
 except NameError:
     ROOT_URLCONF = 'urls'
 
-
+RECAPTCHA_PUB_KEY = "6Lf2WLwSAAAAAAs5ofIEr_0l3u34dYHK6LRghoiU"
+RECAPTCHA_PRIVATE_KEY = "6Lf2WLwSAAAAAJ4rWk4tLcZAJueB_yhsXjjCVo7_"
 ###############################################
 # it follows an example for a settings_local.py
 ###############################################

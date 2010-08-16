@@ -24,7 +24,8 @@
 """ testing events application """
 import datetime
 from django.contrib.auth.models import User
-from events.models import Event, Group, Filter, EventUrl, Membership
+from events.models import Event, Group, Filter, EventUrl, Membership, \
+        EventHistory
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
@@ -35,7 +36,7 @@ import settings
 #import time
 #import threading
 #import random
-ONLINE = False
+ONLINE = True
 USERS_COUNT = 3
 
 FIELDS_STATUS = {
@@ -93,7 +94,7 @@ FIELDS_DATA = {
            {
             'title':         ( ( 'GridCalendar presentation', ), ),
             'tags':          ( ( 'calendar software open-source \
-            GridMind GridCalendar', ), ),
+GridMind GridCalendar', ), ),
             'start':         ( ( '2010-12-29', ), ),
             'public':        ( ( 'true', ), ),
             'acronym':       ( ( '26C3', ), ),
@@ -105,7 +106,7 @@ FIELDS_DATA = {
             'latitude':      ( ( '52', ), ),
             'longitude':     ( ( '13', ), ),
             'timezone':      ( ( '0', ), ),
-            'groups':        ( ( 'g1 g2 g3', ), ),
+            'groups':        ( ( 'g1 g2 g3', '"g1" "g2" "g3"' ), ),
             'description':   ( ( '''GridCalendar presentation
             line 1
             line 2
@@ -421,6 +422,8 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
             user = self.get_user( user_nr )
             for public in ( True, False ):
                 event = self.get_event( user, public, True )
+#                print map( lambda x: x.pk, Event.objects.all() ), event.pk
+                history = EventHistory.objects.filter( event = event )
                 self.client.post( reverse( 'event_edit',
                                          kwargs = {'event_id':event.id} )
                 , {'urls-3-url_name':    '',
@@ -507,6 +510,8 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
                                          kwargs = {'event_id':event.id} ) )
                 self.assertTrue( 'http://onet.pl' in response.content )
                 self.assertTrue( 'http://wp.pl' in response.content )
+                history = EventHistory.objects.filter( event = event )
+#                print 2, map( lambda x: ( x.new, x.user ), history ), len( history )
                 url0 = EventUrl.objects.get( event = event, url_name = 'onet' )
                 url1 = EventUrl.objects.get( event = event, url_name = 'wp' )
 
@@ -596,6 +601,8 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
                                          kwargs = {'event_id':event.id} ) )
                 self.assertFalse( 'http://onet.pl' in response.content )
                 self.assertTrue( 'http://wp.pl' in response.content )
+                history = EventHistory.objects.filter( event = event )
+#                print 3, map( lambda x: ( x.new, x.user ), history ), len( history )
 
     def test_visibility( self ):
         "testing visibility public and private events"
@@ -722,12 +729,191 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
 
     def test_parser( self ):
         "testing event's parser"
-        for event in Event.objects.all():
+        for user_nr in range( USERS_COUNT ):
+            event = self.event_from_txt_data( user_nr )
             event_txt = event.as_text()
             new_id = Event.objects.latest( 'pk' ).pk
             Event.parse_text( event_txt, new_id )
             new = Event.objects.get( pk = new_id )
             self.assertEqual( event_txt, new.as_text() )
+
+#    def test_history( self ):
+#        "testing event's parser"
+#        for user_nr in range( USERS_COUNT ):
+#            user = self.get_user( user_nr )
+#            self.login_user( user_nr )
+#            for public in ( True, False ):
+#                event = self.get_event( user, public, True )
+#                self.client.post( reverse( 'event_edit',
+#                                         kwargs = {'event_id':event.id} )
+#                , {'urls-3-url_name':    '',
+#                'urls-2-url':    '',
+#                'sessions-1-id':    '',
+#                'postcode':    '',
+#                'title':    'test',
+#                'deadlines-3-deadline_name':    '',
+#                'sessions-0-id':    '',
+#                'urls-3-event':    event.id,
+#                'sessions-3-id':    '',
+#                'latitude':    '',
+#                'sessions-0-session_starttime':    '',
+#                'urls-TOTAL_FORMS':    '4',
+#                'sessions-2-session_name':    '',
+#                'deadlines-1-event':    event.id,
+#                'deadlines-2-id':    '',
+#                'deadlines-3-deadline':    '',
+#                'deadlines-0-event':    event.id,
+#                'sessions-3-session_name':    '',
+#                'sessions-2-session_endtime':    '',
+#                'urls-0-event':    event.id,
+#                'urls-3-id':    '',
+#                'urls-3-url':    '',
+#                'deadlines-MAX_NUM_FORMS':    '',
+#                'sessions-3-session_endtime':    '',
+#                'tags':    'tag',
+#                'acronym':    'LALA',
+#                'address':    '',
+#                'deadlines-0-id':    '',
+#                'sessions-0-session_date':    '',
+#                'deadlines-INITIAL_FORMS':    '0',
+#                'country':    '',
+#                'urls-INITIAL_FORMS':    '0',
+#                'deadlines-3-event':    event.id,
+#                'sessions-0-session_endtime':    '',
+#                'deadlines-2-deadline_name':    '',
+#                'sessions-1-session_starttime':    '',
+#                'deadlines-0-deadline':    '',
+#                'urls-0-url':    'http://onet.pl',
+#                'deadlines-1-deadline_name':    '',
+#                'sessions-3-session_starttime':    '',
+#                'sessions-2-session_starttime':    '',
+#                'sessions-INITIAL_FORMS':    '0',
+#                'urls-2-event':    event.id,
+#                'city':    '',
+#                'urls-1-url_name':    'wp',
+#                'urls-0-url_name':    'onet',
+#                'start':    '2010-10-10',
+#                'sessions-TOTAL_FORMS':    '4',
+#                'sessions-3-session_date':    '',
+#                'deadlines-2-deadline':    '',
+#                'urls-1-event':    event.id,
+#                'deadlines-1-id':    '',
+#                'sessions-0-event':    event.id,
+#                'deadlines-0-deadline_name':    '',
+#                'longitude':    '',
+#                'sessions-0-session_name':    '',
+#                'deadlines-2-event':    event.id,
+#                'deadlines-TOTAL_FORMS':    '4',
+#                'timezone':    '',
+#                'sessions-MAX_NUM_FORMS':    '',
+#                'sessions-1-session_date':    '',
+#                'deadlines-3-id':    '',
+#                'sessions-2-id':    '',
+#                'sessions-1-event':    event.id,
+#                'end':    '',
+#                'deadlines-1-deadline':    '',
+#                'sessions-2-session_date':    '',
+#                'sessions-1-session_name':    '',
+#                'urls-0-id':    '',
+#                'description':    '',
+#                'urls-1-url':    'http://wp.pl',
+#                'sessions-3-event':    event.id,
+#                'urls-2-url_name':    '',
+#    #                'urls-0-DELETE':    'on',
+#                'urls-2-id':    '',
+#                'urls-1-id':    '',
+#                'sessions-1-session_endtime':    '',
+#                'urls-MAX_NUM_FORMS':    '4',
+#                'sessions-2-event':    event.id
+#                } )
+#                history = EventHistory.objects.filter( event = event )
+#                print map( lambda x: ( x.date, x.user ), history ), len( history )
+#                url0 = EventUrl.objects.get( event = event, url_name = 'onet' )
+#                url1 = EventUrl.objects.get( event = event, url_name = 'wp' )
+#                self.client.post( reverse( 'event_edit',
+#                                         kwargs = {'event_id':event.id} )
+#                , {'urls-3-url_name':    '',
+#                'urls-2-url':    '',
+#                'sessions-1-id':    '',
+#                'postcode':    '',
+#                'title':    'test',
+#                'deadlines-3-deadline_name':    '',
+#                'sessions-0-id':    '',
+#                'urls-3-event':    event.id,
+#                'sessions-3-id':    '',
+#                'latitude':    '',
+#                'sessions-0-session_starttime':    '',
+#                'urls-TOTAL_FORMS':    '4',
+#                'sessions-2-session_name':    '',
+#                'deadlines-1-event':    event.id,
+#                'deadlines-2-id':    '',
+#                'deadlines-3-deadline':    '',
+#                'deadlines-0-event':    event.id,
+#                'sessions-3-session_name':    '',
+#                'sessions-2-session_endtime':    '',
+#                'urls-0-event':    event.id,
+#                'urls-3-id':    '',
+#                'urls-3-url':    '',
+#                'deadlines-MAX_NUM_FORMS':    '',
+#                'sessions-3-session_endtime':    '',
+#                'tags':    'tag',
+#                'acronym':    'LALA',
+#                'address':    '',
+#                'deadlines-0-id':    '',
+#                'sessions-0-session_date':    '',
+#                'deadlines-INITIAL_FORMS':    '0',
+#                'country':    '',
+#                'urls-INITIAL_FORMS':    '2',
+#                'deadlines-3-event':    event.id,
+#                'sessions-0-session_endtime':    '',
+#                'deadlines-2-deadline_name':    '',
+#                'sessions-1-session_starttime':    '',
+#                'deadlines-0-deadline':    '',
+#                'urls-0-url':    'http://onet.pl',
+#                'deadlines-1-deadline_name':    '',
+#                'sessions-3-session_starttime':    '',
+#                'sessions-2-session_starttime':    '',
+#                'sessions-INITIAL_FORMS':    '0',
+#                'urls-2-event':    event.id,
+#                'city':    '',
+#                'urls-1-url_name':    'wp',
+#                'urls-0-url_name':    'onet',
+#                'start':    '2010-10-10',
+#                'sessions-TOTAL_FORMS':    '4',
+#                'sessions-3-session_date':    '',
+#                'deadlines-2-deadline':    '',
+#                'urls-1-event':    event.id,
+#                'deadlines-1-id':    '',
+#                'sessions-0-event':    event.id,
+#                'deadlines-0-deadline_name':    '',
+#                'longitude':    '',
+#                'sessions-0-session_name':    '',
+#                'deadlines-2-event':    event.id,
+#                'deadlines-TOTAL_FORMS':    '4',
+#                'timezone':    '',
+#                'sessions-MAX_NUM_FORMS':    '',
+#                'sessions-1-session_date':    '',
+#                'deadlines-3-id':    '',
+#                'sessions-2-id':    '',
+#                'sessions-1-event':    event.id,
+#                'end':    '',
+#                'deadlines-1-deadline':    '',
+#                'sessions-2-session_date':    '',
+#                'sessions-1-session_name':    '',
+#                'urls-0-id':    url0.id,
+#                'description':    '',
+#                'urls-1-url':    'http://wp.pl',
+#                'sessions-3-event':    event.id,
+#                'urls-2-url_name':    '',
+#                'urls-0-DELETE':    'on',
+#                'urls-2-id':    '',
+#                'urls-1-id':    url1.id,
+#                'sessions-1-session_endtime':    '',
+#                'urls-MAX_NUM_FORMS':    '4',
+#                'sessions-2-event':    event.id
+#                } )
+#                history = EventHistory.objects.filter( event = event )
+#                print map( lambda x: ( x.date, x.user ), history ), len( history )
 
     def test_txt_data( self ):
         "tests synonims event's field"
@@ -762,13 +948,13 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
                             field_data_count = False, ):
         "tests version of event's text data"
         event_txt = ""
-        if user_nr:
+        if user_nr != None:
+            user = cls.get_user( user_nr )
             groups = FIELDS_DATA['simple']['groups'][0][0]
             for group_name in [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
                                                    groups ) if p.strip()]:
                 group = Group.objects.\
                     get_or_create( name = group_name )[0]
-                user = cls.get_user( user_nr )
                 Membership.objects.get_or_create( user = user, group = group )
         for simple_field in FIELDS_DATA['simple']:
             case_count = 0
@@ -791,14 +977,17 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
                     data_count = field_data_count
             event_txt = "%s%s\n" % ( event_txt, FIELDS_DATA['table']\
                 [table_field][case_count][data_count] )
-        return Event.parse_text( event_txt, user_id = user.pk )
+        if user_nr != None:
+            return Event.parse_text( event_txt, user_id = user.pk )
+        else:
+            return Event.parse_text( event_txt )
 
     @classmethod
     def event_for_synonim( cls, user_nr = None, field_name = False, \
                            field_synonim = None ):
         "tests version of event's text data"
         event_txt = ""
-        if user_nr:
+        if user_nr != None:
             groups = FIELDS_DATA['simple']['groups'][0][0]
             for group_name in [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
                                                    groups ) if p.strip()]:
@@ -821,7 +1010,10 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
                     field_data = field_data.replace( table_field, \
                                                      field_synonim )
             event_txt = "%s%s\n" % ( event_txt, field_data )
-        return Event.parse_text( event_txt, user_id = user.pk )
+        if user_nr != None:
+            return Event.parse_text( event_txt, user_id = user.pk )
+        else:
+            return Event.parse_text( event_txt )
 
 
 #This test can't work with sqlite, because sqlite not support multiusers, 
