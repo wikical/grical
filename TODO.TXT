@@ -30,6 +30,7 @@ high priority
 
 medium priority
 ---------------
+- write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
 - Check out http://code.djangoproject.com/wiki/GeoDjango
 - add message to user invited to a group
