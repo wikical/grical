@@ -93,6 +93,20 @@ def _error( request, text ):
             },
             context_instance = RequestContext( request ) )
 
+def _errors( request, texts ):
+    """ Returns a view with the front page and an error message """
+    text = "<ul>"
+    for msg in texts:
+        text += "<li>%s</li>" % msg
+    text += "</ul>"
+    return render_to_response( 'error.html',
+            {
+                'title': _( "GridCalendar.net - error" ),
+                'form': get_event_form( request.user ),
+                'message_col1': text
+            },
+            context_instance = RequestContext( request ) )
+
 def usage( request ):
     """ Just returns the usage page including the RST documentation in the file
     USAGE.TXT"""
@@ -265,12 +279,14 @@ def event_edit_raw( request, event_id ):
     if request.method == 'POST':
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
-            try:
-                event.parse_text( event_textarea, event_id, request.user.id )
+            errors = event.parse_text( event_textarea, event_id, request.user.id )
+            if type( event ) == type( errors ):
+            #if no errors, parse_text returns event instance
                 return HttpResponseRedirect( 
                         reverse( 'event_show', kwargs = {'event_id': event_id} ) )
-            except ValidationError, error:
-                return _error( request, error )
+            else:
+            #else, parse_text return errors list
+                return _errors( request, errors )
         else:
             return _error( request,
                 _( "You submitted an empty form, nothing was saved. Click the \
