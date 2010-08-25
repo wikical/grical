@@ -534,16 +534,27 @@ class Event( models.Model ):# pylint: disable-msg=R0904
 
     def as_text( self ):
         """ Returns a multiline string representation of the event."""
-        # TODO: add a test here to create an event as a text with the output of
-        # this function
         to_return = ""
-        # TODO: have a constant sort order
-        for keyword in set( self.get_synonyms().values() ):
+        #lets gets some orders
+        keywords_order = ( 'acronym', 'title', 'start', 'ends', 'tags', 'urls',
+                  'public', 'groups', 'address', 'postcode', 'city', 'country',
+                  'latitude', 'longitude', 'deadlines', 'timezone', 'sessions',
+                  'description' )
+        keywords = ( keywords_order +
+                  tuple( 
+                        filter( 
+                            lambda keyword: keyword not in keywords_order,
+                            set( self.get_synonyms().values() )
+                            )
+                        )
+                  )
+        for keyword in keywords:
             if keyword == 'title':
                 to_return += keyword + ": " + unicode( self.title ) + "\n"
             elif keyword == 'start':
                 to_return += ''.join( [
-                        keyword, ": ", self.start.strftime( "%Y-%m-%d" ), "\n"] )
+                        keyword, ": ",
+                        self.start.strftime( "%Y-%m-%d" ), "\n"] )
             elif keyword == 'end' and self.end:
                 to_return += ''.join( [
                         keyword, ": ", self.end.strftime( "%Y-%m-%d" ), "\n"] )

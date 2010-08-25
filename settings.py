@@ -253,6 +253,11 @@ RECAPTCHA_PRIVATE_KEY = "6Lf2WLwSAAAAAJ4rWk4tLcZAJueB_yhsXjjCVo7_"
 #EMAIL_HOST_PASSWORD = ''
 #EMAIL_USE_TLS = False
 #
+#
+#IMAP_SERVER = ''
+#IMAP_LOGIN = ''
+#IMAP_PASSWD = ''
+#
 ## see http://docs.djangoproject.com/en/dev/howto/error-reporting/
 #SEND_BROKEN_LINK_EMAILS = True
 #
