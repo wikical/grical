@@ -720,309 +720,344 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         event_session_data_list = list()
         event_groups_req_names_list = list() # list of group names
 
+        errors = []
+
         fields_data = cls.get_fields( input_text )
         for field_data in fields_data:
-            parts = ( field_data[0], field_data[2], field_data[3] )
             try:
-                field_name = synonyms[parts[0].replace( '\n', '' )]
-            except KeyError:
-                raise ValidationError( _( 
-                        "you used an invalid field name %s'" % field_data[0] ) )
-            try:
-                if parts[1] and parts[2]:
-                    # for mixed data after colon and in indented lines
-                    new_parts = ( parts[0],
-                                 '',
-                                 "%s%s" % parts[1:] )
-                    parts = new_parts
-                if field_name == 'urls':
-                    event_url_index = 0
-                    if not parts[1] == '':
-                        event_url_data = {}
-                        event_url_line_parts = \
-                                    filter( lambda x: x, \
-                                    parts[1].strip().replace( '\t', ' ' )\
-                                    .split( " " ) )
-                        if len( event_url_line_parts ) == 1:
-                            event_url_data['url_name'] = u'web'
-                        else:
-                            event_url_data['url_name'] = \
-                            ' '.join( event_url_line_parts[:-1] )
-                        event_url_data['url'] = event_url_line_parts[-1].strip()
-                        event_url_data_list.append( event_url_data )
-                        event_url_index += 1
-                    if not parts[2] == '':
-                        for event_url_line in parts[2].splitlines():
-                            if not event_url_line == '':
-                                event_url_line_parts = \
-                                    filter( lambda x: x, \
-                                    event_url_line.strip().replace( '\t', ' ' )\
-                                    .split( " " ) )
-                                event_url_data = {}
-                                if len( event_url_line_parts ) == 1:
-                                    event_url_data['url_name'] = u'web'
-                                else:
-                                    event_url_data['url_name'] = \
-                                    ' '.join( event_url_line_parts[:-1] )
-                                event_url_data['url'] = \
-                                        event_url_line_parts[-1].strip()
-                                event_url_data_list.append( event_url_data )
-                                event_url_index += 1
-
-                elif field_name == 'deadlines':
-                    event_deadline_index = 0
-                    if not parts[1] == '':
-                        event_deadline_data = {}
-                        event_deadline_line_parts = \
-                                    filter( lambda x: x, \
-                                    parts[1].strip().replace( '\t', ' ' )\
-                                    .split( " " ) )
-                        if len( event_deadline_line_parts ) == 1:
-                            event_deadline_data['deadline_name'] = u'deadline'
-                        else:
-                            event_deadline_data['deadline_name'] = \
-                            ' '.join( event_deadline_line_parts[1:] )
-                        event_deadline_data['deadline'] = \
-                                            event_deadline_line_parts[0].strip()
-                        event_deadline_data_list.append( event_deadline_data )
-                        event_deadline_index += 1
-                    if not parts[2] == '':
-                        for event_deadline_line in parts[2].splitlines():
-                            if not event_deadline_line == '':
-                                event_deadline_data = {}
-                                event_deadline_line_parts = \
+                parts = ( field_data[0], field_data[2], field_data[3] )
+                try:
+                    field_name = synonyms[parts[0].replace( '\n', '' )]
+                except KeyError:
+                    raise ValidationError( _( 
+                            "you used an invalid field name %s'" % field_data[0] ) )
+                try:
+                    if parts[1] and parts[2]:
+                        # for mixed data after colon and in indented lines
+                        new_parts = ( parts[0],
+                                     '',
+                                     "%s%s" % parts[1:] )
+                        parts = new_parts
+                    if field_name == 'urls':
+                        event_url_index = 0
+                        if not parts[1] == '':
+                            event_url_data = {}
+                            event_url_line_parts = \
                                         filter( lambda x: x, \
-                                        event_deadline_line.\
-                                        strip().replace( '\t', ' ' )\
+                                        parts[1].strip().replace( '\t', ' ' )\
                                         .split( " " ) )
+                            if len( event_url_line_parts ) == 1:
+                                event_url_data['url_name'] = u'web'
+                            else:
+                                event_url_data['url_name'] = \
+                                ' '.join( event_url_line_parts[:-1] )
+                            event_url_data['url'] = event_url_line_parts[-1].strip()
+                            event_url_data_list.append( event_url_data )
+                            event_url_index += 1
+                        if not parts[2] == '':
+                            for event_url_line in parts[2].splitlines():
+                                if not event_url_line == '':
+                                    event_url_line_parts = \
+                                        filter( lambda x: x, \
+                                        event_url_line.strip().replace( '\t', ' ' )\
+                                        .split( " " ) )
+                                    event_url_data = {}
+                                    if len( event_url_line_parts ) == 1:
+                                        event_url_data['url_name'] = u'web'
+                                    else:
+                                        event_url_data['url_name'] = \
+                                        ' '.join( event_url_line_parts[:-1] )
+                                    event_url_data['url'] = \
+                                            event_url_line_parts[-1].strip()
+                                    event_url_data_list.append( event_url_data )
+                                    event_url_index += 1
+
+                    elif field_name == 'deadlines':
+                        event_deadline_index = 0
+                        if not parts[1] == '':
+                            event_deadline_data = {}
+                            event_deadline_line_parts = \
+                                        filter( lambda x: x, \
+                                        parts[1].strip().replace( '\t', ' ' )\
+                                        .split( " " ) )
+                            if len( event_deadline_line_parts ) == 1:
+                                event_deadline_data['deadline_name'] = u'deadline'
+                            else:
                                 event_deadline_data['deadline_name'] = \
-                                    ' '.join( event_deadline_line_parts[1:] )\
-                                    .strip()
-                                event_deadline_data['deadline'] = \
-                                        event_deadline_line_parts[0].strip()
-                                event_deadline_data_list\
-                                .append( event_deadline_data )
-                                event_deadline_index += 1
+                                ' '.join( event_deadline_line_parts[1:] )
+                            event_deadline_data['deadline'] = \
+                                                event_deadline_line_parts[0].strip()
+                            event_deadline_data_list.append( event_deadline_data )
+                            event_deadline_index += 1
+                        if not parts[2] == '':
+                            for event_deadline_line in parts[2].splitlines():
+                                if not event_deadline_line == '':
+                                    event_deadline_data = {}
+                                    event_deadline_line_parts = \
+                                            filter( lambda x: x, \
+                                            event_deadline_line.\
+                                            strip().replace( '\t', ' ' )\
+                                            .split( " " ) )
+                                    event_deadline_data['deadline_name'] = \
+                                        ' '.join( event_deadline_line_parts[1:] )\
+                                        .strip()
+                                    event_deadline_data['deadline'] = \
+                                            event_deadline_line_parts[0].strip()
+                                    event_deadline_data_list\
+                                    .append( event_deadline_data )
+                                    event_deadline_index += 1
 
-                elif field_name == 'sessions':
-                    event_session_index = 0
-                    if not parts[1] == '':
-                        event_session_data = {}
+                    elif field_name == 'sessions':
+                        event_session_index = 0
+                        if not parts[1] == '':
+                            event_session_data = {}
 
-                        event_session_line_parts = \
-                                        filter( lambda x: x, \
-                                        parts[1].\
-                                        strip().replace( '\t', ' ' )\
-                                        .split( " " ) )
-                        if len( event_session_line_parts ) < 3:
-                            event_session_data['session_name'] = u'session'
-                        else:
-                            event_session_data['session_name'] = \
-                                ' '.join( event_session_line_parts[2:] ).strip()
-                        event_session_data['session_date'] = \
-                                event_session_line_parts[0].strip()
-                        event_session_str_times_parts = \
-                                event_session_line_parts[1].split( "-", 1 )
-                        event_session_data['session_starttime'] = \
-                                event_session_str_times_parts[0].strip()
-                        event_session_data['session_endtime'] = \
-                                event_session_str_times_parts[1].strip()
-                        event_session_data_list.append( event_session_data )
-                        event_session_index += 1
-                    if not parts[2] == '':
-                        for event_session_line in parts[2].splitlines():
-                            if not event_session_line == '':
-                                event_session_data = {}
-                                event_session_line_parts = \
-                                        filter( lambda x: x, \
-                                        event_session_line.\
-                                        strip().replace( '\t', ' ' )\
-                                        .split( " " ) )
+                            event_session_line_parts = \
+                                            filter( lambda x: x, \
+                                            parts[1].\
+                                            strip().replace( '\t', ' ' )\
+                                            .split( " " ) )
+                            if len( event_session_line_parts ) < 3:
+                                event_session_data['session_name'] = u'session'
+                            else:
                                 event_session_data['session_name'] = \
-                                    ' '.join( event_session_line_parts[2:] )\
-                                    .strip()
-                                event_session_data['session_date'] = \
-                                        event_session_line_parts[0].strip()
-                                event_session_str_times_parts = \
-                                        event_session_line_parts[1]\
-                                        .split( "-", 1 )
-                                event_session_data['session_starttime'] = \
-                                        event_session_str_times_parts[0].strip()
-                                event_session_data['session_endtime'] = \
-                                        event_session_str_times_parts[1].strip()
-                                event_session_data_list\
-                                .append( event_session_data )
-                                event_session_index += 1
+                                    ' '.join( event_session_line_parts[2:] ).strip()
+                            event_session_data['session_date'] = \
+                                    event_session_line_parts[0].strip()
+                            event_session_str_times_parts = \
+                                    event_session_line_parts[1].split( "-", 1 )
+                            event_session_data['session_starttime'] = \
+                                    event_session_str_times_parts[0].strip()
+                            event_session_data['session_endtime'] = \
+                                    event_session_str_times_parts[1].strip()
+                            event_session_data_list.append( event_session_data )
+                            event_session_index += 1
+                        if not parts[2] == '':
+                            for event_session_line in parts[2].splitlines():
+                                if not event_session_line == '':
+                                    event_session_data = {}
+                                    event_session_line_parts = \
+                                            filter( lambda x: x, \
+                                            event_session_line.\
+                                            strip().replace( '\t', ' ' )\
+                                            .split( " " ) )
+                                    event_session_data['session_name'] = \
+                                        ' '.join( event_session_line_parts[2:] )\
+                                        .strip()
+                                    event_session_data['session_date'] = \
+                                            event_session_line_parts[0].strip()
+                                    event_session_str_times_parts = \
+                                            event_session_line_parts[1]\
+                                            .split( "-", 1 )
+                                    event_session_data['session_starttime'] = \
+                                            event_session_str_times_parts[0].strip()
+                                    event_session_data['session_endtime'] = \
+                                            event_session_str_times_parts[1].strip()
+                                    event_session_data_list\
+                                    .append( event_session_data )
+                                    event_session_index += 1
 
-                elif field_name == 'groups':
-                    event_groups_req_names_list = \
-                            [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-                            parts[1] ) if p.strip()]
+                    elif field_name == 'groups':
+                        event_groups_req_names_list = \
+                                [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
+                                parts[1] ) if p.strip()]
 
-                elif field_name == 'description':
-                    event_data['description'] = field_data[1]
-                else:
-                    if not parts[2] == '':
+                    elif field_name == 'description':
+                        event_data['description'] = field_data[1]
+                    else:
+                        if not parts[2] == '':
 
-                        raise ValidationError( _( 
-                            "field '%s' doesn't accept subparts" % parts[0] ) )
-                    if parts[0] == '':
-                        raise \
-                        ValidationError\
-                        ( _( "a left part of a colon is empty" ) )
-                    if not synonyms.has_key( parts[0] ):
-                        raise \
-                        ValidationError( _( "keyword %s unknown" % parts[0] ) )
-                    event_data[synonyms[parts[0]]] = parts[1]
-            except IndexError:
-                raise \
-                ValidationError( _( "Validation error in %s" % field_data[1] ) )
-
+                            raise ValidationError( _( 
+                                "field '%s' doesn't accept subparts" % parts[0] ) )
+                        if parts[0] == '':
+                            raise \
+                            ValidationError\
+                            ( _( "a left part of a colon is empty" ) )
+                        if not synonyms.has_key( parts[0] ):
+                            raise \
+                            ValidationError( _( "keyword %s unknown" % parts[0] ) )
+                        event_data[synonyms[parts[0]]] = parts[1]
+                except IndexError:
+                    raise \
+                    ValidationError( _( "Validation error in %s" % field_data[1] ) )
+            except ValidationError, error:
+                errors.append( error )
         # at this moment we have event_data, event_url_data_list,
         # event_deadline_data_list and event_session_data_list
 
-        from gridcalendar.events.forms import ( EventForm, EventUrlForm,
-            EventDeadlineForm, EventSessionForm )
+        if not errors:
 
-        if ( event_id == None ):
-            event_form = EventForm( event_data )
-            event = event_form.save()
-            final_event_id = event.id
-        else:
-            final_event_id = event_id
+            from gridcalendar.events.forms import ( EventForm, EventUrlForm,
+                EventDeadlineForm, EventSessionForm )
+
             try:
-                event = Event.objects.get( id = event_id )
-            except Event.DoesNotExist:
-                raise ValidationError( \
-                            _( "event '%s' doesn't exist" % final_event_id ) )
-            event_form = EventForm( event_data, instance = event )
 
-        if not event_form.is_valid():
-            raise \
-            ValidationError( _( "there is an error: in the input data: %s" % \
-                                event_form.errors ) )
+                if ( event_id == None ):
+                    event_form = EventForm( event_data )
+                    event = event_form.save()
+                    final_event_id = event.id
+                else:
+                    final_event_id = event_id
+                    try:
+                        event = Event.objects.get( id = event_id )
+                    except Event.DoesNotExist:
+                        raise ValidationError( \
+                                    _( "event '%s' doesn't exist" % final_event_id ) )
+                    event_form = EventForm( event_data, instance = event )
 
-        # now we will add the event ID's to the lists of dictionaries
+                if not event_form.is_valid():
+                    raise \
+                    ValidationError( _( "there is an error: in the input data: %s" % \
+                                        event_form.errors ) )
+            except ValidationError, error:
+                errors.append( error )
 
-        event_url_data_list2 = list()
-        for event_url_data in event_url_data_list:
-            event_url_data['event'] = final_event_id
-            event_url_data_list2.append( event_url_data )
+            # now we will add the event ID's to the lists of dictionaries
 
-        event_deadline_data_list2 = list()
-        for event_deadline_data in event_deadline_data_list:
-            event_deadline_data['event'] = final_event_id
-            event_deadline_data_list2.append( event_deadline_data )
 
-        event_session_data_list2 = list()
-        for event_session_data in event_session_data_list:
-            event_session_data['event'] = final_event_id
-            event_session_data_list2.append( event_session_data )
 
-        # now we will create forms out of the lists of URLs, deadlines and
-        # sessions, and check if these forms are valid
 
-        for event_url_data in event_url_data_list2:
+
+
+                # now we will create forms out of the lists of URLs, deadlines and
+                # sessions, and check if these forms are valid
+        if not errors:
+            event_url_data_list2 = list()
+            for event_url_data in event_url_data_list:
+                event_url_data['event'] = final_event_id
+                event_url_data_list2.append( event_url_data )
             try:
-                event_url = EventUrl.objects.get( 
-                    Q( event = event_url_data['event'] ),
-                    Q( url_name__exact = event_url_data['url_name'] ) )
-                event_url_form = \
-                        EventUrlForm( event_url_data, instance = event_url )
-            except EventUrl.DoesNotExist:
+
+                for event_url_data in event_url_data_list2:
+                    try:
+                        event_url = EventUrl.objects.get( 
+                            Q( event = event_url_data['event'] ),
+                            Q( url_name__exact = event_url_data['url_name'] ) )
+                        event_url_form = \
+                                EventUrlForm( event_url_data, instance = event_url )
+                    except EventUrl.DoesNotExist:
+                        event_url_form = EventUrlForm( event_url_data )
+                    if not event_url_form.is_valid():
+                        if ( event_id == None ):
+                            Event.objects.get( id = final_event_id ).delete()
+                        raise ValidationError( _( 
+                            "There is an error in the input data for URLs: %s" %
+                            event_url_form.errors ) )
+            except ValidationError, error:
+                errors.append( error )
+
+        if not errors:
+            event_deadline_data_list2 = list()
+            for event_deadline_data in event_deadline_data_list:
+                event_deadline_data['event'] = final_event_id
+                event_deadline_data_list2.append( event_deadline_data )
+            try:
+                for event_deadline_data in event_deadline_data_list2:
+                    try:
+                        event_deadline = EventDeadline.objects.get( 
+                                Q( event = event_deadline_data['event'] ),
+                                Q( deadline_name__exact = \
+                                        event_deadline_data['deadline_name'] ) )
+                        event_deadline_form = EventDeadlineForm( 
+                                event_deadline_data, instance = event_deadline )
+                    except EventDeadline.DoesNotExist:
+                        event_deadline_form = EventDeadlineForm( event_deadline_data )
+                    if not event_deadline_form.is_valid():
+                        if ( event_id == None ):
+                            Event.objects.get( id = final_event_id ).delete()
+                        raise ValidationError( _( 
+                            "There is an error in the input data in the deadlines: %s"
+                            % event_deadline_form.errors ) )
+
+            except ValidationError, error:
+                errors.append( error )
+
+        if not errors:
+
+            event_session_data_list2 = list()
+            for event_session_data in event_session_data_list:
+                event_session_data['event'] = final_event_id
+                event_session_data_list2.append( event_session_data )
+            try:
+                for event_session_data in event_session_data_list2:
+                    try:
+                        event_session = EventSession.objects.get( 
+                                Q( event = event_session_data['event'] ),
+                                Q( session_name__exact = \
+                                        event_session_data['session_name'] ) )
+                        event_session_form = EventSessionForm( 
+                                event_session_data, instance = event_session )
+                    except EventSession.DoesNotExist:
+                        event_session_form = EventSessionForm( event_session_data )
+                    if not event_session_form.is_valid():
+                        if ( event_id == None ):
+                            Event.objects.get( id = final_event_id ).delete()
+                        raise ValidationError( _( 
+                            "There is an error in the input data in the sessions: %s" %
+                            event_session_form.errors ) )
+            except ValidationError, error:
+                errors.append( error )
+
+
+        if not errors:
+
+            if ( event_id == None ):
+                pass
+            else:
+                EventUrl.objects.filter( event = event_id ).delete()
+                EventDeadline.objects.filter( event = event_id ).delete()
+                EventSession.objects.filter( event = event_id ).delete()
+                event_form.save()
+
+            for event_url_data in event_url_data_list2:
                 event_url_form = EventUrlForm( event_url_data )
-            if not event_url_form.is_valid():
-                if ( event_id == None ):
-                    Event.objects.get( id = final_event_id ).delete()
-                raise ValidationError( _( 
-                    "There is an error in the input data for URLs: %s" %
-                    event_url_form.errors ) )
+                event_url_form.save()
 
-        for event_deadline_data in event_deadline_data_list2:
-            try:
-                event_deadline = EventDeadline.objects.get( 
-                        Q( event = event_deadline_data['event'] ),
-                        Q( deadline_name__exact = \
-                                event_deadline_data['deadline_name'] ) )
-                event_deadline_form = EventDeadlineForm( 
-                        event_deadline_data, instance = event_deadline )
-            except EventDeadline.DoesNotExist:
+            for event_deadline_data in event_deadline_data_list2:
                 event_deadline_form = EventDeadlineForm( event_deadline_data )
-            if not event_deadline_form.is_valid():
-                if ( event_id == None ):
-                    Event.objects.get( id = final_event_id ).delete()
-                raise ValidationError( _( 
-                    "There is an error in the input data in the deadlines: %s"
-                    % event_deadline_form.errors ) )
+                event_deadline_form.save()
 
-        for event_session_data in event_session_data_list2:
-            try:
-                event_session = EventSession.objects.get( 
-                        Q( event = event_session_data['event'] ),
-                        Q( session_name__exact = \
-                                event_session_data['session_name'] ) )
-                event_session_form = EventSessionForm( 
-                        event_session_data, instance = event_session )
-            except EventSession.DoesNotExist:
+            for event_session_data in event_session_data_list2:
                 event_session_form = EventSessionForm( event_session_data )
-            if not event_session_form.is_valid():
-                if ( event_id == None ):
-                    Event.objects.get( id = final_event_id ).delete()
-                raise ValidationError( _( 
-                    "There is an error in the input data in the sessions: %s" %
-                    event_session_form.errors ) )
+                event_session_form.save()
 
-        if ( event_id == None ):
-            pass
-        else:
-            EventUrl.objects.filter( event = event_id ).delete()
-            EventDeadline.objects.filter( event = event_id ).delete()
-            EventSession.objects.filter( event = event_id ).delete()
-            event_form.save()
-
-        for event_url_data in event_url_data_list2:
-            event_url_form = EventUrlForm( event_url_data )
-            event_url_form.save()
-
-        for event_deadline_data in event_deadline_data_list2:
-            event_deadline_form = EventDeadlineForm( event_deadline_data )
-            event_deadline_form.save()
-
-        for event_session_data in event_session_data_list2:
-            event_session_form = EventSessionForm( event_session_data )
-            event_session_form.save()
-
-        if event_id:
-            event_groups_cur_id_list = event.is_in_groups_id_list()
-        else:
-            event_groups_cur_id_list = list()
-        event_groups_req_id_list = list()
-        for group_name_quoted in event_groups_req_names_list:
-            group_name = group_name_quoted.strip( '"' )
+            if event_id:
+                event_groups_cur_id_list = event.is_in_groups_id_list()
+            else:
+                event_groups_cur_id_list = list()
+            event_groups_req_id_list = list()
             try:
-                g = Group.objects.get( name = group_name )
-            except Group.DoesNotExist:
-                raise ValidationError( _( 
-                        "Group: %(group_name)s does not exist, enter a valid \
-group name." % {"group_name":group_name} ) )
-            event_groups_req_id_list.append( g.id )
-            if g.id not in event_groups_cur_id_list:
-                if user_id is None or not g.is_user_in_group( user_id, g.id ):
-                    raise ValidationError( _( 
-                        "You are not a member of group: %(group_name)s so \
-                        you can not add any event to it." %
-                        {"group_name":g.name} ) )
-                event.add_to_group( g.id )
-        for group_id in event_groups_cur_id_list:
-            if group_id not in event_groups_req_id_list:
-                if user_id is None or \
-                        not g.is_user_in_group( user_id, group_id ):
-                    g = Group.objects.get( id = group_id )
-                    raise ValidationError( _( "You are not a member of \
-                        group: %(group_name)s so you can not remove an \
-                        event from it." % {"group_name":g.name} ) )
-                event.remove_from_group( group_id )
-        return event
+                for group_name_quoted in event_groups_req_names_list:
+                    group_name = group_name_quoted.strip( '"' )
+                    try:
+                        g = Group.objects.get( name = group_name )
+                    except Group.DoesNotExist:
+                        raise ValidationError( _( 
+                                "Group: %(group_name)s does not exist, enter a valid \
+        group name." % {"group_name":group_name} ) )
+                    event_groups_req_id_list.append( g.id )
+                    if g.id not in event_groups_cur_id_list:
+                        if user_id is None or not g.is_user_in_group( user_id, g.id ):
+                            raise ValidationError( _( 
+                                "You are not a member of group: %(group_name)s so \
+                                you can not add any event to it." %
+                                {"group_name":g.name} ) )
+                        event.add_to_group( g.id )
+                for group_id in event_groups_cur_id_list:
+                    if group_id not in event_groups_req_id_list:
+                        if user_id is None or \
+                                not g.is_user_in_group( user_id, group_id ):
+                            g = Group.objects.get( id = group_id )
+                            raise ValidationError( _( "You are not a member of \
+                                group: %(group_name)s so you can not remove an \
+                                event from it." % {"group_name":g.name} ) )
+                        event.remove_from_group( group_id )
+            except ValidationError, error:
+                errors.append( error )
+        if errors:
+            return errors
+        else:
+            return event
 
 
     @staticmethod
