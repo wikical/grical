@@ -26,6 +26,7 @@ from imaplib import IMAP4
 from gridcalendar.events.models import Event
 from django.conf import settings
 import email
+from django.core.mail import send_mail
 
 class Mailbox:
     def __init__( self, name = 'INBOX' ):
@@ -40,12 +41,22 @@ class Mailbox:
             typ, data = self.M.fetch( nr, '(RFC822 UID BODY[TEXT])' )
             mail = email.message_from_string( data[0][1] )
             text = data[1][1]
-            try:
-                event = Event.parse_text( text )
+            event = Event.parse_text( text )
+            if type( event ) == Event :
                 self.mv_mail( nr, 'saved' )
                 yield event
-            except Exception, err:
+            else:
+                errors = event
                 self.mv_mail( nr, 'errors' )
+                subject = _( 'Validation error in: %s' % mail['Subject'] )
+                message = '\n\n'.join( errors )
+                to_email = mail['From']
+                from_email = settings.DEFAULT_FROM_EMAIL
+                if subject and message and from_email:
+                    try:
+                        send_mail( subject, message, from_email, to_email )
+                    except:
+                        pass
 
 
     def mv_mail( self, nr, mbox_name ):
