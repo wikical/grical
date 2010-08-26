@@ -27,7 +27,8 @@ from imaplib import IMAP4
 from gridcalendar.events.models import Event
 from django.conf import settings
 import email, re, sys
-from django.core.mail import send_mail
+from django.core.mail import send_mail, get_connection
+from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
 from django.core.management.base import NoArgsCommand
 
@@ -80,17 +81,23 @@ class Command( NoArgsCommand ):
                 else:
                     errors = event
                     self.mv_mail( nr, 'errors' )
-                    subject = _( 'Validation error in: %s' % mail['Subject'] )
+                    subject = _( 'Validation error in: %s' % \
+                                 mail['Subject'].replace( '\n', ' ' ) )
+                    subject = subject.replace( '\n', ' ' )
                     message = '\n'.join( map( str, errors ) )
                     sys.stderr.write( "Found errors in message %s: \n%s\n" % \
                                       ( mail['Subject'], message ) )
                     to_email = mail['From']
                     from_email = settings.DEFAULT_FROM_EMAIL
                     if subject and message and from_email:
-                        try:
-                            send_mail( subject, message, from_email, to_email )
-                        except:
-                            pass
+                        mail = EmailMessage( subject, message, \
+                                             from_email, ( to_email, ) )
+                        msg = str( mail.message() )
+                        mail.send()
+                        self.M.append( 'IMAP.sent', None, None, \
+                                       msg )
+
+
         if self.get_list():
             return self.parse()
 
