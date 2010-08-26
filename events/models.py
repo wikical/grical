@@ -713,7 +713,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         synonyms = Event.get_synonyms()
 
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
-        input_text = input_text_in.replace( '\r\n', '\n' ).replace( '\r', '\n' )
+        input_text = input_text_in.replace( '\r\n', '\n' ).\
+        replace( '\r', '\n' )
 
         event_url_data_list = list()
         event_deadline_data_list = list()
@@ -730,7 +731,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                     field_name = synonyms[parts[0].replace( '\n', '' )]
                 except KeyError:
                     raise ValidationError( _( 
-                            "you used an invalid field name %s'" % field_data[0] ) )
+                            "you used an invalid field name %s'" % \
+                            field_data[0] ) )
                 try:
                     if parts[1] and parts[2]:
                         # for mixed data after colon and in indented lines
@@ -751,7 +753,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                             else:
                                 event_url_data['url_name'] = \
                                 ' '.join( event_url_line_parts[:-1] )
-                            event_url_data['url'] = event_url_line_parts[-1].strip()
+                            event_url_data['url'] = \
+                            event_url_line_parts[-1].strip()
                             event_url_data_list.append( event_url_data )
                             event_url_index += 1
                         if not parts[2] == '':
@@ -759,7 +762,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                 if not event_url_line == '':
                                     event_url_line_parts = \
                                         filter( lambda x: x, \
-                                        event_url_line.strip().replace( '\t', ' ' )\
+                                        event_url_line.strip().\
+                                        replace( '\t', ' ' )\
                                         .split( " " ) )
                                     event_url_data = {}
                                     if len( event_url_line_parts ) == 1:
@@ -769,7 +773,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                         ' '.join( event_url_line_parts[:-1] )
                                     event_url_data['url'] = \
                                             event_url_line_parts[-1].strip()
-                                    event_url_data_list.append( event_url_data )
+                                    event_url_data_list.\
+                                    append( event_url_data )
                                     event_url_index += 1
 
                     elif field_name == 'deadlines':
@@ -781,13 +786,15 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                         parts[1].strip().replace( '\t', ' ' )\
                                         .split( " " ) )
                             if len( event_deadline_line_parts ) == 1:
-                                event_deadline_data['deadline_name'] = u'deadline'
+                                event_deadline_data['deadline_name'] = \
+                                u'deadline'
                             else:
                                 event_deadline_data['deadline_name'] = \
                                 ' '.join( event_deadline_line_parts[1:] )
                             event_deadline_data['deadline'] = \
-                                                event_deadline_line_parts[0].strip()
-                            event_deadline_data_list.append( event_deadline_data )
+                                        event_deadline_line_parts[0].strip()
+                            event_deadline_data_list.\
+                            append( event_deadline_data )
                             event_deadline_index += 1
                         if not parts[2] == '':
                             for event_deadline_line in parts[2].splitlines():
@@ -799,10 +806,10 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                             strip().replace( '\t', ' ' )\
                                             .split( " " ) )
                                     event_deadline_data['deadline_name'] = \
-                                        ' '.join( event_deadline_line_parts[1:] )\
+                                    ' '.join( event_deadline_line_parts[1:] )\
                                         .strip()
                                     event_deadline_data['deadline'] = \
-                                            event_deadline_line_parts[0].strip()
+                                        event_deadline_line_parts[0].strip()
                                     event_deadline_data_list\
                                     .append( event_deadline_data )
                                     event_deadline_index += 1
@@ -821,7 +828,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                 event_session_data['session_name'] = u'session'
                             else:
                                 event_session_data['session_name'] = \
-                                    ' '.join( event_session_line_parts[2:] ).strip()
+                                    ' '.join( event_session_line_parts[2:] ).\
+                                    strip()
                             event_session_data['session_date'] = \
                                     event_session_line_parts[0].strip()
                             event_session_str_times_parts = \
@@ -830,7 +838,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                     event_session_str_times_parts[0].strip()
                             event_session_data['session_endtime'] = \
                                     event_session_str_times_parts[1].strip()
-                            event_session_data_list.append( event_session_data )
+                            event_session_data_list.\
+                            append( event_session_data )
                             event_session_index += 1
                         if not parts[2] == '':
                             for event_session_line in parts[2].splitlines():
@@ -842,7 +851,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                             strip().replace( '\t', ' ' )\
                                             .split( " " ) )
                                     event_session_data['session_name'] = \
-                                        ' '.join( event_session_line_parts[2:] )\
+                                    ' '.join( event_session_line_parts[2:] )\
                                         .strip()
                                     event_session_data['session_date'] = \
                                             event_session_line_parts[0].strip()
@@ -850,36 +859,53 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                             event_session_line_parts[1]\
                                             .split( "-", 1 )
                                     event_session_data['session_starttime'] = \
-                                            event_session_str_times_parts[0].strip()
+                                    event_session_str_times_parts[0].strip()
                                     event_session_data['session_endtime'] = \
-                                            event_session_str_times_parts[1].strip()
+                                    event_session_str_times_parts[1].strip()
                                     event_session_data_list\
                                     .append( event_session_data )
                                     event_session_index += 1
 
                     elif field_name == 'groups':
                         event_groups_req_names_list = \
-                                [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-                                parts[1] ) if p.strip()]
+                            [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
+                            parts[1] ) if p.strip()]
 
                     elif field_name == 'description':
                         event_data['description'] = field_data[1]
+                    elif field_name == 'country':
+                        country = parts[1]
+                        countries = [x[0] for x in COUNTRIES]
+                        if not country in countries:
+                            countries_dict = dict( [( x[1].lower(), x[0] ) \
+                                                    for x in COUNTRIES] )
+                            country = country.lower()
+                            if country in countries_dict:
+                                country = countries_dict[country]
+                            else:
+                                raise ValidationError( _( 
+                                "no '%s' country in countres list" % \
+                                parts[0] ) )
+                        event_data['country'] = country
                     else:
                         if not parts[2] == '':
 
                             raise ValidationError( _( 
-                                "field '%s' doesn't accept subparts" % parts[0] ) )
+                                "field '%s' doesn't accept subparts" % \
+                                parts[0] ) )
                         if parts[0] == '':
                             raise \
                             ValidationError\
                             ( _( "a left part of a colon is empty" ) )
                         if not synonyms.has_key( parts[0] ):
                             raise \
-                            ValidationError( _( "keyword %s unknown" % parts[0] ) )
+                            ValidationError( _( "keyword %s unknown" % \
+                                                parts[0] ) )
                         event_data[synonyms[parts[0]]] = parts[1]
                 except IndexError:
                     raise \
-                    ValidationError( _( "Validation error in %s" % field_data[1] ) )
+                    ValidationError( _( "Validation error in %s" % \
+                                        field_data[1] ) )
             except ValidationError, error:
                 errors.append( error )
         # at this moment we have event_data, event_url_data_list,
@@ -894,20 +920,22 @@ class Event( models.Model ):# pylint: disable-msg=R0904
 
                 if ( event_id == None ):
                     event_form = EventForm( event_data )
-                    event = event_form.save()
-                    final_event_id = event.id
                 else:
-                    final_event_id = event_id
                     try:
                         event = Event.objects.get( id = event_id )
                     except Event.DoesNotExist:
                         raise ValidationError( \
-                                    _( "event '%s' doesn't exist" % final_event_id ) )
+                                    _( "event '%s' doesn't exist" % \
+                                       event_id ) )
                     event_form = EventForm( event_data, instance = event )
 
-                if not event_form.is_valid():
+                if event_form.is_valid():
+                    event = event_form.save()
+                    final_event_id = event.id
+                else:
                     raise \
-                    ValidationError( _( "there is an error: in the input data: %s" % \
+                    ValidationError( _( \
+                                "there is an error: %s" % \
                                         event_form.errors ) )
             except ValidationError, error:
                 errors.append( error )
@@ -919,8 +947,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
 
 
 
-                # now we will create forms out of the lists of URLs, deadlines and
-                # sessions, and check if these forms are valid
+        # now we will create forms out of the lists of URLs, deadlines and
+        # sessions, and check if these forms are valid
         if not errors:
             event_url_data_list2 = list()
             for event_url_data in event_url_data_list:
@@ -934,14 +962,15 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                             Q( event = event_url_data['event'] ),
                             Q( url_name__exact = event_url_data['url_name'] ) )
                         event_url_form = \
-                                EventUrlForm( event_url_data, instance = event_url )
+                                EventUrlForm( event_url_data, instance = \
+                                              event_url )
                     except EventUrl.DoesNotExist:
                         event_url_form = EventUrlForm( event_url_data )
                     if not event_url_form.is_valid():
                         if ( event_id == None ):
                             Event.objects.get( id = final_event_id ).delete()
                         raise ValidationError( _( 
-                            "There is an error in the input data for URLs: %s" %
+                        "There is an error in the input data for URLs: %s" %
                             event_url_form.errors ) )
             except ValidationError, error:
                 errors.append( error )
@@ -957,16 +986,18 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                         event_deadline = EventDeadline.objects.get( 
                                 Q( event = event_deadline_data['event'] ),
                                 Q( deadline_name__exact = \
-                                        event_deadline_data['deadline_name'] ) )
+                                    event_deadline_data['deadline_name'] ) )
                         event_deadline_form = EventDeadlineForm( 
-                                event_deadline_data, instance = event_deadline )
+                                event_deadline_data, instance = \
+                                event_deadline )
                     except EventDeadline.DoesNotExist:
-                        event_deadline_form = EventDeadlineForm( event_deadline_data )
+                        event_deadline_form = \
+                        EventDeadlineForm( event_deadline_data )
                     if not event_deadline_form.is_valid():
                         if ( event_id == None ):
                             Event.objects.get( id = final_event_id ).delete()
                         raise ValidationError( _( 
-                            "There is an error in the input data in the deadlines: %s"
+                    "There is an error in the input data in the deadlines: %s"
                             % event_deadline_form.errors ) )
 
             except ValidationError, error:
@@ -988,12 +1019,13 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                         event_session_form = EventSessionForm( 
                                 event_session_data, instance = event_session )
                     except EventSession.DoesNotExist:
-                        event_session_form = EventSessionForm( event_session_data )
+                        event_session_form = \
+                        EventSessionForm( event_session_data )
                     if not event_session_form.is_valid():
                         if ( event_id == None ):
                             Event.objects.get( id = final_event_id ).delete()
                         raise ValidationError( _( 
-                            "There is an error in the input data in the sessions: %s" %
+                    "There is an error in the input data in the sessions: %s" %
                             event_session_form.errors ) )
             except ValidationError, error:
                 errors.append( error )
@@ -1033,26 +1065,28 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                         g = Group.objects.get( name = group_name )
                     except Group.DoesNotExist:
                         raise ValidationError( _( 
-                                "Group: %(group_name)s does not exist, enter a valid \
+                        "Group: %(group_name)s does not exist, enter a valid \
         group name." % {"group_name":group_name} ) )
                     event_groups_req_id_list.append( g.id )
                     if g.id not in event_groups_cur_id_list:
-                        if user_id is None or not g.is_user_in_group( user_id, g.id ):
+                        if user_id is None or not \
+                        g.is_user_in_group( user_id, g.id ):
                             raise ValidationError( _( 
-                                "You are not a member of group: %(group_name)s so \
-                                you can not add any event to it." %
-                                {"group_name":g.name} ) )
+                            "You are not a member of group: %(group_name)s so \
+                            you can not add any event to it." %
+                            {"group_name":g.name} ) )
                         event.add_to_group( g.id )
                 for group_id in event_groups_cur_id_list:
                     if group_id not in event_groups_req_id_list:
                         if user_id is None or \
                                 not g.is_user_in_group( user_id, group_id ):
                             g = Group.objects.get( id = group_id )
-                            raise ValidationError( _( "You are not a member of \
-                                group: %(group_name)s so you can not remove an \
-                                event from it." % {"group_name":g.name} ) )
+                            raise ValidationError( _( "You are not a \
+                            member of group: %(group_name)s so you can not \
+                            remove an event from it." % \
+                            {"group_name":g.name} ) )
                         event.remove_from_group( group_id )
-            except ValidationError, error:
+            except Exception, error:
                 errors.append( error )
         if errors:
             return errors
