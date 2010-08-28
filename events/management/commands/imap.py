@@ -20,17 +20,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-from base64 import decode
 
 """recive events from imap mailbox"""
+
+
+from base64 import decode
 from imaplib import IMAP4
-from gridcalendar.events.models import Event
+import email
+import re
+
 from django.conf import settings
-import email, re, sys
 from django.core.mail import send_mail, get_connection
 from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
 from django.core.management.base import NoArgsCommand
+
+from gridcalendar.events.models import Event
 
 
 class Command( NoArgsCommand ):
@@ -76,7 +81,7 @@ class Command( NoArgsCommand ):
                 event = Event.parse_text( text )
                 if type( event ) == Event :
                     self.mv_mail( nr, 'saved' )
-                    sys.stdout.write( 'Successfully add new event: %s\n' \
+                    self.stdout.write( 'Successfully add new event: %s\n' \
                                        % event.title )
                 else:
                     errors = event
@@ -85,7 +90,7 @@ class Command( NoArgsCommand ):
                                  mail['Subject'].replace( '\n', ' ' ) )
                     subject = subject.replace( '\n', ' ' )
                     message = '\n'.join( map( str, errors ) )
-                    sys.stderr.write( "Found errors in message %s: \n%s\n" % \
+                    self.stderr.write( "Found errors in message %s: \n%s\n" % \
                                       ( mail['Subject'], message ) )
                     to_email = mail['From']
                     from_email = settings.DEFAULT_FROM_EMAIL
