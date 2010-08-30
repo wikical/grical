@@ -24,13 +24,11 @@
 """recive events from imap mailbox"""
 
 
-from base64 import decode
 from imaplib import IMAP4
 import email
 import re
 
 from django.conf import settings
-from django.core.mail import send_mail, get_connection
 from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
 from django.core.management.base import NoArgsCommand
@@ -45,13 +43,16 @@ class Command( NoArgsCommand ):
     help = "Parse mails from imap server"
 
     def __init__( self, *args, **kwargs ):
-        self.M = IMAP4( settings.IMAP_SERVER )
-        self.M.login( settings.IMAP_LOGIN, settings.IMAP_PASSWD )
-        self.M.select()
+        self.mailbox = IMAP4( settings.IMAP_SERVER )
+        self.mailbox.login( settings.IMAP_LOGIN, settings.IMAP_PASSWD )
+        self.mailbox.select()
         super( Command, self ).__init__( *args, **kwargs )
 
     def get_list( self ):
-        typ, data = self.M.search( None, 'ALL' )
+        '''
+        get list of message's numbers in main mailbox
+        '''
+        typ, data = self.mailbox.search( None, 'ALL' )
         return data[0]
 
     def handle_noargs( self, **options ):
@@ -63,8 +64,8 @@ class Command( NoArgsCommand ):
         parse all mails from imap mailbox
         '''
         re_charset = re.compile( r'charset=([^\s]*)', re.IGNORECASE )
-        for nr in self.get_list():
-            typ, data = self.M.fetch( nr, '(RFC822 UID BODY[TEXT])' )
+        for number in self.get_list():
+            typ, data = self.mailbox.fetch( number, '(RFC822 UID BODY[TEXT])' )
             if data and len( data ) > 1:
                 mail = email.message_from_string( data[0][1] )
                 charset = False
@@ -80,12 +81,12 @@ class Command( NoArgsCommand ):
                 text = data[1][1].decode( charset )
                 event = Event.parse_text( text )
                 if type( event ) == Event :
-                    self.mv_mail( nr, 'saved' )
+                    self.mv_mail( number, 'saved' )
                     self.stdout.write( 'Successfully add new event: %s\n' \
                                        % event.title )
                 else:
                     errors = event
-                    self.mv_mail( nr, 'errors' )
+                    self.mv_mail( number, 'errors' )
                     subject = _( 'Validation error in: %s' % \
                                  mail['Subject'].replace( '\n', ' ' ) )
                     subject = subject.replace( '\n', ' ' )
@@ -99,19 +100,24 @@ class Command( NoArgsCommand ):
                                              from_email, ( to_email, ) )
                         msg = str( mail.message() )
                         mail.send()
-                        self.M.append( 'IMAP.sent', None, None, \
+                        self.mailbox.append( 'IMAP.sent', None, None, \
                                        msg )
 
 
         if self.get_list():
             return self.parse()
 
-    def mv_mail( self, nr, mbox_name ):
-        self.M.copy( nr, "INBOX.%s" % mbox_name )
-        self.M.store( nr, '+FLAGS', '\\Deleted' )
-        self.M.expunge()
+    def mv_mail( self, number, mbox_name ):
+        '''
+        move message to internal mailbox
+        @param number: message number in main mailbox
+        @param mbox_name: internal mailbox name
+        '''
+        self.mailbox.copy( number, "INBOX.%s" % mbox_name )
+        self.mailbox.store( number, '+FLAGS', '\\Deleted' )
+        self.mailbox.expunge()
 
     def __del__( self, *args, **kwargs ):
-        self.M.close()
-        self.M.logout()
+        self.mailbox.close()
+        self.mailbox.logout()
 
