@@ -27,6 +27,13 @@
 from imaplib import IMAP4
 import email
 import re
+import sys
+from email.Header import decode_header
+from base64 import b64decode
+from email.Parser import Parser as EmailParser
+from email.utils import parseaddr
+
+from StringIO import StringIO
 
 from django.conf import settings
 from django.core.mail.message import EmailMessage
@@ -53,7 +60,7 @@ class Command( NoArgsCommand ):
         get list of message's numbers in main mailbox
         '''
         typ, data = self.mailbox.search( None, 'ALL' )
-        return data[0]
+        return data[0].split( ' ' )
 
     def handle_noargs( self, **options ):
         """ Executes the action. """
@@ -68,17 +75,16 @@ class Command( NoArgsCommand ):
             typ, data = self.mailbox.fetch( number, '(RFC822 UID BODY[TEXT])' )
             if data and len( data ) > 1:
                 mail = email.message_from_string( data[0][1] )
-                charset = False
-                if 'Content-Type' in mail.keys():
-                    charset = \
-                        filter( lambda x: x, \
-                                map( lambda x: re_charset.findall( x ), \
-                                     mail['Content-Type'].split( ';' ) ) )
-                if charset:
-                    charset = charset[0][0]
-                else:
-                    charset = 'utf-8'
-                text = data[1][1].decode( charset )
+                text = ""
+                p = EmailParser()
+                msgobj = p.parse( StringIO( mail ), False )
+                for part in msgobj.walk():
+                    if part.get_content_type() == "text/plain":
+                        text += unicode( 
+                                        part.get_payload( decode = True ),
+                                        part.get_content_charset(),
+                                        'replace'
+                                        )
                 event = Event.parse_text( text )
                 if type( event ) == Event :
                     self.mv_mail( number, 'saved' )
@@ -87,10 +93,24 @@ class Command( NoArgsCommand ):
                 else:
                     errors = event
                     self.mv_mail( number, 'errors' )
-                    subject = _( 'Validation error in: %s' % \
-                                 mail['Subject'].replace( '\n', ' ' ) )
-                    subject = subject.replace( '\n', ' ' )
+                    if msgobj['Subject'] is not None:
+                        decodefrag = decode_header( msgobj['Subject'] )
+                        subj_fragments = []
+                        for s , enc in decodefrag:
+                            if enc:
+                                s = unicode( s , enc ).encode( 'utf8', \
+                                                               'replace' )
+                            subj_fragments.append( s )
+                        subject = ''.join( subj_fragments )
+                        subject = _( 'Validation error in: %s' % \
+                                 subject.replace( '\n', ' ' ) )
+                        subject = subject.replace( '\n', ' ' )
+                    else:
+                        subject = _( 'Validation error' )
+                    #insert errors message into mail
                     message = '\n'.join( map( str, errors ) )
+                    #add parsed text on the end of mail
+                    message = "%s/n/n%s" % ( message, text )
                     self.stderr.write( "Found errors in message %s: \n%s\n" % \
                                       ( mail['Subject'], message ) )
                     to_email = mail['From']
@@ -104,7 +124,7 @@ class Command( NoArgsCommand ):
                                        msg )
 
 
-        if self.get_list():
+        if len( self.get_list() ) > 1:
             return self.parse()
 
     def mv_mail( self, number, mbox_name ):
@@ -120,4 +140,3 @@ class Command( NoArgsCommand ):
     def __del__( self, *args, **kwargs ):
         self.mailbox.close()
         self.mailbox.logout()
-
