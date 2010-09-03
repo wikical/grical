@@ -60,7 +60,11 @@ class Command( NoArgsCommand ):
         get list of message's numbers in main mailbox
         '''
         typ, data = self.mailbox.search( None, 'ALL' )
-        return data[0].split( ' ' )
+        nr_list = data[0].split( ' ' )
+        if len( nr_list ) == 1 and nr_list[0] == '':
+            return []
+        else:
+            return nr_list
 
     def handle_noargs( self, **options ):
         """ Executes the action. """
@@ -123,8 +127,8 @@ class Command( NoArgsCommand ):
                         self.mailbox.append( 'IMAP.sent', None, None, \
                                        msg )
 
-
-        if len( self.get_list() ) > 1:
+        rest = self.get_list()
+        if len( rest ) > 0 :
             return self.parse()
 
     def mv_mail( self, number, mbox_name ):
@@ -140,3 +144,12 @@ class Command( NoArgsCommand ):
     def __del__( self, *args, **kwargs ):
         self.mailbox.close()
         self.mailbox.logout()
+
+try:
+    getattr( Command, 'stdout' )
+except:
+    Command.stdout = sys.stdout
+try:
+    getattr( Command, 'stderr' )
+except:
+    Command.stderr = sys.stderr
