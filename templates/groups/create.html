@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Create a group" %}:</p>
+<div id="event_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+        </p>
+    {% endif %}
+    <form action="" method="post">
+        <table>
+            {{ form.as_table }}
+        </table>
+        <input type="submit" value={% trans "Create" %}>
+    </form>
+</div>
+
+{% endblock %}
+
+
+{% block column3 %}
+{% endblock %}

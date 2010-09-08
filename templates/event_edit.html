@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block column1 %}
+
+<p>{% trans "Add information about the event" %}:</p>
+<div class="info">
+    <a href="{% url event_edit_raw event_id %}">{% trans "edit as text" %}</a>
+    ({% trans "Warning: unsaved changes in the form bellow will be lost" %})
+</div>
+<div id="event_form">
+    {% if form.errors %}
+        <p style="color: red;">
+            {% blocktrans count form.errors|length as counter %}
+            Please correct following error
+            {% plural %}Please correct following errors
+            {% endblocktrans %}
+        </p>
+    {% endif %}
+    <form action="" method="post">
+        <table>
+            {{ form.as_table }}
+        </table>
+        <!-- urls -->
+        <div class="url_table">
+            {%for f in formset_url.management_form%}
+            {{f}}
+            {%endfor%}
+            <!-- TODO: use divs instead of a table to allow font scalation -->
+            <table>
+                <tr>
+                    {% for field in formset_url.forms.0 %}
+                    {% if not field.is_hidden %}
+                    <th>{{field.label}}</th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {%for f in formset_url.forms%}
+                <tr>
+                    {%for field in f%} 
+                    {% if not field.is_hidden %}
+                    <td valign="bottom">{{field}}</td>
+                    {%else%}
+                    {{field}}
+                    {% endif %}
+                    {%endfor%}
+                </tr>
+                {%endfor%}
+            </table>
+        </div>
+        <!-- sessions -->
+        <div class="session_table">
+            {%for f in formset_session.management_form%}
+            {{f}}
+            {%endfor%}
+            <!-- TODO: use divs instead of a table to allow font scalation -->
+            <table>
+                <tr>
+                    {% for field in formset_session.forms.0 %}
+                    {% if not field.is_hidden %}
+                    <th>{{field.label}}</th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {%for f in formset_session.forms%}
+                <tr>
+                    {%for field in f%} 
+                    {% if not field.is_hidden %}
+                    <td valign="bottom">{{field}}</td>
+                    {%else%}
+                    {{field}}
+                    {% endif %}
+                    {%endfor%}
+                </tr>
+                {%endfor%}
+            </table>
+        </div>
+        <!-- deadlines -->
+        <div class="deadline_table">
+            {%for f in formset_deadline.management_form%}
+            {{f}}
+            {%endfor%}
+            <!-- TODO: use divs instead of a table to allow font scalation -->
+            <table>
+                <tr>
+                    {% for field in formset_deadline.forms.0 %}
+                    {% if not field.is_hidden %}
+                    <th>{{field.label}}</th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {%for f in formset_deadline.forms%}
+                <tr>
+                    {%for field in f%} 
+                    {% if not field.is_hidden %}
+                    <td valign="bottom">{{field}}</td>
+                    {%else%}
+                    {{field}}
+                    {% endif %}
+                    {%endfor%}
+                </tr>
+                {%endfor%}
+            </table>
+        </div>
+        <input type="submit" value={% trans "Save" %}>
+    </form>
+</div>
+<div class="info">
+    <a href="{% url event_edit_raw event_id %}">{% trans "edit as text" %}</a>
+    ({% trans "Warning: unsaved changes in the form above will be lost" %})
+</div>
+{% endblock %}
+

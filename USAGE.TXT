@@ -1,0 +1,51 @@
+.. This file is written in ReStructuredText, explains how GridCalendar works and is part of the generated web documentation
+
+Help
+
+=======================
+How to use GridCalendar
+=======================
+
+Events
+------
+
+An event can be public or private. Public events can be edited by anyone like pages of the
+Wikipedia_. You can *subscribe* to an event to get notified of any change, comment, etc. Private
+events can be seen and edited only by the submitter of the event and the groups the submitter
+chooses. When a private event is added to a group, the event is clone (i.e. a deep copy of the event
+is done) and is accessible and modifiable for all current and future members of the group.
+
+The public/private flag of an event cannot be changed after creation, but an event can be cloned and
+the flag of the clone can be different.
+
+Events submitted by anonymous users are public.
+
+The main rational of private events belonging only to a single group is that events have comments,
+and members of a group commenting on an event might not want non-members to see their comments.
+
+When a private event is clone to another group, the comments are not copied.
+
+.. _Wikipedia: http://en.wikipedia.org/wiki/Help:About
+
+Groups
+------
+
+A group consist of some users and events. When an event is public, comments and modifications of the event
+can be seen by anyone, otherwise only by the members of the group. When a private event is added to
+a group, a clone (i.e. a deep copy) of the event is created an attached to the group. This means
+that a private event can have only one group.
+
+Events as text
+--------------
+
+Events can be submitted and retrieved as plain text for example per E-Mail.
+
+.. FIXME complete
+
+Searches and filters
+--------------------
+
+When searching or creating filters, words are searched matching substrings of the fields ``title`` and ``descriptions``, but also full words of the fields ``acronym``, ``tags``, ``country`` and ``city``. It is an OR-search showing the events with the most number of matches first.
+
+Filters also can use the fields ``start``, ``end``, ``public`` and ``user``
+
