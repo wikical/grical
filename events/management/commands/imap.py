@@ -24,13 +24,18 @@
 """recive events from imap mailbox"""
 
 
-from base64 import decode
 from imaplib import IMAP4
 import email
 import re
+import sys
+from email.Header import decode_header
+from base64 import b64decode
+from email.Parser import Parser as EmailParser
+from email.utils import parseaddr
+
+from StringIO import StringIO
 
 from django.conf import settings
-from django.core.mail import send_mail, get_connection
 from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
 from django.core.management.base import NoArgsCommand
@@ -45,14 +50,21 @@ class Command( NoArgsCommand ):
     help = "Parse mails from imap server"
 
     def __init__( self, *args, **kwargs ):
-        self.M = IMAP4( settings.IMAP_SERVER )
-        self.M.login( settings.IMAP_LOGIN, settings.IMAP_PASSWD )
-        self.M.select()
+        self.mailbox = IMAP4( settings.IMAP_SERVER )
+        self.mailbox.login( settings.IMAP_LOGIN, settings.IMAP_PASSWD )
+        self.mailbox.select()
         super( Command, self ).__init__( *args, **kwargs )
 
     def get_list( self ):
-        typ, data = self.M.search( None, 'ALL' )
-        return data[0]
+        '''
+        get list of message's numbers in main mailbox
+        '''
+        typ, data = self.mailbox.search( None, 'ALL' )
+        nr_list = data[0].split( ' ' )
+        if len( nr_list ) == 1 and nr_list[0] == '':
+            return []
+        else:
+            return nr_list
 
     def handle_noargs( self, **options ):
         """ Executes the action. """
@@ -63,33 +75,46 @@ class Command( NoArgsCommand ):
         parse all mails from imap mailbox
         '''
         re_charset = re.compile( r'charset=([^\s]*)', re.IGNORECASE )
-        for nr in self.get_list():
-            typ, data = self.M.fetch( nr, '(RFC822 UID BODY[TEXT])' )
+        for number in self.get_list():
+            typ, data = self.mailbox.fetch( number, '(RFC822 UID BODY[TEXT])' )
             if data and len( data ) > 1:
                 mail = email.message_from_string( data[0][1] )
-                charset = False
-                if 'Content-Type' in mail.keys():
-                    charset = \
-                        filter( lambda x: x, \
-                                map( lambda x: re_charset.findall( x ), \
-                                     mail['Content-Type'].split( ';' ) ) )
-                if charset:
-                    charset = charset[0][0]
-                else:
-                    charset = 'utf-8'
-                text = data[1][1].decode( charset )
+                text = ""
+                p = EmailParser()
+                msgobj = p.parse( StringIO( mail ), False )
+                for part in msgobj.walk():
+                    if part.get_content_type() == "text/plain":
+                        text += unicode( 
+                                        part.get_payload( decode = True ),
+                                        part.get_content_charset(),
+                                        'replace'
+                                        )
                 event = Event.parse_text( text )
                 if type( event ) == Event :
-                    self.mv_mail( nr, 'saved' )
+                    self.mv_mail( number, 'saved' )
                     self.stdout.write( 'Successfully add new event: %s\n' \
                                        % event.title )
                 else:
                     errors = event
-                    self.mv_mail( nr, 'errors' )
-                    subject = _( 'Validation error in: %s' % \
-                                 mail['Subject'].replace( '\n', ' ' ) )
-                    subject = subject.replace( '\n', ' ' )
+                    self.mv_mail( number, 'errors' )
+                    if msgobj['Subject'] is not None:
+                        decodefrag = decode_header( msgobj['Subject'] )
+                        subj_fragments = []
+                        for s , enc in decodefrag:
+                            if enc:
+                                s = unicode( s , enc ).encode( 'utf8', \
+                                                               'replace' )
+                            subj_fragments.append( s )
+                        subject = ''.join( subj_fragments )
+                        subject = _( 'Validation error in: %s' % \
+                                 subject.replace( '\n', ' ' ) )
+                        subject = subject.replace( '\n', ' ' )
+                    else:
+                        subject = _( 'Validation error' )
+                    #insert errors message into mail
                     message = '\n'.join( map( str, errors ) )
+                    #add parsed text on the end of mail
+                    message = "%s/n/n%s" % ( message, text )
                     self.stderr.write( "Found errors in message %s: \n%s\n" % \
                                       ( mail['Subject'], message ) )
                     to_email = mail['From']
@@ -99,19 +124,32 @@ class Command( NoArgsCommand ):
                                              from_email, ( to_email, ) )
                         msg = str( mail.message() )
                         mail.send()
-                        self.M.append( 'IMAP.sent', None, None, \
+                        self.mailbox.append( 'IMAP.sent', None, None, \
                                        msg )
 
-
-        if self.get_list():
+        rest = self.get_list()
+        if len( rest ) > 0 :
             return self.parse()
 
-    def mv_mail( self, nr, mbox_name ):
-        self.M.copy( nr, "INBOX.%s" % mbox_name )
-        self.M.store( nr, '+FLAGS', '\\Deleted' )
-        self.M.expunge()
+    def mv_mail( self, number, mbox_name ):
+        '''
+        move message to internal mailbox
+        @param number: message number in main mailbox
+        @param mbox_name: internal mailbox name
+        '''
+        self.mailbox.copy( number, "INBOX.%s" % mbox_name )
+        self.mailbox.store( number, '+FLAGS', '\\Deleted' )
+        self.mailbox.expunge()
 
     def __del__( self, *args, **kwargs ):
-        self.M.close()
-        self.M.logout()
+        self.mailbox.close()
+        self.mailbox.logout()
 
+try:
+    getattr( Command, 'stdout' )
+except:
+    Command.stdout = sys.stdout
+try:
+    getattr( Command, 'stderr' )
+except:
+    Command.stderr = sys.stderr
