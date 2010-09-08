@@ -23,10 +23,10 @@
     </span>
   {% endif %}
   {% if event.get_tags %}
+    <br />
     <span class="event_medium_tags">
       {% for tag in event.get_tags %}
-        <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a>, </span>
-        <!-- TODO: remove the comma after the last one -->
+        <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a> &nbsp; &nbsp; </span>
       {% endfor %}
     </span>
   {% endif %}
@@ -35,7 +35,7 @@
     &nbsp;&nbsp;
     <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
     &nbsp;|&nbsp;
-    <a href="{% url event_edit_raw event.id %}">{% trans "text" %}</a>
+    <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
     &nbsp;|&nbsp;
     <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
     &nbsp;&nbsp;
