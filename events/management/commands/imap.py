@@ -112,7 +112,9 @@ class Command( NoArgsCommand ):
                     else:
                         subject = _( 'Validation error' )
                     #insert errors message into mail
-                    message = '\n'.join( map( str, errors ) )
+                    message = '\n'.join( map( \
+                                            lambda x: '\n'.join( x.messages ), \
+                                            errors ) )
                     #add parsed text on the end of mail
                     message = "%s/n/n%s" % ( message, text )
                     self.stderr.write( "Found errors in message %s: \n%s\n" % \
