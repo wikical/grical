@@ -940,13 +940,6 @@ class Event( models.Model ):# pylint: disable-msg=R0904
             except ValidationError, error:
                 errors.append( error )
 
-            # now we will add the event ID's to the lists of dictionaries
-
-
-
-
-
-
         # now we will create forms out of the lists of URLs, deadlines and
         # sessions, and check if these forms are valid
         if not errors:

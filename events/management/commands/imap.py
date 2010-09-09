@@ -42,6 +42,26 @@ from django.core.management.base import NoArgsCommand
 
 from gridcalendar.events.models import Event
 
+from subprocess import Popen, PIPE
+
+from django import template
+
+register = template.Library()
+
+@register.filter
+def html2text( value ):
+    """
+    Pipes given HTML string into the text browser W3M, which renders it.
+    Rendered text is grabbed from STDOUT and returned.
+    """
+    try:
+        cmd = "w3m -dump -T text/html -O ascii"
+        proc = Popen( cmd, shell = True, stdin = PIPE, stdout = PIPE )
+        return proc.communicate( str( value ) )[0]
+    except OSError:
+        # something bad happened, so just return the input
+        return value
+
 
 class Command( NoArgsCommand ):
     """ A management command which Parse mails from imap server..
@@ -113,10 +133,13 @@ class Command( NoArgsCommand ):
                         subject = _( 'Validation error' )
                     #insert errors message into mail
                     message = '\n'.join( map( \
-                                            lambda x: '\n'.join( x.messages ), \
+                                            lambda x: \
+                                                html2text( \
+                                                    '\n'.join( x.messages ) ), \
                                             errors ) )
                     #add parsed text on the end of mail
-                    message = "%s/n/n%s" % ( message, text )
+                    message = "%s\n\n==== Orginal message ===\n%s" % \
+                            ( message, text )
                     self.stderr.write( "Found errors in message %s: \n%s\n" % \
                                       ( mail['Subject'], message ) )
                     to_email = mail['From']
