@@ -4,7 +4,7 @@
 {% block column1 %}
 <h1>{% trans "Create a new account" %}</h1>
 <br />
-<form action="{% url registration_register %}" method="POST">
+<form action="{% url registration_register %}" method="POST">{% csrf_token %}
 <table>
 <tr>
     <td align="right" valign="top">{% trans "Username" %}:</td>

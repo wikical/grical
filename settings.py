@@ -89,6 +89,8 @@ INSTALLED_APPS = (
 # added
 
 MIDDLEWARE_CLASSES = ( 
+    # see http://docs.djangoproject.com/en/1.2/ref/contrib/csrf/
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

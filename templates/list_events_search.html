@@ -5,10 +5,10 @@
 <h3> {% trans "Search result for" %}: {{ query }}</h3>
 
 <p>
-        <form action="{% url filter_save %}" method="POST">
-            <input type="hidden" size="60" name="q" value="{{ query }}">
-            <input type="submit" value="{% trans "Save this search as a filter" %}">
-        </form>
+    <form action="{% url filter_save %}" method="POST">{% csrf_token %}
+        <input type="hidden" size="60" name="q" value="{{ query }}">
+        <input type="submit" value="{% trans "Save this search as a filter" %}">
+    </form>
 </p>
 
 
