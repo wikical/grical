@@ -46,6 +46,8 @@ from subprocess import Popen, PIPE
 
 from django import template
 
+from django.utils.encoding import smart_str
+
 register = template.Library()
 
 @register.filter
@@ -112,8 +114,9 @@ class Command( NoArgsCommand ):
                 event = Event.parse_text( text )
                 if type( event ) == Event :
                     self.mv_mail( number, 'saved' )
-                    self.stdout.write( 'Successfully add new event: %s\n' \
-                                       % event.title )
+                    self.stdout.write( smart_str( \
+                                    _( 'Successfully add new event: %s\n' \
+                                       % event.title ) ) )
                 else:
                     errors = event
                     self.mv_mail( number, 'errors' )
@@ -140,8 +143,9 @@ class Command( NoArgsCommand ):
                     #add parsed text on the end of mail
                     message = "%s\n\n==== Orginal message ===\n%s" % \
                             ( message, text )
-                    self.stderr.write( "Found errors in message %s: \n%s\n" % \
-                                      ( mail['Subject'], message ) )
+                    self.stderr.write( smart_str( \
+                                    _( "Found errors in message %s: \n%s\n" \
+                                         % ( mail['Subject'], message ) ) ) )
                     to_email = mail['From']
                     from_email = settings.DEFAULT_FROM_EMAIL
                     if subject and message and from_email:
