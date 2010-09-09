@@ -6,7 +6,7 @@
 <p>{% trans "Create a new event" %}:</p>
 <div id="event_textarea_form">
 
-    <form action="" method="post">
+    <form action="" method="post">{% csrf_token %}
         <table>
             <TEXTAREA Name="event_astext" rows="25" cols="80"></TEXTAREA>
         <input type="submit" value={% trans "Save" %}>
