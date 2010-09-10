@@ -57,11 +57,13 @@ def html2text( value ):
     Rendered text is grabbed from STDOUT and returned.
     """
     try:
+        # TODO: explain as a comment why ascii
         cmd = "w3m -dump -T text/html -O ascii"
         proc = Popen( cmd, shell = True, stdin = PIPE, stdout = PIPE )
         return proc.communicate( str( value ) )[0]
     except OSError:
         # something bad happened, so just return the input
+        # TODO: create a line in an error log file
         return value
 
 
@@ -69,7 +71,7 @@ class Command( NoArgsCommand ):
     """ A management command which Parse mails from imap server..
     """
 
-    help = "Parse mails from imap server"
+    help = "Parse mails from settings.IMAP_SERVER"
 
     def __init__( self, *args, **kwargs ):
         self.mailbox = IMAP4( settings.IMAP_SERVER )
@@ -115,7 +117,7 @@ class Command( NoArgsCommand ):
                 if type( event ) == Event :
                     self.mv_mail( number, 'saved' )
                     self.stdout.write( smart_str( \
-                                    _( 'Successfully add new event: %s\n' \
+                                    _( 'Successfully added new event: %s\n' \
                                        % event.title ) ) )
                 else:
                     errors = event
@@ -135,14 +137,17 @@ class Command( NoArgsCommand ):
                     else:
                         subject = _( 'Validation error' )
                     #insert errors message into mail
+                    # TODO: create the message from a template in
+                    # templates/mail
                     message = '\n'.join( map( \
                                             lambda x: \
                                                 html2text( \
                                                     '\n'.join( x.messages ) ), \
                                             errors ) )
                     #add parsed text on the end of mail
-                    message = "%s\n\n==== Orginal message ===\n%s" % \
+                    message = "%s\n\n==== Original message ====\n%s" % \
                             ( message, text )
+                    #TODO: write to an error log file instead of stderr
                     self.stderr.write( smart_str( \
                                     _( "Found errors in message %s: \n%s\n" \
                                          % ( mail['Subject'], message ) ) ) )
@@ -152,9 +157,18 @@ class Command( NoArgsCommand ):
                         mail = EmailMessage( subject, message, \
                                              from_email, ( to_email, ) )
                         msg = str( mail.message() )
-                        mail.send()
-                        self.mailbox.append( 'IMAP.sent', None, None, \
-                                       msg )
+                        try:
+                            mail.send(fail_silently=False)
+                            self.mailbox.append( 'IMAP.sent', None, None, \
+                                           msg )
+                        except smtplib.SMTPException:
+                            #TODO: write to an error log file instead of stderr
+                            self.stderr.write(
+                                    'imap.py:ERR:smtplib.SMTPException')
+                    else:
+                        #TODO: write to an error log file instead of stderr
+                        self.stderr.write(
+                                'imap.py:ERR:missing info for error email')
 
         rest = self.get_list()
         if len( rest ) > 0 :
