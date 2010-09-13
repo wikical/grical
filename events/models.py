@@ -48,6 +48,9 @@ from tagging.models import Tag
 from tagging.fields import TagField
 from tagging import register
 
+# TODO: use instead a client library from http://www.geonames.org/ accepting
+# names (in different languages) and codes like e.g. ES, es,  ESP, eSp, 724,
+# España, etc. Name colisions in different languages needs to be checked.
 COUNTRIES = ( 
     ( 'AF', _( u'Afghanistan' ) ),
     ( 'AX', _( u'Åland Islands' ) ),
@@ -346,8 +349,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
     """The user who created the event or null if AnonymousUser"""
-    creation_time = models.DateTimeField( _( u'Creation time' ), editable = False,
-            auto_now_add = True )
+    creation_time = models.DateTimeField(
+            _( u'Creation time' ), editable = False, auto_now_add = True )
     """Time stamp for event creation"""
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
@@ -377,8 +380,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
             _( u'City' ), blank = True, null = True, max_length = 50 )
     postcode = models.CharField( _( u'Postcode' ), blank = True, null = True,
             max_length = 16 )
-    address = models.CharField( _( u'Street address' ), blank = True, null = True,
-            max_length = 100 )
+    address = models.CharField( _( u'Street address' ), blank = True,
+            null = True, max_length = 100 )
     latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
             help_text = _( "In decimal degrees, not \
             degrees/minutes/seconds. Prefix with \"-\" for South, no sign for \
@@ -390,8 +393,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
     timezone = models.SmallIntegerField( 
             _( u'Timezone' ), blank = True, null = True,
             help_text = _( "Minutes relative to UTC (e.g. -60 means UTC-1)" ) )
-    description = models.TextField( _( u'Description' ), blank = True, null = True )
-
+    description = models.TextField(
+            _( u'Description' ), blank = True, null = True )
 
     clone_of = models.ForeignKey( 'self', \
                                editable = False, \
@@ -461,9 +464,11 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         cls.objects.set_user( user )
 
     def set_tags( self, tags ):
+        "set tags"
         Tag.objects.update_tags( self, tags )
 
     def get_tags( self ):
+        "get tags"
         return Tag.objects.get_for_object( self )
 
     def __unicode__( self ):
@@ -471,6 +476,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
 
     @models.permalink
     def get_absolute_url( self ):
+        "get internal URL of an event"
         #return '/e/show/' + str(self.id) + '/'
         #return (reverse('event_show', kwargs ={'event_id': str(self.id)}))
         return ( 'event_show', (), { 'event_id': self.id } )
@@ -1316,7 +1322,8 @@ class EventHistory( models.Model ):
     """ the event as text after the change """
 
 class Filter( models.Model ):
-    user = models.ForeignKey( User, unique = False, verbose_name = _( u'User' ) )
+    user = models.ForeignKey(
+            User, unique = False, verbose_name = _( u'User' ) )
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
     query = models.CharField( _( u'Query' ), max_length = 500, blank = False,
@@ -1324,8 +1331,9 @@ class Filter( models.Model ):
     name = models.CharField( 
             _( u'Name' ), max_length = 40, blank = False, null = False )
     email = models.BooleanField( _( u'Email' ), default = False, help_text =
-            _( u'If set it sends an email to a user when a new event matches' ) )
-    maxevents_email = models.SmallIntegerField( _( u'Number of events in e-mail' ),
+            _(u'If set it sends an email to a user when a new event matches'))
+    maxevents_email = models.SmallIntegerField(
+            _( u'Number of events in e-mail' ),
             blank = True, null = True, default = 10, help_text =
             _( "Maximum number of events to show in a notification e-mail" ) )
 
@@ -1351,7 +1359,8 @@ class Filter( models.Model ):
         users = User.objects.all()
         for user in users:
             to_email = user.email
-            user_filters = Filter.objects.filter( user = u ).filter( email = True )
+            user_filters = Filter.objects.filter( user = u ).filter(
+                    email = True )
             # user_events will be a list of dictionaries containing event data
             user_events = list()
             # FIXME: list_search_get is now different
@@ -1376,7 +1385,8 @@ class Filter( models.Model ):
             }
             if len( user_events ) > 0:
                 subject = 'new events on ' + settings.PROJECT_NAME
-                message = render_to_string( 'mail/new_events_notif.txt', context )
+                message = render_to_string(
+                        'mail/new_events_notif.txt', context )
                 from_email = settings.DEFAULT_FROM_EMAIL
                 if subject and message and from_email:
                     try:
@@ -1393,8 +1403,8 @@ class Group( models.Model ):
             verbose_name = _( u'Members' ) )
     events = models.ManyToManyField( Event, through = 'Calendar',
             verbose_name = _( u'Events' ) )
-    creation_time = models.DateTimeField( _( u'Creation time' ), editable = False,
-            auto_now_add = True )
+    creation_time = models.DateTimeField(
+            _( u'Creation time' ), editable = False, auto_now_add = True )
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
 
@@ -1446,11 +1456,13 @@ class Membership( models.Model ):
     user = models.ForeignKey( 
             User, verbose_name = _( u'User' ), related_name = 'user_in_groups' )
     group = models.ForeignKey( 
-            Group, verbose_name = _( u'Group' ), related_name = 'users_in_group' )
+            Group, verbose_name = _( u'Group' ),
+            related_name = 'users_in_group' )
     is_administrator = models.BooleanField( 
             _( u'Is administrator' ), default = True )
     """Not used at the moment. All members of a group are administrators."""
-    new_event_email = models.BooleanField( _( u'New event notification' ), default = True )
+    new_event_email = models.BooleanField(
+            _( u'New event notification' ), default = True )
     """If True a notification email should be sent to the user when a new event
     is added to the group"""
     new_member_email = models.BooleanField( 
@@ -1467,8 +1479,8 @@ class Membership( models.Model ):
 
 class Calendar( models.Model ):
     """Relation between events and groups."""
-    event = models.ForeignKey( 
-            Event, verbose_name = _( u'Event' ), related_name = 'event_in_groups' )
+    event = models.ForeignKey( Event, verbose_name = _( u'Event' ),
+            related_name = 'event_in_groups' )
     group = models.ForeignKey( 
             Group, verbose_name = _( u'Group' ), related_name = 'calendar' )
     date_added = models.DateField( 
@@ -1608,7 +1620,8 @@ class GroupInvitationManager( models.Manager ):
                   'host': host.username,
                   'group': group.name, } )
 
-        send_mail( subject, message, settings.DEFAULT_FROM_EMAIL, [guest.email] )
+        send_mail(
+                subject, message, settings.DEFAULT_FROM_EMAIL, [guest.email] )
 
 
     def delete_expired_invitations( self ):
