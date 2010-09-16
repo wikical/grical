@@ -1,8 +1,8 @@
 
 high priority
 -------------
-- security: when Django 1.2 is out: add {% csrf_token %} to all forms targetting internal urls
-  See http://docs.djangoproject.com/en/dev/intro/tutorial04/#write-a-simple-form
+- Add the attribute `alters_data` to all methods which alters data, see
+  http://www.djangobook.com/en/2.0/chapter04/
 - Implement optimistic looking and transactions when e.g. saving/changing an event as a text. See
     http://stackoverflow.com/questions/320096/django-how-can-i-protect-against-concurrent-modification-of-data-base-entries
 - When committing remove and create new data base creating automatically a new super user to avoid
@@ -55,12 +55,6 @@ low priority
 - add in profiles to receive entries per email for e.g. a group, or group and location, or search
   string, etc. Add a link in the email for the icalc entry, etc.
 - add an icon on events to e.g. get it as iCal, vCal
-- add an option to add an entry by email, e.g.
-    name=FFII demonstration
-    start=2008-06-06
-    url=http://...
-    tags=...
-    ...
 - for:user (like in del.icio.us)
 - add 'interesting' to an event
 - advanced group features like admins for groups, etc. See:

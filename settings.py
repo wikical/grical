@@ -25,7 +25,9 @@
 import os
 
 # absolute path to this directory
-PROJECT_ROOT = os.path.realpath( os.path.dirname( __file__ ) )
+PROJECT_ROOT = \
+    os.path.realpath( os.path.dirname( __file__ ) ).replace('\\', '/')
+
 PROJECT_NAME = os.path.split( PROJECT_ROOT )[-1]
 
 # See how settings_local.py should look like at the end of this file
@@ -206,6 +208,8 @@ except NameError:
 
 RECAPTCHA_PUB_KEY = "6Lf2WLwSAAAAAAs5ofIEr_0l3u34dYHK6LRghoiU"
 RECAPTCHA_PRIVATE_KEY = "6Lf2WLwSAAAAAJ4rWk4tLcZAJueB_yhsXjjCVo7_"
+
+
 ###############################################
 # it follows an example for a settings_local.py
 ###############################################
