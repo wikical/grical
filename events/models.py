@@ -330,7 +330,7 @@ class EventManager( models.Manager ):# pylint: disable-msg=R0904
         if user:
             if user.is_staff:
                 return super( EventManager, self ).get_query_set()
-            groups = Group.objects.filter( users_in_group__user = user )
+            groups = Group.objects.filter( membership__user = user )
             query_set = super( EventManager, self )\
             .get_query_set().filter( \
                                     Q( public = True ) \
@@ -631,13 +631,15 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                 " ",
                                 session.session_name,
                                 '\n'] )
-            elif keyword == 'groups' and self.event_in_groups:
-                calendars = Calendar.objects.filter( event = self.id )
-                if len( calendars ) > 0:
-                    to_return += keyword + ":"
-                    for calendar in calendars:
-                        to_return += ' "' + str( calendar.group.name ) + '"'
-                    to_return += '\n'
+            # the groups an event belong to are not shown for privacy of the
+            # groups and because the list can be too long
+            # elif keyword == 'groups' and self.event_in_groups:
+            #     calendars = Calendar.objects.filter( event = self.id )
+            #     if len( calendars ) > 0:
+            #         to_return += keyword + ":"
+            #         for calendar in calendars:
+            #             to_return += ' "' + str( calendar.group.name ) + '"'
+            #         to_return += '\n'
             elif keyword == 'description' and self.description:
                 to_return += keyword + ": " + unicode( \
                             self.description ) + "\n"
@@ -681,6 +683,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                 name1: name1_url
                 name2: name2_url
                 ...
+
         The idented lines are optional. If web_url is present, it will be saved
         with the url_name 'web'
 
@@ -689,6 +692,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                 deadline1_name: deadline1_date
                 deadline2_name: deadline2_date
                 ...
+
         The idented lines are optional. If deadline_date is present, it will be saved
         with the deadline_name 'deadline'
 
@@ -697,6 +701,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                 session1_name: session1_date: session1_starttime-session1_endtime
                 session2_name: session2_date: session2_starttime-session2_endtime
                 ...
+
         The idented lines are optional. If session_date is present, it will be saved
         with the session_name 'session'
 
@@ -1409,7 +1414,7 @@ class Group( models.Model ):
             editable = False, auto_now = True )
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['creation_time']
+        ordering = ['name']
         verbose_name = _( u'Group' )
         verbose_name_plural = _( u'Groups' )
 
@@ -1418,10 +1423,46 @@ class Group( models.Model ):
 
     @models.permalink
     def get_absolute_url( self ):
+        # FIXME: make a view for a group and change the name list_events_group.
+        # The view could have on the left events and on the right members info
+        # and messages
         return ( 'list_events_group', (), { 'group_id': self.id } )
 
+    def is_member(self, user):
+        """ Return True if the user is a member of the group, False otherwise.
+        """
+        return is_user_in_group(user, self)
+
     @staticmethod
-    def is_user_in_group( user_id, group_id ):
+    def is_user_in_group( user, group ):
+        """ Returns True if `user` is in `group`.
+
+        The parameters `user` and `group` can be an instance the classes User
+        and Group or the id number.
+
+        >>> from django.contrib.auth.models import User
+        >>> from events.models import Event, Group, Membership
+        >>> user1, created = User.objects.get_or_create(username = "user1")
+        >>> user2, created = User.objects.get_or_create(username = "user2")
+        >>> group1 = Group.objects.create(name="group1")
+        >>> m = Membership.objects.create(user=user1, group=group1)
+        >>> assert (Group.is_user_in_group(user1, group1))
+        >>> assert (not Group.is_user_in_group(user2, group1))
+        >>> assert (Group.is_user_in_group(user1.id, group1.id))
+        >>> assert (not Group.is_user_in_group(user2.id, group1.id))
+        """
+        if isinstance(user, User):
+            user_id = user.id
+        elif isinstance(user, int):
+            user_id = user
+        else: raise TypeError(
+                "'user' must be a User instance or an integer")
+        if isinstance(group, Group):
+            group_id = group.id
+        elif isinstance(group, int):
+            group_id = group
+        else: raise TypeError(
+                "'group' must be a Group instance or an integer")
         times_user_in_group = Membership.objects.filter( 
                 user__id__exact = user_id,
                 group__id__exact = group_id )
@@ -1431,9 +1472,65 @@ class Group( models.Model ):
         else:
             return False
 
+    # FIXME: implemnt __hash__ and __eq__ and probably __cmp__ to be able to
+    # efficiently use a group as a key of a dictionary
+
+    @staticmethod
+    def groups_of_user(user):
+        """ Returns a list of groups the `user` is a member of.
+
+        The parameter `user` can be an instance of User or the id number of a
+        user.
+        
+        >>> from django.contrib.auth.models import User
+        >>> from events.models import Event, Group, Membership
+        >>> user1, created = User.objects.get_or_create(username = "user1")
+        >>> user2, created = User.objects.get_or_create(username = "user2")
+        >>> group12 = Group.objects.create(name="group12")
+        >>> group2 = Group.objects.create(name="group2")
+        >>> m1 = Membership.objects.create(user=user1, group=group12)
+        >>> m2 = Membership.objects.create(user=user2, group=group12)
+        >>> m3 = Membership.objects.create(user=user2, group=group2)
+        >>> groups_of_user_2 = Group.groups_of_user(user2.id)
+        >>> assert(len(groups_of_user_2) == 2)
+        >>> assert(isinstance(groups_of_user_2, list))
+        >>> assert(isinstance(groups_of_user_2[0], Group))
+        >>> assert(isinstance(groups_of_user_2[1], Group))
+        >>> groups_of_user_1 = Group.groups_of_user(user1)
+        >>> assert(len(groups_of_user_1) == 1)
+
+        """
+        if (user is None):
+            return list()
+        if isinstance(user, User):
+            pass
+        elif isinstance(user, int):
+            user = User.objects.get(id=user)
+        else: raise TypeError(
+                "'user' must be a User instance or an integer")
+        return list(Group.objects.filter(membership__user=user))
+
+    @staticmethod
+    def events_in_groups(groups, limit=5):
+        """ Returns a dictionary whose keys are groups and its values are lists
+        of maximal `limit` events of the group.
+        """
+        to_return = {}
+        if len(groups) == 0:
+            return to_return
+        for group in groups:
+            if limit > 0:
+                # TODO: fix the code below because it is not efficient because
+                # the filter could return millions of events
+                events = Event.objects.filter(group=group).filter(
+                        start__gte=datetime.now()) [0:limit]
+                if length(events) > 0:
+                    to_return[group] = events
+        return to_return
+
     @classmethod
     def groups_for_add_event( cls, user, event ):
-        "return grups for event to add"
+        "return groups for event to add"
         if event.clone_of:
             event = event.clone_of
         groups = cls.objects.filter( members = user )
@@ -1441,12 +1538,14 @@ class Group( models.Model ):
         groups = groups.exclude( events__in = event.get_clones() )
         return groups
 
+    # FIXME: rename to is_member
     def is_user_member_of( self, user ):
         if Membership.objects.get( group = self, user = user ):
             return True
         else:
             return False
 
+    # FIXME: rename to contains
     def is_event_in_calendar( self, event ):
         return False # TODO: what is this?!
 
@@ -1454,10 +1553,15 @@ class Group( models.Model ):
 class Membership( models.Model ):
     """Relation between users and groups."""
     user = models.ForeignKey( 
-            User, verbose_name = _( u'User' ), related_name = 'user_in_groups' )
+            User,
+            verbose_name = _( u'User' ),
+            related_name = 'membership' )
+    # the name 'groups' instead of mygroups is not possible because the default
+    # User model in django already has a relation called 'groups'
     group = models.ForeignKey( 
-            Group, verbose_name = _( u'Group' ),
-            related_name = 'users_in_group' )
+            Group,
+            verbose_name = _( u'Group' ),
+            related_name = 'membership' )
     is_administrator = models.BooleanField( 
             _( u'Is administrator' ), default = True )
     """Not used at the moment. All members of a group are administrators."""
@@ -1480,7 +1584,7 @@ class Membership( models.Model ):
 class Calendar( models.Model ):
     """Relation between events and groups."""
     event = models.ForeignKey( Event, verbose_name = _( u'Event' ),
-            related_name = 'event_in_groups' )
+            related_name = 'calendar' )
     group = models.ForeignKey( 
             Group, verbose_name = _( u'Group' ), related_name = 'calendar' )
     date_added = models.DateField( 

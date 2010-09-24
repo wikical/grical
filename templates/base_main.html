@@ -14,7 +14,7 @@
 
 {% if events %}
     {% for event in events %}
-        {% include "event_show_expanded.html" %}
+        {% include "event_show_medium.html" %}
         {% trans "Matches your filters" %}:
         {% for fil in event.filters %}
             <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
@@ -28,7 +28,7 @@
 {% if ip_country_event_list %}
     <!-- ip country events -->
     {% for event in ip_country_event_list %}
-        {% include "event_show_expanded.html" %}
+        {% include "event_show_medium.html" %}
     {% endfor %}
 {% endif %}
 
@@ -36,14 +36,14 @@
     <!-- ip continent events -->
     {% trans "Below are some events which happen soon on the continent we think you are in now" %}:
     {% for event in ip_continent_event_list %}
-        {% include "event_show_expanded.html" %}
+        {% include "event_show_medium.html" %}
     {% endfor %}
 {% endif %}
 
 {% if landless_event_list %}
     <!-- events without country -->
     {% for event in landless_event_list %}
-        {% include "event_show_expanded.html" %}
+        {% include "event_show_medium.html" %}
     {% endfor %}
 {% endif %}
 
@@ -80,6 +80,6 @@
     <a href="{% url settings %}">{% trans "filters" %}</a></p>
 {% endif %}
 -->
-{% include "coming_events_in_my_groups.html" %}
+{% include "events_in_groups_or_intro.html" %}
 
 {% endblock %}

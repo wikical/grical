@@ -3,6 +3,9 @@ high priority
 -------------
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
+- Show events whose end-time has not experid, for instance important for consultations.
+  Alternatively consultations start-time should be the expected results time with a dead line
+  before. Use the earlierst dead line to sort events, not the start time.
 - Implement optimistic looking and transactions when e.g. saving/changing an event as a text. See
     http://stackoverflow.com/questions/320096/django-how-can-i-protect-against-concurrent-modification-of-data-base-entries
 - When committing remove and create new data base creating automatically a new super user to avoid
@@ -30,6 +33,7 @@ high priority
 
 medium priority
 ---------------
+- css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
 - Check out http://code.djangoproject.com/wiki/GeoDjango

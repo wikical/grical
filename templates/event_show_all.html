@@ -1,6 +1,16 @@
+{% extends "base.html" %}
+
 {% load i18n %}
 
+{% block column1 %}
+
 <div class="field">
+    <a href="{% url event_edit event.id %}"><span class="field_link">{% trans "edit this event" %}</span></a>
+    &nbsp;
+    <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit this event as text" %}</span></a>
+    &nbsp;
+    <a href="{% url group_add_event event.id %}"><span class="field_link">{% trans "add this event to a group" %}</span></a>
+    <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
     <p>
     {% if event.acro %}
         {{ event.acro }}
@@ -49,25 +59,18 @@
 
     <p>
     {% if event.get_tags %}
-    <br />{% trans "Tags" %}: <span class="tags">
-    {% for tag in event.get_tags %}
-        <span class="tag"><a href="{% url list_events_tag tag %}">{{ tag }}</a>, </span>
-    {% endfor %}
+        <br />{% trans "Tags" %}: <span class="tags">
+        {% for tag in event.get_tags %}
+            <span class="tag"><a href="{% url list_events_tag tag %}">{{ tag }}</a>, </span>
+        {% endfor %}
     {% endif %}
     </p>
 
-    <p>
+    <pre>
     {% if event.description %}
             {{ event.description }}
     {% endif %}
-    </p>
-
-    <br />
-    <a href="{% url event_edit event.id %}"><span class="field_link">{% trans "edit this event" %}</span></a>
-    &nbsp;
-    <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit this event as text" %}</span></a>
-    &nbsp;
-    <a href="{% url group_add_event event.id %}"><span class="field_link">{% trans "add this event to a group" %}</span></a>
-    <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
+    </pre>
 </div>
 
+{% endblock %}

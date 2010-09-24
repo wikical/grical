@@ -399,7 +399,7 @@ def all_events_in_user_groups(user_id, limit):
         return list()
     else:
         u = User.objects.get(id=user_id)
-        groups = Group.objects.filter(users_in_group__user=u)
+        groups = Group.objects.filter(membership__user=u)
         if len(groups) == 0:
             return list()
         else:
