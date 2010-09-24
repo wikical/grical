@@ -139,20 +139,23 @@ def event_new( request ):
                 public = cleaned_data['public']
             else:
                 public = True
-            event = Event( user_id = request.user.id, title = cleaned_data['title'],
-                    start = cleaned_data['start'],
-                    tags = cleaned_data['tags'], public = public )
+            event = Event(
+                        user_id = request.user.id,
+                        title   = cleaned_data['title'],
+                        start   = cleaned_data['start'],
+                        tags    = cleaned_data['tags'],
+                        public  = public )
             event.save()
             return HttpResponseRedirect( reverse( 'event_edit',
                     kwargs = {'event_id': str( event.id )} ) )
             # TODO: look in a thread for all users who wants to receive an
             # email notification and send it
         else:
-            return render_to_response( 'root.html',
+            return render_to_response( 'base_main.html',
                     {'title': _( "GridCalendar.net" ), 'form': sef},
                     context_instance = RequestContext( request ) )
     else:
-        return HttpResponseRedirect( reverse( 'root' ) )
+        return HttpResponseRedirect( reverse( 'main' ) )
 
 def event_edit( request, event_id ):
     """ Complete web-form to edit an event. """
@@ -176,7 +179,8 @@ def event_edit( request, event_id ):
                 with the number:' ) + " " + str( event_id ) +
                 _( "Please log-in and try again" ) + "." )
         else:
-            if ( not Event.is_event_viewable_by_user( event_id, request.user.id ) ):
+            if ( not Event.is_event_viewable_by_user(
+                    event_id, request.user.id ) ):
                 return _error( request,
                     _( 'You are not allowed to edit the event with the \
                         number:' ) + " " + str( event_id ) )
@@ -239,7 +243,7 @@ def event_new_raw( request ):
             try:
                 Event.parse_text( event_textarea, None, request.user.id )
                 # TODO: inform that the event was saved
-                return HttpResponseRedirect( reverse( 'root' ) )
+                return HttpResponseRedirect( reverse( 'main' ) )
             except ValidationError, error:
                 return _error( request, error )
         else:
@@ -272,18 +276,20 @@ def event_edit_raw( request, event_id ):
                     with the number:' ) + " " + str( event_id ) + ". " +
                 _( "Please log-in and try again" ) + "." )
         else:
-            if ( not Event.is_event_viewable_by_user( event_id, request.user.id ) ):
+            if ( not Event.is_event_viewable_by_user(
+                    event_id, request.user.id ) ):
                 return _error( request,
                     _( 'You are not allowed to edit the event with the \
                     number:' ) + " " + str( event_id ) )
     if request.method == 'POST':
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
-            errors = event.parse_text( event_textarea, event_id, request.user.id )
+            errors = event.parse_text(
+                    event_textarea, event_id, request.user.id )
             if type( event ) == type( errors ):
             #if no errors, parse_text returns event instance
                 return HttpResponseRedirect( 
-                        reverse( 'event_show', kwargs = {'event_id': event_id} ) )
+                    reverse( 'event_show', kwargs = {'event_id': event_id} ) )
             else:
             #else, parse_text return errors list
                 return _errors( request, errors )
@@ -314,7 +320,7 @@ def event_show( request, event_id ):
             number" ) + ": " + str( event_id ) )
     else:
         templates = {'title': _( "view event detail" ), 'event': event }
-        return render_to_response( 'event_show.html', templates,
+        return render_to_response( 'event_show_all.html', templates,
                 context_instance = RequestContext( request ) )
 
 def event_show_raw( request, event_id ):
@@ -396,8 +402,8 @@ def filter_save( request ):
             efilter.query = query_lowercase
             efilter.name = str( request.user ) + "'s filter " + str( maximum )
             efilter.save()
-            return HttpResponseRedirect( 
-                    reverse( 'filter_edit', kwargs = {'filter_id': efilter.id} ) )
+            return HttpResponseRedirect( reverse(
+                'filter_edit', kwargs = {'filter_id': efilter.id} ) )
         except Exception:
             return _error( request,
                     _( "An error has ocurred, nothing was saved. Click the \
@@ -437,8 +443,10 @@ def filter_edit( request, filter_id ):
                         'title': 'edit event',
                         'form': ssf,
                         'filter_id': filter_id }
-                return render_to_response( 'filter_edit.html',
-                        templates, context_instance = RequestContext( request ) )
+                return render_to_response(
+                        'filter_edit.html',
+                        templates,
+                        context_instance = RequestContext( request ) )
         else:
             ssf = FilterForm( instance = efilter )
             templates = {
@@ -454,14 +462,15 @@ def filter_drop( request, filter_id ):
     try:
         efilter = Filter.objects.get( pk = filter_id )
     except Filter.DoesNotExist:
-        return _error( request,
-                _( "The saved search with the following number doesn't exist:" ) +
+        return _error(
+            request,
+            _( "The saved search with the following number doesn't exist:" ) +
                 str( filter_id ) )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
         return _error( request,
                 _( 'You are not allowed to delete the saved search with the \
-                    following number:' ) + " " + str( Filter_id ) )
+                    following number:' ) + " " + str( filter_id ) )
     else:
         if request.method == 'POST':
             assert False
@@ -472,7 +481,8 @@ def filter_drop( request, filter_id ):
 @login_required
 def list_filters_my( request ):
     """ View that lists the filters of the logged-in user """
-    if ( ( not request.user.is_authenticated() ) or ( request.user.id is None ) ):
+    if ( ( not request.user.is_authenticated() ) or
+            ( request.user.id is None ) ):
         return _error( request,
                 _( "Your search didn't get any result" ) )
     else:
@@ -487,7 +497,8 @@ def list_filters_my( request ):
 
 def list_events_of_user( request, username ):
     """ View that lists the events of a user """
-    if ( ( not request.user.is_authenticated() ) or ( request.user.id is None ) ):
+    if ( ( not request.user.is_authenticated() ) or
+            ( request.user.id is None ) ):
         try:
             user = User.objects.get( username__exact = username )
             useridtmp = user.id
@@ -508,7 +519,9 @@ def list_events_of_user( request, username ):
             useridtmp = user.id
             events = Event.objects.filter( user = useridtmp )
             if len( events ) == 0:
-                return _error( request, _( "Your search didn't get any result" ) )
+                return _error(
+                        request,
+                        _( "Your search didn't get any result" ) )
             else:
                 return render_to_response( 'events/list_user.html',
                     {'events': events, 'username': username},
@@ -519,7 +532,8 @@ def list_events_of_user( request, username ):
 @login_required
 def list_events_my( request ):
     """ View that lists the events the logged-in user is the owner of """
-    if ( ( not request.user.is_authenticated() ) or ( request.user.id is None ) ):
+    if ( ( not request.user.is_authenticated() ) or
+            ( request.user.id is None ) ):
         return _error( request, _( "Your search didn't get any result" ) )
     else:
         events = Event.objects.filter( user = request.user )
@@ -543,7 +557,7 @@ def list_events_tag( request, tag ):
             },
             context_instance = RequestContext( request ) )
 
-def root( request ):
+def main( request ):
     """ main view """
     user_id = request.user.id
     if request.method == 'POST':
@@ -606,7 +620,8 @@ def root( request ):
         ip_continent_event_list = list()
 
     if ( len( events ) + len( ip_country_event_list ) + \
-            len( ip_continent_event_list ) ) < settings.MAX_EVENTS_ON_ROOT_PAGE :
+            len( ip_continent_event_list ) ) < \
+                settings.MAX_EVENTS_ON_ROOT_PAGE :
         add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len( events ) - \
                 len( ip_country_event_list ) - len( ip_continent_event_list )
         landless_event_list = list_up_to_max_events_ip_country_events( 
@@ -614,7 +629,7 @@ def root( request ):
                 'landless' )
 
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
-    return render_to_response( 'root.html',
+    return render_to_response( 'base_main.html',
             {
                 'title': _( "Welcome to GridCalendar" ),
                 'form': event_form,
@@ -634,7 +649,7 @@ def settings_page( request ):
     # user is logged in because of decorator
     list_of_filters = filter_list( request.user.id )
     user = User( request.user )
-    groups = Group.objects.filter( users_in_group__user = user )
+    groups = Group.objects.filter( membership__user = user )
     hashvalue = hashlib.sha256( 
             "%s!%s" % ( SECRET_KEY, request.user.id ) ).hexdigest()
     return render_to_response( 'settings.html',

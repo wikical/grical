@@ -8,17 +8,18 @@
         {% for g in group_events %}
             Group: {{g.group_name}}<br>
             {% for event in g.el %}
-            <p>
-            <div class="field">
-                <a href="{% url event_show event.id %}">{{ event.title }}</a><br />
-                <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
-                </span>
-            </div>
-            </p>
+                <p>
+                    <div class="field">
+                        <a href="{% url event_show event.id %}">{{ event.title }}</a><br />
+                        <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
+                        </span>
+                    </div>
+                </p>
             {% endfor %}
         <hr />
         {% endfor %}
     {% else %}
+        <!-- TODO: recommend some events -->
         <p>{% trans "No events in your groups." %}</p>
     {% endif %}
 {% else %}

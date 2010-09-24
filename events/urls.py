@@ -27,7 +27,7 @@ from django.conf.urls.defaults import *
 from gridcalendar.events import views, views_groups, rss, feeds
 
 urlpatterns = patterns('',
-    url(r'^$', views.root, name='root'),
+    url(r'^$', views.main, name='main'),
 )
 
 urlpatterns += patterns('', # views of a single event

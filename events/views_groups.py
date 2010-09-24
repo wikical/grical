@@ -77,7 +77,7 @@ def list_groups_my(request):
     #            context_instance=RequestContext(request))
     #else:
     user = User(request.user)
-    groups = Group.objects.filter(users_in_group__user=user)
+    groups = Group.objects.filter(membership__user=user)
     if len(groups) == 0:
         return render_to_response('error.html',
             {
@@ -96,7 +96,7 @@ def group_quit(request, group_id, sure):
     user is the last member of the group """
     user = User(request.user)
     try:
-        group = Group.objects.get(id=group_id, users_in_group__user=user)
+        group = Group.objects.get(id=group_id, membership__user=user)
     except Group.DoesNotExist:
         return render_to_response('error.html',
                 {
