@@ -663,13 +663,15 @@ class Event( models.Model ):# pylint: disable-msg=R0904
             list( re_parts.match( fields[i + 1] ).groups() )
 
 
+    # TODO: why classmethod instead of staticmethod ?
     @classmethod
     def parse_text( cls, input_text_in, event_id = None, user_id = None ):
         """It parses a text and saves it as a single event in the data base.
 
         It raises a ValidationError if there is an error.
 
-        A text to be parsed as an event is of the form:
+        A text to be parsed as an event is of the form::
+
             title: a title
             tags: tag1 tag2 tag3
             start: 2020-01-30
@@ -678,7 +680,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         There are synonyms for the names of the field like 't' for 'title'. See
         get_synonyms()
 
-        The text for the field 'urls' is of the form:
+        The text for the field 'urls' is of the form::
             urls: web_url
                 name1: name1_url
                 name2: name2_url
@@ -687,7 +689,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         The idented lines are optional. If web_url is present, it will be saved
         with the url_name 'web'
 
-        The text for the field 'deadlines' is of the form:
+        The text for the field 'deadlines' is of the form::
+
             deadlines: deadline_date
                 deadline1_name: deadline1_date
                 deadline2_name: deadline2_date
@@ -696,7 +699,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         The idented lines are optional. If deadline_date is present, it will be saved
         with the deadline_name 'deadline'
 
-        The text for the field 'sessions' is of the form:
+        The text for the field 'sessions' is of the form::
+
             sessions: session_date session_starttime session_endtime
                 session1_name: session1_date: session1_starttime-session1_endtime
                 session2_name: session2_date: session2_starttime-session2_endtime
@@ -705,10 +709,13 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         The idented lines are optional. If session_date is present, it will be saved
         with the session_name 'session'
 
-        The text for the field 'groups' is of the form:
+        The text for the field 'groups' is of the form::
+
             groups: group1 group2 ...
+
         """
         # TODO: allow to put comments on events by email
+        # check the text above and also the online documentation
         event_data = {}
         # separate events
         # get fields
@@ -788,6 +795,8 @@ class Event( models.Model ):# pylint: disable-msg=R0904
                                     append( event_url_data )
                                     event_url_index += 1
 
+                    # TODO: accept deadlines like:
+                    #       2010-02-10 Submission of invited session proposals
                     elif field_name == 'deadlines':
                         event_deadline_index = 0
                         if not parts[1] == '':
