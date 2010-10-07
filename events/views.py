@@ -170,7 +170,7 @@ def event_edit( request, event_id ):
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
-    if ( not event.public ):
+    if not event.public :
         # events submitted by anonymous users cannot be non-public:
         assert ( event.user != None )
         if ( not request.user.is_authenticated() ):
@@ -346,6 +346,8 @@ def event_show_raw( request, event_id ):
 
 def query( request ):
     """ View to get the data of a search query calling `list_events_search` """
+    # FIXME: replace everything using something like the first example at
+    # http://www.djangobook.com/en/1.0/chapter07/
     if 'q' in request.GET and request.GET['q']:
         query_lowercase = request.GET['q'].lower()
         return HttpResponseRedirect( 

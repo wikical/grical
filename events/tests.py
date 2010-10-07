@@ -22,6 +22,22 @@
 #############################################################################
 
 """ testing events application """
+
+# TODO: read http://toastdriven.com/fresh/django-doctest-tips/
+# To run all doctests of all modules, see:
+# http://stackoverflow.com/questions/1615406/configure-django-to-find-all-doctests-in-all-modules
+
+import unittest
+import doctest
+from gridcalendar.events import models
+
+#def suite():
+#    suite = unittest.TestSuite()
+#    suite.addTest(doctest.DocTestSuite(models))
+# FIXME: use following line:
+#    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(EventTestCase))
+#    return suite
+
 import datetime
 from django.contrib.auth.models import User
 from events.models import Event, Group, Filter, EventUrl, Membership, \
@@ -36,131 +52,9 @@ import settings
 #import time
 #import threading
 #import random
+
 ONLINE = True
 USERS_COUNT = 3
-
-FIELDS_STATUS = {
-    'compulsory':
-          ( 'title',
-           'tags',
-           'start',
-           'urls',
-           'public',
-           ),
-    'optional':
-           ( 'acronym',
-            'end',
-            'address',
-            'city',
-            'postcode',
-            'country',
-            'latitude',
-            'longitude',
-            'timezone',
-            'groups',
-            'description',
-            'deadlines',
-            'sessions',
-            ),
-           }
-
-FIELDS_SYNONYMS = {
-            'title':         ( 'ti', 'titl' ),
-            'tags':          ( 'ta', 'tag', 'subjects', 'subject', \
-                               'su', 'subj' ),
-            'start':         ( 'st', 'starts', 'date', 'da', 'start date',
-                             'start-date', 'start_date', 'sd' ),
-            'urls':          ( 'ur', 'url', 'ur', 'web', 'webs', 'we' ),
-            'public':        ( 'pu', 'open', 'op' ),
-            'acronym':      ( 'ac', 'acro' ),
-            'end':          ( 'en', 'ends', 'finish', 'finishes', 'fi',
-                             'enddate', 'end date', 'end-date', 'end_date',
-                             'ed', 'endd' ),
-            'address':      ( 'ad', 'addr', 'street' ),
-            'city':         ( 'ci', 'town', 'to' ),
-            'postcode':     ( 'po', 'zip', 'zi', 'code' ),
-            'country':      ( 'co', 'coun', 'nation', 'nati', 'na' ),
-            'latitude':     ( 'la', 'lati' ),
-            'longitude':    ( 'lo', 'long' ),
-            'timezone':     ( 'tz', ),
-            'groups':       ( 'gr', 'group' ),
-            'description':  ( 'de', 'desc', 'des', 'info', 'infos', 'in' ),
-            'deadlines':    ( 'deadline', 'dl' ),
-            'sessions':    ( 'se', 'session', 'times', 'time' ),
-           }
-
-FIELDS_DATA = {
-    'simple':
-           {
-            'title':         ( ( 'GridCalendar presentation', ), ),
-            'tags':          ( ( 'calendar software open-source \
-GridMind GridCalendar', ), ),
-            'start':         ( ( '2010-12-29', ), ),
-            'public':        ( ( 'true', ), ),
-            'acronym':       ( ( '26C3', ), ),
-            'end':           ( ( '2010-12-30', ), ),
-            'address':       ( ( 'Bismark str. 666', ), ),
-            'city':          ( ( 'Berlin', ), ),
-            'postcode':      ( ( '123456', ), ),
-            'country':       ( ( 'DE', ), ),
-            'latitude':      ( ( '52', ), ),
-            'longitude':     ( ( '13', ), ),
-            'timezone':      ( ( '0', ), ),
-            'groups':        ( ( 'g1 g2 g3', '"g1" "g2" "g3"' ), ),
-            'description':   ( ( '''GridCalendar presentation
-            line 1
-            line 2
-
-
-
-
-above empty line 1
-
-
-
-above empty line 2
-
-
-
-
-above empty line 3''', ), ),
-            },
-    'table':
-            {'urls':         ( 
-                              ( 
-'''url: acco   http://onet.pl/
-url: travel info http://wp.pl/
-url: accomodation info http://gazeta.pl/
-''',
-'''url: acco   http://onet.pl/
-    travel info http://wp.pl/
-    accomodation info http://gazeta.pl/
-''' ),
- ),
-             'deadlines':    ( 
-( '''deadlines:
-    2009-01-01 call for papers
-    2009-03-01 visitor tickets
-    2009-04-01 visitor wek
-''',
-'''deadlines: 2009-01-01 call for papers
-deadlines: 2009-03-01 visitor tickets
-deadlines: 2009-04-01 visitor wek
-''' ),
- ),
-             'sessions':     ( 
-( '''time:
-  2009-01-01 10:00-16:00 first day
-  2009-01-01 11:00-12:00 speech about cloca
-  2009-01-02 10:00-16:00 second day
-''',
-'''time: 2009-01-01 10:00-16:00 first day
-time: 2009-01-01 11:00-12:00 speech about cloca
-time: 2009-01-02 10:00-16:00 second day
-''' ),
- ),
-            },
-           }
 
 class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
     """testing case for event application"""
@@ -929,26 +823,6 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
 #                history = EventHistory.objects.filter( event = event )
 #                print map( lambda x: ( x.date, x.user ), history ), len( history )
 
-    def test_txt_data( self ):
-        "tests synonyms event's field"
-        event = self.event_from_txt_data( 1 )
-        for simple_field in FIELDS_DATA['simple']:
-            if len( FIELDS_DATA['simple'][simple_field][0] ) > 1:
-                for field_data_count in \
-                range( 1, len( FIELDS_DATA['simple'][simple_field][0] ) ):
-                    new_event = \
-                    self.event_from_txt_data( 1, simple_field, False, \
-                                             field_data_count )
-                    self.assertEventsEqual( event, new_event )
-        for table_field in FIELDS_DATA['table']:
-            if len( FIELDS_DATA['table'][table_field][0] ) > 1:
-                for field_data_count in \
-                range( 1, len( FIELDS_DATA['table'][table_field][0] ) ):
-                    new_event = \
-                    self.event_from_txt_data( 1, table_field, False, \
-                                             field_data_count )
-                    self.assertEventsEqual( event, new_event )
-
     # FIXME: test is not working
 #    def test_synonyms( self ):
 #        "tests synonyms event's field"
@@ -957,80 +831,6 @@ class EventTestCase( TestCase ):              #pylint: disable-msg=R0904
 #            for synonym in synonyms:
 #                new_event = self.event_for_synonym( 1, field, synonym )
 #                self.assertEventsEqual( event, new_event )
-
-    @classmethod
-    def event_from_txt_data( cls, user_nr = None, field_name = False, \
-                            field_case_count = False, \
-                            field_data_count = False, ):
-        "tests version of event's text data"
-        event_txt = ""
-        if user_nr != None:
-            user = cls.get_user( user_nr )
-            groups = FIELDS_DATA['simple']['groups'][0][0]
-            for group_name in [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-                                                   groups ) if p.strip()]:
-                group = Group.objects.\
-                    get_or_create( name = group_name )[0]
-                Membership.objects.get_or_create( user = user, group = group )
-        for simple_field in FIELDS_DATA['simple']:
-            case_count = 0
-            data_count = 0
-            if simple_field == field_name:
-                if field_case_count:
-                    case_count = field_case_count
-                if field_data_count:
-                    data_count = field_data_count
-            event_txt = "%s%s: %s\n" % ( event_txt, simple_field, \
-                    FIELDS_DATA['simple'][simple_field][case_count]\
-                    [data_count] )
-        for table_field in FIELDS_DATA['table']:
-            case_count = 0
-            data_count = 0
-            if table_field == field_name:
-                if field_case_count:
-                    case_count = field_case_count
-                if field_data_count:
-                    data_count = field_data_count
-            event_txt = "%s%s\n" % ( event_txt, FIELDS_DATA['table']\
-                [table_field][case_count][data_count] )
-        if user_nr != None:
-            return Event.parse_text( event_txt, user_id = user.pk )
-        else:
-            return Event.parse_text( event_txt )
-
-    @classmethod
-    def event_for_synonym( cls, user_nr = None, field_name = False, \
-                           field_synonym = None ):
-        "tests version of event's text data"
-        event_txt = ""
-        if user_nr != None:
-            groups = FIELDS_DATA['simple']['groups'][0][0]
-            for group_name in [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-                                                   groups ) if p.strip()]:
-                group = Group.objects.\
-                    get_or_create( name = group_name )[0]
-                user = cls.get_user( user_nr )
-                Membership.objects.get_or_create( user = user, group = group )
-        for simple_field in FIELDS_DATA['simple']:
-            simple_field_name = simple_field
-            if simple_field == field_name:
-                if field_synonym:
-                    simple_field_name = field_synonym
-            event_txt = "%s%s: %s\n" % ( event_txt, simple_field_name, \
-                    FIELDS_DATA['simple'][simple_field][0][0] )
-        for table_field in FIELDS_DATA['table']:
-            field_data = FIELDS_DATA['table']\
-                [table_field][0][0]
-            if table_field == field_name:
-                if field_synonym:
-                    field_data = field_data.replace( table_field, \
-                                                     field_synonym )
-            event_txt = "%s%s\n" % ( event_txt, field_data )
-        if user_nr != None:
-            return Event.parse_text( event_txt, user_id = user.pk )
-        else:
-            return Event.parse_text( event_txt )
-
 
 #This test can't work with sqlite, because sqlite not support multiusers, 
 #is recomendet to use this in future

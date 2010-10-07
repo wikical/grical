@@ -22,21 +22,20 @@
 
 """ Models """
 
-import datetime
 import random
 import re
 import hashlib
+import threading
+import datetime
 
+from django.core.mail import send_mail, BadHeaderError
+from django.utils.encoding import smart_str, smart_unicode
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
-from django.contrib import admin
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
 from django.forms import ValidationError
-from django.forms.models import inlineformset_factory
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db.models.query import CollectedObjects
@@ -46,7 +45,6 @@ from gridcalendar.events.decorators import autoconnect
 
 from tagging.models import Tag
 from tagging.fields import TagField
-from tagging import register
 
 # TODO: use instead a client library from http://www.geonames.org/ accepting
 # names (in different languages) and codes like e.g. ES, es,  ESP, eSp, 724,
@@ -300,6 +298,35 @@ COUNTRIES = (
     ( 'ZW', _( u'Zimbabwe' ) ),
  )
 
+EXAMPLE = u"""acronym: GriCal
+title: GridCalendar presentation
+start: 2010-12-29
+end: 2010-12-30
+tags: calendar software open-source gridmind gridcalendar
+urls:
+    code    http://example.com
+    web    http://example.com
+public: True
+address: Gleimstr. 6
+postcode: 10439
+city: Berlin
+country: DE
+latitude: 52.55247
+longitude: 13.40364
+deadlines:
+    2009-11-01    visitor tickets
+    2010-10-01    call for papers
+timezone: 60
+sessions:
+    2010-12-29    10:00-11:00    first presentation
+    2010-12-29    15:00-16:00    second presentation
+    2010-12-30    15:00-16:00    third presentation
+description:
+
+GridCalendar will be presented
+
+"""
+
 class EventManager( models.Manager ):# pylint: disable-msg=R0904
     """let event can show only public models for all
     and private model only for group members and owner"""
@@ -344,17 +371,17 @@ class EventManager( models.Manager ):# pylint: disable-msg=R0904
 user_auth_signal.connect( EventManager.set_auth_user )
 
 @autoconnect
-class Event( models.Model ):# pylint: disable-msg=R0904
-    """ Event model. """
+class Event( models.Model ): # pylint: disable-msg=R0904
+    """ Event model """
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
-    """The user who created the event or null if AnonymousUser"""
+    """The user who created the event or null if AnonymousUser""" # pyling: disable-msg=W0105
     creation_time = models.DateTimeField(
             _( u'Creation time' ), editable = False, auto_now_add = True )
-    """Time stamp for event creation"""
+    """Time stamp for event creation""" # pyling: disable-msg=W0105
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
-    """Time stamp for event modification"""
+    """Time stamp for event modification""" # pyling: disable-msg=W0105
     acronym = models.CharField( _( u'Acronym' ), max_length = 20, blank = True,
             null = True, help_text = _( u'Example: 26C3' ) )
     title = models.CharField( _( u'Title' ), max_length = 200, blank = False,
@@ -499,7 +526,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
 #                pass
 
     def save( self, *args, **kwargs ):
-        """ Call the real 'save' function after some assertions. """
+        """ Call the real 'save' function after some assertions """
         # It is not allowed to have a non-public event without owner:
         assert not ( ( self.public == False ) and ( self.user == None ) )
         old_event = None
@@ -513,7 +540,16 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
-#    def post_save( self ):
+
+    def post_save( self ):
+        """ notify users if a filter of a user matches the event. """
+        # FIXME: implement a Queue, see comments on 
+        # http://www.artfulcode.net/articles/threading-django/
+        thread = threading.Thread(
+                target=Filter.notify_users_when_wanted(self),
+                args=[self,])
+        thread.setDaemon(True)
+        thread.start()
 #        #save history
 #        try:
 #            new_event = Event.objects.get( pk = self.pk )
@@ -538,99 +574,91 @@ class Event( models.Model ):# pylint: disable-msg=R0904
 #        except Event.DoesNotExist:
 #            pass
 
+    @staticmethod
+    def example():
+        """ returns an example of an event as unicode
+        
+        >>> from django.utils.encoding import smart_str
+        >>> text = Event.example()
+        >>> event = Event.parse_text(text)
+        >>> assert (smart_str(text) == event.as_text())
+        
+        """
+        return EXAMPLE
+
     def as_text( self ):
-        """ Returns a multiline string representation of the event."""
-        to_return = ""
-        #lets gets some orders
-        keywords_order = ( 'acronym', 'title', 'start', 'ends', 'tags', 'urls',
-                  'public', 'groups', 'address', 'postcode', 'city', 'country',
-                  'latitude', 'longitude', 'deadlines', 'timezone', 'sessions',
-                  'description' )
-        keywords = ( keywords_order +
-                  tuple( 
-                        filter( 
-                            lambda keyword: keyword not in keywords_order,
-                            set( self.get_synonyms().values() )
-                            )
-                        )
-                  )
-        for keyword in keywords:
-            if keyword == 'title':
-                to_return += keyword + ": " + unicode( self.title ) + "\n"
-            elif keyword == 'start':
-                to_return += ''.join( [
-                        keyword, ": ",
-                        self.start.strftime( "%Y-%m-%d" ), "\n"] )
-            elif keyword == 'end' and self.end:
-                to_return += ''.join( [
-                        keyword, ": ", self.end.strftime( "%Y-%m-%d" ), "\n"] )
-            elif keyword == 'country' and self.country:
-                to_return += keyword + ": " + unicode( self.country ) + "\n"
-            elif keyword == 'timezone' and self.timezone:
-                to_return += keyword + ": " + unicode( self.timezone ) + "\n"
-            elif keyword == 'latitude' and self.latitude:
-                to_return += keyword + ": " + unicode( self.latitude ) + "\n"
-            elif keyword == 'longitude' and self.longitude:
-                to_return += keyword + ": " + unicode( self.longitude ) + "\n"
-            elif keyword == 'acronym' and self.acronym:
-                to_return += keyword + ": " + unicode( self.acronym ) + "\n"
-            elif keyword == 'tags' and self.tags:
-                to_return += keyword + ": " + unicode( self.tags ) + "\n"
-            elif keyword == 'public' and self.public:
-                to_return += keyword + ": " + unicode( self.public ) + "\n"
-            elif keyword == 'address' and self.address:
-                to_return += keyword + ": " + unicode( self.address ) + "\n"
-            elif keyword == 'city' and self.city:
-                to_return += keyword + ": " + unicode( self.city ) + "\n"
-            elif keyword == 'postcode' and self.postcode:
-                to_return += keyword + ": " + unicode( self.postcode ) + "\n"
-            elif keyword == 'urls':
+        """ Returns a unix multiline utf-8 string representation of the
+        event."""
+        to_return = u""
+        for keyword in Event.get_priority_list():
+            if keyword == u'title':
+                to_return += keyword + u": " + self.title + u"\n"
+            elif keyword == u'start':
+                to_return += u''.join( [
+                        keyword, u": ",
+                        unicode(self.start.strftime( "%Y-%m-%d" )), u"\n"] )
+            elif keyword == u'end' and self.end:
+                to_return += u''.join( [
+                        keyword, u": ",
+                        unicode(self.end.strftime( "%Y-%m-%d")), u"\n"] )
+            elif keyword == u'country' and self.country:
+                to_return += keyword + u": " + self.country + u"\n"
+            elif keyword == u'timezone' and self.timezone:
+                to_return += keyword + u": " + unicode(self.timezone) + u"\n"
+            elif keyword == u'latitude' and self.latitude:
+                to_return += keyword + u": " + unicode(self.latitude) + u"\n"
+            elif keyword == u'longitude' and self.longitude:
+                to_return += keyword + u": " + unicode(self.longitude) + u"\n"
+            elif keyword == u'acronym' and self.acronym:
+                to_return += keyword + u": " + self.acronym + u"\n"
+            elif keyword == u'tags' and self.tags:
+                to_return += keyword + u": " + self.tags + u"\n"
+            elif keyword == u'public' and self.public:
+                to_return += keyword + u": " + unicode(self.public) + u"\n"
+            elif keyword == u'address' and self.address:
+                to_return += keyword + u": " + self.address + u"\n"
+            elif keyword == u'city' and self.city:
+                to_return += keyword + u": " + self.city + u"\n"
+            elif keyword == u'postcode' and self.postcode:
+                to_return += keyword + u": " +  self.postcode + u"\n"
+            elif keyword == u'urls':
                 urls = EventUrl.objects.filter( event = self.id )
                 if len( urls ) > 0:
-                    to_return += "urls:\n"
+                    to_return += u"urls:\n"
                     for url in urls:
-                        to_return += ''.join( [
-                                "    ", url.url_name, ' ', url.url, "\n"] )
-            elif keyword == 'deadlines':
+                        to_return += u''.join( [
+                                u"    ", url.url_name, u' ', url.url, u"\n"] )
+            elif keyword == u'deadlines':
                 deadlines = EventDeadline.objects.filter( event = self.id )
                 if len( deadlines ) > 0:
-                    to_return += "deadlines:\n"
+                    to_return += u"deadlines:\n"
                     for deadline in deadlines:
-                        to_return += "".join( [
-                                "    ",
-                                unicode( deadline.deadline ),
-                                ' ',
-                                deadline.deadline_name,
-                                "\n",
-                                ] )
-            elif keyword == 'sessions':
+                        to_return += u"".join( [
+                            u"    ",
+                            unicode(deadline.deadline.strftime("%Y-%m-%d")),
+                            u'    ',
+                            deadline.deadline_name,
+                            u"\n",
+                            ] )
+            elif keyword == u'sessions':
                 sessions = EventSession.objects.filter( event = self.id )
                 if len( sessions ) > 0:
-                    to_return += "sessions:"
+                    to_return += u"sessions:\n"
                     for session in sessions:
-                        if session.session_name == 'session':
-                            to_return = "".join( [
-                                to_return,
-                                " ",
-                                session.session_date.strftime( "%Y-%m-%d" ),
-                                " ",
-                                session.session_starttime.strftime( "%H:%M" ),
-                                "-",
-                                session.session_endtime.strftime( "%H:%M" ),
-                                '\n'] )
-                    for session in sessions:
-                        if not session.session_name == 'session':
-                            to_return = "".join( [
-                                to_return,
-                                "    ",
-                                session.session_date.strftime( "%Y-%m-%d" ),
-                                " ",
-                                session.session_starttime.strftime( "%H:%M" ),
-                                "-",
-                                session.session_endtime.strftime( "%H:%M" ),
-                                " ",
-                                session.session_name,
-                                '\n'] )
+                        to_return = u"".join( [
+                            to_return,
+                            u"    ",
+                            unicode(
+                                session.session_date.strftime("%Y-%m-%d")),
+                            u"    ",
+                            unicode(
+                                session.session_starttime.strftime("%H:%M")),
+                            "-",
+                            unicode(
+                                session.session_endtime.strftime( "%H:%M" )),
+                            u"    ",
+                            session.session_name,
+                            u'\n'] )
             # the groups an event belong to are not shown for privacy of the
             # groups and because the list can be too long
             # elif keyword == 'groups' and self.event_in_groups:
@@ -640,35 +668,118 @@ class Event( models.Model ):# pylint: disable-msg=R0904
             #         for calendar in calendars:
             #             to_return += ' "' + str( calendar.group.name ) + '"'
             #         to_return += '\n'
-            elif keyword == 'description' and self.description:
-                to_return += keyword + ": " + unicode( \
-                            self.description ) + "\n"
-        return to_return
+            elif keyword == u'groups':
+                pass
+            elif keyword == u'description' and self.description:
+                to_return += self.description
+            else:
+                raise RuntimeError('unexpected keyword: ' + keyword)
+        return smart_str(to_return)
 
-    @classmethod
-    def get_fields( cls, text ):
-        "split text to fields"
-        rm_ret = lambda x: x if x[-1] != '\n' else rm_ret( x[:-1] )
-        paterns = cls.get_synonyms()
-        paterns_txt = ""
-        for patern in paterns:
-            paterns_txt = "%s|%s" % ( paterns_txt, patern )
-        re_paterns = re.compile( "^(%s)\s*:\s*" % ( paterns_txt[1:] ), \
-                                 re.I | re.U | re.M )
-        re_parts = re.compile( '[ \t]*(.*)((?:\n(?:[ \t])+.+)*)' )
-        fields = re_paterns.split( text )
-        for i in range( 1, len( fields ), 2 ):
-            yield [fields[i]] + \
-            [rm_ret( fields[i + 1] )] + \
-            list( re_parts.match( fields[i + 1] ).groups() )
+    @staticmethod
+    def get_fields( text ):
+        """ parse an event as unicode text and returns a tuple with two
+        dictionaries, or raises a SyntaxError.
+
+        The first dictionary contains the names of simple fields as keys and
+        its values as values.
+
+        The second dictionary contains the names of complex fields as keys, and
+        lists as values. The list contains all lines including the first one.
+
+        >>> example = Event.example()
+        >>> s,c = Event.get_fields(example)
+        >>> assert(s[u'acronym'] ==  u'GriCal')
+        >>> assert(s[u'address'] ==  u'Gleimstr. 6')
+        >>> assert(s[u'city'] ==  u'Berlin')
+        >>> assert(s[u'country'] ==  u'DE')
+        >>> assert(s[u'end'] ==  u'2010-12-30')
+        >>> assert(s[u'latitude'] ==  u'52.55247')
+        >>> assert(s[u'longitude'] ==  u'13.40364')
+        >>> assert(s[u'postcode'] ==  u'10439')
+        >>> assert(s[u'public'] ==  u'True')
+        >>> assert(s[u'start'] ==  u'2010-12-29')
+        >>> assert(s[u'tags'] ==  u'calendar software open-source gridmind gridcalendar')
+        >>> assert(s[u'timezone'] ==  u'60')
+        >>> assert(s[u'title'] ==  u'GridCalendar presentation')
+        >>> assert(c[u'deadlines'][1].replace(' ','') == u'2009-11-01visitortickets')
+        >>> assert(c[u'deadlines'][2].replace(' ','') == u'2010-10-01callforpapers')
+        >>> c['deadlines'][3]
+        Traceback (most recent call last):
+            ...
+        IndexError: list index out of range
+
+        """
+        if not isinstance(text, unicode):
+            text = smart_unicode(text)
+        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        simple_list = Event.get_simple_fields()
+        complex_list = Event.get_complex_fields()
+        simple_dic = {}  # to be returned, see docstring of this method
+        complex_dic = {} # to be returned, see docstring of this method
+        syns = Event.get_synonyms()
+        current = None # current field being parsed
+        lines = list() # lines belonging to current field
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        # group 1 is the name of the field, group 2 is the value
+        empty_line_p = re.compile(r"^\s*$")
+        line_counter = 0
+        for line in text.split('\n'):
+            line_counter += 1
+            if current and current == "description":
+                lines.append(line)
+                continue
+            if (not current) and empty_line_p.match(line):
+                continue
+            field_m = field_p.match(line)
+            if current: # a complex field is being processed
+                if field_m: # new field, storing previous one and resetting
+                    assert(len(lines) > 0)
+                    complex_dic[current] = lines
+                    current = None
+                    lines = list()
+                else:
+                    if empty_line_p.match(line):
+                        raise SyntaxError(_(
+                                "empty lines are not \
+                                allowed within content of %(field_name)s"
+                                % {'field_name': current,}))
+                    if re.match(r"[^\s]", line[0]):
+                        raise SyntaxError(_(
+                            "extra lines for %(field_name)s must start with \
+                                    identation" % {'field_name': current,}))
+                    lines.append(line)
+                    continue
+            if (not current) and not field_m:
+                raise SyntaxError(_(
+                        "line number %(number)d is wrong: %(line)s" % \
+                                {'number': line_counter, 'line': line}))
+            if not syns.has_key(field_m.group(1)):
+                raise SyntaxError(_("wrong field name: %(name)s" % \
+                        {'name': field_m.group(1),}))
+            if syns[field_m.group(1)] in simple_list:
+                simple_dic[ syns[field_m.group(1)]] = field_m.group(2)
+                continue
+            assert ( field_m.group(1) in complex_list )
+            current = syns[field_m.group(1)]
+            lines.append(line)
+        if current:
+            complex_dic[current] = lines
+        return simple_dic, complex_dic
 
 
-    # TODO: why classmethod instead of staticmethod ?
     @classmethod
     def parse_text( cls, input_text_in, event_id = None, user_id = None ):
-        """It parses a text and saves it as a single event in the data base.
+        """It parses a text and saves it as a single event in the data base and
+        return the event object, or doesn't save the event and raises an Error
+        (a SyntaxError for parsing errors, a ValidationError for data errors,
+        or a Event.DoesNotExist when there is no event with `event_id`)
 
-        It raises a ValidationError if there is an error.
+        It raises a SyntaxError when e.g. a wrong field name is used or the
+        syntax is wrong (parsing error). It raises a ValidationError when the
+        data is wrong, e.g. when a date is not valid. It raises and
+        Event.DoesNotExist error when there is no event with `event_id`
 
         A text to be parsed as an event is of the form::
 
@@ -677,435 +788,537 @@ class Event( models.Model ):# pylint: disable-msg=R0904
             start: 2020-01-30
             ...
 
-        There are synonyms for the names of the field like 't' for 'title'. See
-        get_synonyms()
+        There are synonyms for the names of the fields, like e.g. 't' for
+        'title'. See get_synonyms()
 
         The text for the field 'urls' is of the form::
             urls: web_url
-                name1: name1_url
-                name2: name2_url
+                name1  name1_url
+                name2  name2_url
                 ...
 
         The idented lines are optional. If web_url is present, it will be saved
-        with the url_name 'web'
+        with the url_name 'url'
 
         The text for the field 'deadlines' is of the form::
 
             deadlines: deadline_date
-                deadline1_name: deadline1_date
-                deadline2_name: deadline2_date
+                deadline1_date deadline1_name 
+                deadline2_date deadline2_name 
                 ...
 
-        The idented lines are optional. If deadline_date is present, it will be saved
-        with the deadline_name 'deadline'
+        The idented lines are optional. If deadline_date is present, it will be
+        saved with the deadline_name 'deadline'
 
         The text for the field 'sessions' is of the form::
 
-            sessions: session_date session_starttime session_endtime
-                session1_name: session1_date: session1_starttime-session1_endtime
-                session2_name: session2_date: session2_starttime-session2_endtime
-                ...
+            sessions: session_date session_starttime-session_endtime
+              session1_date session1_starttime-session1_endtime session1_name
+              session2_date session2_starttime-session2_endtime session2_name
+              ...
 
-        The idented lines are optional. If session_date is present, it will be saved
-        with the session_name 'session'
+        The idented lines are optional. If session_date is present, it will be
+        saved with the session_name 'session'
 
         The text for the field 'groups' is of the form::
 
             groups: group1 group2 ...
 
         """
-        # TODO: allow to put comments on events by email
-        # check the text above and also the online documentation
-        event_data = {}
-        # separate events
-        # get fields
+        if not isinstance(input_text_in, unicode):
+            input_text_in = smart_unicode(input_text_in)
+        if user_id is not None:
+            # the following line can raise a User.DoesNotExist
+            user = User.objects.get(id = user_id)
+        # test that the necessary fields are present
+        simple_fields, complex_fields = Event.get_fields(input_text_in)
+        for field in Event.get_necessary_fields():
+            if not (simple_fields.has_key(field) or
+                    complex_fields.has_key(field)):
+                raise SyntaxError(
+                        _("The necessary field '%(name)s' is not present") % 
+                        {'name': field,})
+        # creates an event with a form
+        from gridcalendar.events.forms import EventForm
+        if event_id == None :
+            event_form = EventForm( simple_fields )
+        else:
+            # the following line can raise an Event.DoesNotExist
+            event = Event.objects.get( id = event_id )
+            if user_id is not None:
+                if not event.is_viewable_by_user(user_id):
+                    raise RuntimeError(
+                        _(u'the event is not viewable by the user'))
+            event_form = EventForm( simple_fields, instance = event )
+        if event_form.is_valid():
+            event = event_form.save()
+            event_id = event.id
+            if (user_id is not None) and (event.user == None):
+                event.user = user
+        else:
+            raise ValidationError(event_form.errors.as_text())
+        # processing complex fields if present
+        try:
+            if complex_fields.has_key(u'urls'):
+                EventUrl.parse_text(event,
+                        u'\n'.join(complex_fields[u'urls']))
+                del complex_fields[u'urls']
+            if complex_fields.has_key(u'deadlines'):
+                EventDeadline.parse_text(event,
+                        u'\n'.join(complex_fields[u'deadlines']))
+                del complex_fields[u'deadlines']
+            if complex_fields.has_key(u'sessions'):
+                EventSession.parse_text(event,
+                        u'\n'.join(complex_fields[u'sessions']))
+                del complex_fields[u'sessions']
+            if complex_fields.has_key(u'description'):
+                event.description = u"\n".join(complex_fields[u'description'])
+                del complex_fields[u'description']
+            assert(len(complex_fields) == 0)
+        except ValidationError as error:
+            Event.objects.get( id = event_id ).delete()
+            raise error
+        except SyntaxError as error:
+            Event.objects.get( id = event_id ).delete()
+            raise error
+        assert(len(complex_fields) == 0)
+        return event
+
+# old code
+#        event_data = {}
+#        synonyms = Event.get_synonyms()
+#        event_url_data_list = list()
+#        event_deadline_data_list = list()
+#        event_session_data_list = list()
+#        event_groups_req_names_list = list() # list of group names
 #        field_pattern = re.compile( 
-#                r"^[^\t:]+[ \t]*:.*(?:\n(?:[ \t])+.+)*", re.MULTILINE )
+#                r"^[^\s:]+[ \t]*:.*(?:\n(?:[ \t])+.+)*", re.MULTILINE )
 #        parts_pattern = re.compile( 
 #                r"^([^\t:]+[ \t]*)[ \t]*:[ \t]*(.*)((?:\n(?:[ \t])+.+)*)",
 #                re.MULTILINE )
-
         # group 0 is the text before the colon
         # group 1 is the text after the colon
         # group 2 are all indented lines
-        synonyms = Event.get_synonyms()
+#
+#        for field_data in fields_data:
+#            try:
+#                parts = ( field_data[0], field_data[2], field_data[3] )
+#                try:
+#                    field_name = synonyms[parts[0].replace( '\n', '' )]
+#                except KeyError:
+#                    raise ValidationError( _( 
+#                            "you used an invalid field name %s'" % \
+#                            field_data[0] ) )
+#                try:
+#                    if parts[1] and parts[2]:
+#                        # for mixed data after colon and in indented lines
+#                        new_parts = ( parts[0],
+#                                     '',
+#                                     "%s%s" % parts[1:] )
+#                        parts = new_parts
+#                    if field_name == 'urls':
+#                        #event_url_index = 0
+#                        if not parts[1] == '':
+#                            event_url_data = {}
+#                            event_url_line_parts = \
+#                                        filter( lambda x: x, \
+#                                        parts[1].strip().replace( '\t', ' ' )\
+#                                        .split( " " ) )
+#                            if len( event_url_line_parts ) == 1:
+#                                event_url_data['url_name'] = u'url'
+#                            else:
+#                                event_url_data['url_name'] = \
+#                                ' '.join( event_url_line_parts[:-1] )
+#                            event_url_data['url'] = \
+#                            event_url_line_parts[-1].strip()
+#                            event_url_data_list.append( event_url_data )
+#                            #event_url_index += 1
+#                        if not parts[2] == '':
+#                            for event_url_line in parts[2].splitlines():
+#                                if not event_url_line == '':
+#                                    event_url_line_parts = \
+#                                        filter( lambda x: x, \
+#                                        event_url_line.strip().\
+#                                        replace( '\t', ' ' )\
+#                                        .split( " " ) )
+#                                    event_url_data = {}
+#                                    if len( event_url_line_parts ) == 1:
+#                                        event_url_data['url_name'] = u'url'
+#                                    else:
+#                                        event_url_data['url_name'] = \
+#                                        ' '.join( event_url_line_parts[:-1] )
+#                                    event_url_data['url'] = \
+#                                            event_url_line_parts[-1].strip()
+#                                    event_url_data_list.\
+#                                    append( event_url_data )
+#                                    #event_url_index += 1
+#
+#                    # TODO: accept deadlines like:
+#                    #       2010-02-10 Submission of invited session proposals
+#                    elif field_name == 'deadlines':
+#                        #event_deadline_index = 0
+#                        if not parts[1] == '':
+#                            event_deadline_data = {}
+#                            event_deadline_line_parts = \
+#                                        filter( lambda x: x, \
+#                                        parts[1].strip().replace( '\t', ' ' )\
+#                                        .split( " " ) )
+#                            if len( event_deadline_line_parts ) == 1:
+#                                event_deadline_data['deadline_name'] = \
+#                                u'deadline'
+#                            else:
+#                                event_deadline_data['deadline_name'] = \
+#                                ' '.join( event_deadline_line_parts[1:] )
+#                            event_deadline_data['deadline'] = \
+#                                        event_deadline_line_parts[0].strip()
+#                            event_deadline_data_list.\
+#                            append( event_deadline_data )
+#                            #event_deadline_index += 1
+#                        if not parts[2] == '':
+#                            for event_deadline_line in parts[2].splitlines():
+#                                if not event_deadline_line == '':
+#                                    event_deadline_data = {}
+#                                    event_deadline_line_parts = \
+#                                            filter( lambda x: x, \
+#                                            event_deadline_line.\
+#                                            strip().replace( '\t', ' ' )\
+#                                            .split( " " ) )
+#                                    event_deadline_data['deadline_name'] = \
+#                                    ' '.join( event_deadline_line_parts[1:] )\
+#                                        .strip()
+#                                    event_deadline_data['deadline'] = \
+#                                        event_deadline_line_parts[0].strip()
+#                                    event_deadline_data_list\
+#                                    .append( event_deadline_data )
+#                                    #event_deadline_index += 1
+#
+#                    elif field_name == 'sessions':
+#                        #event_session_index = 0
+#                        if not parts[1] == '':
+#                            event_session_data = {}
+#
+#                            event_session_line_parts = \
+#                                            filter( lambda x: x, \
+#                                            parts[1].\
+#                                            strip().replace( '\t', ' ' )\
+#                                            .split( " " ) )
+#                            if len( event_session_line_parts ) < 3:
+#                                event_session_data['session_name'] = u'session'
+#                            else:
+#                                event_session_data['session_name'] = \
+#                                    ' '.join( event_session_line_parts[2:] ).\
+#                                    strip()
+#                            event_session_data['session_date'] = \
+#                                    event_session_line_parts[0].strip()
+#                            event_session_str_times_parts = \
+#                                    event_session_line_parts[1].split( "-", 1 )
+#                            event_session_data['session_starttime'] = \
+#                                    event_session_str_times_parts[0].strip()
+#                            event_session_data['session_endtime'] = \
+#                                    event_session_str_times_parts[1].strip()
+#                            event_session_data_list.\
+#                            append( event_session_data )
+#                            #event_session_index += 1
+#                        if not parts[2] == '':
+#                            for event_session_line in parts[2].splitlines():
+#                                if not event_session_line == '':
+#                                    event_session_data = {}
+#                                    event_session_line_parts = \
+#                                            filter( lambda x: x, \
+#                                            event_session_line.\
+#                                            strip().replace( '\t', ' ' )\
+#                                            .split( " " ) )
+#                                    event_session_data['session_name'] = \
+#                                    ' '.join( event_session_line_parts[2:] )\
+#                                        .strip()
+#                                    event_session_data['session_date'] = \
+#                                            event_session_line_parts[0].strip()
+#                                    event_session_str_times_parts = \
+#                                            event_session_line_parts[1]\
+#                                            .split( "-", 1 )
+#                                    event_session_data['session_starttime'] = \
+#                                    event_session_str_times_parts[0].strip()
+#                                    event_session_data['session_endtime'] = \
+#                                    event_session_str_times_parts[1].strip()
+#                                    event_session_data_list\
+#                                    .append( event_session_data )
+#                                    #event_session_index += 1
+#
+#                    elif field_name == 'groups':
+#                        event_groups_req_names_list = \
+#                            [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
+#                            parts[1] ) if p.strip()]
+#
+#                    elif field_name == 'description':
+#                        event_data['description'] = field_data[1]
+#                    elif field_name == 'country':
+#                        country = parts[1]
+#                        countries = [x[0] for x in COUNTRIES]
+#                        if not country in countries:
+#                            countries_dict = dict( [( x[1].lower(), x[0] ) \
+#                                                    for x in COUNTRIES] )
+#                            country = country.lower()
+#                            if country in countries_dict:
+#                                country = countries_dict[country]
+#                            else:
+#                                raise ValidationError( _( 
+#                                "no '%s' country in countres list" % \
+#                                parts[0] ) )
+#                        event_data['country'] = country
+#                    else:
+#                        if not parts[2] == '':
+#
+#                            raise ValidationError( _( 
+#                                "field '%s' doesn't accept subparts" % \
+#                                parts[0] ) )
+#                        if parts[0] == '':
+#                            raise \
+#                            ValidationError\
+#                            ( _( "a left part of a colon is empty" ) )
+#                        if not synonyms.has_key( parts[0] ):
+#                            raise \
+#                            ValidationError( _( "keyword %s unknown" % \
+#                                                parts[0] ) )
+#                        event_data[synonyms[parts[0]]] = parts[1]
+#                except IndexError:
+#                    raise \
+#                    ValidationError( _( "Validation error in %s" % \
+#                                        field_data[1] ) )
+#            except ValidationError, error:
+#                errors.append( error )
+#        # at this moment we have event_data, event_url_data_list,
+#        # event_deadline_data_list and event_session_data_list
+#
+#        if not errors:
+#
+#            from gridcalendar.events.forms import ( EventForm, EventUrlForm,
+#                EventDeadlineForm, EventSessionForm )
+#
+#            try:
+#
+#                if ( event_id == None ):
+#                    event_form = EventForm( event_data )
+#                else:
+#                    try:
+#                        event = Event.objects.get( id = event_id )
+#                    except Event.DoesNotExist:
+#                        raise ValidationError( \
+#                                    _( "event '%s' doesn't exist" % \
+#                                       event_id ) )
+#                    event_form = EventForm( event_data, instance = event )
+#
+#                if event_form.is_valid():
+#                    event = event_form.save()
+#                    final_event_id = event.id
+#                else:
+#                    raise \
+#                    ValidationError( _( \
+#                                "there is an error: %s" % \
+#                                        event_form.errors ) )
+#            except ValidationError, error:
+#                errors.append( error )
+#
+#        # now we will create forms out of the lists of URLs, deadlines and
+#        # sessions, and check if these forms are valid
+#        if not errors:
+#            event_url_data_list2 = list()
+#            for event_url_data in event_url_data_list:
+#                event_url_data['event'] = final_event_id
+#                event_url_data_list2.append( event_url_data )
+#            try:
+#
+#                for event_url_data in event_url_data_list2:
+#                    try:
+#                        event_url = EventUrl.objects.get( 
+#                            Q( event = event_url_data['event'] ),
+#                            Q( url_name__exact = event_url_data['url_name'] ) )
+#                        event_url_form = \
+#                                EventUrlForm( event_url_data, instance = \
+#                                              event_url )
+#                    except EventUrl.DoesNotExist:
+#                        event_url_form = EventUrlForm( event_url_data )
+#                    if not event_url_form.is_valid():
+#                        if ( event_id == None ):
+#                            Event.objects.get( id = final_event_id ).delete()
+#                        raise ValidationError( _( 
+#                        "There is an error in the input data for URLs: %s" %
+#                            event_url_form.errors ) )
+#            except ValidationError, error:
+#                errors.append( error )
+#
+#        if not errors:
+#            event_deadline_data_list2 = list()
+#            for event_deadline_data in event_deadline_data_list:
+#                event_deadline_data['event'] = final_event_id
+#                event_deadline_data_list2.append( event_deadline_data )
+#            try:
+#                for event_deadline_data in event_deadline_data_list2:
+#                    try:
+#                        event_deadline = EventDeadline.objects.get( 
+#                                Q( event = event_deadline_data['event'] ),
+#                                Q( deadline_name__exact = \
+#                                    event_deadline_data['deadline_name'] ) )
+#                        event_deadline_form = EventDeadlineForm( 
+#                                event_deadline_data, instance = \
+#                                event_deadline )
+#                    except EventDeadline.DoesNotExist:
+#                        event_deadline_form = \
+#                        EventDeadlineForm( event_deadline_data )
+#                    if not event_deadline_form.is_valid():
+#                        if ( event_id == None ):
+#                            Event.objects.get( id = final_event_id ).delete()
+#                        raise ValidationError( _( 
+#                    "There is an error in the input data in the deadlines: %s"
+#                            % event_deadline_form.errors ) )
+#
+#            except ValidationError, error:
+#                errors.append( error )
+#
+#        if not errors:
+#
+#            event_session_data_list2 = list()
+#            for event_session_data in event_session_data_list:
+#                event_session_data['event'] = final_event_id
+#                event_session_data_list2.append( event_session_data )
+#            try:
+#                for event_session_data in event_session_data_list2:
+#                    try:
+#                        event_session = EventSession.objects.get( 
+#                                Q( event = event_session_data['event'] ),
+#                                Q( session_name__exact = \
+#                                        event_session_data['session_name'] ) )
+#                        event_session_form = EventSessionForm( 
+#                                event_session_data, instance = event_session )
+#                    except EventSession.DoesNotExist:
+#                        event_session_form = \
+#                        EventSessionForm( event_session_data )
+#                    if not event_session_form.is_valid():
+#                        if ( event_id == None ):
+#                            Event.objects.get( id = final_event_id ).delete()
+#                        raise ValidationError( _( 
+#                    "There is an error in the input data in the sessions: %s" %
+#                            event_session_form.errors ) )
+#            except ValidationError, error:
+#                errors.append( error )
+#
+#
+#        if not errors:
+#
+#            if ( event_id == None ):
+#                pass
+#            else:
+#                EventUrl.objects.filter( event = event_id ).delete()
+#                EventDeadline.objects.filter( event = event_id ).delete()
+#                EventSession.objects.filter( event = event_id ).delete()
+#                event_form.save()
+#
+#            for event_url_data in event_url_data_list2:
+#                event_url_form = EventUrlForm( event_url_data )
+#                event_url_form.save()
+#
+#            for event_deadline_data in event_deadline_data_list2:
+#                event_deadline_form = EventDeadlineForm( event_deadline_data )
+#                event_deadline_form.save()
+#
+#            for event_session_data in event_session_data_list2:
+#                event_session_form = EventSessionForm( event_session_data )
+#                event_session_form.save()
+#
+#            if event_id:
+#                event_groups_cur_id_list = event.groups_id_list()
+#            else:
+#                event_groups_cur_id_list = list()
+#            event_groups_req_id_list = list()
+#            try:
+#                for group_name_quoted in event_groups_req_names_list:
+#                    group_name = group_name_quoted.strip( '"' )
+#                    try:
+#                        group = Group.objects.get( name = group_name )
+#                    except Group.DoesNotExist:
+#                        raise ValidationError( _( 
+#                        "Group: %(group_name)s does not exist, enter a valid \
+#                        group name." % {"group_name":group_name} ) )
+#                    event_groups_req_id_list.append( group.id )
+#                    if group.id not in event_groups_cur_id_list:
+#                        if user_id is None or not \
+#                        group.is_user_in_group( user_id, group.id ):
+#                            raise ValidationError( _( 
+#                            "You are not a member of group: %(group_name)s so \
+#                            you can not add any event to it." %
+#                            {"group_name":group.name} ) )
+#                        event.add_to_group( group.id )
+#                for group_id in event_groups_cur_id_list:
+#                    if group_id not in event_groups_req_id_list:
+#                        if user_id is None or \
+#                                not group.is_user_in_group( user_id, group_id ):
+#                            group = Group.objects.get( id = group_id )
+#                            raise ValidationError( _( "You are not a \
+#                            member of group: %(group_name)s so you can not \
+#                            remove an event from it." % \
+#                            {"group_name":group.name} ) )
+#                        event.remove_from_group( group_id )
+#            except Exception, error:
+#                errors.append( error )
+#        if errors:
+#            return errors
+#        else:
+#            return event
 
-        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
-        input_text = input_text_in.replace( '\r\n', '\n' ).\
-        replace( '\r', '\n' )
 
-        event_url_data_list = list()
-        event_deadline_data_list = list()
-        event_session_data_list = list()
-        event_groups_req_names_list = list() # list of group names
+    @staticmethod
+    def get_complex_fields():
+        """ returns a tuple of names of user-editable fields (of events) which
+        can contain many lines in the input text representation of an Event.
+        """
+        return ("urls", "deadlines", "sessions", "description",)
 
-        errors = []
+    @staticmethod
+    def get_simple_fields():
+        """ returns a tuple of names of user-editable fields (of events) which
+        have only one line in the input text representation of an Event.
+        
+        Notice that 'groups' can be present in the input text representation,
+        but it is not present (for privacy reasons) in the output text
+        representation.
+        """ 
+        field_names = [unicode(f.name) for f in Event._meta.fields]
+        field_names.append(u"groups")
+        field_names.remove(u"id")
+        field_names.remove(u"user")
+        field_names.remove(u"creation_time")
+        field_names.remove(u"modification_time")
+        field_names.remove(u"clone_of")
+        field_names.remove(u"description")
+        return tuple(field_names)
+ 
+    @staticmethod
+    def get_necessary_fields():
+        """ returns a tuple of names of the necessary filed fields of an event.
+        """
+        return (u"title", u"start", u"tags", u"urls")
 
-        fields_data = cls.get_fields( input_text )
-        for field_data in fields_data:
-            try:
-                parts = ( field_data[0], field_data[2], field_data[3] )
-                try:
-                    field_name = synonyms[parts[0].replace( '\n', '' )]
-                except KeyError:
-                    raise ValidationError( _( 
-                            "you used an invalid field name %s'" % \
-                            field_data[0] ) )
-                try:
-                    if parts[1] and parts[2]:
-                        # for mixed data after colon and in indented lines
-                        new_parts = ( parts[0],
-                                     '',
-                                     "%s%s" % parts[1:] )
-                        parts = new_parts
-                    if field_name == 'urls':
-                        event_url_index = 0
-                        if not parts[1] == '':
-                            event_url_data = {}
-                            event_url_line_parts = \
-                                        filter( lambda x: x, \
-                                        parts[1].strip().replace( '\t', ' ' )\
-                                        .split( " " ) )
-                            if len( event_url_line_parts ) == 1:
-                                event_url_data['url_name'] = u'web'
-                            else:
-                                event_url_data['url_name'] = \
-                                ' '.join( event_url_line_parts[:-1] )
-                            event_url_data['url'] = \
-                            event_url_line_parts[-1].strip()
-                            event_url_data_list.append( event_url_data )
-                            event_url_index += 1
-                        if not parts[2] == '':
-                            for event_url_line in parts[2].splitlines():
-                                if not event_url_line == '':
-                                    event_url_line_parts = \
-                                        filter( lambda x: x, \
-                                        event_url_line.strip().\
-                                        replace( '\t', ' ' )\
-                                        .split( " " ) )
-                                    event_url_data = {}
-                                    if len( event_url_line_parts ) == 1:
-                                        event_url_data['url_name'] = u'web'
-                                    else:
-                                        event_url_data['url_name'] = \
-                                        ' '.join( event_url_line_parts[:-1] )
-                                    event_url_data['url'] = \
-                                            event_url_line_parts[-1].strip()
-                                    event_url_data_list.\
-                                    append( event_url_data )
-                                    event_url_index += 1
-
-                    # TODO: accept deadlines like:
-                    #       2010-02-10 Submission of invited session proposals
-                    elif field_name == 'deadlines':
-                        event_deadline_index = 0
-                        if not parts[1] == '':
-                            event_deadline_data = {}
-                            event_deadline_line_parts = \
-                                        filter( lambda x: x, \
-                                        parts[1].strip().replace( '\t', ' ' )\
-                                        .split( " " ) )
-                            if len( event_deadline_line_parts ) == 1:
-                                event_deadline_data['deadline_name'] = \
-                                u'deadline'
-                            else:
-                                event_deadline_data['deadline_name'] = \
-                                ' '.join( event_deadline_line_parts[1:] )
-                            event_deadline_data['deadline'] = \
-                                        event_deadline_line_parts[0].strip()
-                            event_deadline_data_list.\
-                            append( event_deadline_data )
-                            event_deadline_index += 1
-                        if not parts[2] == '':
-                            for event_deadline_line in parts[2].splitlines():
-                                if not event_deadline_line == '':
-                                    event_deadline_data = {}
-                                    event_deadline_line_parts = \
-                                            filter( lambda x: x, \
-                                            event_deadline_line.\
-                                            strip().replace( '\t', ' ' )\
-                                            .split( " " ) )
-                                    event_deadline_data['deadline_name'] = \
-                                    ' '.join( event_deadline_line_parts[1:] )\
-                                        .strip()
-                                    event_deadline_data['deadline'] = \
-                                        event_deadline_line_parts[0].strip()
-                                    event_deadline_data_list\
-                                    .append( event_deadline_data )
-                                    event_deadline_index += 1
-
-                    elif field_name == 'sessions':
-                        event_session_index = 0
-                        if not parts[1] == '':
-                            event_session_data = {}
-
-                            event_session_line_parts = \
-                                            filter( lambda x: x, \
-                                            parts[1].\
-                                            strip().replace( '\t', ' ' )\
-                                            .split( " " ) )
-                            if len( event_session_line_parts ) < 3:
-                                event_session_data['session_name'] = u'session'
-                            else:
-                                event_session_data['session_name'] = \
-                                    ' '.join( event_session_line_parts[2:] ).\
-                                    strip()
-                            event_session_data['session_date'] = \
-                                    event_session_line_parts[0].strip()
-                            event_session_str_times_parts = \
-                                    event_session_line_parts[1].split( "-", 1 )
-                            event_session_data['session_starttime'] = \
-                                    event_session_str_times_parts[0].strip()
-                            event_session_data['session_endtime'] = \
-                                    event_session_str_times_parts[1].strip()
-                            event_session_data_list.\
-                            append( event_session_data )
-                            event_session_index += 1
-                        if not parts[2] == '':
-                            for event_session_line in parts[2].splitlines():
-                                if not event_session_line == '':
-                                    event_session_data = {}
-                                    event_session_line_parts = \
-                                            filter( lambda x: x, \
-                                            event_session_line.\
-                                            strip().replace( '\t', ' ' )\
-                                            .split( " " ) )
-                                    event_session_data['session_name'] = \
-                                    ' '.join( event_session_line_parts[2:] )\
-                                        .strip()
-                                    event_session_data['session_date'] = \
-                                            event_session_line_parts[0].strip()
-                                    event_session_str_times_parts = \
-                                            event_session_line_parts[1]\
-                                            .split( "-", 1 )
-                                    event_session_data['session_starttime'] = \
-                                    event_session_str_times_parts[0].strip()
-                                    event_session_data['session_endtime'] = \
-                                    event_session_str_times_parts[1].strip()
-                                    event_session_data_list\
-                                    .append( event_session_data )
-                                    event_session_index += 1
-
-                    elif field_name == 'groups':
-                        event_groups_req_names_list = \
-                            [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-                            parts[1] ) if p.strip()]
-
-                    elif field_name == 'description':
-                        event_data['description'] = field_data[1]
-                    elif field_name == 'country':
-                        country = parts[1]
-                        countries = [x[0] for x in COUNTRIES]
-                        if not country in countries:
-                            countries_dict = dict( [( x[1].lower(), x[0] ) \
-                                                    for x in COUNTRIES] )
-                            country = country.lower()
-                            if country in countries_dict:
-                                country = countries_dict[country]
-                            else:
-                                raise ValidationError( _( 
-                                "no '%s' country in countres list" % \
-                                parts[0] ) )
-                        event_data['country'] = country
-                    else:
-                        if not parts[2] == '':
-
-                            raise ValidationError( _( 
-                                "field '%s' doesn't accept subparts" % \
-                                parts[0] ) )
-                        if parts[0] == '':
-                            raise \
-                            ValidationError\
-                            ( _( "a left part of a colon is empty" ) )
-                        if not synonyms.has_key( parts[0] ):
-                            raise \
-                            ValidationError( _( "keyword %s unknown" % \
-                                                parts[0] ) )
-                        event_data[synonyms[parts[0]]] = parts[1]
-                except IndexError:
-                    raise \
-                    ValidationError( _( "Validation error in %s" % \
-                                        field_data[1] ) )
-            except ValidationError, error:
-                errors.append( error )
-        # at this moment we have event_data, event_url_data_list,
-        # event_deadline_data_list and event_session_data_list
-
-        if not errors:
-
-            from gridcalendar.events.forms import ( EventForm, EventUrlForm,
-                EventDeadlineForm, EventSessionForm )
-
-            try:
-
-                if ( event_id == None ):
-                    event_form = EventForm( event_data )
-                else:
-                    try:
-                        event = Event.objects.get( id = event_id )
-                    except Event.DoesNotExist:
-                        raise ValidationError( \
-                                    _( "event '%s' doesn't exist" % \
-                                       event_id ) )
-                    event_form = EventForm( event_data, instance = event )
-
-                if event_form.is_valid():
-                    event = event_form.save()
-                    final_event_id = event.id
-                else:
-                    raise \
-                    ValidationError( _( \
-                                "there is an error: %s" % \
-                                        event_form.errors ) )
-            except ValidationError, error:
-                errors.append( error )
-
-        # now we will create forms out of the lists of URLs, deadlines and
-        # sessions, and check if these forms are valid
-        if not errors:
-            event_url_data_list2 = list()
-            for event_url_data in event_url_data_list:
-                event_url_data['event'] = final_event_id
-                event_url_data_list2.append( event_url_data )
-            try:
-
-                for event_url_data in event_url_data_list2:
-                    try:
-                        event_url = EventUrl.objects.get( 
-                            Q( event = event_url_data['event'] ),
-                            Q( url_name__exact = event_url_data['url_name'] ) )
-                        event_url_form = \
-                                EventUrlForm( event_url_data, instance = \
-                                              event_url )
-                    except EventUrl.DoesNotExist:
-                        event_url_form = EventUrlForm( event_url_data )
-                    if not event_url_form.is_valid():
-                        if ( event_id == None ):
-                            Event.objects.get( id = final_event_id ).delete()
-                        raise ValidationError( _( 
-                        "There is an error in the input data for URLs: %s" %
-                            event_url_form.errors ) )
-            except ValidationError, error:
-                errors.append( error )
-
-        if not errors:
-            event_deadline_data_list2 = list()
-            for event_deadline_data in event_deadline_data_list:
-                event_deadline_data['event'] = final_event_id
-                event_deadline_data_list2.append( event_deadline_data )
-            try:
-                for event_deadline_data in event_deadline_data_list2:
-                    try:
-                        event_deadline = EventDeadline.objects.get( 
-                                Q( event = event_deadline_data['event'] ),
-                                Q( deadline_name__exact = \
-                                    event_deadline_data['deadline_name'] ) )
-                        event_deadline_form = EventDeadlineForm( 
-                                event_deadline_data, instance = \
-                                event_deadline )
-                    except EventDeadline.DoesNotExist:
-                        event_deadline_form = \
-                        EventDeadlineForm( event_deadline_data )
-                    if not event_deadline_form.is_valid():
-                        if ( event_id == None ):
-                            Event.objects.get( id = final_event_id ).delete()
-                        raise ValidationError( _( 
-                    "There is an error in the input data in the deadlines: %s"
-                            % event_deadline_form.errors ) )
-
-            except ValidationError, error:
-                errors.append( error )
-
-        if not errors:
-
-            event_session_data_list2 = list()
-            for event_session_data in event_session_data_list:
-                event_session_data['event'] = final_event_id
-                event_session_data_list2.append( event_session_data )
-            try:
-                for event_session_data in event_session_data_list2:
-                    try:
-                        event_session = EventSession.objects.get( 
-                                Q( event = event_session_data['event'] ),
-                                Q( session_name__exact = \
-                                        event_session_data['session_name'] ) )
-                        event_session_form = EventSessionForm( 
-                                event_session_data, instance = event_session )
-                    except EventSession.DoesNotExist:
-                        event_session_form = \
-                        EventSessionForm( event_session_data )
-                    if not event_session_form.is_valid():
-                        if ( event_id == None ):
-                            Event.objects.get( id = final_event_id ).delete()
-                        raise ValidationError( _( 
-                    "There is an error in the input data in the sessions: %s" %
-                            event_session_form.errors ) )
-            except ValidationError, error:
-                errors.append( error )
-
-
-        if not errors:
-
-            if ( event_id == None ):
-                pass
-            else:
-                EventUrl.objects.filter( event = event_id ).delete()
-                EventDeadline.objects.filter( event = event_id ).delete()
-                EventSession.objects.filter( event = event_id ).delete()
-                event_form.save()
-
-            for event_url_data in event_url_data_list2:
-                event_url_form = EventUrlForm( event_url_data )
-                event_url_form.save()
-
-            for event_deadline_data in event_deadline_data_list2:
-                event_deadline_form = EventDeadlineForm( event_deadline_data )
-                event_deadline_form.save()
-
-            for event_session_data in event_session_data_list2:
-                event_session_form = EventSessionForm( event_session_data )
-                event_session_form.save()
-
-            if event_id:
-                event_groups_cur_id_list = event.is_in_groups_id_list()
-            else:
-                event_groups_cur_id_list = list()
-            event_groups_req_id_list = list()
-            try:
-                for group_name_quoted in event_groups_req_names_list:
-                    group_name = group_name_quoted.strip( '"' )
-                    try:
-                        g = Group.objects.get( name = group_name )
-                    except Group.DoesNotExist:
-                        raise ValidationError( _( 
-                        "Group: %(group_name)s does not exist, enter a valid \
-        group name." % {"group_name":group_name} ) )
-                    event_groups_req_id_list.append( g.id )
-                    if g.id not in event_groups_cur_id_list:
-                        if user_id is None or not \
-                        g.is_user_in_group( user_id, g.id ):
-                            raise ValidationError( _( 
-                            "You are not a member of group: %(group_name)s so \
-                            you can not add any event to it." %
-                            {"group_name":g.name} ) )
-                        event.add_to_group( g.id )
-                for group_id in event_groups_cur_id_list:
-                    if group_id not in event_groups_req_id_list:
-                        if user_id is None or \
-                                not g.is_user_in_group( user_id, group_id ):
-                            g = Group.objects.get( id = group_id )
-                            raise ValidationError( _( "You are not a \
-                            member of group: %(group_name)s so you can not \
-                            remove an event from it." % \
-                            {"group_name":g.name} ) )
-                        event.remove_from_group( group_id )
-            except Exception, error:
-                errors.append( error )
-        if errors:
-            return errors
-        else:
-            return event
-
+    @staticmethod
+    def get_priority_list():
+        """ returns a tuple of names of fields in the order they
+        should appear when showing an event as a text, i.e. in the output text
+        representation of an Event.
+        
+        Notice that 'groups' can be present in the input text representation,
+        but it is not present (for privacy reasons) in the output text
+        representation.
+ 
+        >>> gpl_len = len(Event.get_priority_list())
+        >>> gsf_len = len(Event.get_simple_fields())
+        >>> gcf_len = len(Event.get_complex_fields())
+        >>> assert(gpl_len + 1 == gsf_len + gcf_len)
+        >>> synonyms_values_set = set(Event.get_synonyms().values())
+        >>> assert(gpl_len + 1 == len(synonyms_values_set))
+ 
+        """
+        return (u"acronym", u"title", u"start", u"end", u"tags", u"urls",
+            u"public", u"address", u"postcode", u"city", u"country", u"latitude",
+            u"longitude", u"deadlines", u"timezone", u"sessions", u"description")
+ 
 
     @staticmethod
     def get_synonyms():
@@ -1113,7 +1326,7 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         they refer.
 
         All values of the returned dictionary (except groups, urls and
-        sessions) must be names of fields of the Event class.
+        sessions) are names of fields of the Event class.
 
         >>> synonyms_values_set = set(Event.get_synonyms().values())
         >>> assert ('groups' in synonyms_values_set)
@@ -1132,10 +1345,12 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         if settings.DEBUG:
             # ensure you don't override a key
             def add( dictionary, key, value ):
+                """ assert that the key is not already there """
                 assert( not dictionary.has_key( key ) )
                 dictionary[key] = value
         else:
             def add( dictionary, key, value ):
+                """ add a pair to the dictionary """
                 dictionary[key] = value
         # NOTE: if you modify the following dictionary, update
         # http://code.gridcalendar.net/wiki/DataFormats
@@ -1143,137 +1358,166 @@ class Event( models.Model ):# pylint: disable-msg=R0904
         # TODO: implement a system for using translations for tags (maybe
         # related to a preferred language user-based)
         synonyms = {}
-        add( synonyms, 'ti', 'title' )
-        add( synonyms, 'title', 'title' )       # title
-        add( synonyms, 'titl', 'title' )
-        add( synonyms, 'start', 'start' )       # start
-        add( synonyms, 'st', 'start' )
-        add( synonyms, 'starts', 'start' )
-        add( synonyms, 'date', 'start' )
-        add( synonyms, 'da', 'start' )
-        add( synonyms, 'start date', 'start' )
-        add( synonyms, 'start-date', 'start' )
-        add( synonyms, 'start_date', 'start' )
-        add( synonyms, 'sd', 'start' )
-        add( synonyms, 'tags', 'tags' )        # tags
-        add( synonyms, 'ta', 'tags' )
-        add( synonyms, 'tag', 'tags' )
-        add( synonyms, 'subjects', 'tags' )
-        add( synonyms, 'subject', 'tags' )
-        add( synonyms, 'su', 'tags' )
-        add( synonyms, 'subj', 'tags' )
-        add( synonyms, 'end', 'end' )         # end
-        add( synonyms, 'en', 'end' )
-        add( synonyms, 'ends', 'end' )
-        add( synonyms, 'finish', 'end' )
-        add( synonyms, 'finishes', 'end' )
-        add( synonyms, 'fi', 'end' )
-        add( synonyms, 'enddate', 'end' )
-        add( synonyms, 'end date', 'end' )
-        add( synonyms, 'end-date', 'end' )
-        add( synonyms, 'end_date', 'end' )
-        add( synonyms, 'ed', 'end' )
-        add( synonyms, 'endd', 'end' )
-        add( synonyms, 'acronym', 'acronym' )     # acronym
-        add( synonyms, 'ac', 'acronym' )
-        add( synonyms, 'acro', 'acronym' )
-        add( synonyms, 'public', 'public' )      # public
-        add( synonyms, 'pu', 'public' )
-        add( synonyms, 'open', 'public' )
-        add( synonyms, 'op', 'public' )
-        add( synonyms, 'country', 'country' )     # country
-        add( synonyms, 'co', 'country' )
-        add( synonyms, 'coun', 'country' )
-        add( synonyms, 'nation', 'country' )
-        add( synonyms, 'nati', 'country' )
-        add( synonyms, 'na', 'country' )
-        add( synonyms, 'city', 'city' )        # city
-        add( synonyms, 'ci', 'city' )
-        add( synonyms, 'town', 'city' )
-        add( synonyms, 'to', 'city' )
-        add( synonyms, 'postcode', 'postcode' )    # postcode
-        add( synonyms, 'po', 'postcode' )
-        add( synonyms, 'zip', 'postcode' )
-        add( synonyms, 'zi', 'postcode' )
-        add( synonyms, 'code', 'postcode' )
-        add( synonyms, 'address', 'address' )     # address
-        add( synonyms, 'ad', 'address' )
-        add( synonyms, 'addr', 'address' )
-        add( synonyms, 'street', 'address' )
-        add( synonyms, 'latitude', 'latitude' )    # latitude
-        add( synonyms, 'lati', 'latitude' )
-        add( synonyms, 'la', 'latitude' )
-        add( synonyms, 'longitude', 'longitude' )   # longitude
-        add( synonyms, 'lo', 'longitude' )
-        add( synonyms, 'long', 'longitude' )
-        add( synonyms, 'timezone', 'timezone' )    # timezone
-        add( synonyms, 'tz', 'timezone' )
-        add( synonyms, 'description', 'description' ) # description
-        add( synonyms, 'de', 'description' )
-        add( synonyms, 'desc', 'description' )
-        add( synonyms, 'des', 'description' )
-        add( synonyms, 'info', 'description' )
-        add( synonyms, 'infos', 'description' )
-        add( synonyms, 'in', 'description' )
-        add( synonyms, 'groups', 'groups' )      # groups (*)
-        add( synonyms, 'gr', 'groups' )
-        add( synonyms, 'group', 'groups' )
-        add( synonyms, 'urls', 'urls' )        # urls (*)
-        add( synonyms, 'ur', 'urls' )
-        add( synonyms, 'url', 'urls' )
-        add( synonyms, 'web', 'urls' )
-        add( synonyms, 'webs', 'urls' )
-        add( synonyms, 'we', 'urls' )
-        add( synonyms, 'deadlines', 'deadlines' )  # deadlines (*)
-#        add(synonyms, 'de', 'deadlines')
-        add( synonyms, 'deadline', 'deadlines' )
-        add( synonyms, 'dl', 'deadlines' )
-        add( synonyms, 'sessions', 'sessions' )    # sessions (*)
-        add( synonyms, 'se', 'sessions' )
-        add( synonyms, 'session', 'sessions' )
-        add( synonyms, 'times', 'sessions' )
-        add( synonyms, 'time', 'sessions' )
-#        add(synonyms, 'ti', 'sessions')
+        add( synonyms, u'ti', u'title' )
+        add( synonyms, u'title', u'title' )       # title
+        add( synonyms, u'titl', u'title' )
+        add( synonyms, u'start', u'start' )       # start
+        add( synonyms, u'st', u'start' )
+        add( synonyms, u'starts', u'start' )
+        add( synonyms, u'date', u'start' )
+        add( synonyms, u'da', u'start' )
+        add( synonyms, u'start date', u'start' )
+        add( synonyms, u'start-date', u'start' )
+        add( synonyms, u'start_date', u'start' )
+        add( synonyms, u'sd', u'start' )
+        add( synonyms, u'tags', u'tags' )        # tags
+        add( synonyms, u'ta', u'tags' )
+        add( synonyms, u'tag', u'tags' )
+        add( synonyms, u'subjects', u'tags' )
+        add( synonyms, u'subject', u'tags' )
+        add( synonyms, u'su', u'tags' )
+        add( synonyms, u'subj', u'tags' )
+        add( synonyms, u'end', u'end' )         # end
+        add( synonyms, u'en', u'end' )
+        add( synonyms, u'ends', u'end' )
+        add( synonyms, u'finish', u'end' )
+        add( synonyms, u'finishes', u'end' )
+        add( synonyms, u'fi', u'end' )
+        add( synonyms, u'enddate', u'end' )
+        add( synonyms, u'end date', u'end' )
+        add( synonyms, u'end-date', u'end' )
+        add( synonyms, u'end_date', u'end' )
+        add( synonyms, u'ed', u'end' )
+        add( synonyms, u'endd', u'end' )
+        add( synonyms, u'acronym', u'acronym' )     # acronym
+        add( synonyms, u'ac', u'acronym' )
+        add( synonyms, u'acro', u'acronym' )
+        add( synonyms, u'public', u'public' )      # public
+        add( synonyms, u'pu', u'public' )
+        add( synonyms, u'open', u'public' )
+        add( synonyms, u'op', u'public' )
+        add( synonyms, u'country', u'country' )     # country
+        add( synonyms, u'co', u'country' )
+        add( synonyms, u'coun', u'country' )
+        add( synonyms, u'nation', u'country' )
+        add( synonyms, u'nati', u'country' )
+        add( synonyms, u'na', u'country' )
+        add( synonyms, u'city', u'city' )        # city
+        add( synonyms, u'ci', u'city' )
+        add( synonyms, u'town', u'city' )
+        add( synonyms, u'to', u'city' )
+        add( synonyms, u'postcode', u'postcode' )    # postcode
+        add( synonyms, u'po', u'postcode' )
+        add( synonyms, u'zip', u'postcode' )
+        add( synonyms, u'zi', u'postcode' )
+        add( synonyms, u'code', u'postcode' )
+        add( synonyms, u'address', u'address' )     # address
+        add( synonyms, u'ad', u'address' )
+        add( synonyms, u'addr', u'address' )
+        add( synonyms, u'street', u'address' )
+        add( synonyms, u'latitude', u'latitude' )    # latitude
+        add( synonyms, u'lati', u'latitude' )
+        add( synonyms, u'la', u'latitude' )
+        add( synonyms, u'longitude', u'longitude' )   # longitude
+        add( synonyms, u'lo', u'longitude' )
+        add( synonyms, u'long', u'longitude' )
+        add( synonyms, u'timezone', u'timezone' )    # timezone
+        add( synonyms, u'tz', u'timezone' )
+        add( synonyms, u'description', u'description' ) # description
+        add( synonyms, u'de', u'description' )
+        add( synonyms, u'desc', u'description' )
+        add( synonyms, u'des', u'description' )
+        add( synonyms, u'info', u'description' )
+        add( synonyms, u'infos', u'description' )
+        add( synonyms, u'in', u'description' )
+        add( synonyms, u'groups', u'groups' )      # groups (*)
+        add( synonyms, u'gr', u'groups' )
+        add( synonyms, u'group', u'groups' )
+        add( synonyms, u'urls', u'urls' )        # urls (*)
+        add( synonyms, u'ur', u'urls' )
+        add( synonyms, u'url', u'urls' )
+        add( synonyms, u'web', u'urls' )
+        add( synonyms, u'webs', u'urls' )
+        add( synonyms, u'we', u'urls' )
+        add( synonyms, u'deadlines', u'deadlines' )  # deadlines (*)
+        add( synonyms, u'deadline', u'deadlines' )
+        add( synonyms, u'dl', u'deadlines' )
+        add( synonyms, u'sessions', u'sessions' )    # sessions (*)
+        add( synonyms, u'se', u'sessions' )
+        add( synonyms, u'session', u'sessions' )
+        add( synonyms, u'times', u'sessions' )
+        add( synonyms, u'time', u'sessions' )
         # (*) can have multi-lines and are not simple text fields
         return synonyms
 
+    def is_viewable_by_user(self, user):
+        """ returns true if `user` can see `event` """
+        return Event.is_event_viewable_by_user(self, user)
+
     @staticmethod
-    def is_event_viewable_by_user( event_id, user_id ):
-        event = Event.objects.get( id = event_id )
+    def is_event_viewable_by_user( event, user ):
+        """ returns true if `user` can see `event` """
+        # checking `event` parameter
+        if event is None:
+            raise  TypeError("`event` parameter was None")
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk=event)
+        else:
+            raise TypeError(
+                "'event' must be an Event instance or an integer")
+        # checking `user` parameter
+        if user is None:
+            return event.public
+        if isinstance(user, User):
+            pass
+        elif isinstance(user, int):
+            user = User.objects.get(pk=user)
+        else: raise TypeError(
+                "'user' must be a User instance or an integer")
         if event.public:
             return True
         elif event.user == None:
             return True
-        elif event.user.id == user_id:
+        elif event.user.id == user.id:
             return True
-        else:
-            # iterating over all groups that the event belongs to
-            for g in Group.objects.filter( events__id__exact = event_id ):
-                if Group.is_user_in_group( user_id, g.id ):
-                    return True
-            return False
+        # iterating over all groups that the event belongs to
+        for group in Group.objects.filter( events__id__exact = event.id ):
+            if Group.is_user_in_group( user.id, group.id ):
+                return True
+        return False
 
-    def is_in_groups_list( self ):
-        # TODO: rename this function and make it return a True or False value
-        return Group.objects.filter( events = self )
-
-    def is_in_groups_id_list( self ):
+    def groups_id_list( self ):
+        """ returns a list of ids of groups the event is member of """
         groups_id_list = list()
-        for g in Group.objects.filter( events = self ):
-            groups_id_list.append( g.id )
+        for group in Group.objects.filter( events = self ):
+            groups_id_list.append( group.id )
         return groups_id_list
 
     def add_to_group( self, group_id ):
-        g = Group.objects.get( id = group_id )
-        calentry = Calendar( event = self, group = g )
-        calentry.save()
+        """ add the event to a group """
+        # TODO: make this more safe, e.g. accepting a user id and checking that
+        # the user is member of the group
+        group = Group.objects.get( id = group_id )
+        cal_entry = Calendar( event = self, group = group )
+        cal_entry.save()
 
     def remove_from_group( self, group_id ):
-        g = Group.objects.get( id = group_id )
-        calentry = Calendar.objects.get( event = self, group = g )
-        calentry.delete()
+        """ remove event from group """
+        group = Group.objects.get( id = group_id )
+        cal_entry = Calendar.objects.get( event = self, group = group )
+        cal_entry.delete()
 
 class EventUrl( models.Model ):
+    """ stores urls of events
+    
+    Code example: getting all events with more than one url:
+    >>> from gridcalendar.events.models import Event
+    >>> from django.db.models import Count
+    >>> urls_numbers = Event.objects.annotate(Count('urls'))
+    >>> gt1 = filter(lambda x: x.urls__count > 1, urls_numbers)
+    """
     event = models.ForeignKey( Event, related_name = 'urls' )
     url_name = models.CharField( _( u'URL Name' ), blank = False, null = False,
             max_length = 80, help_text = _( 
@@ -1285,7 +1529,87 @@ class EventUrl( models.Model ):
     def __unicode__( self ):
         return self.url
 
+    @staticmethod
+    def parse_text(event, text):
+        """ validates and saves text lines containing EventUrl entries, raising
+        SyntaxErrors or ValidationErrors if there are errors
+
+        It also removes all previous EventUrls for `event` if no errors occur.
+
+        >>> now = datetime.datetime.now().isoformat()
+        >>> event = Event(title="test for parse_text in EventUrl" + now,
+        ...         start=datetime.date(2020, 1, 1), tags="test")
+        >>> event.save()
+        >>> event_url = EventUrl(event=event,
+        ...         url_name="test", url="http://example.com")
+        >>> event_url.save()
+        >>> text = u"urls:\\n    test1 http://example.com\\n    test2 http://example.com"
+        >>> EventUrl.parse_text(event, text)
+        >>> event_urls = EventUrl.objects.filter(event=event)
+        >>> assert(len(event_urls) == 2)
+        >>> text = u"urls:\\n    test3 http://example.com"
+        >>> EventUrl.parse_text(event, text)
+        >>> event_urls = EventUrl.objects.filter(event=event)
+        >>> assert(len(event_urls) == 1)
+        >>> assert(event_urls[0].url_name == u'test3')
+        """
+        text = smart_unicode(text)
+        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        lines = text.split('\n')
+        if (len(lines[0]) < 1):
+            raise SyntaxError(_(u"text was empty"))
+        # test for default URL
+        field_m = field_p.match(lines[0])
+        if not field_m:
+            raise SyntaxError(_(u"first line for urls is malformed: ") +
+                    lines[0])
+        syns = Event.get_synonyms()
+        if syns[field_m.group(1).lower()] != u'urls':
+            raise SyntaxError(_(u"first line for urls doesn't contain a \
+                    synonym of 'urls' before the colon: ") + lines[0])
+        urls = {} # keys are url-names, values are urls
+        if field_m.group(2) != u'':
+            urls['url'] = field_m.group(2) # default url
+        field_p = re.compile(r"^\s+(.*)\s+([^\s]+)\s*$")
+        if len(lines) > 1:
+            for line in lines[1:]:
+                field_m = field_p.match(line)
+                if not field_m:
+                    raise SyntaxError(
+                            _(u"the following line is malformed: ") + line)
+                urls[ field_m.group(1) ] = field_m.group(2)
+        event_urls = list() # stores EventURLs to be saved at the end
+        for url_name, url in urls.items():
+            try:
+                previous_event_url = EventUrl.objects.get(
+                        event=event, url_name=url_name)
+            except EventUrl.DoesNotExist:
+                event_url = EventUrl(event=event, url_name=url_name, url=url)
+                # see
+                # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                event_url.full_clean()
+                event_urls.append(event_url)
+            else:
+                previous_event_url.url = url
+                assert(previous_event_url.url_name == url_name)
+                assert(previous_event_url.event == event)
+                previous_event_url.full_clean()
+                event_urls.append(previous_event_url)
+        assert(len(event_urls) == len(urls))
+        # save all
+        for event_url in event_urls:
+            event_url.save()
+        # delete old urls of the event which are not in `text` parameter
+        # TODO: save history
+        event_urls = EventUrl.objects.filter(event=event)
+        for event_url in event_urls:
+            if not urls.has_key(event_url.url_name):
+                event_url.delete()
+
 class EventDeadline( models.Model ):
+    """ stores deadlines for events """
     event = models.ForeignKey( Event, related_name = 'deadlines' )
     deadline_name = models.CharField( 
             _( u'Deadline name' ), blank = False, null = False,
@@ -1298,7 +1622,100 @@ class EventDeadline( models.Model ):
     def __unicode__( self ):
         return unicode( self.deadline ) + u' - ' + self.deadline_name
 
+    @staticmethod
+    def parse_text(event, text):
+        """ validates and saves text lines containing EventDeadline entries,
+        raising SyntaxErrors or ValidationErrors if there are errors
+
+        It also removes all previous EventDeadlines for `event` if no errors
+        occur.
+
+        >>> now = datetime.datetime.now().isoformat()
+        >>> event = Event(title="test for parse_text in EventDeadline " + now,
+        ...         start=datetime.date(2020, 1, 1), tags="test")
+        >>> event.save()
+        >>> event_deadline = EventDeadline(
+        ...         event = event, deadline_name = "test1",
+        ...         deadline = datetime.date(2020,1,1))
+        >>> event_deadline.save()
+        >>> text = u"deadlines:\\n    2010-01-02 test1\\n    2010-02-02 test2"
+        >>> EventDeadline.parse_text(event, text)
+        >>> event_deadlines = EventDeadline.objects.filter(event=event)
+        >>> assert(len(event_deadlines) == 2)
+        >>> text = u"deadlines:\\n    2010-03-03 test3"
+        >>> EventDeadline.parse_text(event, text)
+        >>> event_deadlines = EventDeadline.objects.filter(event=event)
+        >>> assert(len(event_deadlines) == 1)
+        >>> assert(event_deadlines[0].deadline_name == u'test3')
+        """
+        text = smart_unicode(text)
+        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        lines = text.split('\n')
+        if (len(lines[0]) < 1):
+            raise SyntaxError(_(u"text of first line for deadlines was empty"))
+        # test for default deadline
+        field_m = field_p.match(lines[0])
+        if not field_m:
+            raise SyntaxError(_(u"first line for deadlines is malformed: ") +
+                    lines[0])
+        syns = Event.get_synonyms()
+        if syns[field_m.group(1).lower()] != u'deadlines':
+            raise SyntaxError(_(u"first line for deadlines doesn't contain a \
+                    synonym of 'deadlines' before the colon: ") + lines[0])
+        deadlines = {} # keys are names, values are dates
+        if field_m.group(2) != u'':
+            date_p = re.compile(r"^(\d\d\d\d)-(\d\d)-(\d\d)$")
+            date_m = date_p.match(field_m.group(2))
+            if not date_m:
+                raise SyntaxError(_(u"default deadline was not of the form " +
+                    u"nnnn-nn-nn. It was: ") + field_m.group(2))
+            # default deadline:
+            deadlines['deadline'] = datetime.date(
+                    int(date_m.group(1)), int(date_m.group(2)),
+                    int(date_m.group(3)))
+        if len(lines) > 1:
+            field_p = re.compile(r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(.*)\s*$")
+            for line in lines[1:]:
+                field_m = field_p.match(line)
+                if not field_m:
+                    raise SyntaxError(
+                        _(u"the following line for a deadline is malformed: ")
+                        + line)
+                deadlines[ field_m.group(4) ] = datetime.date(
+                        int(field_m.group(1)), int(field_m.group(2)),
+                        int(field_m.group(3)))
+        event_deadlines = list() # stores EventDeadlines to be saved at the end
+        for name, deadline in deadlines.items():
+            try:
+                previous_event_deadline = EventDeadline.objects.get(
+                        event=event, deadline_name=name)
+            except EventDeadline.DoesNotExist:
+                event_deadline = EventDeadline(event=event, deadline_name=name,
+                        deadline=deadline)
+                # see
+                # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                event_deadline.full_clean()
+                event_deadlines.append(event_deadline)
+            else:
+                previous_event_deadline.deadline = deadline
+                assert(previous_event_deadline.deadline_name == name)
+                assert(previous_event_deadline.event == event)
+                previous_event_deadline.full_clean()
+                event_deadlines.append(previous_event_deadline)
+        assert(len(event_deadlines) == len(deadlines))
+        # save all
+        for event_deadline in event_deadlines:
+            event_deadline.save()
+        # delete old deadlines of the event which are not in `text` parameter
+        event_deadlines = EventDeadline.objects.filter(event=event)
+        for event_deadline in event_deadlines:
+            if not deadlines.has_key(event_deadline.deadline_name):
+                event_deadline.delete()
+
 class EventSession( models.Model ):
+    """ stores sessions for events """
     # TODO: check when submitting that session_dates are within the limits of
     # start and end dates of the event.
     event = models.ForeignKey( Event, related_name = 'sessions' )
@@ -1322,20 +1739,161 @@ class EventSession( models.Model ):
                 unicode( self.session_starttime ) + u' - ' + \
                 unicode( self.session_endtime ) + u' - ' + self.session_name
 
+    @staticmethod
+    def parse_text(event, text):
+        """ validates and saves text lines containing EventSession entries,
+        raising SyntaxErrors or ValidationErrors if there are errors
+
+        It also removes all previous EventSessions for `event` if no errors
+        occur.
+
+        Example::
+
+            sessions:
+                2009-01-01 10:00-16:00 first day
+                2009-01-01 11:00-12:00 speech about GridCalendar
+
+        >>> import datetime
+        >>> now = datetime.datetime.now().isoformat()
+        >>> event = Event(title="test for parse_text in EventSession " + now,
+        ...         start=datetime.date(2020, 1, 1), tags="test")
+        >>> event.save()
+        >>> event_session = EventSession(
+        ...     event=event, session_name="test1",
+        ...     session_date = datetime.date(2010,1,1),
+        ...     session_starttime = datetime.time(0,0),
+        ...     session_endtime = datetime.time(1,0))
+        >>> event_session.save()
+        >>> text = u"sessions:\\n    2010-01-02 11:00-12:00 test1\\n"
+        >>> text = text +      "    2010-01-03 12:00-13:00 test2"
+        >>> EventSession.parse_text(event, text)
+        >>> event_sessions = EventSession.objects.filter(event=event)
+        >>> assert(len(event_sessions) == 2)
+        >>> text = u"sessions:\\n    2010-01-02 13:00-14:00 test1"
+        >>> EventSession.parse_text(event, text)
+        >>> event_sessions = EventSession.objects.filter(event=event)
+        >>> assert(len(event_sessions) == 1)
+        >>> assert(event_sessions[0].session_name == u'test1')
+        """
+        text = smart_unicode(text)
+        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        lines = text.split('\n')
+        # test for default deadline
+        field_m = field_p.match(lines[0])
+        if not field_m:
+            raise SyntaxError(_(u"first line for sessions is malformed"))
+        syns = Event.get_synonyms()
+        if syns[field_m.group(1).lower()] != u'sessions':
+            raise SyntaxError(_(u"first line for sessions doesn't contain a \
+                    synonym of 'sessions' before the colon"))
+        class Session:
+            def __init__(self, date=None, start=None, end=None, name=None):
+                self.date = date
+                self.start = start
+                self.end = end
+                self.name = name
+        sessions = list()
+        if field_m.group(2) != u'': # default session
+            times_p = re.compile(r"^(\d\d):(\d\d)-(\d\d):(\d\d)\s*$")
+            times_m = times_p.match(field_m.group(2))
+            if not times_m:
+                raise SyntaxError(_(u'default session data is not of the \
+                form nn:nn-nn:nn It was: ') + field_m.group(2))
+            try:
+                sessions.append(Session(
+                    date = event.start,
+                    start = datetime.time(
+                        int(times_m.group(1)),
+                        int(times_m.group(2))),
+                    end =  datetime.time(
+                        int(times_m.group(3)),
+                        int(times_m.group(4))),
+                    name = 'time'))
+                # TODO: use local time of event if present
+            except ValueError:
+                raise ValidationError(
+                        _(u"a time entry was wrong for: ") + field_m.group(2))
+        if len(lines) > 1:
+            field_p = re.compile(
+                    r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*)\s*$")
+                    #      1          2      3        4      5      6      7       8
+            for line in lines[1:]:
+                field_m = field_p.match(line)
+                if not field_m:
+                    raise SyntaxError(
+                            _(u"the following line is malformed: ") + line)
+                try:
+                    sessions.append(Session(
+                        date = datetime.date(
+                            int(field_m.group(1)),
+                            int(field_m.group(2)),
+                            int(field_m.group(3))),
+                        start = datetime.time(
+                            int(field_m.group(4)),
+                            int(field_m.group(5))),
+                        end = datetime.time(
+                            int(field_m.group(6)),
+                            int(field_m.group(7))),
+                        name = field_m.group(8)))
+                except ValueError:
+                    raise ValidationError(
+                            _(u"a time/date entry was wrong for line: ") + line)
+                # TODO: use local time of event if present
+        event_sessions = list() # stores EventSessions to be saved at the end
+        for session in sessions:
+            try:
+                # check if there is an EventSession with the same name
+                previous_event_session = EventSession.objects.get(
+                        event = event, session_name = session.name)
+            except EventSession.DoesNotExist:
+                event_session = EventSession(
+                        event = event,
+                        session_name = session.name,
+                        session_date = session.date,
+                        session_starttime = session.start,
+                        session_endtime = session.end)
+                # see
+                # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                event_session.full_clean()
+                event_sessions.append(event_session)
+            else:
+                previous_event_session.session_date = session.date
+                previous_event_session.session_starttime = session.start
+                previous_event_session.session_endtime = session.end
+                previous_event_session.full_clean()
+        # save all
+        for event_session in event_sessions:
+            event_session.save()
+        # delete old sessions of the event which are not in `text` parameter
+        # TODO: save history
+        event_sessions = EventSession.objects.filter(event=event)
+        for event_session in event_sessions:
+            found = False
+            for session in sessions:
+                if session.name == event_session.session_name:
+                    found = True
+                    break
+            if not found:
+                event_session.delete()
+
 class EventHistory( models.Model ):
+    """ keeps history of changes (editions) on an event """
     event = models.ForeignKey( Event )
     user = models.ForeignKey( User, unique = False, \
                             verbose_name = _( u'User' ), \
                             blank = True, null = True )
     date = models.DateTimeField( _( u'Creation time' ), editable = False,
             auto_now_add = True )
-    """Time stamp when the change was done"""
+    """Time stamp when the change was done""" # pyling: disable-msg=W0105
     old = models.TextField( _( u'Old data' ), blank = True, null = True )
-    """the event as text before the change"""
+    """the event as text before the change""" # pyling: disable-msg=W0105
     new = models.TextField( _( u'New data' ), blank = True, null = True )
-    """ the event as text after the change """
+    """ the event as text after the change """ # pyling: disable-msg=W0105
 
 class Filter( models.Model ):
+    """ search queries of users """
     user = models.ForeignKey(
             User, unique = False, verbose_name = _( u'User' ) )
     modification_time = models.DateTimeField( _( u'Modification time' ),
@@ -1346,10 +1904,6 @@ class Filter( models.Model ):
             _( u'Name' ), max_length = 40, blank = False, null = False )
     email = models.BooleanField( _( u'Email' ), default = False, help_text =
             _(u'If set it sends an email to a user when a new event matches'))
-    maxevents_email = models.SmallIntegerField(
-            _( u'Number of events in e-mail' ),
-            blank = True, null = True, default = 10, help_text =
-            _( "Maximum number of events to show in a notification e-mail" ) )
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['modification_time']
@@ -1362,53 +1916,53 @@ class Filter( models.Model ):
 
     @models.permalink
     def get_absolute_url( self ):
+        """ django utility ofr url look-up """
         return ( 'filter_edit', (), { 'filter_id': self.id } )
 
+    def matches(self, event):
+        """ returns 0 if `event` doesn't match the filter; otherwise a number
+        bigger than 0 which indicates the strength of the match """
+        # FIXME: specify the search syntax, and a fast method to know if a
+        # single event matches a filter, then change this code:
+        from gridcalendar.events.lists import list_search_get
+        for event_in_list in list_search_get(self.query):
+            if event == event_in_list:
+                return True
+            return False
+
     @staticmethod
-    def notify():
-        """ Walks through all filters of all users and send a single email
-        notification to each user with no more than ``Filter.maxevents_email``
-        emails.
-        """
+    def notify_users_when_wanted(event):
+        """ notifies all users if `event` matches a filter of the user and the
+        user wants to be notified for the matching filter """
         users = User.objects.all()
         for user in users:
-            to_email = user.email
-            user_filters = Filter.objects.filter( user = u ).filter(
-                    email = True )
-            # user_events will be a list of dictionaries containing event data
-            user_events = list()
-            # FIXME: list_search_get is now different
-            for fff in user_filters:
-                try:
-                    search_results = list_search_get( fff.query, user, True )
-                except ValueError:
-                    raise
-                fff_len = len( search_results )
-                if fff_len <= fff.maxevents_email:
-                    show = fff_len
-                else:
-                    show = maxevents_email
-                for event in search_results[0:show]:
-                    user_events.append( event )
-                else:
-                    assert False
-                del fff_len
-            context = {
-                'user_events': user_events,
-                'site': settings.PROJECT_NAME,
-            }
-            if len( user_events ) > 0:
-                subject = 'new events on ' + settings.PROJECT_NAME
-                message = render_to_string(
-                        'mail/new_events_notif.txt', context )
-                from_email = settings.DEFAULT_FROM_EMAIL
-                if subject and message and from_email:
-                    try:
-                        send_mail( subject, message, from_email, [to_email] )
-                    except BadHeaderError:
-                        raise
+            user_filters = Filter.objects.filter( user = user ).filter(
+                    email = True)
+            for fil in user_filters:
+                if fil.matches(event):
+                    context = {
+                        'name': user.name,
+                        'event': event,
+                        'filter': fil,
+                        'site': settings.PROJECT_NAME, }
+                    subject = _('event match: %(event.title)s') % \
+                            { 'event.title': event.title, }
+                    # TODO: use a preferred language setting for users to send
+                    # emails to them in this language
+                    message = render_to_string(
+                            'mail/event_notice.txt', context )
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    if subject and message and from_email and user.email:
+                        try:
+                            send_mail(subject, message, from_email,
+                                    [user.email,])
+                        except BadHeaderError:
+                            # TODO: do something meanfull
+                            pass
+                    break
 
 class Group( models.Model ):
+    """ groups of users and events """
     # FIXME: groups only as lowerDeadlines case ascii (case insensitive).
     # Validate everywhere including save method.
     name = models.CharField( _( u'Name' ), max_length = 80, unique = True )
@@ -1432,15 +1986,20 @@ class Group( models.Model ):
 
     @models.permalink
     def get_absolute_url( self ):
+        "get internal URL of an event"
         # FIXME: make a view for a group and change the name list_events_group.
         # The view could have on the left events and on the right members info
         # and messages
         return ( 'list_events_group', (), { 'group_id': self.id } )
 
-    def is_member(self, user):
-        """ Return True if the user is a member of the group, False otherwise.
+    # FIXME: rename to is_member
+    def is_member( self, user ):
+        """ returns True if `user` is a member of the group, False otherwise
         """
-        return is_user_in_group(user, self)
+        if Membership.objects.get( group = self, user = user ):
+            return True
+        else:
+            return False
 
     @staticmethod
     def is_user_in_group( user, group ):
@@ -1451,9 +2010,10 @@ class Group( models.Model ):
 
         >>> from django.contrib.auth.models import User
         >>> from events.models import Event, Group, Membership
-        >>> user1, created = User.objects.get_or_create(username = "user1")
-        >>> user2, created = User.objects.get_or_create(username = "user2")
-        >>> group1 = Group.objects.create(name="group1")
+        >>> now = datetime.datetime.now().isoformat()
+        >>> user1 = User.objects.create(username = "user1 " + now)
+        >>> user2 = User.objects.create(username = "user2 " + now)
+        >>> group1 = Group.objects.create(name="group1 " + now)
         >>> m = Membership.objects.create(user=user1, group=group1)
         >>> assert (Group.is_user_in_group(user1, group1))
         >>> assert (not Group.is_user_in_group(user2, group1))
@@ -1493,10 +2053,11 @@ class Group( models.Model ):
         
         >>> from django.contrib.auth.models import User
         >>> from events.models import Event, Group, Membership
-        >>> user1, created = User.objects.get_or_create(username = "user1")
-        >>> user2, created = User.objects.get_or_create(username = "user2")
-        >>> group12 = Group.objects.create(name="group12")
-        >>> group2 = Group.objects.create(name="group2")
+        >>> now = datetime.datetime.now().isoformat()
+        >>> user1 = User.objects.create(username = "user1 " + now)
+        >>> user2 = User.objects.create(username = "user2 " + now)
+        >>> group12 = Group.objects.create(name="group12 " + now)
+        >>> group2 = Group.objects.create(name="group2 " + now)
         >>> m1 = Membership.objects.create(user=user1, group=group12)
         >>> m2 = Membership.objects.create(user=user2, group=group12)
         >>> m3 = Membership.objects.create(user=user2, group=group2)
@@ -1532,8 +2093,8 @@ class Group( models.Model ):
                 # TODO: fix the code below because it is not efficient because
                 # the filter could return millions of events
                 events = Event.objects.filter(group=group).filter(
-                        start__gte=datetime.now()) [0:limit]
-                if length(events) > 0:
+                        start__gte=datetime.datetime.now()) [0:limit]
+                if len(events) > 0:
                     to_return[group] = events
         return to_return
 
@@ -1546,18 +2107,6 @@ class Group( models.Model ):
         groups = groups.exclude( events = event )
         groups = groups.exclude( events__in = event.get_clones() )
         return groups
-
-    # FIXME: rename to is_member
-    def is_user_member_of( self, user ):
-        if Membership.objects.get( group = self, user = user ):
-            return True
-        else:
-            return False
-
-    # FIXME: rename to contains
-    def is_event_in_calendar( self, event ):
-        return False # TODO: what is this?!
-
 
 class Membership( models.Model ):
     """Relation between users and groups."""
@@ -1573,15 +2122,16 @@ class Membership( models.Model ):
             related_name = 'membership' )
     is_administrator = models.BooleanField( 
             _( u'Is administrator' ), default = True )
-    """Not used at the moment. All members of a group are administrators."""
+    """Not used at the moment. All members of a group are administrators.
+    """ # pylint: disable-msg=W0105
     new_event_email = models.BooleanField(
             _( u'New event notification' ), default = True )
     """If True a notification email should be sent to the user when a new event
-    is added to the group"""
+    is added to the group""" # pylint: disable-msg=W0105
     new_member_email = models.BooleanField( 
             _( u'New member notification' ), default = True )
     """If True a notification email should be sent to the user when a new
-    member is added to the group"""
+    member is added to the group""" # pylint: disable-msg=W0105
     date_joined = models.DateField( 
             _( u'date_joined' ), editable = False, auto_now_add = True )
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -1717,7 +2267,6 @@ class GroupInvitationManager( models.Manager ):
                 as_administrator = as_administrator,
                 activation_key = activation_key )
 
-        from django.core.mail import send_mail
         current_site = Site.objects.get_current()
 
         subject = render_to_string( 'groups/invitation_email_subject.txt',
