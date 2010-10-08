@@ -31,12 +31,12 @@ import unittest
 import doctest
 from gridcalendar.events import models
 
-#def suite():
-#    suite = unittest.TestSuite()
-#    suite.addTest(doctest.DocTestSuite(models))
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(doctest.DocTestSuite(models))
 # FIXME: use following line:
 #    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(EventTestCase))
-#    return suite
+    return suite
 
 import datetime
 from django.contrib.auth.models import User

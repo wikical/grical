@@ -721,7 +721,7 @@ class Event( models.Model ): # pylint: disable-msg=R0904
         syns = Event.get_synonyms()
         current = None # current field being parsed
         lines = list() # lines belonging to current field
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
         # group 1 is the name of the field, group 2 is the value
         empty_line_p = re.compile(r"^\s*$")
         line_counter = 0
@@ -730,7 +730,8 @@ class Event( models.Model ): # pylint: disable-msg=R0904
             if current and current == "description":
                 lines.append(line)
                 continue
-            if (not current) and empty_line_p.match(line):
+            # empty lines, if not in 'description', are ignored
+            if empty_line_p.match(line):
                 continue
             field_m = field_p.match(line)
             if current: # a complex field is being processed
@@ -740,28 +741,25 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                     current = None
                     lines = list()
                 else:
-                    if empty_line_p.match(line):
-                        raise SyntaxError(_(
-                                "empty lines are not \
-                                allowed within content of %(field_name)s"
-                                % {'field_name': current,}))
                     if re.match(r"[^\s]", line[0]):
                         raise SyntaxError(_(
-                            "extra lines for %(field_name)s must start with \
-                                    identation" % {'field_name': current,}))
+                            "extra lines for %(field_name)s must start with " \
+                            + "identation" % {'field_name': current,}))
                     lines.append(line)
                     continue
             if (not current) and not field_m:
                 raise SyntaxError(_(
-                        "line number %(number)d is wrong: %(line)s" % \
-                                {'number': line_counter, 'line': line}))
+                        "line number %(number)d is wrong: %(line)s") % \
+                                {'number': line_counter, 'line': line})
             if not syns.has_key(field_m.group(1)):
-                raise SyntaxError(_("wrong field name: %(name)s" % \
-                        {'name': field_m.group(1),}))
+                raise SyntaxError(_("wrong field name: %(name)s") % \
+                        {'name': field_m.group(1),})
             if syns[field_m.group(1)] in simple_list:
                 simple_dic[ syns[field_m.group(1)]] = field_m.group(2)
                 continue
-            assert ( field_m.group(1) in complex_list )
+            if not syns[field_m.group(1)] in complex_list:
+                raise RuntimeError("field %s was not in 'complex_list'" %
+                        field_m.group(1))
             current = syns[field_m.group(1)]
             lines.append(line)
         if current:
@@ -839,6 +837,7 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                         _("The necessary field '%(name)s' is not present") % 
                         {'name': field,})
         # creates an event with a form
+        # FIXME: process field 'public' now because it is not in EventForm
         from gridcalendar.events.forms import EventForm
         if event_id == None :
             event_form = EventForm( simple_fields )
@@ -881,7 +880,6 @@ class Event( models.Model ): # pylint: disable-msg=R0904
         except SyntaxError as error:
             Event.objects.get( id = event_id ).delete()
             raise error
-        assert(len(complex_fields) == 0)
         return event
 
 # old code
@@ -1552,11 +1550,16 @@ class EventUrl( models.Model ):
         >>> event_urls = EventUrl.objects.filter(event=event)
         >>> assert(len(event_urls) == 1)
         >>> assert(event_urls[0].url_name == u'test3')
+        >>> text = u"web: http://example.com "
+        >>> EventUrl.parse_text(event, text)
+        >>> event_urls = EventUrl.objects.filter(event=event)
+        >>> assert(len(event_urls) == 1)
+        >>> assert(event_urls[0].url_name == u'url')
         """
         text = smart_unicode(text)
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         text = text.replace('\r\n', '\n').replace('\r', '\n')
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
         lines = text.split('\n')
         if (len(lines[0]) < 1):
             raise SyntaxError(_(u"text was empty"))
@@ -1572,11 +1575,15 @@ class EventUrl( models.Model ):
         urls = {} # keys are url-names, values are urls
         if field_m.group(2) != u'':
             urls['url'] = field_m.group(2) # default url
-        field_p = re.compile(r"^\s+(.*)\s+([^\s]+)\s*$")
         if len(lines) > 1:
+            field_p = re.compile(r"^\s+(.*)\s+(.+?)\s*$")
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
+                    empty_line_p = re.compile("^\s*$")
+                    if empty_line_p.match(line):
+                        raise SyntaxError(
+                            _(u"an unexpected empty line was found."))
                     raise SyntaxError(
                             _(u"the following line is malformed: ") + line)
                 urls[ field_m.group(1) ] = field_m.group(2)
@@ -1651,7 +1658,7 @@ class EventDeadline( models.Model ):
         text = smart_unicode(text)
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         text = text.replace('\r\n', '\n').replace('\r', '\n')
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
         lines = text.split('\n')
         if (len(lines[0]) < 1):
             raise SyntaxError(_(u"text of first line for deadlines was empty"))
@@ -1676,7 +1683,7 @@ class EventDeadline( models.Model ):
                     int(date_m.group(1)), int(date_m.group(2)),
                     int(date_m.group(3)))
         if len(lines) > 1:
-            field_p = re.compile(r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(.*)\s*$")
+            field_p = re.compile(r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(.*?)\s*$")
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
@@ -1778,7 +1785,7 @@ class EventSession( models.Model ):
         text = smart_unicode(text)
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         text = text.replace('\r\n', '\n').replace('\r', '\n')
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*)\s*$")
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
         lines = text.split('\n')
         # test for default deadline
         field_m = field_p.match(lines[0])
@@ -1817,7 +1824,7 @@ class EventSession( models.Model ):
                         _(u"a time entry was wrong for: ") + field_m.group(2))
         if len(lines) > 1:
             field_p = re.compile(
-                    r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*)\s*$")
+                    r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*?)\s*$")
                     #      1          2      3        4      5      6      7       8
             for line in lines[1:]:
                 field_m = field_p.match(line)
