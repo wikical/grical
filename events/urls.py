@@ -37,7 +37,7 @@ urlpatterns += patterns('', # views of a single event
         views.event_new_raw,            name='event_new_raw'),
     url(r'^e/edit/(?P<event_id>\d+)/$',
         views.event_edit,               name='event_edit'),
-    url(r'^e/edit/(?P<event_id>\d+)/raw/$',
+    url(r'^e/edit/(?P<event>\d+)/raw/$',
         views.event_edit_raw,           name='event_edit_raw'),
     url(r'^e/show/(?P<event_id>\d+)/$',
         views.event_show,               name='event_show'),
