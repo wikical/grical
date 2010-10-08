@@ -597,30 +597,41 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                 to_return += u''.join( [
                         keyword, u": ",
                         unicode(self.start.strftime( "%Y-%m-%d" )), u"\n"] )
-            elif keyword == u'end' and self.end:
-                to_return += u''.join( [
+            elif keyword == u'end':
+                if self.end:
+                    to_return += u''.join( [
                         keyword, u": ",
                         unicode(self.end.strftime( "%Y-%m-%d")), u"\n"] )
-            elif keyword == u'country' and self.country:
-                to_return += keyword + u": " + self.country + u"\n"
-            elif keyword == u'timezone' and self.timezone:
-                to_return += keyword + u": " + unicode(self.timezone) + u"\n"
-            elif keyword == u'latitude' and self.latitude:
-                to_return += keyword + u": " + unicode(self.latitude) + u"\n"
-            elif keyword == u'longitude' and self.longitude:
-                to_return += keyword + u": " + unicode(self.longitude) + u"\n"
-            elif keyword == u'acronym' and self.acronym:
-                to_return += keyword + u": " + self.acronym + u"\n"
-            elif keyword == u'tags' and self.tags:
-                to_return += keyword + u": " + self.tags + u"\n"
-            elif keyword == u'public' and self.public:
-                to_return += keyword + u": " + unicode(self.public) + u"\n"
-            elif keyword == u'address' and self.address:
-                to_return += keyword + u": " + self.address + u"\n"
-            elif keyword == u'city' and self.city:
-                to_return += keyword + u": " + self.city + u"\n"
-            elif keyword == u'postcode' and self.postcode:
-                to_return += keyword + u": " +  self.postcode + u"\n"
+            elif keyword == u'country':
+                if self.country:
+                    to_return += keyword + u": " + self.country + u"\n"
+            elif keyword == u'timezone':
+                if self.timezone:
+                    to_return += keyword + u": " + unicode(self.timezone) + u"\n"
+            elif keyword == u'latitude':
+                if self.latitude:
+                    to_return += keyword + u": " + unicode(self.latitude) + u"\n"
+            elif keyword == u'longitude':
+                if self.longitude:
+                    to_return += keyword + u": " + unicode(self.longitude) + u"\n"
+            elif keyword == u'acronym':
+                if self.acronym:
+                    to_return += keyword + u": " + self.acronym + u"\n"
+            elif keyword == u'tags':
+                if self.tags:
+                    to_return += keyword + u": " + self.tags + u"\n"
+            elif keyword == u'public':
+                if self.public:
+                    to_return += keyword + u": " + unicode(self.public) + u"\n"
+            elif keyword == u'address':
+                if self.address:
+                    to_return += keyword + u": " + self.address + u"\n"
+            elif keyword == u'city':
+                if self.city:
+                    to_return += keyword + u": " + self.city + u"\n"
+            elif keyword == u'postcode':
+                if self.postcode:
+                    to_return += keyword + u": " +  self.postcode + u"\n"
             elif keyword == u'urls':
                 urls = EventUrl.objects.filter( event = self.id )
                 if len( urls ) > 0:
@@ -671,7 +682,7 @@ class Event( models.Model ): # pylint: disable-msg=R0904
             elif keyword == u'groups':
                 pass
             elif keyword == u'description' and self.description:
-                to_return += self.description
+                to_return += u'description:\n' + self.description
             else:
                 raise RuntimeError('unexpected keyword: ' + keyword)
         return smart_str(to_return)
@@ -871,7 +882,9 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                         u'\n'.join(complex_fields[u'sessions']))
                 del complex_fields[u'sessions']
             if complex_fields.has_key(u'description'):
-                event.description = u"\n".join(complex_fields[u'description'])
+                description = u"\n".join(complex_fields[u'description'])
+                # remove the word 'description'
+                event.description = description[13:]
                 del complex_fields[u'description']
             assert(len(complex_fields) == 0)
         except ValidationError as error:
