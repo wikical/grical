@@ -2032,13 +2032,15 @@ class Group( models.Model ):
         elif isinstance(user, int):
             user_id = user
         else: raise TypeError(
-                "'user' must be a User instance or an integer")
+                "'user' must be a User instance or an integer but it was " +
+                user.__class__)
         if isinstance(group, Group):
             group_id = group.id
         elif isinstance(group, int):
             group_id = group
         else: raise TypeError(
-                "'group' must be a Group instance or an integer")
+                "'group' must be a Group instance or an integer but it was" +
+                group.__class__)
         times_user_in_group = Membership.objects.filter( 
                 user__id__exact = user_id,
                 group__id__exact = group_id )
@@ -2084,7 +2086,8 @@ class Group( models.Model ):
         elif isinstance(user, int):
             user = User.objects.get(id=user)
         else: raise TypeError(
-                "'user' must be a User instance or an integer")
+                "'user' must be a User instance or an integer but it was " +
+                user.__class__)
         return list(Group.objects.filter(membership__user=user))
 
     @staticmethod

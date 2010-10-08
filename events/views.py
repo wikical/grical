@@ -34,7 +34,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import User
 from gridcalendar.events.decorators import login_required
 
 from gridcalendar.settings_local import SECRET_KEY
@@ -255,15 +255,21 @@ def event_new_raw( request ):
         return render_to_response( 'event_new_raw.html', templates,
                 context_instance = RequestContext( request ) )
 
-def event_edit_raw( request, event_id ):
+def event_edit_raw( request, event ):
     """ View to edit an event as text. """
+    if isinstance(event, Event):
+        event_id = event.id
+    elif isinstance(event, int):
+        event_id = event
+    else:
+        raise RuntimeError("'event' was neither an Event nor an int")
     # checks if the event exists
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
         return _error( request,
-            _( "The event with the following number \ doesn't exist" ) + ": " +
-            str( event_id ) )
+            _( u"The event with the number $(number)d doesn't exist." ) %
+            {'number': str(event_id),})
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
@@ -560,7 +566,14 @@ def list_events_tag( request, tag ):
             context_instance = RequestContext( request ) )
 
 def main( request ):
-    """ main view """
+    """ main view
+    
+    >>> from django.test import Client
+    >>> c = Client()
+    >>> r = c.get('/')
+    >>> r.status_code # /
+    200
+    """
     user_id = request.user.id
     if request.method == 'POST':
         if request.user.is_authenticated():
