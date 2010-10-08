@@ -217,80 +217,88 @@ try:
 except NameError:
     ROOT_URLCONF = 'urls'
 
-RECAPTCHA_PUB_KEY = "6Lf2WLwSAAAAAAs5ofIEr_0l3u34dYHK6LRghoiU"
-RECAPTCHA_PRIVATE_KEY = "6Lf2WLwSAAAAAJ4rWk4tLcZAJueB_yhsXjjCVo7_"
 
-
-###############################################
-# it follows an example for a settings_local.py
-###############################################
-#
-#import os
-#
-#VERSION = 'alpha'
-#
-## ======================================================================
-## debug settings
-## ======================================================================
-#
-#DEBUG = True
-#TEMPLATE_DEBUG = DEBUG
-## http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
-#INTERNAL_IPS = ('127.0.0.1',)
-#if DEBUG:
-#    TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
-#
-## ======================================================================
-## cache settings
-## ======================================================================
-## http://docs.djangoproject.com/en/dev/topics/cache/
-#
-## CACHE_BACKEND = 'locmem://'
-## CACHE_MIDDLEWARE_KEY_PREFIX = '%s_' % PROJECT_NAME
-## CACHE_MIDDLEWARE_SECONDS = 600
-#
-#
-## ======================================================================
-## email and error-notify settings
-## ======================================================================
-#
-#ADMINS = (
-#    ('a_name', 'an_email'),
-#    ('another_name', 'another_email'),
-#)
-#
-#MANAGERS = ADMINS
-#
-#DEFAULT_FROM_EMAIL = 'GridCalendar Dev'
-#SERVER_EMAIL = 'an_email'
-#
-#EMAIL_HOST = 'a_smarthost'
-#EMAIL_PORT = 25
-#EMAIL_HOST_USER = ''
-#EMAIL_HOST_PASSWORD = ''
-#EMAIL_USE_TLS = False
-#
-#
-#IMAP_SERVER = ''
-#IMAP_LOGIN = ''
-#IMAP_PASSWD = ''
-#
-## see http://docs.djangoproject.com/en/dev/howto/error-reporting/
-#SEND_BROKEN_LINK_EMAILS = True
-#
-#
-## ======================================================================
-## database settings
-## ======================================================================
-#
-## 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-#DATABASE_ENGINE   = 'sqlite3'
-## DB Name (or path to database file if using sqlite3)
-#DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
-#DATABASE_USER     = ''                     # Not used with sqlite3.
-#DATABASE_PASSWORD = ''                     # Not used with sqlite3.
-#DATABASE_HOST     = ''                     # Not used with sqlite3.
-#DATABASE_PORT     = ''                     # Not used with sqlite3.
-#
-## Make this unique, and don't share it with anybody.
-#SECRET_KEY = '(a#%@bhr23!af9875tybca(_a.13524fgav@#$a1ybkdzlfrq$'
+################################
+# example of a settings_local.py
+################################
+# 
+# import os
+# 
+# VERSION = 'alpha'
+# 
+# # Make this unique, and don't share it with anybody.
+# SECRET_KEY = 'a$#ba$@(AJIOEAanb.;p;ki))(*&^4556breqnape#$3q23422'
+# 
+# # absolute path to this directory
+# PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
+# # the name of the directory
+# PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
+# 
+# # ======================================================================
+# # imap settings for getting events as emails
+# # ======================================================================
+# IMAP_SERVER = 'your_imap_server'                                                                                                   
+# IMAP_LOGIN = 'your_imap_login'                                                                                                           
+# IMAP_PASSWD = 'your_imap_password'
+# 
+# # ======================================================================
+# # debug settings
+# # ======================================================================
+# 
+# DEBUG = True
+# TEMPLATE_DEBUG = DEBUG
+# # http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
+# INTERNAL_IPS = ('127.0.0.1',)
+# if DEBUG:
+#     TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
+# 
+# # ======================================================================
+# # cache settings
+# # ======================================================================
+# # http://docs.djangoproject.com/en/dev/topics/cache/
+# 
+# # CACHE_BACKEND = 'locmem://'
+# # CACHE_MIDDLEWARE_KEY_PREFIX = '%s_' % PROJECT_NAME
+# # CACHE_MIDDLEWARE_SECONDS = 600
+# 
+# 
+# # ======================================================================
+# # email and error-notify settings
+# # ======================================================================
+# 
+# ADMINS = (
+#     ('your_name', 'your_mail'),
+# )
+# 
+# MANAGERS = ADMINS
+# 
+# DEFAULT_FROM_EMAIL = 'noreply@example.com'
+# SERVER_EMAIL = 'noreply@example.com'
+# 
+# EMAIL_HOST = 'your_smtp_email'
+# EMAIL_PORT = 25
+# EMAIL_HOST_USER = ''
+# EMAIL_HOST_PASSWORD = ''
+# EMAIL_USE_TLS = False
+# 
+# # see http://docs.djangoproject.com/en/dev/howto/error-reporting/
+# SEND_BROKEN_LINK_EMAILS = True
+# 
+# 
+# # ======================================================================
+# # database settings
+# # ======================================================================
+# 
+# # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+# DATABASE_ENGINE   = 'sqlite3'
+# # DB Name (or path to database file if using sqlite3)
+# DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
+# DATABASE_USER     = ''                     # Not used with sqlite3.
+# DATABASE_PASSWORD = ''                     # Not used with sqlite3.
+# DATABASE_HOST     = ''                     # Not used with sqlite3.
+# DATABASE_PORT     = ''                     # Not used with sqlite3.
+# 
+# # used for RECAPTCHA
+# 
+# RECAPTCHA_PUB_KEY = "6Lf2WLwSAAAAAAs5ofIEr_0l3u34dYHK6LRghoiU"
+# RECAPTCHA_PRIVATE_KEY = "6Lf2WLwSAAAAAJ4rWk4tLcZAJueB_yhsXjjCVo7_"

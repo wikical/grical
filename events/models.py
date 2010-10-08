@@ -1464,7 +1464,8 @@ class Event( models.Model ): # pylint: disable-msg=R0904
             event = Event.objects.get(pk=event)
         else:
             raise TypeError(
-                "'event' must be an Event instance or an integer")
+                "'event' must be an Event or an integer but it was: " +
+                str(event.__class__))
         # checking `user` parameter
         if user is None:
             return event.public
@@ -1473,7 +1474,8 @@ class Event( models.Model ): # pylint: disable-msg=R0904
         elif isinstance(user, int):
             user = User.objects.get(pk=user)
         else: raise TypeError(
-                "'user' must be a User instance or an integer")
+                "'user' must be a User or an integer but it was: " +
+                str(user.__class__))
         if event.public:
             return True
         elif event.user == None:
@@ -1556,6 +1558,12 @@ class EventUrl( models.Model ):
         >>> assert(len(event_urls) == 1)
         >>> assert(event_urls[0].url_name == u'url')
         """
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
         text = smart_unicode(text)
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         text = text.replace('\r\n', '\n').replace('\r', '\n')
@@ -1655,6 +1663,12 @@ class EventDeadline( models.Model ):
         >>> assert(len(event_deadlines) == 1)
         >>> assert(event_deadlines[0].deadline_name == u'test3')
         """
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
         text = smart_unicode(text)
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         text = text.replace('\r\n', '\n').replace('\r', '\n')
@@ -1782,6 +1796,12 @@ class EventSession( models.Model ):
         >>> assert(len(event_sessions) == 1)
         >>> assert(event_sessions[0].session_name == u'test1')
         """
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
         text = smart_unicode(text)
         # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
         text = text.replace('\r\n', '\n').replace('\r', '\n')
@@ -1941,6 +1961,12 @@ class Filter( models.Model ):
     def notify_users_when_wanted(event):
         """ notifies all users if `event` matches a filter of the user and the
         user wants to be notified for the matching filter """
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
         users = User.objects.all()
         for user in users:
             user_filters = Filter.objects.filter( user = user ).filter(
@@ -2033,14 +2059,14 @@ class Group( models.Model ):
             user_id = user
         else: raise TypeError(
                 "'user' must be a User instance or an integer but it was " +
-                user.__class__)
+                str(user.__class__))
         if isinstance(group, Group):
             group_id = group.id
         elif isinstance(group, int):
             group_id = group
         else: raise TypeError(
-                "'group' must be a Group instance or an integer but it was" +
-                group.__class__)
+                "'group' must be a Group instance or an integer but it was " +
+                str(group.__class__))
         times_user_in_group = Membership.objects.filter( 
                 user__id__exact = user_id,
                 group__id__exact = group_id )
@@ -2087,7 +2113,7 @@ class Group( models.Model ):
             user = User.objects.get(id=user)
         else: raise TypeError(
                 "'user' must be a User instance or an integer but it was " +
-                user.__class__)
+                str(user.__class__))
         return list(Group.objects.filter(membership__user=user))
 
     @staticmethod
@@ -2111,6 +2137,12 @@ class Group( models.Model ):
     @classmethod
     def groups_for_add_event( cls, user, event ):
         "return groups for event to add"
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
         if event.clone_of:
             event = event.clone_of
         groups = cls.objects.filter( members = user )

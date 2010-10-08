@@ -158,6 +158,7 @@ def event_new( request ):
         return HttpResponseRedirect( reverse( 'main' ) )
 
 def event_edit( request, event_id ):
+    event_id = int(event_id)
     """ Complete web-form to edit an event. """
     # checks if the event exists
     try:
@@ -262,7 +263,7 @@ def event_edit_raw( request, event ):
     elif isinstance(event, int):
         event_id = event
     else:
-        raise RuntimeError("'event' was neither an Event nor an int")
+        event_id = int(event)
     # checks if the event exists
     try:
         event = Event.objects.get( pk = event_id )
@@ -314,6 +315,7 @@ def event_edit_raw( request, event ):
 
 def event_show( request, event_id ):
     """ View that shows an event """
+    event_id = int(event_id)
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
@@ -331,6 +333,7 @@ def event_show( request, event_id ):
 
 def event_show_raw( request, event_id ):
     """ View that shows an event as text """
+    event_id = int(event_id)
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
