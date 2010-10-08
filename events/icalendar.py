@@ -28,7 +28,7 @@ EVENT_ITEMS = (
     ('uid', 'uid'),
     ('dtstart', 'start'),
     ('dtend', 'end'),
-    ('summary', 'summary'),
+    #('summary', 'summary'),
     ('location', 'location'),
     ('last_modified', 'last_modified'),
     ('created', 'created'),
