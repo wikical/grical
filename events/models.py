@@ -1663,7 +1663,7 @@ class EventDeadline( models.Model ):
         ordering = ['event', 'deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
     def __unicode__( self ):
-        return unicode( self.deadline ) + u' - ' + self.deadline_name
+        return unicode( self.deadline ) + u'    ' + self.deadline_name
 
     @staticmethod
     def parse_text(event, text):
@@ -1784,9 +1784,9 @@ class EventSession( models.Model ):
         verbose_name = _( u'Session' )
         verbose_name_plural = _( u'Sessions' )
     def __unicode__( self ):
-        return unicode( self.session_date ) + u' - ' + \
-                unicode( self.session_starttime ) + u' - ' + \
-                unicode( self.session_endtime ) + u' - ' + self.session_name
+        return unicode( self.session_date ) + u'    ' + \
+                unicode( self.session_starttime ) + u'-' + \
+                unicode( self.session_endtime ) + u'    ' + self.session_name
 
     @staticmethod
     def parse_text(event, text):
