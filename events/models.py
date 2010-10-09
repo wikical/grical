@@ -582,13 +582,19 @@ class Event( models.Model ): # pylint: disable-msg=R0904
         >>> text = Event.example()
         >>> event = Event.parse_text(text)
         >>> assert (smart_str(text) == event.as_text())
-        
+        >>> # test also that it works when using an English name for the
+        >>> # country
+        >>> text = text.replace(u'DE', u'Germany')
+        >>> event = Event.parse_text(text)
+        >>> text = text.replace(u'Germany', u'DE')
+        >>> assert (smart_str(text) == event.as_text())
         """
         return EXAMPLE
 
     def as_text( self ):
         """ Returns a unix multiline utf-8 string representation of the
         event."""
+        # this code is tested with a doctest in the staticmethod example()
         to_return = u""
         for keyword in Event.get_priority_list():
             if keyword == u'title':
@@ -847,6 +853,15 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                 raise SyntaxError(
                         _("The necessary field '%(name)s' is not present") % 
                         {'name': field,})
+        # Check if the country is in Englisch (instead of the international
+        # short two-letter form) and replace it. TODO: check in other
+        # languages.
+        if simple_fields.has_key(u'country'):
+            for names in COUNTRIES:
+                if names[1].encode('utf-8') == \
+                simple_fields[u'country'].encode('utf-8'):
+                    simple_fields['country'] = names[0]
+                    break
         # creates an event with a form
         # FIXME: process field 'public' now because it is not in EventForm
         from gridcalendar.events.forms import EventForm
