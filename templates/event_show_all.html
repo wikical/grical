@@ -10,67 +10,95 @@
     <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit this event as text" %}</span></a>
     &nbsp;
     <a href="{% url group_add_event event.id %}"><span class="field_link">{% trans "add this event to a group" %}</span></a>
-    <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
+    <hr />
     <p>
-    {% if event.acro %}
-        {{ event.acro }}
-    {% endif %}
-    </p>
+        <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
+        {% if event.acro %}
+            {{ event.acro }}
+        {% endif %}
 
-    <a href="{% url event_show event.id %}"><span class="field_title"> {{ event.title }} </span></a><br />
-
-    <p>
-    <span class="field_dates">
-        {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
-    </span>
+        <a href="{% url event_show event.id %}"><span class="field_title"> {{ event.title|escape }} </span></a><br />
+        <span class="field_dates">
+            {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
+        </span>
     </p>
 
     <p>
     {% if event.country %}
-    <span class="field_country">
-        (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
-    </span>
+        <span class="field_country">
+            (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country|urlencode }}">{{ event.country|escape }}</a>)
+        </span>
     {% endif %}
-
     {% if event.postcode %}
             {{ event.postcode }}
     {% endif %}
-
     {% if event.city %}
-        <span class="field_city">
-            <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">{{ event.city|capfirst }}</a>
+        &nbsp;<span class="field_city">
+            <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst|escape }}</a>
         </span>
     {% endif %}
-
-    <br/>
     {% if event.address %}
-            {{ event.address }}
+        <br/>
+        {{ event.address|escape }}
     {% endif %}
     </p>
 
-    <p>
-    {% if event.latitude %}
-            {{ event.latitude }},
+    {% if event.latitude and event.longitude%}
+        <p>
+            Coordinates: {{ event.latitude }}, {{ event.longitude }}
+        </p>
     {% endif %}
-    {% if event.longitude %}
-            {{ event.longitude }}
-    {% endif %}
-    </p>
 
-    <p>
     {% if event.get_tags %}
-        <br />{% trans "Tags" %}: <span class="tags">
-        {% for tag in event.get_tags %}
-            <span class="tag"><a href="{% url list_events_tag tag %}">{{ tag }}</a>, </span>
-        {% endfor %}
+        <p>
+            <br />{% trans "Tags:" %} <span class="tags">
+            {% for tag in event.get_tags %}
+                <span class="tag"><a href="{% url list_events_tag tag %}">{{ tag }}</a>, </span>
+            {% endfor %}
+        </p>
     {% endif %}
-    </p>
 
-    <pre>
-    {% if event.description %}
-            {{ event.description }}
+    {% if event.urls.all %}
+        <p>
+            URLS:
+            <ul>
+                {% for url in event.urls.all %}
+                    <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
+                {% endfor %}
+            </ul>
+        </p>
     {% endif %}
-    </pre>
+
+    {% if event.deadlines.all %}
+        <p>
+            Deadlines:
+            <ul>
+                {% for deadline in event.deadlines.all %}
+                <li>{{ deadline.deadline }}&nbsp;&nbsp;&nbsp;&nbsp;{{ deadline.deadline_name|escape }}</li>
+                {% endfor %}
+            </ul>
+        </p>
+    {% endif %}
+            
+    {% if event.sessions.all %}
+        <p>
+            Sessions:
+            <ul>
+                {% for session in event.sessions.all %}
+                <li>{{ session.session_date }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_starttime|time:"H:i" }}-{{ session.session_endtime|time:"H:i" }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_name|escape }}</li>
+                {% endfor %}
+            </ul>
+        </p>
+    {% endif %}
+
+    {% if event.description %}
+        <p>Description:</p>
+        <pre>
+        {% if event.description %}
+                {{ event.description }}
+        {% endif %}
+        </pre>
+    {% endif %}
 </div>
 
 {% endblock %}
