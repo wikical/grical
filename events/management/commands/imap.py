@@ -24,52 +24,31 @@
 """recive events from imap mailbox"""
 
 
+import sys
 from imaplib import IMAP4
 import email
-# import re
-import sys
-from email.Header import decode_header
-# from base64 import b64decode
-from email.Parser import Parser as EmailParser
-# from email.utils import parseaddr
+from email.header import decode_header
+from email.parser import Parser as EmailParser
 from smtplib import SMTPException
-
 from StringIO import StringIO
+# from base64 import b64decode
+# from email.utils import parseaddr
 
 # from django import template
 from django.conf import settings
 from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import smart_str, force_unicode
+from django.utils.encoding import smart_str
 from django.core.management.base import NoArgsCommand
+from django.forms import ValidationError
 
 from gridcalendar.events.models import Event
 
-from subprocess import Popen, PIPE
 
 #TODO: set the Django language to the first possible language the email sender
 # accepts (from the Accept-Language header). If there is no such header use the
 # first possible value of the Content-Language header. If not present default
 # to English
-
-# following two lines commented because this file is not the right place to
-# define a filter:
-# register = template.Library()
-# @register.filter
-def html2text( value ):
-    """
-    Pipes given HTML strings into the text browser W3M, which renders it.
-    """
-    try:
-        cmd = "w3m -dump -T text/html -I utf8 -O utf8"
-        proc = Popen( cmd, shell = True, stdin = PIPE, stdout = PIPE )
-        return force_unicode(
-                proc.communicate( smart_str(value) )[0])
-    except: # better to catch all errors instead of only OSError:
-        # something bad happened, so just return the input
-        # TODO: create a line in an error log file
-        return value
-
 
 class Command( NoArgsCommand ):
     """ A management command which parses mails from imap server..
@@ -88,8 +67,8 @@ class Command( NoArgsCommand ):
         '''
         get list of message's numbers in main mailbox
         '''
-        #TODO: think if this would work when the mailbox is changed when
-        # this all is running
+        #TODO: think if this would work when the mailbox is changed while
+        # this code is running
         typ, data = self.mailbox.search( None, 'ALL' )
         nr_list = data[0].split( ' ' )
         if len( nr_list ) == 1 and nr_list[0] == '':
@@ -120,13 +99,16 @@ class Command( NoArgsCommand ):
                                     part.get_content_charset(),
                                     'replace'
                                     )
-            event = Event.parse_text( text )
-            if type( event ) == Event :
+            try:
+                event = Event.parse_text( text )
+                assert( type( event ) == Event )
                 self.mv_mail( number, 'saved' )
                 self.stdout.write( smart_str(
                         u'Successfully added new event: ' + event.title ) )
-            else:
-                errors = event
+            except (SyntaxError, ValidationError) as error:
+                # at the moment (Oct 11 2010) Event.parse_text returns only one
+                # error message, but in the future it could return more
+                errors = (error.args[0],) # see http://stackoverflow.com/questions/1272138/baseexception-message-deprecated-in-python-2-6
                 self.mv_mail( number, 'errors' )
                 if msgobj['Subject'] is not None:
                     decodefrag = decode_header( msgobj['Subject'] )
@@ -144,15 +126,11 @@ class Command( NoArgsCommand ):
                         subject.replace( '\n', ' ' ), }
                     subject = subject.replace( '\n', ' ' )
                 else:
-                    subject = _( 'Validation error' )
+                    subject = _( u'Validation error' )
                 #insert errors message into mail
                 # TODO: create the message from a template in
                 # templates/mail
-                message = '\n'.join( map( \
-                                        lambda x: \
-                                            html2text( \
-                                                '\n'.join( x.messages ) ), \
-                                        errors ) )
+                message = '\n'.join( errors )
                 #add parsed text on the end of mail
                 message = "%s\n\n==== Original message ====\n%s" % \
                         ( message, text )
