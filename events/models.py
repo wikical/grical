@@ -696,7 +696,7 @@ class Event( models.Model ): # pylint: disable-msg=R0904
     @staticmethod
     def get_fields( text ):
         """ parse an event as unicode text and returns a tuple with two
-        dictionaries, or raises a SyntaxError.
+        dictionaries, or raises a ValidationError.
 
         The first dictionary contains the names of simple fields as keys and
         its values as values.
@@ -759,17 +759,17 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                     lines = list()
                 else:
                     if re.match(r"[^\s]", line[0]):
-                        raise SyntaxError(_(
+                        raise ValidationError(_(
                             "extra lines for %(field_name)s must start with " \
-                            + "identation" % {'field_name': current,}))
+                            + "identation") % {'field_name': current,})
                     lines.append(line)
                     continue
             if (not current) and not field_m:
-                raise SyntaxError(_(
+                raise ValidationError(_(
                         "line number %(number)d is wrong: %(line)s") % \
                                 {'number': line_counter, 'line': line})
             if not syns.has_key(field_m.group(1)):
-                raise SyntaxError(_("wrong field name: %(name)s") % \
+                raise ValidationError(_("wrong field name: %(name)s") % \
                         {'name': field_m.group(1),})
             if syns[field_m.group(1)] in simple_list:
                 simple_dic[ syns[field_m.group(1)]] = field_m.group(2)
@@ -787,14 +787,13 @@ class Event( models.Model ): # pylint: disable-msg=R0904
     @classmethod
     def parse_text( cls, input_text_in, event_id = None, user_id = None ):
         """It parses a text and saves it as a single event in the data base and
-        return the event object, or doesn't save the event and raises an Error
-        (a SyntaxError for parsing errors, a ValidationError for data errors,
-        or a Event.DoesNotExist when there is no event with `event_id`)
+        return the event object, or doesn't save the event and raises a
+        ValidationError or a Event.DoesNotExist when there is no event with
+        `event_id`)
 
-        It raises a SyntaxError when e.g. a wrong field name is used or the
-        syntax is wrong (parsing error). It raises a ValidationError when the
-        data is wrong, e.g. when a date is not valid. It raises and
-        Event.DoesNotExist error when there is no event with `event_id`
+        It raises a ValidationError when the data is wrong, e.g. when a date is
+        not valid. It raises and Event.DoesNotExist error when there is no
+        event with `event_id`
 
         A text to be parsed as an event is of the form::
 
@@ -850,7 +849,7 @@ class Event( models.Model ): # pylint: disable-msg=R0904
         for field in Event.get_necessary_fields():
             if not (simple_fields.has_key(field) or
                     complex_fields.has_key(field)):
-                raise SyntaxError(
+                raise ValidationError(
                         _("The necessary field '%(name)s' is not present") % 
                         {'name': field,})
         # Check if the country is in Englisch (instead of the international
@@ -903,9 +902,6 @@ class Event( models.Model ): # pylint: disable-msg=R0904
                 del complex_fields[u'description']
             assert(len(complex_fields) == 0)
         except ValidationError as error:
-            Event.objects.get( id = event_id ).delete()
-            raise error
-        except SyntaxError as error:
             Event.objects.get( id = event_id ).delete()
             raise error
         return event
@@ -1560,7 +1556,7 @@ class EventUrl( models.Model ):
     @staticmethod
     def parse_text(event, text):
         """ validates and saves text lines containing EventUrl entries, raising
-        SyntaxErrors or ValidationErrors if there are errors
+        ValidationErrors if there are errors
 
         It also removes all previous EventUrls for `event` if no errors occur.
 
@@ -1598,15 +1594,17 @@ class EventUrl( models.Model ):
         field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
         lines = text.split('\n')
         if (len(lines[0]) < 1):
-            raise SyntaxError(_(u"text was empty"))
+            raise ValidationError(_(u"text was empty") )
         # test for default URL
         field_m = field_p.match(lines[0])
         if not field_m:
-            raise SyntaxError(_(u"first line for urls is malformed: ") +
+            raise ValidationError(
+                    _(u"first line for urls is malformed: ") +
                     lines[0])
         syns = Event.get_synonyms()
         if syns[field_m.group(1).lower()] != u'urls':
-            raise SyntaxError(_(u"first line for urls doesn't contain a \
+            raise ValidationError(
+                    _(u"first line for urls doesn't contain a \
                     synonym of 'urls' before the colon: ") + lines[0])
         urls = {} # keys are url-names, values are urls
         if field_m.group(2) != u'':
@@ -1618,9 +1616,9 @@ class EventUrl( models.Model ):
                 if not field_m:
                     empty_line_p = re.compile("^\s*$")
                     if empty_line_p.match(line):
-                        raise SyntaxError(
+                        raise ValidationError(
                             _(u"an unexpected empty line was found."))
-                    raise SyntaxError(
+                    raise ValidationError(
                             _(u"the following line is malformed: ") + line)
                 urls[ field_m.group(1) ] = field_m.group(2)
         event_urls = list() # stores EventURLs to be saved at the end
@@ -1668,7 +1666,7 @@ class EventDeadline( models.Model ):
     @staticmethod
     def parse_text(event, text):
         """ validates and saves text lines containing EventDeadline entries,
-        raising SyntaxErrors or ValidationErrors if there are errors
+        raising ValidationErrors if there are errors
 
         It also removes all previous EventDeadlines for `event` if no errors
         occur.
@@ -1703,23 +1701,27 @@ class EventDeadline( models.Model ):
         field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
         lines = text.split('\n')
         if (len(lines[0]) < 1):
-            raise SyntaxError(_(u"text of first line for deadlines was empty"))
+            raise ValidationError(
+                    _(u"text of first line for deadlines was empty"))
         # test for default deadline
         field_m = field_p.match(lines[0])
         if not field_m:
-            raise SyntaxError(_(u"first line for deadlines is malformed: ") +
+            raise ValidationError(
+                    _(u"first line for deadlines is malformed: ") +
                     lines[0])
         syns = Event.get_synonyms()
         if syns[field_m.group(1).lower()] != u'deadlines':
-            raise SyntaxError(_(u"first line for deadlines doesn't contain a \
+            raise ValidationError(
+                    _(u"first line for deadlines doesn't contain a \
                     synonym of 'deadlines' before the colon: ") + lines[0])
         deadlines = {} # keys are names, values are dates
         if field_m.group(2) != u'':
             date_p = re.compile(r"^(\d\d\d\d)-(\d\d)-(\d\d)$")
             date_m = date_p.match(field_m.group(2))
             if not date_m:
-                raise SyntaxError(_(u"default deadline was not of the form " +
-                    u"nnnn-nn-nn. It was: ") + field_m.group(2))
+                raise ValidationError(
+                        _(u"default deadline was not of the form " +
+                        u"nnnn-nn-nn. It was: ") + field_m.group(2))
             # default deadline:
             deadlines['deadline'] = datetime.date(
                     int(date_m.group(1)), int(date_m.group(2)),
@@ -1729,7 +1731,7 @@ class EventDeadline( models.Model ):
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
-                    raise SyntaxError(
+                    raise ValidationError(
                         _(u"the following line for a deadline is malformed: ")
                         + line)
                 deadlines[ field_m.group(4) ] = datetime.date(
@@ -1791,7 +1793,7 @@ class EventSession( models.Model ):
     @staticmethod
     def parse_text(event, text):
         """ validates and saves text lines containing EventSession entries,
-        raising SyntaxErrors or ValidationErrors if there are errors
+        raising ValidationErrors if there are errors
 
         It also removes all previous EventSessions for `event` if no errors
         occur.
@@ -1838,11 +1840,13 @@ class EventSession( models.Model ):
         # test for default deadline
         field_m = field_p.match(lines[0])
         if not field_m:
-            raise SyntaxError(_(u"first line for sessions is malformed"))
+            raise ValidationError(
+                    _(u"first line for sessions is malformed"))
         syns = Event.get_synonyms()
         if syns[field_m.group(1).lower()] != u'sessions':
-            raise SyntaxError(_(u"first line for sessions doesn't contain a \
-                    synonym of 'sessions' before the colon"))
+            raise ValidationError(
+                    _(u"first line for sessions doesn't contain a " +
+                    "synonym of 'sessions' before the colon"))
         class Session:
             def __init__(self, date=None, start=None, end=None, name=None):
                 self.date = date
@@ -1854,8 +1858,9 @@ class EventSession( models.Model ):
             times_p = re.compile(r"^(\d\d):(\d\d)-(\d\d):(\d\d)\s*$")
             times_m = times_p.match(field_m.group(2))
             if not times_m:
-                raise SyntaxError(_(u'default session data is not of the \
-                form nn:nn-nn:nn It was: ') + field_m.group(2))
+                raise ValidationError(
+                        _(u'default session data is not of the ' +
+                        'form nn:nn-nn:nn It was: ') + field_m.group(2))
             try:
                 sessions.append(Session(
                     date = event.start,
@@ -1877,7 +1882,7 @@ class EventSession( models.Model ):
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
-                    raise SyntaxError(
+                    raise ValidationError(
                             _(u"the following line is malformed: ") + line)
                 try:
                     sessions.append(Session(
