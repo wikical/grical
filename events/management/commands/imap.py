@@ -105,10 +105,10 @@ class Command( NoArgsCommand ):
                 self.mv_mail( number, 'saved' )
                 self.stdout.write( smart_str(
                         u'Successfully added new event: ' + event.title ) )
-            except (SyntaxError, ValidationError) as error:
+            except ValidationError as error:
                 # at the moment (Oct 11 2010) Event.parse_text returns only one
                 # error message, but in the future it could return more
-                errors = (error.args[0],) # see http://stackoverflow.com/questions/1272138/baseexception-message-deprecated-in-python-2-6
+                errors = error.messages
                 self.mv_mail( number, 'errors' )
                 if msgobj['Subject'] is not None:
                     decodefrag = decode_header( msgobj['Subject'] )
