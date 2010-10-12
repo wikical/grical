@@ -37,8 +37,10 @@ import hashlib
 
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.test.client import Client
 from django.core.urlresolvers import reverse
 from django.core import mail
+from registration.models import RegistrationProfile
 
 import settings
 from gridcalendar.events import models,views
@@ -66,6 +68,68 @@ USERS_COUNT = 3
 
 class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
     """TestCase for the 'events' application"""
+
+    def test_anonymous_private_error(self):
+        """ tests that an Event of the anonymous user cannot be private """
+        e = Event(user=None, public=False, title="test",
+                start=datetime.date.today(), tags="test test1 test2")
+        self.assertRaises(AssertionError, e.save)
+
+    def test_valid_activation(self):
+        """ tests signing up """
+        response = self.client.post('/a/accounts/register/', {
+            'username': 'SignUpUser',
+            'email': 'test@example.com',
+            'password1': 'pass',
+            'password2': 'pass',})
+        self.assertRedirects(response, '/a/accounts/register/complete/')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject,
+                u'[example.com] Activation email')
+        body = mail.outbox[0].body
+        profile = RegistrationProfile.objects.get(
+                user__username='SignUpUser')
+        key = profile.activation_key
+        regex = re.compile('^.*/a/accounts/activate/(.*)/$')
+        for line in body.split('\n'):
+            matcher = regex.match(line)
+            if matcher:
+                self.assertEqual(key, matcher.group(1))
+                response = self.client.get('/a/accounts/activate/' + key)
+                # the above line returns a HttpResponsePermanentRedirect (I,
+                # ivan, don't know why). items()[1][1] is where it redirects
+                # to.
+                response = self.client.get(response.items()[1][1])
+                # TODO: test the page
+                self.failUnless(User.objects.get(username='SignUpUser').is_active)
+                break
+        user = User.objects.get(username='SignUpUser')
+        self.assertEqual(user.email, 'test@example.com')
+
+    def setUp( self ):                            # pylint: disable-msg=C0103
+        """models value initiation"""
+
+        # create some userless events
+        EventsTestCase.create_event( False )
+
+        # create some users and let them create some filters and events
+        for user_nr in range( USERS_COUNT ):
+            user = User.objects.create_user( 
+                    username = self.user_name( user_nr ),
+                    email = self.user_email( user_nr ),
+                    password = 'p',
+                    )
+            user.save()
+            event_filter = Filter( user = user,
+                query = 'berlin',
+                name = user.username + "'s filter: berlin"
+                )
+            event_filter.save()
+            EventsTestCase.create_event( user )
+
+    def test_public_private_change_error(self):
+        e = Event(user=None, public=False, title="test",
+                start=datetime.date.today(), tags="test test1 test2")
 
     @staticmethod
     def user_name( user_nr ):
@@ -182,27 +246,6 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
         login = self.client.login( username = self.user_name( user_nr ), \
                                   password = 'p' )
         return login
-
-    def setUp( self ):                            # pylint: disable-msg=C0103
-        """models value initiation"""
-
-        # create some userless events
-        EventsTestCase.create_event( False )
-
-        # create some users and let them create some filters and events
-        for user_nr in range( USERS_COUNT ):
-            user = User.objects.create_user( 
-                    username = self.user_name( user_nr ),
-                    email = self.user_email( user_nr ),
-                    password = 'p',
-                    )
-            user.save()
-            event_filter = Filter( user = user,
-                query = 'berlin',
-                name = user.username + "'s filter: berlin"
-                )
-            event_filter.save()
-            EventsTestCase.create_event( user )
 
     def test_login(self):
         "testing for login"
