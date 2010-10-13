@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# GPL {{{1
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2010 Adam Beret Manczuk <beret@hipisi.org.pl>,
@@ -21,11 +22,12 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-"""recive events from imap mailbox"""
+"""recive events from imap mailbox""" # {{{1
 
+# imports {{{1
 
 import sys
-from imaplib import IMAP4
+from imaplib import IMAP4, IMAP4_SSL
 import email
 from email.header import decode_header
 from email.parser import Parser as EmailParser
@@ -41,6 +43,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_str
 from django.core.management.base import NoArgsCommand
 from django.forms import ValidationError
+from django.template.loader import render_to_string
 
 from gridcalendar.events.models import Event
 
@@ -50,22 +53,24 @@ from gridcalendar.events.models import Event
 # first possible value of the Content-Language header. If not present default
 # to English
 
-class Command( NoArgsCommand ):
+class Command( NoArgsCommand ): # {{{1
     """ A management command which parses mails from imap server..
     """
 
     help = "Parse mails from settings.IMAP_SERVER"
 
-    def __init__( self, *args, **kwargs ):
-        # TODO: use IMAP4_SSL
-        self.mailbox = IMAP4( settings.IMAP_SERVER )
+    def __init__( self, *args, **kwargs ): # {{{2
+        if settings.IMAP_SSL:
+            self.mailbox = IMAP4_SSL( settings.IMAP_SERVER )
+        else:
+            self.mailbox = IMAP4( settings.IMAP_SERVER )
         self.mailbox.login( settings.IMAP_LOGIN, settings.IMAP_PASSWD )
         self.mailbox.select()
         super( Command, self ).__init__( *args, **kwargs )
 
-    def get_list( self ):
+    def get_list( self ): # {{{2
         '''
-        get list of message's numbers in main mailbox
+        get list of message's numbers in INBOX mailbox
         '''
         #TODO: think if this would work when the mailbox is changed while
         # this code is running
@@ -76,19 +81,19 @@ class Command( NoArgsCommand ):
         else:
             return nr_list
 
-    def handle_noargs( self, **options ):
+    def handle_noargs( self, **options ): # {{{2
         """ Executes the action. """
         self.parse()
 
-    def parse( self ):
+    def parse( self ): # {{{2
         '''
         parse all mails from imap mailbox
         '''
         #re_charset = re.compile( r'charset=([^\s]*)', re.IGNORECASE )
         for number in self.get_list():
             typ, data = self.mailbox.fetch( number, '(RFC822 UID BODY[TEXT])' )
-            if (not data) or len( data ) < 1 :
-                return
+            if (not data) or len( data ) < 1 or len( data[0] ) < 2:
+                continue
             mail = email.message_from_string( data[0][1] )
             text = u""
             msgobj = EmailParser().parse( StringIO( mail ), False )
@@ -105,11 +110,10 @@ class Command( NoArgsCommand ):
                 self.mv_mail( number, 'saved' )
                 self.stdout.write( smart_str(
                         u'Successfully added new event: ' + event.title ) )
-            except ValidationError as error:
-                # at the moment (Oct 11 2010) Event.parse_text returns only one
-                # error message, but in the future it could return more
-                errors = error.messages
-                self.mv_mail( number, 'errors' )
+            except ValidationError as err:
+                # error found, saving the message in the imap forder 'errors'
+                #self.mv_mail( number, 'errors' )
+                # sending a notification email to the sender {{{3
                 if msgobj['Subject'] is not None:
                     decodefrag = decode_header( msgobj['Subject'] )
                     subj_fragments = []
@@ -127,17 +131,42 @@ class Command( NoArgsCommand ):
                     subject = subject.replace( '\n', ' ' )
                 else:
                     subject = _( u'Validation error' )
-                #insert errors message into mail
-                # TODO: create the message from a template in
-                # templates/mail
-                message = '\n'.join( errors )
-                #add parsed text on the end of mail
-                message = "%s\n\n==== Original message ====\n%s" % \
-                        ( message, text )
-                #TODO: write to an error log file instead of stderr
-                self.stderr.write( smart_str( \
-                                _( "Found errors in message %s: \n%s\n" \
-                                     % ( mail['Subject'], message ) ) ) )
+                # insert errors message into the email body
+                if hasattr( err, 'message_dict' ):
+                    # if hasattr(err, 'message_dict'), it looks like:
+                    # {'url': [u'Enter a valid value.']}
+                    message = render_to_string('mail/email_parsing_errors.txt',
+                            {'PROJECT_NAME': settings.PROJECT_NAME,
+                            'original_message': text,
+                            'errors_dict': err.message_dict})
+                    #TODO: write to an error log file instead of stderr
+                    self.stderr.write( smart_str(
+                        u"Found errors in message with subject: %s\n\terrors: %s" \
+                        % ( mail['Subject'], unicode(err.message_dict))))
+                elif hasattr( err, 'messages' ):
+                    message = render_to_string('mail/email_parsing_errors.txt',
+                            {'PROJECT_NAME': settings.PROJECT_NAME,
+                            'original_message': text,
+                            'errors_list': err.messages})
+                    self.stderr.write( smart_str(
+                        u"Found errors in message with subject: %s\n\terrors: %s" \
+                        % ( mail['Subject'], unicode(err.messages))))
+                elif hasattr( err, 'message' ):
+                    message = render_to_string('mail/email_parsing_errors.txt',
+                            {'PROJECT_NAME': settings.PROJECT_NAME,
+                            'original_message': text,
+                            'errors_list': [err.message]})
+                    self.stderr.write( smart_str(
+                        u"Found errors in message with subject: %s\n\terrors: %s" \
+                        % ( mail['Subject'], unicode(err.message))))
+                else:
+                    message = render_to_string('mail/email_parsing_errors.txt',
+                            {'PROJECT_NAME': settings.PROJECT_NAME,
+                            'original_message': text,
+                            'errors_list': []})
+                    self.stderr.write( smart_str(
+                        u"Found errors in message with subject: %s" \
+                        % mail['Subject'] ))
                 to_email = mail['From']
                 from_email = settings.DEFAULT_FROM_EMAIL
                 if subject and message and from_email:
@@ -157,11 +186,7 @@ class Command( NoArgsCommand ):
                     self.stderr.write(
                             'imap.py:ERR:missing info for error email')
 
-        rest = self.get_list()
-        if len( rest ) > 0 :
-            return self.parse()
-
-    def mv_mail( self, number, mbox_name ):
+    def mv_mail( self, number, mbox_name ): # {{{2
         '''
         move message to internal mailbox
         @param number: message number in main mailbox
@@ -171,9 +196,11 @@ class Command( NoArgsCommand ):
         self.mailbox.store( number, '+FLAGS', '\\Deleted' )
         self.mailbox.expunge()
 
-    def __del__( self, *args, **kwargs ):
+    def __del__( self, *args, **kwargs ): # {{{2
         self.mailbox.close()
         self.mailbox.logout()
+
+# setting stdout and stderr {{{1
 
 try:
     getattr( Command, 'stdout' )
