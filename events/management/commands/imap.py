@@ -112,7 +112,7 @@ class Command( NoArgsCommand ): # {{{1
                         u'Successfully added new event: ' + event.title ) )
             except ValidationError as err:
                 # error found, saving the message in the imap forder 'errors'
-                #self.mv_mail( number, 'errors' )
+                self.mv_mail( number, 'errors' )
                 # sending a notification email to the sender {{{3
                 if msgobj['Subject'] is not None:
                     decodefrag = decode_header( msgobj['Subject'] )
