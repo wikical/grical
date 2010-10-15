@@ -13,9 +13,10 @@ permission of the original author -->
     <title>{{ title }}</title>
     <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
     <link href="{{ MEDIA_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="{{ MEDIA_URL }}favicon.ico" type="image/x-icon" />
+    <!-- see http://en.wikipedia.org/wiki/Favicon -->
+    <link rel="apple-touch-icon" href="{{ MEDIA_URL }}icon-apple-57x57.png" />
     {% block feeds %} {%endblock feeds%}
-    {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
     {% block css %}{% endblock %}
     <!--
     <script type="text/javascript" src="{{ MEDIA_URL }}javascript/external.js"></script>
