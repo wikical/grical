@@ -30,14 +30,15 @@ Installation instructions for Debian based systems
         LogLevel warn
      
         Alias /robots.txt /var/www/gridcalendar.net/robots.txt
-        Alias /favicon.ico /var/www/gridcalendar.net/favicon.ico
-        Alias /media/ /var/www/gridcalendar.net/media/
+        Alias /m/ /var/www/gridcalendar.net/m/
     
         WSGIScriptAlias / /usr/local/gridcalendar/apache/django.wsgi
     
     </VirtualHost>
 
 1. Create the necessary files or symlinks under `/var/www/gridcalendar` which are mentioned in the above configuration.
+
+1. Don't forgett to create a file `/var/www/gridcalendar/robots.txt` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
 1. If Apache is used, for development it is recommended to include the following line in `/etc/apache2/apache2.conf`. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
 
