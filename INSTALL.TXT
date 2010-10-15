@@ -31,7 +31,8 @@ Installation instructions for Debian based systems
      
         Alias /robots.txt /var/www/gridcalendar.net/robots.txt
         Alias /m/ /var/www/gridcalendar.net/m/
-    
+        Alias /favicon.ico /var/www/gridcalendar.net/m/favicon.ico
+
         WSGIScriptAlias / /usr/local/gridcalendar/apache/django.wsgi
     
     </VirtualHost>
