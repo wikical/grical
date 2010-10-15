@@ -631,6 +631,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 if self.tags:
                     to_return += keyword + u": " + self.tags + u"\n"
             elif keyword == u'public':
+                # FIXME: it makes no sense to show this field, think how to
+                # handle the public field
                 if self.public:
                     to_return += keyword + u": " + unicode(self.public) + u"\n"
             elif keyword == u'address':
@@ -691,8 +693,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             #         to_return += '\n'
             elif keyword == u'groups':
                 pass
-            elif keyword == u'description' and self.description:
-                to_return += u'description:\n' + self.description
+            elif keyword == u'description':
+                if self.description:
+                    to_return += u'description:\n' + self.description
             else:
                 raise RuntimeError('unexpected keyword: ' + keyword)
         return smart_str(to_return)
