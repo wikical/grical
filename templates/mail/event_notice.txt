@@ -1,19 +1,22 @@
 {% load i18n %}
-{% blocktrans %}
+{% blocktrans with fil.name as fil_name %}
 Hello {{ name }},
+
+this is an automated email from {{ site }} to inform you as wished that
+the event below matches your filter with the name:
+{{ fil_name }}
 {% endblocktrans %}
-{% trans "matching event:" %}
 
 {{ event.start }} : {{ event.title }}
 {{ event.get_absolute_url }}
-
 
 {% trans "You can edit your matching filter (and also turn off notifications) at:" %}
 {{ fil.get_absolute_url }}
 
 {% trans "You can see and edit all your filters at:" %}
-http://{{ DOMAIN }}{% url list_filters_my %}
+{% url list_filters_my %}
 
 --
 {% blocktrans %}
 Your {{ site }} team
+{% endblocktrans %}

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# gpl {{{1
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
 # Copyright 2010 Adam Beret Manczuk <beret@hipisi.org.pl>,
@@ -20,13 +21,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
+# doc {{{1
 """ tests for events application 
 
 Some used ideas are from http://toastdriven.com/fresh/django-doctest-tips/ and 
 http://stackoverflow.com/questions/1615406/configure-django-to-find-all-doctests-in-all-modules
 """
 
+# imports {{{1
 import unittest
 import doctest
 import datetime
@@ -51,7 +53,7 @@ from events.models import Event, Group, Filter, EventUrl, Membership, \
 #import threading
 #import random
 
-def suite():
+def suite(): #{{{1
     """ returns a TestSuite naming the tests explicitly 
     
     This allows to include e.g. the doctests of views.py which are not included
@@ -68,6 +70,9 @@ USERS_COUNT = 3
 
 class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
     """TestCase for the 'events' application"""
+
+    #FIXME: create a user with a filter, introduce an event anonymously
+    # matching the filter, check that an email has been sent
 
     def test_anonymous_private_error(self):
         """ tests that an Event of the anonymous user cannot be private """

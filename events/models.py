@@ -1618,14 +1618,18 @@ class Filter( models.Model ): # {{{1
 
     @staticmethod
     def notify_users_when_wanted(event):
-        """ notifies all users if `event` matches a filter of the user and the
-        user wants to be notified for the matching filter """
+        """ notifies users if `event` matches a filter of a user and the
+        user wants to be notified for the matching filter and the user can see
+        the event """
         if isinstance(event, Event):
             pass
         elif isinstance(event, int):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
+        # TODO: the next code iterate throw all users but this is not workable
+        # for a big number of users: implement a special data structure which
+        # saves filters and can look up fast filters matching an event
         users = User.objects.all()
         for user in users:
             user_filters = Filter.objects.filter( user = user ).filter(
@@ -1633,7 +1637,7 @@ class Filter( models.Model ): # {{{1
             for fil in user_filters:
                 if fil.matches(event):
                     context = {
-                        'name': user.name,
+                        'name': user.username,
                         'event': event,
                         'filter': fil,
                         'site': settings.PROJECT_NAME, }
