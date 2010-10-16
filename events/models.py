@@ -775,16 +775,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 raise ValidationError(_(
                         "line number %(number)d is wrong: %(line)s") % \
                                 {'number': line_counter, 'line': line})
-            if not syns.has_key(field_m.group(1)):
+            if not syns.has_key(field_m.group(1).lower()):
                 raise ValidationError(_("wrong field name: %(name)s") % \
                         {'name': field_m.group(1),})
-            if syns[field_m.group(1)] in simple_list:
-                simple_dic[ syns[field_m.group(1)]] = field_m.group(2)
+            if syns[field_m.group(1).lower()] in simple_list:
+                simple_dic[ syns[field_m.group(1).lower()]] = field_m.group(2)
                 continue
-            if not syns[field_m.group(1)] in complex_list:
+            if not syns[field_m.group(1).lower()] in complex_list:
                 raise RuntimeError("field %s was not in 'complex_list'" %
                         field_m.group(1))
-            current = syns[field_m.group(1)]
+            current = syns[field_m.group(1).lower()]
             lines.append(line)
         if current:
             complex_dic[current] = lines
