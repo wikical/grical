@@ -52,6 +52,7 @@ from tagging.fields import TagField
 # TODO: use instead a client library from http://www.geonames.org/ accepting
 # names (in different languages) and codes like e.g. ES, es,  ESP, eSp, 724,
 # España, etc. Name colisions in different languages needs to be checked.
+# OR use python.django.countries
 COUNTRIES = (
     ( 'AF', _( u'Afghanistan' ) ),
     ( 'AX', _( u'Åland Islands' ) ),
@@ -377,6 +378,7 @@ user_auth_signal.connect( EventManager.set_auth_user )
 @autoconnect
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model """
+    # fields {{{2
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
     """The user who created the event or null if AnonymousUser""" # pyling: disable-msg=W0105
@@ -433,16 +435,65 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                null = True )
     " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105,C0301
 
+    # meta {{{2
     objects = EventManager()
-
-    # the relation event-group is now handle in group. The old code was:
-    # groups = models.ManyToManyField(Group, blank = True, null = True,
-    # help_text=_("Groups to be notified and allowed to see it if not public"))
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['start']
         verbose_name = _( u'Event' )
         verbose_name_plural = _( u'Events' )
+
+    # methods {{{2
+    def next_coming_date(self):
+        """ returns the next most proximate date of an event to today, which
+        can be the start date, the end date or one of the deadlines 
+        
+        >>> from datetime import timedelta
+        >>> today = datetime.date.today()
+        >>> event = Event(title="test for n_c_d " + today.isoformat(),
+        ...     start=timedelta(days=1)+today,
+        ...     end=timedelta(days=2)+today,
+        ...     tags="test")
+        >>> assert today + timedelta(days=1) == event.next_coming_date()
+
+        >>> from datetime import timedelta
+        >>> today = datetime.date.today()
+        >>> event3 = Event(title="test 3 for n_c_d " + today.isoformat(),
+        ...     start=timedelta(days=3)+today, tags="test")
+        >>> event3.save()
+        >>> event2 = Event(title="test 2 for n_c_d " + today.isoformat(),
+        ...     start=timedelta(days = -1)+today,
+        ...     end=timedelta(days=2)+today,
+        ...     tags="test")
+        >>> event2.save()
+        >>> event1 = Event(title="test 1 for n_c_d " + today.isoformat(),
+        ...     start=timedelta(days=2)+today, tags="test")
+        >>> event1.save()
+        >>> event1_deadline = EventDeadline(
+        ...         event = event1, deadline_name = "test1",
+        ...         deadline = today)
+        >>> event1_deadline.save()
+        >>> list_events = [event3, event2, event1]
+        >>> sorted_list = sorted(list_events, key=Event.next_coming_date)
+        >>> assert sorted_list[0] == event1
+        >>> assert sorted_list[1] == event2
+        >>> assert sorted_list[2] == event3
+        """
+        # creates a list with all dates of the event (self)
+        dates = []
+        dates.append(self.start)
+        if self.end: dates.append(self.end)
+        deadlines = EventDeadline.objects.filter(event=self)
+        if deadlines:
+            for deadline in deadlines:
+                dates.append(deadline.deadline)
+        today = datetime.date.today()
+        # creates a list of deltas of the dates to today
+        deltas = map(lambda d: d - today, dates)
+        # removes negative deltas from past events
+        deltas = filter(lambda n: n.days >= 0, deltas)
+        # returns the smallest date
+        return today + ( sorted(deltas)[0] )
 
     def clone( self, public = False ):
         """
@@ -646,14 +697,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     to_return += keyword + u": " +  self.postcode + u"\n"
             elif keyword == u'urls':
                 urls = EventUrl.objects.filter( event = self.id )
-                if len( urls ) > 0:
+                if urls and len( urls ) > 0:
                     to_return += u"urls:\n"
                     for url in urls:
                         to_return += u''.join( [
                                 u"    ", url.url_name, u' ', url.url, u"\n"] )
             elif keyword == u'deadlines':
                 deadlines = EventDeadline.objects.filter( event = self.id )
-                if len( deadlines ) > 0:
+                if deadlines and len( deadlines ) > 0:
                     to_return += u"deadlines:\n"
                     for deadline in deadlines:
                         to_return += u"".join( [
@@ -665,7 +716,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                             ] )
             elif keyword == u'sessions':
                 sessions = EventSession.objects.filter( event = self.id )
-                if len( sessions ) > 0:
+                if sessions and len( sessions ) > 0:
                     to_return += u"sessions:\n"
                     for session in sessions:
                         to_return = u"".join( [
@@ -1785,7 +1836,7 @@ class Group( models.Model ): # {{{1
     @staticmethod
     def events_in_groups(groups, limit=5):
         """ Returns a dictionary whose keys are groups and its values are lists
-        of maximal `limit` events of the group.
+        of maximal `limit` events of the group in the future.
         """
         to_return = {}
         if len(groups) == 0:
@@ -1795,7 +1846,7 @@ class Group( models.Model ): # {{{1
                 # TODO: fix the code below because it is not efficient because
                 # the filter could return millions of events
                 events = Event.objects.filter(group=group).filter(
-                        start__gte=datetime.datetime.now()) [0:limit]
+                        start__gte=datetime.date.today()) [0:limit]
                 if len(events) > 0:
                     to_return[group] = events
         return to_return
