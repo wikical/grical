@@ -1659,6 +1659,7 @@ class Filter( models.Model ): # {{{1
         """ django utility ofr url look-up """
         return ( 'filter_edit', (), { 'filter_id': self.id } )
 
+    # FIXME Paul
     def matches(self, event):
         """ returns 0 if `event` doesn't match the filter; otherwise a number
         bigger than 0 which indicates the strength of the match """

@@ -3,7 +3,6 @@ url: http://www.blenderusers.at/
 title: Blender 3D UserDay 2010
 start: 2010-03-20
 tags: blender
-address: im Medienkunstlabor Graz (im Kunsthaus)
 
 t: Swiss Open Source Software Conference & Exposition
 acro: OpenExpo
@@ -20,47 +19,36 @@ tags: security software internet
 start: 2010-09-18
 t: Fros Camp
 url: http://www.froscamp.org/
-    call for projects: http://wiki.froscamp.org/2010:Call_for_Projects
-    call for papers: http://wiki.froscamp.org/2010:Call_for_Papers
+    call for projects http://wiki.froscamp.org/2010:Call_for_Projects
+    call for papers http://wiki.froscamp.org/2010:Call_for_Papers
 city: Zurich
 
 url: http://www.facebook.com/event.php?eid=213462013928&ref=nf
 title: Opendata Hackday : Hack the Government
 tags: hackday opendata opengovernment transparency participation
-comment: Gastgeber: Opendata Network (opendata-network.org)
-start: 2010-04-17+18
+start: 2010-04-17
 city: Berlin
 
-#####################################################################
-#####################################################################
-#####################################################################
+start: 2010-04-30
+title: roflcon
+url: http://roflcon.org/
+web: http://roflcon.org/about/
+tags: internet memes
+city: cambridge
+country: US
 
-https://eventioz.com/search?search=linux&commit=Search
+start: 2010-05-22
+title: SigInt
+web: http://www.facebook.com/event.php?eid=297465032748&ref=nf
+city: Koeln
+country: DE
 
-2010-04-30-01
-http://roflcon.org/
-cambridge, mass., usa
+start: 2010-05-13
+web: https://lug-camp-2010.de/
+city: schwabach
+tags: lug-camp linux
 
-2010-05-22-24
-SigInt
-http://www.facebook.com/event.php?eid=297465032748&ref=nf
-Koeln, KOMED
-
-2010-05-13-16
-https://lug-camp-2010.de/
-schwabach
-2010-04-03 deadline anmeldung LUG Camp
-orga: lugcamp-orga@lusc.de
-loca:
-  https://lug-camp-2010.de/location/
-  Otto-Schrimpff-Str. 4, 91154 Roth
-  (bei Festplatz, Bahnhof "Roth-Lohgarten"!)
-  GPS-Koordinaten: N: 49.24389, E: 11.09482
-
-2010-02-20 Sat 13h
-Budapest, Hungary
-Opening Party of H.A.C.K.
-http://hspbp.org/opening-party-en
+---------------------------------------------------------
 
 http://jandbeyond.org/
 Joomla and Beyond
@@ -144,67 +132,14 @@ http://www.linux-magazin.de/content/view/full/48490
 
 http://www.eth-0.nl/ !
 
-neue kalender:
-https://developer.berlios.de/calendar/
-www.webtermine.at
-
-alternative input via email to person:
-  Anmeldung Ihrer Veranstaltung über:
-  kalender(at)mauerfall09.de
-
-= www.eduvent.at =
-
-homepage:
-table with desc+loca+time+cats
-sorted by today and coming days
-where cats (categories) are bubbles
-which indicate the category.
-
-categories:
-Vortrag, Diskussion, Workshop/Seminar, Tagung,
-Kongress, Konferenz, Messe/Infoveranstaltung
-
-categories can be turned on/off by radio buttons.
-the automatic update is easy/fast/nice.
-
-the title/description has a link a page
-which is local to the site:
-http://www.eduvent.at/eduvents/NNN
-
-http://twitter.com/eduvent
-
-= BUGS =
-
-= TO Add =
-
-TOOLS:  http://codespeak.net/icalendar/
-SOURCE: http://opendesktop.org/events/
-SOURCE: http://www.linux.com/community/events/categoryevents/1
-SOURCE: http://www.kde-look.org/events/?mode=1
-
-= Special Days =
-
-http://www.talklikeapirate.com/
-sysadmin appreciation day
-software freedom day
-documentfreedomday
-towelday
-
-CLOCA BEGIN
-== Future ==
-
-=== 2010 Jul ===
-summ: 2010-07-14-16 in Vienna (AT): International Conference on Computers Helping People with Special Needs (ICCHP)
 titl: International Conference on Computers Helping People with Special Needs
-abbr: ICCHP
-time: 2010-07-14-16 Wed-Fri
-tags:
-city: Vienna (AT)
-addr: Vienna University of Technology.
-home: http://www.icchp.org
-call: http://www.icchp.org/call
-dead: http://www.icchp.org/node/197
-more:
+acro: ICCHP
+start: 2010-07-14
+tags: disability webdesign
+city: Vienna
+country: AT
+web: http://www.icchp.org
+deadlines:
   2010-01-01      Deadline for submitting STS
   2010-02-01      Deadline for Papers/Extended Abstracts
   2010-03-01      Notification of Acceptance
@@ -215,72 +150,36 @@ more:
   2010-06-01      Deadline for Workshops, Tutorials and Seminars
   2010-06-15      Deadline Nomination for ICCHP Award
   2010-07-01      Deadline for Meetings, Presentations and Posters
-  2010-07-12+13   ICCHP 2010 Pre-Conference
-  2010-07-14-16   ICCHP 2010
-sign:
-  www.icchp.com  July 14-16, 2010
-  (Preconference July 12+13, 2010)
-  International Conference on
-  Helping People with Special Needs
-  at the Vienna University of Technology.
-  http://www.icchp.org/files/firstAnnouncement2010.pdf
 
-=== 2010 May ===
-summ: 2010-05-28+29 in Eisenstadt (AT): Linuxwochen
 titl: Linuxwochen Eisenstadt
-time: 2010-05-28+29
-tags:
+start: 2010-05-28
+city: Eisenstadt
+country: AT
+tags: linux floss foss
 city: Eisenstadt (AT)
-home: http://eisenstadt.linuxwochen.at
+web: http://eisenstadt.linuxwochen.at
 
-=== 2010 Jun ===
-=== 2010 Apr ===
-=== 2010 Mar ===
+city: Augsburg
+country: DE
+titl: Linux Infotag
+start: 2010-03-27
+tags: linux foss floss
+web: http://wiki.luga.de/LinuxInfotag2010/Orga/Zeitplanung
 
-summ: 2010-03-27 in Augsburg (DE): Linux Infotag
-titl: ...
-time: 2010-03-27 Sat
-tags:
-city: Augsburg (DE)
-home: http://www.luga.de/Aktuelles/LIT-2010/ (?)
-links: http://wiki.luga.de/LinuxInfotag2010/Orga/Zeitplanung
-
-summ: 2010-03-13+14 in Chemnitz (DE): Chemnitzer Linux Tage
+city: Chemnitz
+country: DE
 titl: Chemnitzer Linux Tage
-time: 2010-03-13+14 Sat+Sun
-tags:
-http://chemnitzer.linux-tage.de/2009/info/
+tags: linux foss floss
+start: 2010-03-13
+web: http://chemnitzer.linux-tage.de
 
-=== 2010 Feb ===
-
-summ: 2010-02-06+07 in Klagenfurt (AT): BarCamp Kärnten 2010
-titl: BarCamp Kärnten 2010
-time: 2010-02-06+07
-tags:
-http://www.facebook.com/event.php?eid=138219204244&ref=nf
-Titel:      BarCamp Kärnten 2010
-Motto:      Wissen vermehrt sich durch Teilung
-Gastgeber:  SiliconAlps
-Art:        Ausbildung - Workshop
-Beginn:     Samstag, 6. Februar 2010 um 09:00
-Ende:       Sonntag, 7. Februar 2010 um 17:00
-Ort:        Universität Klagenfurt
-Straße:     Universitätsstraße 65-67
-Stadt/Ort:  Klagenfurt, Austria
-Preis:      0
-
-summ: 2010-02-06+07 in Brussels (BE): 10th FOSDEM
+city: Brussels
+country: BE
 titl: FOSDEM
-abbr: FOSDEM
-time: 2010-02-06+07 Sat+Sun
-tags:
-city: Brussels (BE)
-home: http://www.fosdem.org/2010/
-call: http://fosdem.org/2010/call_for_stands
-mail: devrooms@fosdem.org
-list: http://lists.fosdem.org/mailman/listinfo/dist2010
+start: 2010-02-06
+tags: linux foss floss
+web: http://www.fosdem.org/2010/
 
-=== 2010 Jan ===
 
 === 2009 Dec ===
 summ: 2009-12-27-30 in Berlin (DE): 26th Chaos Communication Congress (26C3)
