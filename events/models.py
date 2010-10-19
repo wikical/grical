@@ -394,18 +394,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             help_text = _( u'Example: Demostration in Munich against software \
                 patents organised by the German association FFII e.V.' ) )
     start = models.DateField( _( u'Start' ), blank = False,
-        help_text = _( "Examples \
-            of valid dates: '2006-10-25' '10/25/2006' '10/25/06' 'Oct 25 \
-            2006' 'Oct 25, 2006' '25 Oct 2006' '25 Oct, 2006' \
-            'October 25 2006' 'October 25, 2006' '25 October 2006' '25 \
-            October, 2006'" ) )
+            help_text = _( u"Example: 2006-10-25"))
     end = models.DateField( _( u'End' ), null = True, blank = True )
     tags = TagField( _( u'Tags' ), blank = True, null = True,
         help_text = _( u"Tags are case in-sensitive. Only letters (these can \
         be international, like: αöł), digits and hyphens (-) are allowed. \
         Tags are separated with spaces." ) )
     public = models.BooleanField( _( u'Public' ), default = True,
-        help_text = _( "A public event can be seen and edited by anyone, \
+        help_text = _( u"A public event can be seen and edited by anyone, \
         otherwise only by the members of selected groups" ) )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
             max_length = 2, choices = COUNTRIES )
@@ -416,16 +412,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     address = models.CharField( _( u'Street address' ), blank = True,
             null = True, max_length = 100 )
     latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
-            help_text = _( "In decimal degrees, not \
+            help_text = _( u"In decimal degrees, not \
             degrees/minutes/seconds. Prefix with \"-\" for South, no sign for \
             North." ) )
     longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
-            help_text = _( "In decimal degrees, not \
+            help_text = _( u"In decimal degrees, not \
                 degrees/minutes/seconds. Prefix with \"-\" for West, no sign \
                 for East." ) )
     timezone = models.SmallIntegerField( 
             _( u'Timezone' ), blank = True, null = True,
-            help_text = _( "Minutes relative to UTC (e.g. -60 means UTC-1)" ) )
+            help_text = _( u"Minutes relative to UTC (e.g. -60 means UTC-1)" ) )
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
 
@@ -554,7 +550,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return Tag.objects.get_for_object( self )
 
     def __unicode__( self ):
-        return self.start.isoformat() + " : " + self.title
+        return self.start.isoformat() + u" : " + self.title
 
     @models.permalink
     def get_absolute_url( self ):
@@ -827,8 +823,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         "line number %(number)d is wrong: %(line)s") % \
                                 {'number': line_counter, 'line': line})
             if not syns.has_key(field_m.group(1).lower()):
-                raise ValidationError(_("wrong field name: %(name)s") % \
-                        {'name': field_m.group(1),})
+                raise ValidationError(_(u"wrong field name: ") + field_m.group(1))
             if syns[field_m.group(1).lower()] in simple_list:
                 simple_dic[ syns[field_m.group(1).lower()]] = field_m.group(2)
                 continue
@@ -910,8 +905,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             if not (simple_fields.has_key(field) or
                     complex_fields.has_key(field)):
                 raise ValidationError(
-                        _("The necessary field '%(name)s' is not present") % 
-                        {'name': field,})
+                        _(u"The following necessary field is not present: ") +
+                        smart_unicode(field))
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
         # languages.
@@ -1225,7 +1220,7 @@ class EventUrl( models.Model ): # {{{1
     event = models.ForeignKey( Event, related_name = 'urls' )
     url_name = models.CharField( _( u'URL Name' ), blank = False, null = False,
             max_length = 80, help_text = _( 
-            "Example: information about accomodation" ) )
+            u"Example: information about accomodation" ) )
     url = models.URLField( _( u'URL' ), blank = False, null = False )
     class Meta: # pylint: disable-msg=C0111
         ordering = ['event', 'url_name']
@@ -1452,7 +1447,7 @@ class EventSession( models.Model ): # {{{1
     event = models.ForeignKey( Event, related_name = 'sessions' )
     session_name = models.CharField( 
             _( u'Session name' ), blank = False, null = False, max_length = 80,
-            help_text = _( "Example: day 2 of the conference" ) )
+            help_text = _( u"Example: day 2 of the conference" ) )
     session_date = models.DateField( 
             _( u'Session day' ), blank = False, null = False )
     session_starttime = models.TimeField( 
@@ -1696,8 +1691,8 @@ class Filter( models.Model ): # {{{1
                         'event': event,
                         'filter': fil,
                         'site': settings.PROJECT_NAME, }
-                    subject = _('event match: %(event.title)s') % \
-                            { 'event.title': event.title, }
+                    # TODO: create the subject from a text template
+                    subject = _(u'filter match: ') + event.title
                     # TODO: use a preferred language setting for users to send
                     # emails to them in this language
                     message = render_to_string(
