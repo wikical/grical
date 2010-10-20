@@ -66,10 +66,18 @@ permission of the original author -->
     <div class="colleft">
         <div class="col1">
             <!-- Column 1 start -->
-            {% if message_col1 %}
-            <div id="message_col1">
-                {{ message_col1 }}
-            </div>
+            {% if messages_col1 and message_col1|length > 0 %}
+                <div id="message_col1">
+                    {% if messages_col1|length > 1 %}
+                        <ul>
+                            {% for message in message_col1 %}
+                            <li> {{ message }} </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        {{ messages_col1.0 }}
+                    {% endif %}
+                </div>
             {% endif %}
             {% block column1 %}
             {% endblock %}

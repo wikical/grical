@@ -1,4 +1,5 @@
 {% load i18n %}
+{% autoescape off %}
 {% if errors_dict %}
 {% blocktrans count errors_dict|length as counter %}
 An email you submitted to {{ PROJECT_NAME }} contained one error:
@@ -33,3 +34,4 @@ An email you submitted to {{ PROJECT_NAME }} contained {{ counter }} errors:
 {% trans "========== original message sent by you: ==========" %}
 
 {{ original_message }}
+{% endautoescape %}

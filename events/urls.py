@@ -2,19 +2,19 @@
 # -*- coding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
-# Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
+# Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
 # 
-# GridCalendar is free software: you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
+# GridCalendar is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
 # 
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License
-# for more details.
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
+# details.
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
@@ -83,7 +83,7 @@ urlpatterns += patterns('', # events in a group
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         rss.rss_for_group_hash,         name='list_events_group_rss_hashed'),
     url(r'^g/(?P<group_id>\d+)/$',
-        views_groups.list_events_group, name='list_events_group'),
+        views_groups.list_events_group, name='list_events_group'), # TODO: this should be a view with everything about the group for members and not members; see also list_groups_my
 )
 
 urlpatterns += patterns('',
