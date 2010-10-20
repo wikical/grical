@@ -1,27 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# gpl {{{1
 #############################################################################
-# Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
+# Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
 # 
-# GridCalendar is free software: you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
+# GridCalendar is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
 # 
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License
-# for more details.
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
+# details.
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
 """ VIEWS """
-
+# imports {{{1
 import hashlib
 
 from django.conf import settings
@@ -32,6 +33,7 @@ from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
 from django.contrib.auth.models import User
@@ -83,31 +85,21 @@ from gridcalendar.events.lists import (
 # notice that an anonymous user get a form without the 'public' field
 # (simplified form)
 
-def _error( request, text ):
-    """ Returns a view with the front page and an error message """
+def _error( request, errors ): # {{{1
+    """ Returns a view with an error message whereas 'errors' must be a list or
+    a unicode """
+    if not isinstance(errors, list):
+        assert (isinstance(errors, unicode))
+        errors = [errors,]
     return render_to_response( 'error.html',
             {
                 'title': _( "GridCalendar.net - error" ),
                 'form': get_event_form( request.user ),
-                'message_col1': text
+                'messages_col1': errors
             },
             context_instance = RequestContext( request ) )
 
-def _errors( request, texts ):
-    """ Returns a view with the front page and an error message """
-    text = "<ul>"
-    for msg in texts:
-        text += "<li>%s</li>" % msg
-    text += "</ul>"
-    return render_to_response( 'error.html',
-            {
-                'title': _( "GridCalendar.net - error" ),
-                'form': get_event_form( request.user ),
-                'message_col1': text
-            },
-            context_instance = RequestContext( request ) )
-
-def usage( request ):
+def usage( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
     USAGE.TXT"""
     usage_text = open( settings.PROJECT_ROOT + '/USAGE.TXT', 'r' ).read()
@@ -118,13 +110,13 @@ def usage( request ):
             'about_text': about_text,
             }, context_instance = RequestContext( request ) )
 
-def legal_notice( request ):
+def legal_notice( request ): # {{{1
     """Just returns the legal notice page."""
     return render_to_response( 'legal_notice.html', {
             'title': _( 'GridCalendar.net - legal notice' ),
             }, context_instance = RequestContext( request ) )
 
-def event_new( request ):
+def event_new( request ): # {{{1
     """ Expects a filled simplified event form and redirects to `event_edit`
     """
     if request.method == 'POST':
@@ -157,7 +149,8 @@ def event_new( request ):
     else:
         return HttpResponseRedirect( reverse( 'main' ) )
 
-def event_edit( request, event_id ):
+def event_edit( request, event_id ): # {{{1
+    """ view to edit an event as a form """
     event_id = int(event_id)
     """ Complete web-form to edit an event. """
     # checks if the event exists
@@ -236,7 +229,7 @@ def event_edit( request, event_id ):
         return render_to_response( 'event_edit.html', templates,
                 context_instance = RequestContext( request ) )
 
-def event_new_raw( request ):
+def event_new_raw( request ): # {{{1
     """ View to create an event as text. """
     if request.method == 'POST':
         if 'event_astext' in request.POST:
@@ -257,7 +250,7 @@ def event_new_raw( request ):
         return render_to_response( 'event_new_raw.html', templates,
                 context_instance = RequestContext( request ) )
 
-def event_edit_raw( request, event ):
+def event_edit_raw( request, event ): # {{{1
     """ View to edit an event as text. """
     if isinstance(event, Event):
         event_id = event.id
@@ -300,7 +293,7 @@ def event_edit_raw( request, event ):
                     reverse( 'event_show', kwargs = {'event_id': event_id} ) )
             else:
             #else, parse_text return errors list
-                return _errors( request, errors )
+                return _error( request, errors )
         else:
             return _error( request,
                 _( "You submitted an empty form, nothing was saved. Click the \
@@ -315,7 +308,7 @@ def event_edit_raw( request, event ):
         return render_to_response( 'event_edit_raw.html', templates,
                 context_instance = RequestContext( request ) )
 
-def event_show( request, event_id ):
+def event_show( request, event_id ): # {{{1
     """ View that shows an event """
     event_id = int(event_id)
     try:
@@ -333,7 +326,7 @@ def event_show( request, event_id ):
         return render_to_response( 'event_show_all.html', templates,
                 context_instance = RequestContext( request ) )
 
-def event_show_raw( request, event_id ):
+def event_show_raw( request, event_id ): # {{{1
     """ View that shows an event as text """
     event_id = int(event_id)
     try:
@@ -355,7 +348,7 @@ def event_show_raw( request, event_id ):
         return render_to_response( 'event_show_raw.html',
                 templates, context_instance = RequestContext( request ) )
 
-def query( request ):
+def query( request ): # {{{1
     """ View to get the data of a search query calling `list_events_search` """
     # FIXME: replace everything using something like the first example at
     # http://www.djangobook.com/en/1.0/chapter07/
@@ -365,17 +358,21 @@ def query( request ):
                 reverse( 'list_events_search',
                 kwargs = {'query': query_lowercase} ) )
 
-def list_events_search( request, query ):
+def list_events_search( request, query ): # {{{1
     """ View to show the results of a search query """
     query_lowercase = query.lower()
     user_id = request.user.id
     try:
         search_result = list_search_get( query_lowercase, user_id, 0 )
     except ValueError, ( errmsg ):
+        if not isinstance(errmsg, list):
+            errors = [smart_unicode(errmsg),]
+        else:
+            errors = errmsg
         return render_to_response( 'error.html',
             {
                 'title': _( "GridCalendar - search error" ),
-                'message_col1': errmsg,
+                'messages_col1': errors,
                 'query': query_lowercase,
                 'form': get_event_form( request.user )
             },
@@ -385,7 +382,7 @@ def list_events_search( request, query ):
         return render_to_response( 'error.html',
             {
                 'title': _( "GridCalendar - no search results" ),
-                'message_col1': _( "Your search didn't get any result" ),
+                'messages_col1': [_( u"Your search didn't get any result" ),],
                 'query': query,
                 'form': get_event_form( request.user ),
             },
@@ -400,13 +397,13 @@ def list_events_search( request, query ):
             context_instance = RequestContext( request ) )
 
 @login_required
-def filter_save( request ):
+def filter_save( request ): # {{{1
     """ Saves a new filter """
     if 'q' in request.POST and request.POST['q']:
         query_lowercase = request.POST['q'].lower()
     else:
         return _error( request,
-            _( "You are trying to save a search without any search terms" ) )
+            _( u"You are trying to save a search without any search terms" ) )
     if request.method == 'POST':
         try:
             maximum = Filter.objects.aggregate( Max( 'id' ) )['id__max']
@@ -419,20 +416,14 @@ def filter_save( request ):
                 'filter_edit', kwargs = {'filter_id': efilter.id} ) )
         except Exception:
             return _error( request,
-                    _( "An error has ocurred, nothing was saved. Click the \
-                    back button in your browser and try \ again." ) )
+                    _( u"An error has ocurred, nothing was saved. Click the \
+                    back button in your browser and try again." ) )
     else:
-        return render_to_response( 'error.html',
-                {
-                    'title': _( "GridCalendar - error" ),
-                    'message_col1': _( "You have submitted a GET request which \
-                        is not a valid method for searching" ),
-                    'query': query_lowercase
-                },
-                context_instance = RequestContext( request ) )
+        return _error( request, _( "You have submitted a GET request " +
+                        "which is not a valid method for saving a filter" ))
 
 @login_required
-def filter_edit( request, filter_id ):
+def filter_edit( request, filter_id ): # {{{1
     """ View to edit a filter """
     try:
         efilter = Filter.objects.get( pk = filter_id )
@@ -470,7 +461,7 @@ def filter_edit( request, filter_id ):
                     templates, context_instance = RequestContext( request ) )
 
 @login_required
-def filter_drop( request, filter_id ):
+def filter_drop( request, filter_id ): # {{{1
     """ Delete a filter if the user is the owner """
     try:
         efilter = Filter.objects.get( pk = filter_id )
@@ -492,7 +483,7 @@ def filter_drop( request, filter_id ):
             return HttpResponseRedirect( reverse( 'list_filters_my' ) )
 
 @login_required
-def list_filters_my( request ):
+def list_filters_my( request ): # {{{1
     """ View that lists the filters of the logged-in user """
     if ( ( not request.user.is_authenticated() ) or
             ( request.user.id is None ) ):
@@ -508,7 +499,7 @@ def list_filters_my( request ):
                 {'title': 'list of my filters', 'filters': list_of_filters},
                 context_instance = RequestContext( request ) )
 
-def list_events_of_user( request, username ):
+def list_events_of_user( request, username ): # {{{1
     """ View that lists the events of a user """
     if ( ( not request.user.is_authenticated() ) or
             ( request.user.id is None ) ):
@@ -543,7 +534,7 @@ def list_events_of_user( request, username ):
             return _error( request, ( "User does not exist" ) )
 
 @login_required
-def list_events_my( request ):
+def list_events_my( request ): # {{{1
     """ View that lists the events the logged-in user is the owner of """
     if ( ( not request.user.is_authenticated() ) or
             ( request.user.id is None ) ):
@@ -557,7 +548,7 @@ def list_events_my( request ):
                 {'title': _( "list my events" ), 'events': events},
                 context_instance = RequestContext( request ) )
 
-def list_events_tag( request, tag ):
+def list_events_tag( request, tag ): # {{{1
     """ returns a view with events having a tag """
     query_tag = Tag.objects.get( name = tag )
     events = TaggedItem.objects.get_by_model( Event, query_tag )
@@ -570,7 +561,7 @@ def list_events_tag( request, tag ):
             },
             context_instance = RequestContext( request ) )
 
-def main( request ):
+def main( request ): # {{{1
     """ main view
     
     >>> from django.test import Client
@@ -664,7 +655,7 @@ def main( request ):
 
 # http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator
 @login_required
-def settings_page( request ):
+def settings_page( request ): # {{{1
     """ View to show the settings of a user """
     # user is logged in because of decorator
     list_of_filters = filter_list( request.user.id )

@@ -1,4 +1,5 @@
 {% load i18n %}
+{% autoescape off %}
 {% blocktrans with fil.name as fil_name %}
 Hello {{ name }},
 
@@ -20,3 +21,4 @@ the event below matches your filter with the name:
 {% blocktrans %}
 Your {{ site }} team
 {% endblocktrans %}
+{% endautoescape %}

@@ -65,88 +65,184 @@ def suite(): #{{{1
     suite.addTest(unittest.TestLoader().loadTestsFromTestCase(EventsTestCase))
     return suite
 
-ONLINE = True
-USERS_COUNT = 3
-
-class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
+class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     """TestCase for the 'events' application"""
 
-    #FIXME: create a user with a filter, introduce an event anonymously
-    # matching the filter, check that an email has been sent
+    def setUp( self ): # {{{2 pylint: disable-msg=C0103
+        pass
 
-    def test_anonymous_private_error(self):
+    def test_anonymous_private_error(self): # {{{2
         """ tests that an Event of the anonymous user cannot be private """
         e = Event(user=None, public=False, title="test",
                 start=datetime.date.today(), tags="test test1 test2")
         self.assertRaises(AssertionError, e.save)
 
-    def test_valid_activation(self):
-        """ tests signing up """
-        response = self.client.post('/a/accounts/register/', {
-            'username': 'SignUpUser',
-            'email': 'test@example.com',
-            'password1': 'pass',
-            'password2': 'pass',})
-        self.assertRedirects(response, '/a/accounts/register/complete/')
+    def test_valid_activation(self): # {{{2
+        """ tests account creation throw web """
+        _create_user('test_activation_web', True)
+
+    def test_public_private_event_visibility(self): # {{{2
+        user1 = _create_user('tpev1', False)
+        user2 = _create_user('tpev2', False)
+        event_public = Event.objects.create(
+                user = user1, title = "public 1234",
+                tags = "test", start=datetime.date.today() )
+        event_public.save()
+        event_private = Event.objects.create(
+                user = user1, title = "private 1234",
+                tags = "test", start=datetime.date.today() )
+        event_private.save()
+        self.client.login ( user2 )
+        response = self.client.get(
+                reverse('list_event_search'),
+                {'query': '1234'} )
+        self.assertTrue(event_public in response.context['events'])
+        self.assertFalse(event_private in response.context['events'])
+        # old code of beret:
+        #"tests visibility private and public events for user"
+        #login = self.login_user( user_nr )
+        #self.assertTrue( login )
+        #user = self.get_user( user_nr )
+        #public_event = self.get_event( user, True, True )
+        #private_event = self.get_event( user, False, True )
+        #response = self.client.get( reverse( 'list_events_tag', \
+        #                                 kwargs = {'tag':'tag'} ) )
+        #txt = response.content
+        #self.assertTrue( public_event.title.decode('utf-8') in
+        #        txt.decode('utf-8') )
+        #self.assertTrue( private_event.title.decode('utf-8') in
+        #        txt.decode('utf-8') )
+        #for nr in range( USERS_COUNT ):# pylint: disable-msg=C0103
+        #    if nr != user_nr:
+        #        public_title = self.event_title( self.get_user( nr ), \
+        #                                         True, True )
+        #        private_title = self.event_title( self.get_user( nr ), \
+        #                                          False, True )
+        #        self.assertTrue(
+        #                public_title.decode('utf-8') in txt.decode('utf-8'),
+        #                u"not visible public event: %s" % \
+        #                public_title.decode('utf-8') )
+        #        self.assertFalse(
+        #                private_title.decode('utf-8') in txt.decode('utf-8'),
+        #                u"visible private event: %s" % \
+        #                private_title.decode('utf-8') )
+        #self.client.logout()
+
+    def test_public_private_change_error(self): # {{{2
+        user = _create_user('tppce', False)
+        event = Event(user = user, public = True, title="test",
+                start=datetime.date.today(), tags="test")
+        event.save()
+        event.public = False
+        self.assertRaises(AssertionError, event.save)
+
+    def test_private_public_change_error(self): # {{{2
+        user = _create_user('tppce', False)
+        event = Event(user = user, public = False, title="test",
+                start=datetime.date.today(), tags="test")
+        event.save()
+        event.public = True
+        self.assertRaises(AssertionError, event.save)
+
+    def test_group_invitation(self) # {{{2
+        user1 = _create_user('tgi1', True)
+        user2 = _create_user('tgi2', True)
+        group = _create_group( user = user1, name = "group", throw_web = True )
+        users = User.objects.get( membership_user = user )
+        self.assertEqual( len(users), 1 )
+        self.assertEqual(users[0] = user1)
+        login = self.client.login ( user1 )
+        self.assertTrue(login)
+        response = self.client.post(
+                reverse( 'group_invite', kwargs = {'group_id': group.id} ),
+                {'username': user2.name,} )
+                # {'username': user2.name, 'group_id': group.id} )
+        self.assertTrue(response.status_code, 200)
+        self.logout()
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject,
-                u'[example.com] Activation email')
+        self.assertEqual(mail[0].to, wu3g23g3.email)
         body = mail.outbox[0].body
-        profile = RegistrationProfile.objects.get(
-                user__username='SignUpUser')
-        key = profile.activation_key
-        regex = re.compile('^.*/a/accounts/activate/(.*)/$')
-        for line in body.split('\n'):
+        regex = re.compile('^.*g/invite/confirm/(.*)/$') # TODO: use reverse
+        for line in body:
             matcher = regex.match(line)
             if matcher:
-                self.assertEqual(key, matcher.group(1))
-                response = self.client.get('/a/accounts/activate/' + key)
-                # the above line returns a HttpResponsePermanentRedirect (I,
-                # ivan, don't know why). items()[1][1] is where it redirects
-                # to.
-                response = self.client.get(response.items()[1][1])
-                # TODO: test the page
-                self.failUnless(User.objects.get(username='SignUpUser').is_active)
+                response = self.client.get(
+                        '/g/invite/confirm/' + matcher.group(1))
+                assertEqual(response.status_code, 200)
                 break
-        user = User.objects.get(username='SignUpUser')
-        self.assertEqual(user.email, 'test@example.com')
+        users = User.objects.get( membership_user = user )
+        self.assertEqual( len(users), 2 )
+        self.assertTrue(user1 in users)
+        self.assertTrue(user2 in users)
 
-    def setUp( self ):                            # pylint: disable-msg=C0103
-        """models value initiation"""
-
-        # create some userless events
-        EventsTestCase.create_event( False )
-
-        # create some users and let them create some filters and events
-        for user_nr in range( USERS_COUNT ):
-            user = User.objects.create_user( 
-                    username = self.user_name( user_nr ),
-                    email = self.user_email( user_nr ),
-                    password = 'p',
-                    )
+    def _create_user(self, name, throw_web): # {{{2
+        if not throw_web:
+            user = User.objects.create_user(username = name,
+                    email = name + '@example.com', password = 'p')
             user.save()
-            event_filter = Filter( user = user,
-                query = 'berlin',
-                name = user.username + "'s filter: berlin"
-                )
-            event_filter.save()
-            EventsTestCase.create_event( user )
+            self.users[name] = user
+            return user
+        else:
+            response = self.client.post('/a/accounts/register/', {
+                'username': name
+                'email': name + '@example.com',
+                'password1': 'p',
+                'password2': 'p',})
+            self.assertRedirects(response, '/a/accounts/register/complete/')
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertEqual(mail.outbox[0].subject,
+                    u'[example.com] Activation email')
+            body = mail.outbox[0].body
+            profile = RegistrationProfile.objects.get(
+                    user__username=name)
+            key = profile.activation_key
+            regex = re.compile('^.*/a/accounts/activate/(.*)/$')
+            for line in body.split('\n'):
+                matcher = regex.match(line)
+                if matcher:
+                    self.assertEqual(key, matcher.group(1))
+                    response = self.client.get('/a/accounts/activate/' + key)
+                    # the above line returns a HttpResponsePermanentRedirect (I,
+                    # ivan, don't know why). items()[1][1] is where it redirects
+                    # to.
+                    response = self.client.get(response.items()[1][1])
+                    # TODO: test the page
+                    self.failUnless(User.objects.get(username=name).is_active)
+                    break
+            user = User.objects.get(username=name)
+            self.assertEqual(user.email, name + '@example.com')
+            self.users[name] = user
+            return user
 
-    def test_public_private_change_error(self):
-        e = Event(user=None, public=False, title="test",
-                start=datetime.date.today(), tags="test test1 test2")
+    def _create_group(self, name, user, throw_web): # {{{2
+        """ creates a group and add `user` to it; if `throw_web` `user`
+        creates the group throw the web """
+        if not throw_web:
+            group = Group.objects.create(name = name)
+            m = Membership.objects.create(user = user, group = group)
+            return group
+        else:
+            self.client.login(
+                    username = user.username, password = 'p' )
+            response = self.client.post ( reverse('group_new'),
+                    {'Name': name, 'Description': u'_create_group'} )
+            self.assertEqual( response.status_code, 200 )
+            return Group.objects.get(name = name)
 
-    @staticmethod
-    def user_name( user_nr ):
-        "cereate user name for nr"
-        return "u_%02d_test" % user_nr
+    def _login(user, throw_web): # {{{2
+        """ logs in `user` """
+        if not throw_web:
+            login = self.client.login(
+                    username = user.username, password = 'p' )
+            self.failUnless(login, 'Could not log in')
+            response = self.client.get(reverse('group_new'))
+            self.failUnlessEqual(response.status_code, 200)
+        else:
+            response = self.Client.post('/a/accounts/login/',
+                    {'username':user.username, 'password':'p'})
+            self.assertEqual(response.status_code, 200)
 
-    @staticmethod
-    def user_email( user_nr ):
-        "create user email for user_nr"
-        return "u_%02d_test@gridcalendar.net" % user_nr
-
-    def validate_ical( self, url ):
+    def validate_ical( self, url ): # {{{2
         "validate iCalendar url"
         response = self.client.get( url )
         self.assertEqual( response.status_code, 200 )
@@ -161,7 +257,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
             result = response.read()
             self.assertTrue( 'Congratulations' in result, content )
 
-    def validate_rss( self, url ):
+    def validate_rss( self, url ): # {{{2
         "validate rss feed data"
         response = self.client.get( url )
         self.assertEqual( response.status_code, 200 )
@@ -174,123 +270,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
             result = response.read()
             self.assertTrue( 'Congratulations' in result, content )
 
-    def assertEventsEqual( self, event_1, event_2, message = False ):
-        "test equal of two events"
-        if message:
-            self.assertEqual( event_1.as_text(), event_2.as_text(), message )
-        else:
-            self.assertEqual( event_1.as_text(), event_2.as_text() )
-
-    @classmethod
-    def get_user( cls, user_nr ):
-        "get user instance for nr"
-        return User.objects.get( username = cls.user_name( user_nr ) )
-
-    @classmethod
-    def get_event( cls, user, public, future, contest = False ):
-        "find and return event for params"
-        if contest:
-            Event.objects.set_user( contest )
-        else:
-            Event.objects.set_user( user )
-        event = Event.objects.get( \
-                        title = cls.event_title( user, public, future ) )
-        return event
-
-    @classmethod
-    def event_title( cls, user, public, future ):
-        "create title for event"
-        user_str = user and user.username or 'USERLESS'
-        when = future and 'future' or 'past'
-        public_value_str = public and 'public' or 'private'
-        title = "EVENT %(when)s %(user)s %(pv)s" % {
-                    'when':     when,
-                    'user':     user_str,
-                    'pv':       public_value_str,
-                    }
-        return title
-
-    @classmethod
-    def create_event( cls, user = False ):
-        """helper function to create events for user"""
-        for future, start_delta, end_delta in ( ( False, -36, -33 ),
-                                             ( True, 33, 36 ) ):
-            start_str = str( datetime.date.today() +
-                    datetime.timedelta( start_delta ) )
-            end_str = str( datetime.date.today() +
-                    datetime.timedelta( end_delta ) )
-            if user:
-                public_value_list = [True, False]
-            else:
-                public_value_list = [True, ]
-                user = False
-            for public_value in public_value_list:
-
-                event = Event( 
-                        acronym = 'ACRO',
-                        title = cls.event_title( user, public_value, future ),
-                        start = start_str,
-                        end = end_str,
-                        public = public_value,
-                        tags = 'tag',
-                        country = 'DE',
-                        city = 'Berlin',
-                        postcode = '10439',
-                        address = 'Random Street 3',
-                        latitude = 50.32323,
-                        longitude = 13.83245,
-                        timezone = 60,
-                        description = 'Event description.'
-                        )
-                if user:
-                    event.user = user
-                event.save()
-
-    def login_user( self, user_nr ):
-        "login user for id"
-        login = self.client.login( username = self.user_name( user_nr ), \
-                                  password = 'p' )
-        return login
-
-    def test_login(self):
-        "testing for login"
-        for user_id in range(1, USERS_COUNT):
-            login = self.login_user(user_id)
-            self.failUnless(login, 'Could not log in')
-            response = self.client.get(reverse('group_new'))
-            self.failUnlessEqual(response.status_code, 200)
-
-    def user_test_visibility( self, user_nr ):
-        "tests visibility private and public events for user"
-        login = self.login_user( user_nr )
-        self.assertTrue( login )
-        user = self.get_user( user_nr )
-        public_event = self.get_event( user, True, True )
-        private_event = self.get_event( user, False, True )
-        response = self.client.get( reverse( 'list_events_tag', \
-                                         kwargs = {'tag':'tag'} ) )
-        txt = response.content
-        self.assertTrue( public_event.title.decode('utf-8') in
-                txt.decode('utf-8') )
-        self.assertTrue( private_event.title.decode('utf-8') in
-                txt.decode('utf-8') )
-        for nr in range( USERS_COUNT ):# pylint: disable-msg=C0103
-            if nr != user_nr:
-                public_title = self.event_title( self.get_user( nr ), \
-                                                 True, True )
-                private_title = self.event_title( self.get_user( nr ), \
-                                                  False, True )
-                self.assertTrue(
-                        public_title.decode('utf-8') in txt.decode('utf-8'),
-                        u"not visible public event: %s" % \
-                        public_title.decode('utf-8') )
-                self.assertFalse(
-                        private_title.decode('utf-8') in txt.decode('utf-8'),
-                        u"visible private event: %s" % \
-                        private_title.decode('utf-8') )
-        self.client.logout()
-
-    def user_group_edit( self, user_nr ):
+    def user_group_edit( self, user_nr ): # {{{2
         "tests edit private and public events for user \
         after add this to group"
         user = self.get_user( user_nr )
@@ -320,7 +300,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                                 txt.decode('utf-8') ) )
                 self.client.logout()
 
-    def user_group_visibility( self, user_nr ):
+    def user_group_visibility( self, user_nr ): # {{{2
         "tests visibility private and public events for user \
         after add this to group"
         login = self.login_user( user_nr )
@@ -344,23 +324,8 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                         % private_title.decode('utf-8') )
         self.client.logout()
 
-    def user_create_groups( self, user_nr ):
-        "create groups and send invitive to all users"
-        login = self.login_user( user_nr )
-        self.assertTrue( login )
-        user = self.get_user( user_nr )
-        self.client.post( reverse( 'group_new' ), \
-                                    {'name':user.username,
-                                     'description':user.username} )
-        group = Group.objects.get( membership = user )
-        self.assertEqual( group, Group.objects.get( name = user.username ) )
-        for nr in range( USERS_COUNT ):# pylint: disable-msg=C0103
-            self.client.post( reverse( 'group_invite', \
-                                            kwargs = {'group_id': group.id} ), \
-                        {'username': self.user_name( nr ),
-                        'group_id': group.id} )
 
-    def user_add_event( self, user_nr ):
+    def user_add_event( self, user_nr ): # {{{2
         "add event to user's group"
         mail.outbox = []
         login = self.login_user( user_nr )
@@ -375,6 +340,9 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                                     {'grouplist': group.id} )
         # is no message after add new event to group
         # print map(lambda x: (x.to[0],x.body), mail.outbox)
+
+    #FIXME: create a user with a filter, introduce an event anonymously
+    # matching the filter, check that an email has been sent
 
     # FIXME: test is not working
     #def test_event_url( self ):
@@ -565,7 +533,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
     #            history = EventHistory.objects.filter( event = event )
     #            # print 3, map( lambda x: ( x.new, x.user ), history ), len( history )
 
-    def test_visibility( self ):
+    def test_visibility( self ): # {{{2
         "testing visibility public and private events"
         for user_nr in range( USERS_COUNT ):
             self.user_test_visibility( user_nr )
@@ -591,14 +559,14 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
     #        self.user_group_visibility( user_nr )
     #        self.user_group_edit( user_nr )
 
-    def test_group_rss( self ):
+    def test_group_rss( self ): # {{{2
         "test for one rss.xml icon for each group"
         groups = Group.objects.all()
         for group in groups:
             self.validate_rss( reverse( 'list_events_group_rss',
                                       kwargs = {'group_id':group.id} ) )
 
-    def test_group_ical( self ):
+    def test_group_ical( self ): # {{{2
         "test for one ical file for each group"
         for user_nr in range( USERS_COUNT ):
             self.user_create_groups( user_nr )
@@ -609,19 +577,19 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
             self.validate_ical( reverse( 'list_events_group_ical',
                                       kwargs = {'group_id':group.id} ) )
 
-    def test_event_ical( self ):
+    def test_event_ical( self ): # {{{2
         "test for one ical file for each event"
         events = Event.objects.all()
         for event in events:
             self.validate_ical( reverse( 'event_show_ical',
                                       kwargs = {'event_id':event.id} ) )
 
-    def test_search_ical( self ):
+    def test_search_ical( self ): # {{{2
         "test for ical search"
         self.validate_ical( reverse( 'list_events_search_ical',
                                       kwargs = {'query':'belin'} ) )
 
-    def test_filter_rss( self ):
+    def test_filter_rss( self ): # {{{2
         "test for one rss.xml icon for each filter"
         for user_nr in range( USERS_COUNT ):
             self.login_user( user_nr )
@@ -631,7 +599,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                 self.validate_rss( reverse( 'list_events_filter_rss',
                                       kwargs = {'filter_id':filer.id} ) )
 
-    def test_filter_ical( self ):
+    def test_filter_ical( self ): # {{{2
         "test for one iCalendar file for each filter"
         for user_nr in range( USERS_COUNT ):
             self.login_user( user_nr )
@@ -641,13 +609,13 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                 self.validate_ical( reverse( 'list_events_filter_ical',
                                       kwargs = {'filter_id':filer.id} ) )
 
-    @staticmethod
+    @staticmethod # user_hash {{{2
     def user_hash( user_id ):
         "return correct hash for user_id"
         return hashlib.sha256( "%s!%s" %
                               ( settings.SECRET_KEY, user_id ) ).hexdigest()
 
-    def test_hash_filter_rss( self ):
+    def test_hash_filter_rss( self ): # {{{2
         "test for one rss.xml icon for each filter"
         for user_nr in range( USERS_COUNT ):
             user = self.get_user( user_nr )
@@ -659,7 +627,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                                                 'user_id':user.id,
                                                 'hash':user_hash} ) )
 
-    def test_hash_filter_ical( self ):
+    def test_hash_filter_ical( self ): # {{{2
         "test for one iCalendar file for each filter"
         for user_nr in range( USERS_COUNT ):
             user = self.get_user( user_nr )
@@ -671,36 +639,7 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
                                                 'user_id':user.id,
                                                 'hash':user_hash} ) )
 
-    def test_private_to_public( self ):
-        "A private event cannot be made public"
-        for user_nr in range( USERS_COUNT ):
-            self.login_user( user_nr )
-            user = self.get_user( user_nr )
-            private_event = self.get_event( user, False, True )
-            private_event.public = True
-            self.assertRaises( AssertionError, private_event.save )
-
-    def test_public_to_private( self ):
-        "A public event cannot be made private"
-        for user_nr in range( USERS_COUNT ):
-            self.login_user( user_nr )
-            user = self.get_user( user_nr )
-            public_event = self.get_event( user, True, True )
-            public_event.public = False
-            self.assertRaises( AssertionError, public_event.save )
-
-    # FIXME: the test is not working
-    # def test_parser( self ):
-    #     "testing event's parser"
-    #     for user_nr in range( USERS_COUNT ):
-    #         event = self.event_from_txt_data( user_nr )
-    #         event_txt = event.as_text()
-    #         new_id = Event.objects.latest( 'pk' ).pk
-    #         Event.parse_text( event_txt, new_id )
-    #         new = Event.objects.get( pk = new_id )
-    #         self.assertEqual( event_txt, new.as_text() )
-
-    # def test_history( self ):
+    # def test_history( self ): # {{{2
     #     "testing event's parser"
     #     for user_nr in range( USERS_COUNT ):
     #         user = self.get_user( user_nr )
@@ -878,18 +817,9 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
     #             history = EventHistory.objects.filter( event = event )
     #             print map( lambda x: ( x.date, x.user ), history ), len( history )
 
-    # FIXME: test is not working
-    # def test_synonyms( self ):
-    #     "tests synonyms event's field"
-    #     event = self.event_from_txt_data( 1 )
-    #     for field, synonyms in FIELDS_SYNONYMS.items():
-    #         for synonym in synonyms:
-    #             new_event = self.event_for_synonym( 1, field, synonym )
-    #             self.assertEventsEqual( event, new_event )
-
     #This test can't work with sqlite, because sqlite not support multiusers, 
     #is recomendet to use this in future
-    # def test_visibility_in_thread(self):
+    # def test_visibility_in_thread(self): # {{{2
     #     "testing visibility public and private events in thread"
     #     class TestThread(threading.Thread):
     #         "thread with random delay"
@@ -907,8 +837,6 @@ class EventsTestCase( TestCase ):              #pylint: disable-msg=R0904
     #         print "wait %d seconds     \r" % second,
     #         time.sleep(1)
 
-
     # TODO: test that a notification email is sent to all members of a group
     # when a new event is added to the group. See class Membership in
     # events/models.py
-

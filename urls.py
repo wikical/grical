@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Main urls definition file. """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# gpl {{{ 1
 #############################################################################
-# Copyright 2009, 2010 Iván F. Villanueva B. <ivan ät gridmind.org>
+# Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
 # 
@@ -20,7 +20,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
+""" Main urls definition file. """
+# imports {{{1
 from django.conf import settings
 from django.conf.urls.defaults import patterns, include, url, handler500, handler404
 from django.contrib import admin, databrowse
@@ -28,14 +29,15 @@ from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:
 # http://code.djangoproject.com/ticket/5350
 
+# registrations {{{1
+admin.autodiscover()
 # databrowse.site.register(Event)
 # databrowse.site.register(Group)
 # databrowse.site.register(EventUrl)
 # databrowse.site.register(EventSession)
 # databrowse.site.register(EventDeadline)
 
-admin.autodiscover()
-
+# a patterns for administrations, db and accounts {{{1
 urlpatterns = patterns( '', # pylint: disable-msg=C0103
     ( r'^a/admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
     #(r'^a/admin/(.*)', admin.site.root),
@@ -46,21 +48,19 @@ urlpatterns = patterns( '', # pylint: disable-msg=C0103
         'django.contrib.auth.views.logout', {'next_page': '/'} ),
  )
 
+# h pattern for help and legal_notice {{{1
 urlpatterns += patterns( '',
         url( r'^h/help/', 'gridcalendar.events.views.usage', name = "help" ),
         url( r'^h/legal_notice/', 'gridcalendar.events.views.legal_notice',
                 name = "legal_notice" ),
  )
-#
-#urlpatterns += patterns( '',
-#    ( r'^comments/postfree/$', 'recaptcha_views.free_comment_wrapper' ),
-#    ( r'^comments/', include( 'django.contrib.comments.urls.comments' ) ),
-# )
 
+# include events.urls {{{1
 urlpatterns += patterns( '',
     ( r'', include( 'events.urls' ) ),
  )
 
+# static files {{{1
 # see http://docs.djangoproject.com/en/1.0/howto/static-files/
 if settings.DEBUG:
     urlpatterns += patterns( '',
@@ -71,8 +71,14 @@ if settings.DEBUG:
         ),
     )
 
-#recaptcha
+# recaptcha {{{1
 #urlpatterns += patterns( '',
 #        ( r'^contact/$', 'gridcalendar.events.views.contact' ),
+# )
+
+# comments {{{1
+#urlpatterns += patterns( '',
+#    ( r'^comments/postfree/$', 'recaptcha_views.free_comment_wrapper' ),
+#    ( r'^comments/', include( 'django.contrib.comments.urls.comments' ) ),
 # )
 
