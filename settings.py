@@ -24,12 +24,6 @@
 
 import os
 
-# absolute path to this directory
-PROJECT_ROOT = \
-    os.path.realpath( os.path.dirname( __file__ ) ).replace('\\', '/')
-
-PROJECT_NAME = os.path.split( PROJECT_ROOT )[-1]
-
 # See how settings_local.py should look like at the end of this file
 try:
     from settings_local import * # pylint: disable-msg=W0401,W0614

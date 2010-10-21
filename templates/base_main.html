@@ -18,7 +18,10 @@
         {% trans "Matches your filters" %}:
         {% for fil in event.filters %}
             <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
+            {% comment %}
+            FIXME
             <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}icallogo.png" width="14"></a>&nbsp;
+            {% endcomment %}
             <a href="{% url list_events_filter_rss_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
         {% endfor %}
     {% endfor %}

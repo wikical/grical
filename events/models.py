@@ -30,6 +30,8 @@ import hashlib
 import threading
 import datetime
 
+import vobject
+
 from django.core.mail import send_mail, BadHeaderError
 from django.utils.encoding import smart_str, smart_unicode
 from django.db import models
@@ -490,6 +492,47 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         deltas = filter(lambda n: n.days >= 0, deltas)
         # returns the smallest date
         return today + ( sorted(deltas)[0] )
+
+    def icalendar( self, ical = None ):
+        """ returns an iCalendar object of the event entry or add it to 'ical'
+
+        >>> event = Event.parse_text(EXAMPLE)
+        >>> ical = event.icalendar()
+        >>> ical = vobject.readOne(ical.serialize())
+        >>> assert (ical.vevent.dtstart.value == event.start)
+        """
+        if ical is None:
+            ical = vobject.iCalendar()
+            ical.add('METHOD').value = 'PUBLISH' # IE/Outlook needs this
+        vevent = ical.add('vevent')
+        vevent.add('PRODID').value = '-//GridMind//NONSGML GridCalendar//EN'
+        vevent.add('UID').value = \
+                settings.PROJECT_NAME + u'-' + \
+                hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
+                + unicode(self.id) + u'@' + \
+                settings.HOST_IP
+        vevent.add('SUMMARY').value = self.title
+        vevent.add('DTSTART').value = self.start
+        if self.end: vevent.add('DTEND').value = self.end
+        if self.tags: vevent.add('CATEGORIES').value = \
+                u', '.join(self.tags.split(u' '))
+        if self.description: vevent.add('DESCRIPTION').value = self.description
+        # see rfc5545 3.8.7.2. Date-Time Stamp
+        vevent.add('DTSTAMP').value = self.modification_time
+        if self.public: vevent.add('CLASS').value = 'PUBLIC'
+        else: vevent.add('CLASS').value = 'PRIVATE'
+        if self.latitude and self.longitude:
+            vevent.add('GEO').value = \
+                unicode(self.latitude) + ";" + unicode(self.longitude)
+        location = ""
+        # rfc5545 specifies CRLF for new lines:
+        if self.address: location = self.address + " "
+        if self.postcode: location = location + self.postcode + " "
+        if self.city: location = location + self.city + " "
+        if self.country: location = location + self.country + " "
+        vevent.add('LOCATION').value = location
+        # TODO: add VALARMs when there are deadlines
+        return ical
 
     def clone( self, public = False ):
         """
