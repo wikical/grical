@@ -44,14 +44,14 @@ urlpatterns += patterns('', # views of a single event
     url(r'^e/show/(?P<event_id>\d+)/raw/$',
         views.event_show_raw,           name='event_show_raw'),
     url(r'^e/show/(?P<event_id>\d+)/ical/$',
-        feeds.ICalForEvent(),           name='event_show_ical'),
+        feeds.ICalForEvent,           name='event_show_ical'),
 )
 
 urlpatterns += patterns('', # events matching a filter
-    url(r'^f/(?P<filter_id>\d+)/ical/$',
-        feeds.ICalForFilterAuth(),      name='list_events_filter_ical'),
-    url(r'^f/(?P<filter_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        feeds.ICalForFilterHash(),      name='list_events_filter_ical_hashed'),
+    #url(r'^f/(?P<filter_id>\d+)/ical/$',
+    #    feeds.ICalForFilterAuth(),      name='list_events_filter_ical'),
+    #url(r'^f/(?P<filter_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    #    feeds.ICalForFilterHash(),      name='list_events_filter_ical_hashed'),
     url(r'^f/(?P<filter_id>\d+)/rss/$',
         rss.rss_for_filter_auth,        name='list_events_filter_rss'),
     url(r'^f/(?P<filter_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
@@ -62,9 +62,9 @@ urlpatterns += patterns('', # events matching some query
     url(r'^q/',
         views.query,                    name='query'),
     url(r'^s/(?P<query>.*)/ical/$',
-        feeds.ICalForSearchAuth(),      name='list_events_search_ical'),
-    url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        feeds.ICalForSearchHash(),      name='list_events_search_ical_hashed'),
+        feeds.ICalForSearch,      name='list_events_search_ical'),
+    #url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    #    feeds.ICalForSearchHash(),      name='list_events_search_ical_hashed'),
     url(r'^s/(?P<query>.*)/rss/$',
         rss.rss_for_search,             name='list_events_search_rss'),
     url(r'^s/(?P<query>.*)/$',
@@ -74,10 +74,10 @@ urlpatterns += patterns('', # events matching some query
 )
 
 urlpatterns += patterns('', # events in a group
-    url(r'^g/(?P<group_id>\d+)/ical/$',
-        feeds.ICalForGroup(),       name='list_events_group_ical'),
-    url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        feeds.ICalForGroupHash(),       name='list_events_group_ical_hashed'),
+    #url(r'^g/(?P<group_id>\d+)/ical/$',
+    #    feeds.ICalForGroup(),       name='list_events_group_ical'),
+    #url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    #    feeds.ICalForGroupHash(),       name='list_events_group_ical_hashed'),
     url(r'^g/(?P<group_id>\d+)/rss/$',
         rss.rss_for_group_auth,         name='list_events_group_rss'),
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',

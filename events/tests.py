@@ -32,10 +32,14 @@ http://stackoverflow.com/questions/1615406/configure-django-to-find-all-doctests
 import unittest
 import doctest
 import datetime
+from datetime import timedelta
 import re
 import httplib
 import urllib
 import hashlib
+import string
+from random import choice
+import vobject
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -47,11 +51,8 @@ from registration.models import RegistrationProfile
 import settings
 from gridcalendar.events import models,views
 from events.models import Event, Group, Filter, EventUrl, Membership, \
-        EventHistory
+        Calendar
 
-#import time
-#import threading
-#import random
 
 def suite(): #{{{1
     """ returns a TestSuite naming the tests explicitly 
@@ -61,8 +62,8 @@ def suite(): #{{{1
     """
     suite = unittest.TestSuite()
     suite.addTest(doctest.DocTestSuite(models))
-    suite.addTest(doctest.DocTestSuite(views))
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(EventsTestCase))
+    #suite.addTest(doctest.DocTestSuite(views))
+    #suite.addTest(unittest.TestLoader().loadTestsFromTestCase(EventsTestCase))
     return suite
 
 class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
@@ -79,11 +80,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
 
     def test_valid_activation(self): # {{{2
         """ tests account creation throw web """
-        _create_user('test_activation_web', True)
+        self._create_user('test_activation_web', True)
 
     def test_public_private_event_visibility(self): # {{{2
-        user1 = _create_user('tpev1', False)
-        user2 = _create_user('tpev2', False)
+        user1 = self._create_user('tpev1', False)
+        user2 = self._create_user('tpev2', False)
         event_public = Event.objects.create(
                 user = user1, title = "public 1234",
                 tags = "test", start=datetime.date.today() )
@@ -129,7 +130,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         #self.client.logout()
 
     def test_public_private_change_error(self): # {{{2
-        user = _create_user('tppce', False)
+        user = self._create_user('tppce', False)
         event = Event(user = user, public = True, title="test",
                 start=datetime.date.today(), tags="test")
         event.save()
@@ -137,20 +138,20 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self.assertRaises(AssertionError, event.save)
 
     def test_private_public_change_error(self): # {{{2
-        user = _create_user('tppce', False)
+        user = self._create_user('tppce', False)
         event = Event(user = user, public = False, title="test",
                 start=datetime.date.today(), tags="test")
         event.save()
         event.public = True
         self.assertRaises(AssertionError, event.save)
 
-    def test_group_invitation(self) # {{{2
-        user1 = _create_user('tgi1', True)
-        user2 = _create_user('tgi2', True)
-        group = _create_group( user = user1, name = "group", throw_web = True )
+    def test_group_invitation(self): # {{{2
+        user1 = self._create_user('tgi1', True)
+        user2 = self._create_user('tgi2', True)
+        group = self._create_group( user = user1, name = "group", throw_web = True )
         users = User.objects.get( membership_user = user )
         self.assertEqual( len(users), 1 )
-        self.assertEqual(users[0] = user1)
+        self.assertEqual(users[0], user1)
         login = self.client.login ( user1 )
         self.assertTrue(login)
         response = self.client.post(
@@ -175,16 +176,17 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self.assertTrue(user1 in users)
         self.assertTrue(user2 in users)
 
-    def _create_user(self, name, throw_web): # {{{2
+    def _create_user(self, name = None, throw_web = False): # {{{2
+        if name is None:
+            name = datetime.datetime.now().isoformat()
         if not throw_web:
             user = User.objects.create_user(username = name,
                     email = name + '@example.com', password = 'p')
             user.save()
-            self.users[name] = user
             return user
         else:
             response = self.client.post('/a/accounts/register/', {
-                'username': name
+                'username': name,
                 'email': name + '@example.com',
                 'password1': 'p',
                 'password2': 'p',})
@@ -214,7 +216,10 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             self.users[name] = user
             return user
 
-    def _create_group(self, name, user, throw_web): # {{{2
+    def _create_group(self, user, name = None, throw_web = False): # {{{2
+        if name is None:
+            chars = string.letters # you can append: + string.digits
+            name = ''.join( [ choice(chars) for i in xrange(8) ] )
         """ creates a group and add `user` to it; if `throw_web` `user`
         creates the group throw the web """
         if not throw_web:
@@ -229,7 +234,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             self.assertEqual( response.status_code, 200 )
             return Group.objects.get(name = name)
 
-    def _login(user, throw_web): # {{{2
+    def _login(self, user, throw_web = False): # {{{2
         """ logs in `user` """
         if not throw_web:
             login = self.client.login(
@@ -242,20 +247,19 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                     {'username':user.username, 'password':'p'})
             self.assertEqual(response.status_code, 200)
 
-    def validate_ical( self, url ): # {{{2
+    def _validate_ical( self, url ): # {{{2
         "validate iCalendar url"
         response = self.client.get( url )
         self.assertEqual( response.status_code, 200 )
         content = response.content
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
-        if ONLINE:
-            params = urllib.urlencode( {'snip':content} )
-            conn = httplib.HTTPConnection( "severinghaus.org" )
-            conn.request( "POST", "/projects/icv/", params, headers )
-            response = conn.getresponse()
-            result = response.read()
-            self.assertTrue( 'Congratulations' in result, content )
+        params = urllib.urlencode( {'snip':content} )
+        conn = httplib.HTTPConnection( "severinghaus.org" )
+        conn.request( "POST", "/projects/icv/", params, headers )
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue( 'Congratulations' in result, content )
 
     def validate_rss( self, url ): # {{{2
         "validate rss feed data"
@@ -533,10 +537,6 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     #            history = EventHistory.objects.filter( event = event )
     #            # print 3, map( lambda x: ( x.new, x.user ), history ), len( history )
 
-    def test_visibility( self ): # {{{2
-        "testing visibility public and private events"
-        for user_nr in range( USERS_COUNT ):
-            self.user_test_visibility( user_nr )
 
     # FIXME: test is not working
     #def test_groups( self ):
@@ -566,48 +566,115 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             self.validate_rss( reverse( 'list_events_group_rss',
                                       kwargs = {'group_id':group.id} ) )
 
-    def test_group_ical( self ): # {{{2
-        "test for one ical file for each group"
-        for user_nr in range( USERS_COUNT ):
-            self.user_create_groups( user_nr )
-        for user_nr in range( USERS_COUNT ):
-            self.user_add_event( user_nr )
-        groups = Group.objects.all()
-        for group in groups:
-            self.validate_ical( reverse( 'list_events_group_ical',
-                                      kwargs = {'group_id':group.id} ) )
+    def test_group_ical_rss( self ): # {{{2
+        "test the ical file of a group"
+        user1 = self._create_user()
+        user2 = self._create_user()
+        group = self._create_group(user1)
+        membership = Membership.objects.create(user=user2, group=group)
+        membership.save()
+        event1 = Event(user = user1, public = True, title="public",
+                    start=datetime.date.today() + timedelta(days=+1),
+                    tags="test")
+        event1.save()
+        cal = Calendar.objects.create(event = event1, group = group)
+        cal.save()
+        event2 = Event(user = user1, public = False, title="private",
+                    start=datetime.date.today() + timedelta(days=+2),
+                    tags="test")
+        event2.save()
+        cal = Calendar.objects.create(event = event2, group = group)
+        cal.save()
+        self._login(user2)
+        # test ical
+        url =  reverse( 'list_events_group_ical',
+                                      kwargs = {'group_id': group.id, } )
+        self._validate_ical(url)
+        content = self.client.get( url ).content
+        generator = vobject.readComponents(content)
+        self.assertEqual(generator.next().vevent.title.value, "public")
+        self.assertEqual(generator.next().vevent.title.value, "private")
+        # test rss
+        url =  reverse( 'list_events_group_rss',
+                                      kwargs = {'group_id':group.id}, )
+        self._validate_ical( url )
+        content = self.client.get( url ).content
+        generator = vobject.readComponents( content )
+        self.assertEqual( generator.next().vevent.title.value, "public" )
+        self.assertEqual( generator.next().vevent.title.value, "private" )
+        # FIXME test rss content
+
+    def test_visibility_private_event_in_group_when_searching( self ): # {{{2
+        """ test that a private event added to a group is visible in the result
+        of a search for a member of the group """
+        user1 = self._create_user()
+        user2 = self._create_user()
+        group = self._create_group(user1)
+        membership = Membership.objects.create(user=user2, group=group)
+        membership.save()
+        event = Event(user = user1, public = False, title="private",
+                    start=datetime.date.today() + timedelta(days=10),
+                    tags="test")
+        event.save()
+        cal = Calendar.objects.create(event = event, group = group)
+        cal.save()
+        content = self.client.get( reverse( 'list_events_search',
+                kwargs = {'query': 'test'} ) )
+        self.assertTrue( event in content.context['events'] )
 
     def test_event_ical( self ): # {{{2
         "test for one ical file for each event"
         events = Event.objects.all()
         for event in events:
-            self.validate_ical( reverse( 'event_show_ical',
+            self._validate_ical( reverse( 'event_show_ical',
                                       kwargs = {'event_id':event.id} ) )
 
     def test_search_ical( self ): # {{{2
         "test for ical search"
-        self.validate_ical( reverse( 'list_events_search_ical',
+        self._validate_ical( reverse( 'list_events_search_ical',
                                       kwargs = {'query':'belin'} ) )
 
     def test_filter_rss( self ): # {{{2
-        "test for one rss.xml icon for each filter"
-        for user_nr in range( USERS_COUNT ):
-            self.login_user( user_nr )
-            user = self.get_user( user_nr )
-            filters = Filter.objects.filter( user = user )
-            for filer in filters:
-                self.validate_rss( reverse( 'list_events_filter_rss',
-                                      kwargs = {'filter_id':filer.id} ) )
+        "test for the rss file of a filter"
+        user_tfi = self._create_user()
+        # creates 10 events anonymously and 10 belonging to user_tfi
+        chars = string.letters # you can append: + string.digits
+        tag = ''.join( [ choice(chars) for i in xrange(10) ] )
+        for i in range(20):
+            if i % 2: user = user_tfi
+            else: user = None
+            event = Event(user = user, public = True, title="test" + str(i),
+                    start=datetime.date.today() + timedelta(days=i-10),
+                    tags=tag)
+        # creates a filter
+        fil = Filter.objects.create(
+                user = user_tfi, query = tag, name = "test")
+        # checks the ical of the filter
+        user = self._login( user_tfi )
+        self._validate_ical( reverse( 'list_events_filter_ical',
+                                      kwargs = {'filter_id':fil.id} ) )
+        # FIXME: check that all the events are correct
 
     def test_filter_ical( self ): # {{{2
-        "test for one iCalendar file for each filter"
-        for user_nr in range( USERS_COUNT ):
-            self.login_user( user_nr )
-            user = self.get_user( user_nr )
-            filters = Filter.objects.filter( user = user )
-            for filer in filters:
-                self.validate_ical( reverse( 'list_events_filter_ical',
-                                      kwargs = {'filter_id':filer.id} ) )
+        "test for the iCalendar file of a filter"
+        user_tfi = self._create_user()
+        # creates 10 events anonymously and 10 belonging to user_tfi
+        chars = string.letters # you can append: + string.digits
+        tag = ''.join( [ choice(chars) for i in xrange(10) ] )
+        for i in range(20):
+            if i % 2: user = user_tfi
+            else: user = None
+            event = Event(user = user, public = True, title="test" + str(i),
+                    start=datetime.date.today() + timedelta(days=i-10),
+                    tags = tag )
+        # creates a filter
+        fil = Filter.objects.create(
+                user = user_tfi, query = tag, name = "test")
+        # checks the ical of the filter
+        user = self._login( user_tfi )
+        self._validate_ical( reverse( 'list_events_filter_ical',
+                                      kwargs = {'filter_id':fil.id} ) )
+        # FIXME: check that all the events are correct
 
     @staticmethod # user_hash {{{2
     def user_hash( user_id ):
@@ -634,7 +701,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             filters = Filter.objects.filter( user = user )
             user_hash = self.user_hash( user.id )
             for filer in filters:
-                self.validate_ical( reverse( 'list_events_filter_ical_hashed',
+                self._validate_ical( reverse( 'list_events_filter_ical_hashed',
                                       kwargs = {'filter_id':filer.id,
                                                 'user_id':user.id,
                                                 'hash':user_hash} ) )
