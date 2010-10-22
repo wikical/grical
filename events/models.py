@@ -369,7 +369,7 @@ class EventManager( models.Manager ):# {{{1 pylint: disable-msg=R0904
             .get_query_set().filter( \
                                     Q( public = True ) \
                                     | Q( user = user )\
-                                    | Q( group__in = groups ) )
+                                    | Q( calendar__group__in = groups ) )
         else:
             query_set = super( EventManager, self )\
             .get_query_set().filter( public = True )
@@ -433,9 +433,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                null = True )
     " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105,C0301
 
-    # meta {{{2
-    objects = EventManager()
+    objects = EventManager() # {{{2
 
+    # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['start']
         verbose_name = _( u'Event' )
@@ -444,7 +444,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     # methods {{{2
     def next_coming_date(self):
         """ returns the next most proximate date of an event to today, which
-        can be the start date, the end date or one of the deadlines 
+        can be the start date, the end date or one of the deadlines; or None if
+        all are in the past
         
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -488,10 +489,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         today = datetime.date.today()
         # creates a list of deltas of the dates to today
         deltas = map(lambda d: d - today, dates)
-        # removes negative deltas from past events
+        # removes negative deltas from the past
         deltas = filter(lambda n: n.days >= 0, deltas)
-        # returns the smallest date
-        return today + ( sorted(deltas)[0] )
+        if len(deltas) > 0:
+            # returns the smallest date
+            return today + ( sorted(deltas)[0] )
+        else:
+            return None
 
     def icalendar( self, ical = None ):
         """ returns an iCalendar object of the event entry or add it to 'ical'
@@ -499,31 +503,18 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event = Event.parse_text(EXAMPLE)
         >>> ical = event.icalendar()
         >>> ical = vobject.readOne(ical.serialize())
-        >>> assert (ical.vevent.dtstart.value == event.start)
+        >>> assert (ical.vevent.categories.serialize() == 
+        ...  u'CATEGORIES:calendar,software,open-source,gridmind,gridcalendar\\r\\n')
         """
         if ical is None:
             ical = vobject.iCalendar()
             ical.add('METHOD').value = 'PUBLISH' # IE/Outlook needs this
+            ical.add('PRODID').value = settings.PRODID
         vevent = ical.add('vevent')
-        vevent.add('PRODID').value = '-//GridMind//NONSGML GridCalendar//EN'
-        vevent.add('UID').value = \
-                settings.PROJECT_NAME + u'-' + \
-                hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
-                + unicode(self.id) + u'@' + \
-                settings.HOST_IP
         vevent.add('SUMMARY').value = self.title
         vevent.add('DTSTART').value = self.start
-        if self.end: vevent.add('DTEND').value = self.end
-        if self.tags: vevent.add('CATEGORIES').value = \
-                u', '.join(self.tags.split(u' '))
-        if self.description: vevent.add('DESCRIPTION').value = self.description
-        # see rfc5545 3.8.7.2. Date-Time Stamp
-        vevent.add('DTSTAMP').value = self.modification_time
-        if self.public: vevent.add('CLASS').value = 'PUBLIC'
-        else: vevent.add('CLASS').value = 'PRIVATE'
-        if self.latitude and self.longitude:
-            vevent.add('GEO').value = \
-                unicode(self.latitude) + ";" + unicode(self.longitude)
+        if self.tags:
+            vevent.add('CATEGORIES').value = self.tags.split(u' ')
         location = ""
         # rfc5545 specifies CRLF for new lines:
         if self.address: location = self.address + " "
@@ -531,7 +522,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if self.city: location = location + self.city + " "
         if self.country: location = location + self.country + " "
         vevent.add('LOCATION').value = location
-        # TODO: add VALARMs when there are deadlines
+        vevent.add('UID').value = \
+                settings.PROJECT_NAME + u'-' + \
+                hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
+                + unicode(self.id) + u'@' + \
+                settings.HOST_IP
+        if self.end: vevent.add('DTEND').value = self.end
+        if self.description: vevent.add('DESCRIPTION').value = self.description
+        # see rfc5545 3.8.7.2. Date-Time Stamp
+        vevent.add('DTSTAMP').value = self.modification_time
+        if self.public: vevent.add('CLASS').value = 'PUBLIC'
+        else: vevent.add('CLASS').value = 'PRIVATE'
+        if self.latitude and self.longitude:
+            vevent.add('GEO').value = \
+                unicode(self.latitude) + u";" + unicode(self.longitude)
+        # TODO: add deadlines. As VALARMs or there is something better in
+        # rfc5545 ?
         return ical
 
     def clone( self, public = False ):
@@ -622,7 +628,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def save( self, *args, **kwargs ):
         """ Call the real 'save' function after some assertions """
         # It is not allowed to have a non-public event without owner:
-        assert not ( ( self.public == False ) and ( self.user == None ) )
+        assert not ( ( self.public == False ) and ( 
+            self.user == None  or type (self.user) == AnonymousUser ) )
         old_event = None
         if self.pk != None:
             try:
@@ -1209,7 +1216,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 "'event' must be an Event or an integer but it was: " +
                 str(event.__class__))
         # checking `user` parameter
-        if user is None:
+        if user is None or not user.is_authenticated():
             return event.public
         if isinstance(user, User):
             pass
@@ -1220,7 +1227,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 str(user.__class__))
         if event.public:
             return True
-        elif event.user == None:
+        elif event.user == None or type (event.user ) == AnonymousUser:
             return True
         elif event.user.id == user.id:
             return True
@@ -1250,6 +1257,53 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         group = Group.objects.get( id = group_id )
         cal_entry = Calendar.objects.get( event = self, group = group )
         cal_entry.delete()
+
+class ExtendedUser(User): # {{{1
+    """ Add some funtions to users using proxy-models
+
+    See http://docs.djangoproject.com/en/1.2/topics/db/models/#proxy-models
+
+    >>> from events.models import Event, Group, Membership
+    >>> now = datetime.datetime.now().isoformat()
+    >>> user = User.objects.create(username = "user " + now)
+    >>> group1 = Group.objects.create(name="group1 " + now)
+    >>> m = Membership.objects.create(user=user, group=group1)
+    >>> group2 = Group.objects.create(name="group2 " + now)
+    >>> m = Membership.objects.create(user=user, group=group2)
+    >>> euser = ExtendedUser.objects.get(id = user.id)
+    >>> assert ( len( euser.get_groups() ) == 2 )
+    >>> assert euser.has_group()
+    >>> f1 = Filter.objects.create(user = user, name = "f1", query = "query")
+    >>> f2 = Filter.objects.create(user = user, name = "f2", query = "query")
+    >>> assert ( len( euser.get_filters() ) == 2)
+    >>> assert euser.has_filter()
+    """
+    class Meta:
+        proxy = True
+
+    def get_hash(self):
+        """ return the hash code to authenticate by url """
+        return hashlib.sha256(
+                "%s!%s" % (settings.SECRET_KEY, self.id)).hexdigest()
+
+    def has_group(self):
+        """ returns True if the user is at least member of a group, False
+        otherwise """
+        return Group.objects.filter( membership__user = self ).count() > 0
+
+    def get_groups(self):
+        """ returns a queryset of the user's groups """
+        return Group.objects.filter( membership__user = self )
+
+    def has_filter(self):
+        """ returns True if the user has at least one filter, False
+        otherwise """
+        return Filter.objects.filter( user = self ).count() > 0
+
+    def get_filters(self):
+        """ returns a queryset of the user's filters """
+        return Filter.objects.filter( user = self )
+
 
 class EventUrl( models.Model ): # {{{1
     """ stores urls of events
@@ -1861,7 +1915,7 @@ class Group( models.Model ): # {{{1
         >>> assert(len(groups_of_user_1) == 1)
 
         """
-        if (user is None):
+        if ( user is None or type ( user ) == AnonymousUser ):
             return list()
         if isinstance(user, User):
             pass
@@ -1872,27 +1926,60 @@ class Group( models.Model ): # {{{1
                 str(user.__class__))
         return list(Group.objects.filter(membership__user=user))
 
+    def events(self, limit=5):
+        """ Returns a list of maximal `limit` events with at least one date
+        in the future (start, end or deadline).
+        
+        >>> from django.contrib.auth.models import User
+        >>> from events.models import Event, Group, Membership
+        >>> from datetime import timedelta
+        >>> now = datetime.datetime.now().isoformat()
+        >>> today = datetime.date.today()
+        >>> group = Group.objects.create(name="group " + now)
+        >>> event = Event(title="test for events " + now,
+        ...     start=timedelta(days=-1)+today, tags="test")
+        >>> event.save()
+        >>> event_deadline = EventDeadline(
+        ...         event = event, deadline_name = "test",
+        ...         deadline = today)
+        >>> event_deadline.save()
+        >>> user = User.objects.create(username = "user " + now)
+        >>> calendar = Calendar.objects.create( group = group,
+        ...     event = event )
+        >>> assert ( len(group.events()) == 1 )
+        """
+        today = datetime.date.today()
+        events = Event.objects.filter( Q(calendar__group = self) & (
+                    Q(start__gte=today) | Q(end__gte=today) |
+                    Q(deadlines__deadline__gte=today) )).distinct()
+        # next line touches the date base, but notice that the number of future
+        # events of a group shouldn't be big
+        return sorted(events, key=Event.next_coming_date)[0:limit]
+
     @staticmethod
     def events_in_groups(groups, limit=5):
-        """ Returns a dictionary whose keys are groups and its values are lists
-        of maximal `limit` events of the group in the future.
+        """ Returns a dictionary whose keys are groups and its values are non
+        empty lists of maximal `limit` events of the group with at least one
+        date in the futur
+        
+        FIXME: add test.
         """
         to_return = {}
+        if not limit > 0:
+            return to_return
         if len(groups) == 0:
             return to_return
         for group in groups:
-            if limit > 0:
-                # TODO: fix the code below because it is not efficient because
-                # the filter could return millions of events
-                events = Event.objects.filter(group=group).filter(
-                        start__gte=datetime.date.today()) [0:limit]
+                events = group.events(limit)
                 if len(events) > 0:
                     to_return[group] = events
         return to_return
 
     @classmethod
     def groups_for_add_event( cls, user, event ):
-        "return groups for event to add"
+        """ return groups for event to add.
+        
+        FIXME: what is this? check """
         if isinstance(event, Event):
             pass
         elif isinstance(event, int):
@@ -1946,6 +2033,7 @@ class Calendar( models.Model ): # {{{1
             Group, verbose_name = _( u'Group' ), related_name = 'calendar' )
     date_added = models.DateField( 
             _( u'Date added' ), editable = False, auto_now_add = True )
+    # TODO: save who added it
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         unique_together = ( "event", "group" )
         verbose_name = _( u'Calendar' )

@@ -2,7 +2,11 @@
 
 <div class="event_medium">
   <span class="event_medium_ical_logo">
-    <a href="{% url event_show_ical event.id %}"><img src="{{ MEDIA_URL }}icallogo.png" /></a>
+    {% if USER and not event.public %}
+      <a href="{% url event_show_ical_hash event.id USER.id USER.get_hash%}"><img src="{{ MEDIA_URL }}icallogo.png" /></a>
+    {% else %}
+      <a href="{% url event_show_ical event.id %}"><img src="{{ MEDIA_URL }}icallogo.png" /></a>
+    {% endif %}
   </span>
   <span class="event_medium_title">
     <a href="{% url event_show event.id %}">{{ event.title }}</a>
