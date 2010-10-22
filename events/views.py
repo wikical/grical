@@ -24,6 +24,7 @@
 """ VIEWS """
 # imports {{{1
 import hashlib
+import datetime
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -36,7 +37,7 @@ from django.template import RequestContext
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from gridcalendar.events.decorators import login_required
 
 from gridcalendar.settings_local import SECRET_KEY
@@ -49,9 +50,7 @@ from gridcalendar.events.forms import (
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
     get_event_form, EventSessionForm )
 from gridcalendar.events.lists import ( 
-    filter_list, events_with_user_filters,
-    user_filters_events_list, all_events_in_user_groups, uniq_events_list,
-    list_up_to_max_events_ip_country_events, list_search_get )
+    filter_list, list_search_get )
 #from django.shortcuts import render_to_response
 #from django.http import HttpResponseRedirect
 #from django import forms
@@ -166,7 +165,7 @@ def event_edit( request, event_id ): # {{{1
     # and the group the event belongs to
     if not event.public :
         # events submitted by anonymous users cannot be non-public:
-        assert ( event.user != None )
+        assert ( event.user != None and type ( event.user ) != AnonymousUser )
         if ( not request.user.is_authenticated() ):
             return _error( request,
                 _( 'You need to be logged-in to be able to edit the event \
@@ -270,7 +269,7 @@ def event_edit_raw( request, event ): # {{{1
     # and the group the event belongs to
     if ( not event.public ):
         # events submitted by anonymous users cannot be non-public:
-        assert ( event.user != None )
+        assert ( event.user != None and type ( event.user ) != AnonymousUser )
         if ( not request.user.is_authenticated() ):
             return _error( request,
                 _( 'You need to be logged-in to be able to edit the event \
@@ -485,19 +484,14 @@ def filter_drop( request, filter_id ): # {{{1
 @login_required
 def list_filters_my( request ): # {{{1
     """ View that lists the filters of the logged-in user """
-    if ( ( not request.user.is_authenticated() ) or
-            ( request.user.id is None ) ):
+    list_of_filters = filter_list( request.user.id )
+    if len( list_of_filters ) == 0:
         return _error( request,
-                _( "Your search didn't get any result" ) )
+            _( "You do not have any filters configured" ) )
     else:
-        list_of_filters = filter_list( request.user.id )
-        if len( list_of_filters ) == 0:
-            return _error( request,
-                _( "You do not have any filters configured" ) )
-        else:
-            return render_to_response( 'list_filters_my.html',
-                {'title': 'list of my filters', 'filters': list_of_filters},
-                context_instance = RequestContext( request ) )
+        return render_to_response( 'list_filters_my.html',
+            {'title': 'list of my filters', 'filters': list_of_filters},
+            context_instance = RequestContext( request ) )
 
 def list_events_of_user( request, username ): # {{{1
     """ View that lists the events of a user """
@@ -506,7 +500,7 @@ def list_events_of_user( request, username ): # {{{1
         try:
             user = User.objects.get( username__exact = username )
             useridtmp = user.id
-            events = Event.objects.filter( user = useridtmp )
+            events = Event.objects.filter( user = useridtmp ) # FIXME: what is this?
             events = Event.objects.filter( public = True )
             if len( events ) == 0:
                 return _error( request,
@@ -536,17 +530,13 @@ def list_events_of_user( request, username ): # {{{1
 @login_required
 def list_events_my( request ): # {{{1
     """ View that lists the events the logged-in user is the owner of """
-    if ( ( not request.user.is_authenticated() ) or
-            ( request.user.id is None ) ):
+    events = Event.objects.filter( user = request.user )
+    if len( events ) == 0:
         return _error( request, _( "Your search didn't get any result" ) )
     else:
-        events = Event.objects.filter( user = request.user )
-        if len( events ) == 0:
-            return _error( request, _( "Your search didn't get any result" ) )
-        else:
-            return render_to_response( 'list_events_my.html',
-                {'title': _( "list my events" ), 'events': events},
-                context_instance = RequestContext( request ) )
+        return render_to_response( 'list_events_my.html',
+            {'title': _( "list my events" ), 'events': events},
+            context_instance = RequestContext( request ) )
 
 def list_events_tag( request, tag ): # {{{1
     """ returns a view with events having a tag """
@@ -570,7 +560,6 @@ def main( request ): # {{{1
     >>> r.status_code # /
     200
     """
-    user_id = request.user.id
     if request.method == 'POST':
         if request.user.is_authenticated():
             event_form = SimplifiedEventForm( request.POST )
@@ -598,57 +587,26 @@ def main( request ): # {{{1
             event_form = SimplifiedEventForm()
         else:
             event_form = SimplifiedEventFormAnonymous()
-
     if request.user.is_authenticated():
-        efl = events_with_user_filters( user_id )
-        uel = uniq_events_list( efl )
-        events = user_filters_events_list( user_id, efl )
+        # FIXME: add events matching filters
+        pass
     else:
-        efl = list()
-        uel = list()
-        events = list()
-
-    ip_country_event_list = list()
-    ip_continent_event_list = list()
-    landless_event_list = list()
-
-    if len( events ) < settings.MAX_EVENTS_ON_ROOT_PAGE :
-        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len( events )
-        ip_country_event_list = list_up_to_max_events_ip_country_events( 
-                request.META.get( 'REMOTE_ADDR' ),
-                user_id, uel, add_thismany, 'country' )
-    else:
-        ip_country_event_list = list()
-
-    if ( len( events ) + len( ip_country_event_list ) ) < \
-            settings.MAX_EVENTS_ON_ROOT_PAGE :
-        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len( events ) - \
-                len( ip_country_event_list )
-        ip_continent_event_list = list_up_to_max_events_ip_country_events( 
-                request.META.get( 'REMOTE_ADDR' ), user_id, uel, add_thismany,
-                'continent' )
-    else:
-        ip_continent_event_list = list()
-
-    if ( len( events ) + len( ip_country_event_list ) + \
-            len( ip_continent_event_list ) ) < \
-                settings.MAX_EVENTS_ON_ROOT_PAGE :
-        add_thismany = settings.MAX_EVENTS_ON_ROOT_PAGE - len( events ) - \
-                len( ip_country_event_list ) - len( ip_continent_event_list )
-        landless_event_list = list_up_to_max_events_ip_country_events( 
-                request.META.get( 'REMOTE_ADDR' ), user_id, uel, add_thismany,
-                'landless' )
-
+        # FIXME:
+        pass
+    events = list()
+    for event in Event.objects.all():
+        if not event.is_viewable_by_user(request.user): continue
+        if event.next_coming_date():
+            events.append(event)
+        if len(events) >= settings.MAX_EVENTS_ON_ROOT_PAGE:
+            break
+    events = sorted(events, key=Event.next_coming_date)
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'base_main.html',
             {
                 'title': _( "Welcome to GridCalendar" ),
                 'form': event_form,
                 'events': events,
-                'ip_country_event_list': ip_country_event_list,
-                'ip_continent_event_list': ip_continent_event_list,
-                'landless_event_list': landless_event_list,
-                'group_events': all_events_in_user_groups( request.user.id, 5 ),
                 'about_text': about_text,
             },
             context_instance = RequestContext( request ) )

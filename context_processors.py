@@ -30,6 +30,8 @@
 from django.contrib.sites.models import Site
 from django.conf import settings
 
+from events.models import ExtendedUser
+
 def global_template_vars(request):
     """ Adds variables to all templates. """
     current_site = Site.objects.get_current()
@@ -37,10 +39,14 @@ def global_template_vars(request):
         protocol = "https"
     else:
         protocol = "http"
+    if request.user.is_authenticated():
+        user = ExtendedUser.objects.get( id = request.user.id )
+    else:
+        user = None
     return {
             'PROTOCOL': protocol,
             'DOMAIN': current_site.domain,
-            'media_url': settings.MEDIA_URL,
-            'user': request.user,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'USER': user,
             'VERSION': settings.VERSION,
             }

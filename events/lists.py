@@ -250,36 +250,6 @@ def list_search_get(q, user_id=None, only_future=1):
 
     return final_list_of_events
 
-
-def events_with_user_filters(user_id):
-    """
-    returns a list of dictionaries, which contain 'event_id' and 'filter_id'
-    """
-    try:
-        u = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return None
-
-    filter_list = Filter.objects.filter(user=u)
-    l = len(filter_list)
-    if l == 0:
-        return list()
-    else:
-        finlist = list()
-        for filter in filter_list:
-            try:
-                event_list = list_search_get(filter.query, user_id, 1)
-            except:
-                return list()
-            for event in event_list:
-                event_dict = {}
-                event_dict['filter_id'] = filter.id
-                event_dict['event_id'] = event.id
-                event_dict['clone_of'] = event.clone_of
-                finlist.append(event_dict)
-        return finlist
-
-
 def uniq_events_list(events_filters_list):
     """
     returns
@@ -392,7 +362,8 @@ def all_events_in_user_filters(user_id):
 
 def all_events_in_user_groups(user_id, limit):
     """
-    This function returns a list of dictionaries, which contain the group name and a list of events
+    This function returns a list of dictionaries, which contain the group
+    and a list of events
     """
     finlist = list()
     if (user_id is None):

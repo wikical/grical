@@ -1,14 +1,14 @@
 {% load i18n %}
 {% load markup %}
 
-{% if user.username %}
+{% if USER.username %}
     <p align="right"><a href="{% url group_new %}">{% trans "Create a new group" %}</a></p>
-    <h2 align="center">{% trans "Coming events in my groups" %}</h2>
-    {% if group_events %}
+    <h2 align="center">{% trans "Groups" %}</h2>
+    {% if USER.has_group %}
         <ul>
-            {% for g in group_events %}
-                <li>{{ g }}</li>
-                {% for event in g.el %}
+            {% for group in USER.get_groups %}
+                <li>{{ group.name }}</li>
+                {% for event in group.events %}
                     <p>
                         <div class="field">
                             <a href="{% url event_show event.id %}">{{ event.title }}</a><br />

@@ -253,7 +253,6 @@ def group_invite(request, group_id):
                 },
                 context_instance=RequestContext(request))
 
-@login_required
 def group_invite_activate(request, activation_key):
     """ A user clicks on activation link """
     invitation = GroupInvitation.objects.get(activation_key=activation_key)

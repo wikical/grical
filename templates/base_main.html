@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% comment %}
 {% block feeds %}
-<!--
-    TODO: make below feed show all events
--->
 <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_filter_rss 1 %}" />
 {%endblock feeds%}
+{% endcomment %}
 
 {% block column1 %}
 
@@ -14,38 +13,12 @@
 
 {% if events %}
     {% for event in events %}
-        {% include "event_show_medium.html" %}
-        {% trans "Matches your filters" %}:
-        {% for fil in event.filters %}
-            <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
-            {% comment %}
-            FIXME
-            <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}icallogo.png" width="14"></a>&nbsp;
-            {% endcomment %}
-            <a href="{% url list_events_filter_rss_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
-        {% endfor %}
-    {% endfor %}
-{% endif %}
-
-
-{% if ip_country_event_list %}
-    <!-- ip country events -->
-    {% for event in ip_country_event_list %}
-        {% include "event_show_medium.html" %}
-    {% endfor %}
-{% endif %}
-
-{% if ip_continent_event_list %}
-    <!-- ip continent events -->
-    {% trans "Below are some events which happen soon on the continent we think you are in now" %}:
-    {% for event in ip_continent_event_list %}
-        {% include "event_show_medium.html" %}
-    {% endfor %}
-{% endif %}
-
-{% if landless_event_list %}
-    <!-- events without country -->
-    {% for event in landless_event_list %}
+        {% comment %}
+        <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
+        FIXME
+        <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}icallogo.png" width="14"></a>&nbsp;
+        <a href="{% url list_events_search_rss_hashed fil.query fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
+        {% endcomment %}
         {% include "event_show_medium.html" %}
     {% endfor %}
 {% endif %}
