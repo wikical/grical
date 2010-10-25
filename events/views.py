@@ -352,31 +352,13 @@ def query( request ): # {{{1
     # FIXME: replace everything using something like the first example at
     # http://www.djangobook.com/en/1.0/chapter07/
     if 'q' in request.GET and request.GET['q']:
-        query_lowercase = request.GET['q'].lower()
         return HttpResponseRedirect( 
                 reverse( 'list_events_search',
-                kwargs = {'query': query_lowercase} ) )
+                kwargs = {'query': request.GET['q'], } ) )
 
 def list_events_search( request, query ): # {{{1
     """ View to show the results of a search query """
-    query_lowercase = query.lower()
-    user_id = request.user.id
-    try:
-        search_result = list_search_get( query_lowercase, user_id, 0 )
-    except ValueError, ( errmsg ):
-        if not isinstance(errmsg, list):
-            errors = [smart_unicode(errmsg),]
-        else:
-            errors = errmsg
-        return render_to_response( 'error.html',
-            {
-                'title': _( "GridCalendar - search error" ),
-                'messages_col1': errors,
-                'query': query_lowercase,
-                'form': get_event_form( request.user )
-            },
-            context_instance = RequestContext( request ) )
-
+    search_result = Filter.matches(query, request.user)
     if len( search_result ) == 0:
         return render_to_response( 'error.html',
             {

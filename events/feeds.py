@@ -20,20 +20,22 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-""" Functions for RSS and iCal """
+""" views for RSS, Atom and iCal """
 
 # TODO: validate with test iCal and RSS output using validations like e.g.
 # http://arnout.engelen.eu/icalendar-validator/validate/
 
-import vobject, unicodedata
+import vobject
+import unicodedata
+import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.utils.translation import ugettext as _
 from django.template import RequestContext
-
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 
 import gridcalendar.settings as settings
@@ -206,12 +208,21 @@ def ICalForSearchHash( request, query, user_id, hash ): # {{{1
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForGroup( request, group_id ): # {{{1
+    """ return all public events with a date in the future in icalendar format
+    belonging to a group """
     group = Group.objects.filter(id = group_id)
-    elist = Event.objects.filter(group = group)
-    elist = [eve for eve in elist if eve.is_viewable_by_user(request.user)]
+    elist = Event.objects.filter(calendar__group = group, public = True)
+    today = datetime.date.today()
+    elist = elist.filter (
+                Q(start__gte=today) |
+                Q(end__gte=today) |
+                Q(deadlines__deadline__gte=today) ).distinct()
+    elist = sorted(elist, key=Event.next_coming_date)
     return _ical_http_response_from_event_list( elist, group.name )
 
 def ICalForGroupHash( request, group_id, user_id, hash ): # {{{1
+    """ return all events with a date in the future in icalendar format
+    belonging to a group """
     user = ExtendedUser.objects.get(id = user_id)
     if hash != user.get_hash():
         return render_to_response('error.html',
@@ -219,13 +230,18 @@ def ICalForGroupHash( request, group_id, user_id, hash ): # {{{1
             'message_col1': _(u"hash authentification failed")
             },
             context_instance=RequestContext(request))
-    group = Group.objects.filter(id = group_id)
+    group = Group.objects.get(id = group_id)
     if not group.is_member(user_id):
         return render_to_response('error.html',
             {'title': 'error',
             'message_col1': _(u"not a member of the tried group")
             },
             context_instance=RequestContext(request))
-    elist = Event.objects.filter(group = group)
-    elist = [eve for eve in elist if eve.is_viewable_by_user(user_id)]
+    elist = Event.objects.filter(calendar__group = group)
+    today = datetime.date.today()
+    elist = elist.filter (
+                Q(start__gte=today) |
+                Q(end__gte=today) |
+                Q(deadlines__deadline__gte=today) ).distinct()
+    elist = sorted(elist, key=Event.next_coming_date)
     return _ical_http_response_from_event_list( elist, group.name )

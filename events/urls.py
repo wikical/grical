@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
@@ -22,15 +23,16 @@
 
 """ URLs """
 
+# imports {{{1
 from django.conf.urls.defaults import *
 
 from gridcalendar.events import views, views_groups, rss, feeds
 
-urlpatterns = patterns('',                  # pylint: disable-msg=C0103
+urlpatterns = patterns('',            # root url {{{1 pylint: disable-msg=C0103
     url(r'^$', views.main, name='main'),
 )
 
-# views of a single event
+# urls for managing single event {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/new/$',
         views.event_new,                name='event_new'),
@@ -50,7 +52,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         feeds.ICalForEventHash,  name='event_show_ical_hash'),
 )
 
-# events matching some query 
+# urls for managing searches {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^q/',
         views.query,              name='query'),
