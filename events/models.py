@@ -26,6 +26,7 @@
 # imports {{{1
 import random
 import re
+from re import UNICODE
 import hashlib
 import threading
 import datetime
@@ -365,11 +366,10 @@ class EventManager( models.Manager ):# {{{1 pylint: disable-msg=R0904
             if user.is_staff:
                 return super( EventManager, self ).get_query_set()
             groups = Group.objects.filter( membership__user = user )
-            query_set = super( EventManager, self )\
-            .get_query_set().filter( \
-                                    Q( public = True ) \
-                                    | Q( user = user )\
-                                    | Q( calendar__group__in = groups ) )
+            query_set = super( EventManager, self ).get_query_set().filter(
+                    Q( public = True ) |
+                    Q( user = user ) |
+                    Q( calendar__group__in = groups ) )
         else:
             query_set = super( EventManager, self )\
             .get_query_set().filter( public = True )
@@ -1215,8 +1215,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             raise TypeError(
                 "'event' must be an Event or an integer but it was: " +
                 str(event.__class__))
+        if event.public:
+            return True
         # checking `user` parameter
-        if user is None or not user.is_authenticated():
+        if user is None:
             return event.public
         if isinstance(user, User):
             pass
@@ -1225,11 +1227,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else: raise TypeError(
                 "'user' must be a User or an integer but it was: " +
                 str(user.__class__))
-        if event.public:
-            return True
-        elif event.user == None or type (event.user ) == AnonymousUser:
-            return True
-        elif event.user.id == user.id:
+        if not user.is_authenticated():
+            return event.public
+        if event.user.id == user.id:
             return True
         # iterating over all groups that the event belongs to
         for group in Group.objects.filter( events__id__exact = event.id ):
@@ -1751,17 +1751,76 @@ class Filter( models.Model ): # {{{1
         """ django utility ofr url look-up """
         return ( 'filter_edit', (), { 'filter_id': self.id } )
 
-    # FIXME Paul
-    def matches(self, event):
-        """ returns 0 if `event` doesn't match the filter; otherwise a number
-        bigger than 0 which indicates the strength of the match """
-        # FIXME: specify the search syntax, and a fast method to know if a
-        # single event matches a filter, then change this code:
-        from gridcalendar.events.lists import list_search_get
-        for event_in_list in list_search_get(self.query):
-            if event == event_in_list:
-                return True
-            return False
+    @staticmethod
+    def matches( query, user, limit = 100 ):
+        """ returns a sorted (`Event.next_coming_date`) list of of `limit`
+        events matching `query` viewable by `user`
+        
+        - Single words are looked in `title`, `tags`, `city`, `country` and
+          `acronym` with or
+        - A date in isoformat (yyyy-mm-dd) restrict the query to events with
+          dates from them on, i.e. from the last one of all dates in the query
+        - Tags (#tag) restrict the query to events with these tags
+        - Locations (@location) restrict the query to events having these
+          location in `city` or `country`
+        - Groups (!group) restrict the query to events of the group
+
+          """
+        if isinstance(user, int):
+            user = User.objects.get(id = user)
+        elif user is not None and user.id is None:
+            user = None
+        # TODO: use the catche system for queries
+        # TODO: implement it less restrictive, i.e. also showing later events
+        # with only some of the specified tags
+        queryset = Event.objects.all()
+        # if no user get only public events
+        if user is None:
+            queryset = queryset.filter(public = True)
+        # groups
+        regex = re.compile('!(\w+)', UNICODE)
+        for group_name in regex.findall(query):
+            queryset = queryset.filter(calendar__group__name__iexact = group_name)
+        # locations
+        regex = re.compile('@(\w+)', UNICODE)
+        for loc_name in regex.findall(query):
+            queryset = queryset.filter(
+                    Q( city__iexact = loc_name ) | Q( country__iexact = loc_name ) )
+                    # TODO: use also translations of locations
+        # tags
+        regex = re.compile('#(\w+)', UNICODE)
+        tags = regex.findall(query)
+        if tags:
+            queryset = TaggedItem.objects.get_intersection_by_model(
+                    queryset, tags)
+        # dates
+        regex = re.compile('(\d\d\d\d)-(\d\d)-(\d\d)')
+        dates = regex.findall(query)
+        if dates:
+            dates = [datetime.date(year, month, day) for year, month, day in
+                    dates]
+            date = sorted(dates)[-1] # last date
+            queryset = queryset.filter(
+                    Q(start__gte = date) | Q(end__gte = date) |
+                    Q(deadlines__deadline__gte = date) )
+        # look for words
+        regex = re.compile('([^!@#]\w+)', UNICODE)
+        for word in regex.findall(query):
+            queryset = queryset.filter(
+                    Q(title__icontains = word) |
+                    Q(tags__icontains = word) |
+                    Q(city__iexact = word) |
+                    Q(country__iexact = word) |
+                    Q(acronym__iexact = word) )
+        # TODO: add full indexing text on Event.description and comments. See
+        # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
+        # remove duplicates
+        queryset = queryset.distinct()
+        # filter events the user cannot see
+        if user is not None:
+            queryset.filter( Q( user = user) | Q(calendar__group__membership__user = user) )
+        #return sorted(queryset, key=Event.next_coming_date)[0:limit]
+        return queryset[0:limit]
 
     @staticmethod
     def notify_users_when_wanted(event):
