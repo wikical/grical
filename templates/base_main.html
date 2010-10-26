@@ -16,8 +16,8 @@
         {% comment %}
         <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
         FIXME
-        <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}icallogo.png" width="14"></a>&nbsp;
-        <a href="{% url list_events_search_rss_hashed fil.query fil.user_id fil.hash %}"><img src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
+        <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>&nbsp;
+        <a href="{% url list_events_search_rss_hashed fil.query fil.user_id fil.hash %}"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" /></a>
         {% endcomment %}
         {% include "event_show_medium.html" %}
     {% endfor %}

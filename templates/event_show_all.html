@@ -12,7 +12,7 @@
     <a href="{% url group_add_event event.id %}"><span class="field_link">{% trans "add this event to a group" %}</span></a>
     <hr />
     <p>
-        <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img src="{{ MEDIA_URL }}icallogo.png" width="16"></span></a>
+        <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16"></span></a>
         {% if event.acro %}
             {{ event.acro }}
         {% endif %}

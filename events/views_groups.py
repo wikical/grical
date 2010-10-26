@@ -31,6 +31,7 @@ from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.contrib.auth.models import User
 from gridcalendar.events.decorators import login_required
+from django.db.models import Q
 
 from gridcalendar.settings import SECRET_KEY
 
@@ -185,11 +186,15 @@ def group_add_event(request, event_id):
                     },
                     context_instance=RequestContext(request))
 
-@login_required
 def list_events_group(request, group_id):
     """ view that lists the events of group """
-    group = Group.objects.filter(id=group_id)
-    events = Event.objects.filter(group=group)
+    group = Group.objects.get( id = group_id )
+    events = Event.objects.filter(calendar__group = group)
+    if request.user and not request.user.id is None:
+        events.filter( Q( user = request.user) |
+                Q(calendar__group__membership__user = request.user) )
+    else:
+        events.filter( public = True )
     hashvalue = hashlib.sha256(
             "%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
     return render_to_response('groups/group.html',

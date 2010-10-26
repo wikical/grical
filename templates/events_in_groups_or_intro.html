@@ -8,7 +8,7 @@
         <ul>
             {% for group in USER.get_groups %}
             <li>
-                <a href="{% url list_events_group_ical_hashed group.id USER.id USER.get_hash %}"><img src="{{ MEDIA_URL }}icallogo.png" /></a>
+                <a href="{% url list_events_group_ical_hashed group.id USER.id USER.get_hash %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
                 {{ group.name }}</li>
                 {% for event in group.events %}
                     <p>

@@ -2,40 +2,47 @@
 {% load i18n %}
 
 {% block feeds %}
-<link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss_hashed group_id user_id hash %}" />
+{% if USER.is_authenticated %}
+    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss_hashed group_id user_id hash %}" />
+{% else %}
+    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss group_id %}" />
+{% endif %}
 {%endblock feeds%}
 
 {% block column1 %}
 
 {% if events %}
 
-<p>
+    <p>
+        {% if USER.is_authenticated %}
+            <a href="{% url list_events_group_rss_hashed group_id user_id hash %}">
+                <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />
+            </a>
+        <a href="{% url list_events_group_ical_hashed group_id user_id hash %}">
+            <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />
+        </a>
+        {% else %}
+            <a href="{% url list_events_group_rss group_id %}">
+                <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />
+            </a>
+        <a href="{% url list_events_group_ical group_id %}">
+            <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />
+        {% endif %}
+    </p>
 
-<a href="{% url list_events_group_rss_hashed group_id user_id hash %}">
-<img src="{{MEDIA_URL}}15px-Feed-icon.svg.png">
-RSS
-</a>
+    <h3>
+    {% blocktrans count events|length as counter %}
+        Event in this group
+    {% plural %}
+        Events in this group
+    {% endblocktrans %}
+    </h3>
+    {% include "list_events_wrapper.html" %}
 
-</p>
-
-<p>
-
-<a href="{% url list_events_group_ical_hashed group_id user_id hash %}">
-<img width="16" src="{{MEDIA_URL}}ical-small.png">
-iCal
-</a>
-
-</p>
-
-<h3> {% trans "Events in this group" %}:</h3>
-{% include "list_events_wrapper.html" %}
 {% else %}
 
-<p>{% trans "There are no events in this group" %}.</p>
+    <p>{% trans "There are no events in this group." %}</p>
 
 {% endif %}
 
-
-
 {% endblock %}
-
