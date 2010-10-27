@@ -79,7 +79,7 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         rss.rss_for_group_hash,         name='list_events_group_rss_hashed'),
     url(r'^g/(?P<group_id>\d+)/$',
-        views_groups.list_events_group, name='list_events_group'),
+        views_groups.group_view, name='group_view'),
     # TODO: this should be a view with everything about the group for members
     # and not members; see also list_groups_my
 )

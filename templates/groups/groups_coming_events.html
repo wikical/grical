@@ -1,0 +1,16 @@
+{% load i18n %}
+
+<p>{% trans "Next coming events of the group:" %}</p>
+<ul>
+    {% for group in USER.get_groups %}
+        {% if group.has_coming_events %}
+            <li>
+                <a href="{% url list_events_group_ical_hashed group.id USER.id USER.get_hash %}">
+                    <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+                <a href="{% url group_view group.id %}"> {{ group.name }} </a>
+            </li>
+            {% include "groups/group_coming_events.html" %}
+            <hr />
+        {% endif %}
+    {% endfor %}
+</ul>

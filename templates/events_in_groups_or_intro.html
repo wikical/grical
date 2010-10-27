@@ -2,29 +2,17 @@
 {% load markup %}
 
 {% if USER.username %}
-    <p align="right"><a href="{% url group_new %}">{% trans "Create a new group" %}</a></p>
-    <h2 align="center">{% trans "Groups" %}</h2>
-    {% if USER.has_group %}
-        <ul>
-            {% for group in USER.get_groups %}
-            <li>
-                <a href="{% url list_events_group_ical_hashed group.id USER.id USER.get_hash %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
-                {{ group.name }}</li>
-                {% for event in group.events %}
-                    <p>
-                        <div class="field">
-                            <a href="{% url event_show event.id %}">{{ event.title }}</a><br />
-                            <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
-                            </span>
-                        </div>
-                    </p>
-                {% endfor %}
-            <hr />
-            {% endfor %}
-        </ul>
+    {% if USER.has_groups %}
+        <h2 align="center">{% trans "Groups" %}</h2>
+        <p align="right"><a href="{% url group_new %}">{% trans "Create a new group" %}</a></p>
+        {% if USER.has_groups_with_coming_events %}
+            {% include "groups/groups_coming_events.html" %}
+        {% else %}
+            <!-- TODO: recommend some events -->
+            <p>{% trans "No coming events in your groups." %}</p>
+            {% endif %}
     {% else %}
-        <!-- TODO: recommend some events -->
-        <p>{% trans "No events in your groups." %}</p>
+        {% trans "You are not a member of any group" %}
     {% endif %}
 {% else %}
     <h2>{% trans "What is GridCalendar.net?" %}</h2>

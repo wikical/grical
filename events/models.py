@@ -1259,9 +1259,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         cal_entry.delete()
 
 class ExtendedUser(User): # {{{1
-    """ Add some funtions to users using proxy-models
+    """ Some aditional funtions to users
+    
+    It uses the django proxy-models approach, see
+    http://docs.djangoproject.com/en/1.2/topics/db/models/#proxy-models
 
-    See http://docs.djangoproject.com/en/1.2/topics/db/models/#proxy-models
+    The variable USER (a ExtendedUser instance) is available in the `context`
+    for all views and templates
 
     >>> from events.models import Event, Group, Membership
     >>> now = datetime.datetime.now().isoformat()
@@ -1272,11 +1276,16 @@ class ExtendedUser(User): # {{{1
     >>> m = Membership.objects.create(user=user, group=group2)
     >>> euser = ExtendedUser.objects.get(id = user.id)
     >>> assert ( len( euser.get_groups() ) == 2 )
-    >>> assert euser.has_group()
+    >>> assert euser.has_groups()
     >>> f1 = Filter.objects.create(user = user, name = "f1", query = "query")
     >>> f2 = Filter.objects.create(user = user, name = "f2", query = "query")
     >>> assert ( len( euser.get_filters() ) == 2)
     >>> assert euser.has_filter()
+    >>> event = Event(title="test for ExtendedUser " + now,
+    ...         start=datetime.date.today(), tags="test")
+    >>> event.save()
+    >>> calendar = Calendar.objects.create(event = event, group = group2)
+    >>> assert euser.has_groups_with_coming_events()
     """
     class Meta:
         proxy = True
@@ -1286,7 +1295,7 @@ class ExtendedUser(User): # {{{1
         return hashlib.sha256(
                 "%s!%s" % (settings.SECRET_KEY, self.id)).hexdigest()
 
-    def has_group(self):
+    def has_groups(self):
         """ returns True if the user is at least member of a group, False
         otherwise """
         return Group.objects.filter( membership__user = self ).count() > 0
@@ -1303,6 +1312,15 @@ class ExtendedUser(User): # {{{1
     def get_filters(self):
         """ returns a queryset of the user's filters """
         return Filter.objects.filter( user = self )
+
+    def has_groups_with_coming_events( self ):
+        """ returns True if at least one group of the user has a coming event
+        (start, end or a deadline in the future)
+        """
+        for group in self.get_groups():
+            if group.has_coming_events():
+                return True
+        return False
 
 
 class EventUrl( models.Model ): # {{{1
@@ -1864,7 +1882,30 @@ class Filter( models.Model ): # {{{1
                     break
 
 class Group( models.Model ): # {{{1
-    """ groups of users and events """
+    """ groups of users and events
+        
+    >>> from django.contrib.auth.models import User
+    >>> from events.models import Event, Group, Membership
+    >>> from datetime import timedelta
+    >>> now = datetime.datetime.now().isoformat()
+    >>> today = datetime.date.today()
+    >>> group = Group.objects.create(name="group " + now)
+    >>> event = Event(title="test for events " + now,
+    ...     start=timedelta(days=-1)+today, tags="test")
+    >>> event.save()
+    >>> event_deadline = EventDeadline(
+    ...         event = event, deadline_name = "test",
+    ...         deadline = today)
+    >>> event_deadline.save()
+    >>> calendar = Calendar.objects.create( group = group,
+    ...     event = event )
+    >>> assert ( len(group.get_coming_events()) == 1 )
+    >>> assert ( group.has_coming_events() )
+    >>> assert ( len(group.get_users()) == 0 )
+    >>> user = User.objects.create(username = "user " + now)
+    >>> membership = Membership.objects.create(group = group, user = user)
+    >>> assert ( len(group.get_users()) == 1 )
+    """
     # FIXME: groups only as lowerDeadlines case ascii (case insensitive).
     # Validate everywhere including save method.
     name = models.CharField( _( u'Name' ), max_length = 80, unique = True )
@@ -1889,10 +1930,7 @@ class Group( models.Model ): # {{{1
     @models.permalink
     def get_absolute_url( self ):
         "get internal URL of an event"
-        # FIXME: make a view for a group and change the name list_events_group.
-        # The view could have on the left events and on the right members info
-        # and messages
-        return ( 'list_events_group', (), { 'group_id': self.id } )
+        return ( 'group_view', (), { 'group_id': self.id } )
 
     # FIXME: rename to is_member
     def is_member( self, user ):
@@ -1903,9 +1941,14 @@ class Group( models.Model ): # {{{1
         else:
             return False
 
+    def get_users( self ):
+        """ returns a queryset (which can be used as a list) of ExtendedUsers
+        members of the group """
+        return ExtendedUser.objects.filter( membership__group = self )
+
     @staticmethod
     def is_user_in_group( user, group ):
-        """ Returns True if `user` is in `group`.
+        """ Returns True if `user` is in `group`, otherwise False.
 
         The parameters `user` and `group` can be an instance the classes User
         and Group or the id number.
@@ -1926,16 +1969,14 @@ class Group( models.Model ): # {{{1
             user_id = user.id
         elif isinstance(user, int):
             user_id = user
-        else: raise TypeError(
-                "'user' must be a User instance or an integer but it was " +
-                str(user.__class__))
+        else:
+            return False
         if isinstance(group, Group):
             group_id = group.id
         elif isinstance(group, int):
             group_id = group
-        else: raise TypeError(
-                "'group' must be a Group instance or an integer but it was " +
-                str(group.__class__))
+        else:
+            return False
         times_user_in_group = Membership.objects.filter( 
                 user__id__exact = user_id,
                 group__id__exact = group_id )
@@ -1985,27 +2026,9 @@ class Group( models.Model ): # {{{1
                 str(user.__class__))
         return list(Group.objects.filter(membership__user=user))
 
-    def events(self, limit=5):
+    def get_coming_events(self, limit=5):
         """ Returns a list of maximal `limit` events with at least one date
         in the future (start, end or deadline).
-        
-        >>> from django.contrib.auth.models import User
-        >>> from events.models import Event, Group, Membership
-        >>> from datetime import timedelta
-        >>> now = datetime.datetime.now().isoformat()
-        >>> today = datetime.date.today()
-        >>> group = Group.objects.create(name="group " + now)
-        >>> event = Event(title="test for events " + now,
-        ...     start=timedelta(days=-1)+today, tags="test")
-        >>> event.save()
-        >>> event_deadline = EventDeadline(
-        ...         event = event, deadline_name = "test",
-        ...         deadline = today)
-        >>> event_deadline.save()
-        >>> user = User.objects.create(username = "user " + now)
-        >>> calendar = Calendar.objects.create( group = group,
-        ...     event = event )
-        >>> assert ( len(group.events()) == 1 )
         """
         today = datetime.date.today()
         events = Event.objects.filter( Q(calendar__group = self) & (
@@ -2015,11 +2038,20 @@ class Group( models.Model ): # {{{1
         # events of a group shouldn't be big
         return sorted(events, key=Event.next_coming_date)[0:limit]
 
+    def has_coming_events(self):
+        """ returns True if the group has coming events (with `start`, `end` or
+        a `deadline` of an event of the group in the future)
+        """
+        today = datetime.date.today()
+        return Event.objects.filter( Q(calendar__group = self) & (
+                    Q(start__gte=today) | Q(end__gte=today) |
+                    Q(deadlines__deadline__gte=today) )).count() > 0
+
     @staticmethod
     def events_in_groups(groups, limit=5):
         """ Returns a dictionary whose keys are groups and its values are non
         empty lists of maximal `limit` events of the group with at least one
-        date in the futur
+        date in the future
         
         FIXME: add test.
         """
@@ -2029,7 +2061,7 @@ class Group( models.Model ): # {{{1
         if len(groups) == 0:
             return to_return
         for group in groups:
-                events = group.events(limit)
+                events = group.get_coming_events(limit)
                 if len(events) > 0:
                     to_return[group] = events
         return to_return

@@ -44,6 +44,7 @@ def global_template_vars(request):
     else:
         user = None
     return {
+            'PROJECT_NAME': settings.PROJECT_NAME,
             'PROTOCOL': protocol,
             'DOMAIN': current_site.domain,
             'MEDIA_URL': settings.MEDIA_URL,
