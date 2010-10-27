@@ -2,16 +2,21 @@
 {% load i18n %}
 
 {% block column1 %}
-{% trans "You have now joined the group" %}.
-
-
 <p>
-
-<a href="{% url list_events_group group_id %}">all events in this group</a>
-
-
-
+    {% blocktrans with group.name as name %}
+        You have joined the group {{ name }}
+    {% endblocktrans %}
+</p>
+<p>
+    <a href="{% url group_view group.id %}">
+        {% blocktrans with group.name as name %}
+        You can now visit the {{ name }} group page.
+        {% endblocktrans %}
+    </a>
 </p>
 
+{% if group.has_coming_events %}
+    {% include "groups/groups_coming_events.html" %}
+{% endif %}
 
 {% endblock %}

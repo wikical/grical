@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block feeds %}
+{% if user_is_in_group %}
+    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss_hashed group.id USER.id USER.get_hash %}" />
+{% else %}
+    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss group.id %}" />
+{% endif %}
+{%endblock feeds%}
+
+{% block column1 %}
+
+<h1>
+    {% blocktrans with group.name as name %}
+        Group {{ name }}
+    {% endblocktrans %}
+</h1>
+
+<h2> {% trans "Description" %} </h2>
+<p> {{ group.description|urlize }} </p>
+
+{% if user_is_in_group %}
+    <a href="{% url list_events_group_rss_hashed group.id USER.id USER.get_hash %}">
+            <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />
+    </a>
+    <a href="{% url list_events_group_ical_hashed group.id USER.id USER.get_hash %}">
+        <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />
+    </a>
+    {% if group.has_coming_events %}
+        <h2> {% trans "Next coming events" %} </h2>
+        {% include "groups/group_coming_events.html" %}
+    {% else %}
+        <p>{% trans "There is no coming events." %}</p>
+        
+    {% endif %}
+    <h2> {% trans "Members" %} </h2>
+    <ul>
+        {% for user in group.get_users %}
+            <li> {{ user.username }} </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <a href="{% url list_events_group_rss group.id %}">
+        <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />
+    </a>
+    <a href="{% url list_events_group_ical group.id %}">
+        <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />
+    </a>
+    <p> {% trans "You are not a member of the group." %} <p>
+    {% comment %}TODO: show public events of the group{% endcomment %}
+    {% comment %}TODO: link to ask to become a member of the group %}{% endcomment %}
+{% endif %}
+
+
+{% endblock %}

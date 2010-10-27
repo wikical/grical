@@ -33,7 +33,7 @@ from django.contrib.auth.models import User
 from gridcalendar.events.decorators import login_required
 from django.db.models import Q
 
-from gridcalendar.settings import SECRET_KEY
+from gridcalendar.settings import SECRET_KEY, PROJECT_NAME
 
 from gridcalendar.events.models import (
         Event, Group, Membership, Calendar, GroupInvitation, )
@@ -186,24 +186,21 @@ def group_add_event(request, event_id):
                     },
                     context_instance=RequestContext(request))
 
-def list_events_group(request, group_id):
-    """ view that lists the events of group """
+def group_view(request, group_id):
+    """ view that lists everything about a group """
     group = Group.objects.get( id = group_id )
     events = Event.objects.filter(calendar__group = group)
-    if request.user and not request.user.id is None:
-        events.filter( Q( user = request.user) |
-                Q(calendar__group__membership__user = request.user) )
-    else:
-        events.filter( public = True )
-    hashvalue = hashlib.sha256(
-            "%s!%s" % (SECRET_KEY, request.user.id)).hexdigest()
-    return render_to_response('groups/group.html',
+    return render_to_response(
+            'groups/group_view.html',
             {
-                'title': 'group page',
-                'group_id': group_id,
-                'user_id': request.user.id,
-                'hash': hashvalue,
-                'events': events
+                'title': _( u'%(project_name)s - group %(group_name)s' ) % \
+                        {
+                            'group_name': group.name,
+                            'project_name': PROJECT_NAME,
+                        },
+                'group': group,
+                'user_is_in_group': \
+                    Group.is_user_in_group(request.user, group),
             },
             context_instance=RequestContext(request))
 
@@ -262,10 +259,11 @@ def group_invite_activate(request, activation_key):
     """ A user clicks on activation link """
     invitation = GroupInvitation.objects.get(activation_key=activation_key)
     group_id = invitation.id
+    group = Group.objects.get(id = group_id)
     activation = GroupInvitation.objects.activate_invitation(activation_key)
     if activation:
         return render_to_response('groups/invitation_activate.html',
-                {'title': 'activate invitation', 'group_id': group_id},
+                {'title': _(u'invitation activated'), 'group': group},
                 context_instance=RequestContext(request))
     else:
         return render_to_response('groups/invitation_activate_failed.html',
