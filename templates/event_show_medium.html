@@ -1,13 +1,6 @@
 {% load i18n %}
 
 <div class="event_medium">
-  <span class="event_medium_ical_logo">
-    {% if USER and not event.public %}
-      <a href="{% url event_show_ical_hash event.id USER.id USER.get_hash%}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
-    {% else %}
-      <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
-    {% endif %}
-  </span>
   <span class="event_medium_title">
     <a href="{% url event_show event.id %}">{{ event.title }}</a>
   </span>
@@ -35,14 +28,20 @@
     </span>
   {% endif %}
 </div>
-  <p class="event_medium_commands">
-    &nbsp;&nbsp;
-    <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
-    &nbsp;|&nbsp;
-    <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
-    &nbsp;|&nbsp;
-    <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
-    &nbsp;&nbsp;
-  </p>
-  <br />
-
+<div class="event_medium_commands">
+  <span class="event_medium_ical_logo">
+    {% if USER and not event.public %}
+      <a href="{% url event_show_ical_hash event.id USER.id USER.get_hash%}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+    {% else %}
+      <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+    {% endif %}
+  </span>
+  &nbsp;|&nbsp;
+  <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+  &nbsp;|&nbsp;
+  <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
+  &nbsp;|&nbsp;
+  <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+  &nbsp;&nbsp;
+</div>
+<hr />

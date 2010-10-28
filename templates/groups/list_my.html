@@ -5,11 +5,13 @@
 
 {% if groups %}
 <ul>
-    {% for g in groups %}
-        <li> {{ g.name }}
-        <br /><a href="{% url group_view g.id %}">events this group</a>
-        <br /><a href="{% url group_invite g.id %}">invite another user to this group</a>
-        <br /><a href="{% url group_quit_ask g.id %}">quit from this group</a>
+    {% for group in groups %}
+        <li><a href="{% url group_view group.id %}">{{ group.name }}</a></li>
+        <ul>
+            <li><a href="{% url group_view group.id %}">{% trans "show all events in this group" %}</a></li>
+            <li><a href="{% url group_invite group.id %}">{% trans "invite a user to this group" %}</a></li>
+            <li><a href="{% url group_quit_ask group.id %}">{% trans "leave this group" %}</a></li>
+        </ul>
     {% endfor %}
 </ul>
 {% else %}

@@ -1,7 +1,6 @@
 {% load i18n %}
-
-{% if groups %}
 <ul>
+{% if groups %}
     {% for g in groups %}
         <li>
             <a href="{% url group_view g.id %}">{{ g.name }}</a>
@@ -9,16 +8,13 @@
             <a href="{% url group_quit_ask g.id %}">quit</a>
             &nbsp;
             <a href="{% url group_invite g.id %}">invite</a>
-
-            <a href="{% url list_events_group_ical_hashed g.id user_id hash %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>&nbsp;
+            &nbsp;
+            <a href="{% url list_events_group_ical_hashed g.id user_id hash %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>
+            &nbsp;
             <a href="{% url list_events_group_rss_hashed g.id user_id hash %}"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
         </li>
     {% endfor %}
-</ul>
 {% else %}
-        <p>{% trans "No groups found!" %}</p>
+    <li>{% trans "No groups found!" %}</li>
 {% endif %}
-
-
-
-
+</ul>
