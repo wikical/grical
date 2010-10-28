@@ -26,7 +26,7 @@
 # imports {{{1
 from django.conf.urls.defaults import *
 
-from gridcalendar.events import views, views_groups, rss, feeds
+from gridcalendar.events import views
 
 urlpatterns = patterns('',            # root url {{{1 pylint: disable-msg=C0103
     url(r'^$', views.main, name='main'),
@@ -47,9 +47,9 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/show/(?P<event_id>\d+)/raw/$',
         views.event_show_raw,           name='event_show_raw'),
     url(r'^e/show/(?P<event_id>\d+)/ical/$',
-        feeds.ICalForEvent,             name='event_show_ical'),
+        views.ICalForEvent,             name='event_show_ical'),
     url(r'^e/show/(?P<event_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        feeds.ICalForEventHash,  name='event_show_ical_hash'),
+        views.ICalForEventHash,  name='event_show_ical_hash'),
 )
 
 # urls for managing searches {{{1
@@ -57,11 +57,11 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^q/',
         views.query,              name='query'),
     url(r'^s/(?P<query>.*)/ical/$',
-        feeds.ICalForSearch,      name='list_events_search_ical'),
+        views.ICalForSearch,      name='list_events_search_ical'),
     url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        feeds.ICalForSearchHash,  name='list_events_search_ical_hashed'),
+        views.ICalForSearchHash,  name='list_events_search_ical_hashed'),
     url(r'^s/(?P<query>.*)/rss/$',
-        rss.rss_for_search,       name='list_events_search_rss'),
+        views.rss_for_search,       name='list_events_search_rss'),
     url(r'^s/(?P<query>.*)/$',
         views.list_events_search, name='list_events_search'),
     url(r'^t/(?P<tag>[ \-\w]*)/$' ,
@@ -71,15 +71,15 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 # events in a group 
 urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/(?P<group_id>\d+)/ical/$',
-        feeds.ICalForGroup,       name='list_events_group_ical'),
+        views.ICalForGroup,       name='list_events_group_ical'),
     url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        feeds.ICalForGroupHash,       name='list_events_group_ical_hashed'),
+        views.ICalForGroupHash,       name='list_events_group_ical_hashed'),
     url(r'^g/(?P<group_id>\d+)/rss/$',
-        rss.rss_for_group_auth,         name='list_events_group_rss'),
+        views.rss_for_group_auth,         name='list_events_group_rss'),
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        rss.rss_for_group_hash,         name='list_events_group_rss_hashed'),
+        views.rss_for_group_hash,         name='list_events_group_rss_hashed'),
     url(r'^g/(?P<group_id>\d+)/$',
-        views_groups.group_view, name='group_view'),
+        views.group_view, name='group_view'),
     # TODO: this should be a view with everything about the group for members
     # and not members; see also list_groups_my
 )
@@ -99,7 +99,7 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     url(r'^p/filters/$',
         views.list_filters_my,          name='list_filters_my'),
     url(r'^p/groups/$',
-        views_groups.list_groups_my,    name='list_groups_my'),
+        views.list_groups_my,    name='list_groups_my'),
 )
 
 # filter management: 
@@ -115,15 +115,15 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
 # groups
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     url(r'^g/new/$',
-        views_groups.group_new,         name='group_new'),
+        views.group_new,         name='group_new'),
     url(r'^g/invite/(?P<group_id>\d+)/$',
-        views_groups.group_invite,      name='group_invite'),
+        views.group_invite,      name='group_invite'),
     url(r'^g/invite/confirm/(?P<activation_key>\w+)/$',
-        views_groups.group_invite_activate, name='group_invite_activate'),
+        views.group_invite_activate, name='group_invite_activate'),
     url(r'^g/quit/(?P<group_id>\d+)/$',
-        views_groups.group_quit_ask,    name='group_quit_ask'),
+        views.group_quit_ask,    name='group_quit_ask'),
     url(r'^g/quit/(?P<group_id>\d+)/confirm/$',
-        views_groups.group_quit_sure,   name='group_quit_sure'),
+        views.group_quit_sure,   name='group_quit_sure'),
     url(r'^e/group/(?P<event_id>\d+)/$',
-        views_groups.group_add_event,   name='group_add_event'),
+        views.group_add_event,   name='group_add_event'),
 )

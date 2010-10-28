@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # gpl {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
@@ -21,17 +21,21 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+# docs {{{1
 """ VIEWS """
+
 # imports {{{1
 import hashlib
 import datetime
+import vobject
+import unicodedata
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
 from django.forms import ValidationError
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.encoding import smart_unicode
@@ -45,10 +49,11 @@ from gridcalendar.settings_local import SECRET_KEY
 from tagging.models import Tag, TaggedItem
 
 from gridcalendar.events.models import ( 
-    Event, EventUrl, EventSession, EventDeadline, Filter, Group )
+    Event, EventUrl, EventSession, EventDeadline, Filter, Group,
+    Membership, GroupInvitation, )
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
-    get_event_form, EventSessionForm )
+    get_event_form, EventSessionForm, NewGroupForm, InviteToGroupForm )
 from gridcalendar.events.lists import ( 
     filter_list, list_search_get )
 #from django.shortcuts import render_to_response
@@ -593,7 +598,6 @@ def main( request ): # {{{1
             },
             context_instance = RequestContext( request ) )
 
-# http://docs.djangoproject.com/en/1.0/topics/auth/#the-login-required-decorator
 @login_required
 def settings_page( request ): # {{{1
     """ View to show the settings of a user """
@@ -612,3 +616,378 @@ def settings_page( request ): # {{{1
                 'hash': hashvalue
             },
             context_instance = RequestContext( request ) )
+
+# groups views {{{1
+
+@login_required
+def group_new(request): # {{{2
+    """ View to create a new group """
+    if not request.user.is_authenticated():
+        return render_to_response('groups/no_authenticated.html',
+                {}, context_instance=RequestContext(request))
+    if request.method == 'POST':
+        form = NewGroupForm(request.POST)
+        if form.is_valid():
+            form.save()
+            group_name = request.POST.get('name', '')
+            new_group = Group.objects.get(name=group_name)
+            new_membership = Membership(user=request.user, group=new_group)
+            new_membership.save()
+            # TODO: notify all invited members of the group
+            return HttpResponseRedirect(reverse('list_groups_my'))
+        else:
+            return render_to_response('groups/create.html',
+                    {'form': form}, context_instance=RequestContext(request))
+    else:
+        form = NewGroupForm()
+        return render_to_response('groups/create.html',
+                {'form': form}, context_instance=RequestContext(request))
+
+@login_required
+def list_groups_my(request): # {{{2
+    """ view that lists all groups of the logged-in user """
+    # Theoretically not needed because of the decorator:
+    #if ((not request.user.is_authenticated()) or (request.user.id is None)):
+    #    return render_to_response('error.html',
+    #            {
+    #                'title': 'error',
+    #                'message_col1': _("You must be logged in to list your \
+    #                    groups")
+    #            },
+    #            context_instance=RequestContext(request))
+    #else:
+    user = User(request.user)
+    groups = Group.objects.filter(membership__user=user)
+    if len(groups) == 0:
+        return render_to_response('error.html',
+            {
+                'title': 'error',
+                'message_col1': _("You are not a member of any group"),
+            },
+            context_instance=RequestContext(request))
+    else:
+        return render_to_response('groups/list_my.html',
+            {'title': 'list my groups', 'groups': groups},
+            context_instance=RequestContext(request))
+
+@login_required
+def group_quit(request, group_id, sure): # {{{2
+    """ remove the logged-in user from a group asking for confirmation if the
+    user is the last member of the group """
+    user = User(request.user)
+    try:
+        group = Group.objects.get(id=group_id, membership__user=user)
+    except Group.DoesNotExist:
+        return render_to_response('error.html',
+                {
+                    'title': 'error',
+                    'message_col1': _("There is no such group, or you \
+                        are not a member of that group")
+                },
+                context_instance=RequestContext(request))
+    testsize = len(
+            Membership.objects.filter(group=group).exclude(user=user))
+    if (testsize > 0):
+        membership = Membership.objects.get(user=request.user, group=group)
+        membership.delete()
+        return HttpResponseRedirect(reverse('list_groups_my'))
+    elif (sure):
+        membership = Membership.objects.get(user=request.user, group=group)
+        membership.delete()
+        group.delete()
+        return HttpResponseRedirect(reverse('list_groups_my'))
+    else:
+        return render_to_response('groups/quit_group_confirm.html',
+                # TODO: show the user a list of all private events which will
+                # be lost for everyone
+                {
+                    'group_id': group_id,
+                    'group_name': group.name
+                },
+                context_instance=RequestContext(request))
+#        except:
+#            return render_to_response('error.html', {'title': 'error',
+#            'message_col1': _("Quitting group failed") + "."},
+#            context_instance=RequestContext(request))
+
+@login_required
+def group_quit_ask(request, group_id): # {{{2
+    """ view to confirm of quiting a group """
+    return group_quit(request, group_id, False)
+
+@login_required
+def group_quit_sure(request, group_id):
+    """ view to confirm of quiting a group being sure"""
+    return group_quit(request, group_id, True)
+
+@login_required
+def group_add_event(request, event_id): # {{{2
+    """ view to add an event to a group """
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {
+                    'title': 'GridCalendar.net - error',
+                    'message_col1': _("You must be logged in to add an event \
+                            to a group")
+                },
+                context_instance=RequestContext(request))
+    event = Event.objects.get(id=event_id)
+    user = User(request.user)
+    if len(Group.groups_for_add_event(user, event)) > 0:
+        if request.POST:
+            form = AddEventToGroupForm(
+                    data=request.POST, user=user, event=event)
+            if form.is_valid():
+                for group in form.cleaned_data['grouplist']:
+                    if event.public:
+                        event_for_group = event
+                    else:
+                        event_for_group = event.clone()
+                    calentry = Calendar(event=event_for_group, group=group)
+                    calentry.save()
+                return HttpResponseRedirect(reverse('list_groups_my'))
+            else:
+                request.user.message_set.create(
+                        message='Please check your data.')
+        else:
+            form = AddEventToGroupForm(user=user, event=event)
+        context = dict()
+        context['form'] = form
+        return render_to_response('groups/add_event_to_group.html',
+                context_instance=RequestContext(request, context))
+    else:
+        return render_to_response('error.html',
+                    {
+                        'title': 'error',
+                        'message_col1': _("This event is already in all \
+                                groups that you are in, so you can't add it \
+                                to any more groups.")
+                    },
+                    context_instance=RequestContext(request))
+
+def group_view(request, group_id): # {{{2
+    """ view that lists everything about a group """
+    group = Group.objects.get( id = group_id )
+    events = Event.objects.filter(calendar__group = group)
+    return render_to_response(
+            'groups/group_view.html',
+            {
+                'title': _( u'%(project_name)s - group %(group_name)s' ) % \
+                        {
+                            'group_name': group.name,
+                            'project_name': PROJECT_NAME,
+                        },
+                'group': group,
+                'user_is_in_group': \
+                    Group.is_user_in_group(request.user, group),
+            },
+            context_instance=RequestContext(request))
+
+@login_required
+def group_invite(request, group_id): # {{{2
+    """ view to invite a user to a group """
+    if ((not request.user.is_authenticated()) or (request.user.id is None)):
+        return render_to_response('error.html',
+                {
+                    'title': 'error',
+                    'message_col1': _("You must be logged in to invite \
+                            someone to a group")
+                },
+                context_instance=RequestContext(request))
+    else:
+        group = Group.objects.get(id=group_id)
+        if request.POST:
+            username_dirty = request.POST['username']
+            formdata = {'username': username_dirty,
+                        'group_id': group_id}
+            form = InviteToGroupForm(data=formdata)
+            if form.is_valid():
+                username = form.cleaned_data['username']
+                try:
+                    user = User.objects.get(username=username)
+                except User.DoesNotExist:
+                    return render_to_response('error.html',
+                        {
+                            'title': 'error',
+                            'message_col1': _("There is no user with the \
+                                username: ") + username
+                        },
+                        context_instance=RequestContext(request))
+                GroupInvitation.objects.create_invitation(host=request.user,
+                        guest=user, group=group , as_administrator=True)
+                return HttpResponseRedirect(reverse('list_groups_my'))
+            else:
+                request.user.message_set.create(
+                        message='Please check your data.')
+        else:
+#            form = InviteToGroupForm(instance=invitation)
+#            formdata = {
+#                        'username': None,
+#                        'group_id': group_id}
+#            form = InviteToGroupForm(data=formdata)
+            form = InviteToGroupForm()
+        return render_to_response('groups/invite.html',
+                {
+                    'title': 'invite to group',
+                    'group_id': group_id,
+                    'form': form
+                },
+                context_instance=RequestContext(request))
+
+def group_invite_activate(request, activation_key): # {{{2
+    """ A user clicks on activation link """
+    invitation = GroupInvitation.objects.get(activation_key=activation_key)
+    group_id = invitation.id
+    group = Group.objects.get(id = group_id)
+    activation = GroupInvitation.objects.activate_invitation(activation_key)
+    if activation:
+        return render_to_response('groups/invitation_activate.html',
+                {'title': _(u'invitation activated'), 'group': group},
+                context_instance=RequestContext(request))
+    else:
+        return render_to_response('groups/invitation_activate_failed.html',
+                {'title': 'activate invitation failed', 'group_id': group_id},
+                context_instance=RequestContext(request))
+
+# rss views {{{1
+def rss_for_search(request, query): # {{{2
+    """ rss feed of a search """
+    f = feed(request = request, url = 's/' + query, feed_dict = {
+        u's': FeedSearchEvents,
+    })
+    return f
+
+def rss_for_filter(request, filter_id): # {{{2
+    """ rss feed of a filter """
+    f = feed(request = request, url = 'f/' + filter_id, feed_dict = {
+        u'f': FeedFilterEvents,
+    })
+    return f
+
+def rss_for_filter_hash(request, filter_id, user_id, hash): # {{{2
+    return rss_for_filter(request, filter_id)
+
+def rss_for_group(request, group_id): # {{{2
+    f = feed(request = request, url = 'g/' + group_id, feed_dict = {
+        u'g': FeedGroupEvents,
+    })
+    return f
+
+def rss_for_group_auth(request, group_id): # {{{2
+    return rss_for_group(request, group_id)
+
+def rss_for_group_hash(request, group_id, user_id, hash): # {{{2
+    g = Group.objects.filter(id=group_id)
+    u = User.objects.filter(id=user_id)
+    if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest())\
+     and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
+        return rss_for_group(request, group_id)
+    else:
+        return render_to_response('error.html',
+                {'title': 'error', 'form': get_event_form(request.user),
+                'message_col1': _("You are not allowed to see this RSS feed") + "."},
+                context_instance=RequestContext(request))
+
+# ical views {{{1
+def ICalForSearch( request, query ): # {{{2
+    elist = list_search_get(query) # FIXME: it can be too long
+    elist = [eve for eve in elist if eve.is_viewable_by_user( request.user )]
+    return _ical_http_response_from_event_list( elist, query )
+
+def ICalForEvent( request, event_id ): # {{{2
+    event = Event.objects.get( id = event_id )
+    elist = [event,]
+    elist = [eve for eve in elist if eve.is_viewable_by_user(request.user)]
+    return _ical_http_response_from_event_list( elist, event.title )
+
+def ICalForEventHash (request, event_id, user_id, hash): # {{{2
+    user = ExtendedUser.objects.get(id = user_id)
+    if hash != user.get_hash():
+        return render_to_response('error.html',
+            {'title': 'error',
+            'message_col1': _(u"hash authentification failed")
+            },
+            context_instance=RequestContext(request))
+    event = Event.objects.get( id = event_id )
+    if not event.is_viewable_by_user( user ):
+        return render_to_response('error.html',
+            {'title': 'error',
+            'message_col1':
+                _(u"user authentification for requested event failed")
+            },
+            context_instance=RequestContext(request))
+    return _ical_http_response_from_event_list(
+            [event,], event.title)
+            
+
+def ICalForSearchHash( request, query, user_id, hash ): # {{{2
+    user = ExtendedUser.objects.get(id = user_id)
+    if hash != user.get_hash():
+        return render_to_response('error.html',
+            {'title': 'error',
+            'message_col1': _(u"hash authentification failed")
+            },
+            context_instance=RequestContext(request))
+    elist = list_search_get(query) # FIXME: it can be too long
+    elist = [eve for eve in elist if eve.is_viewable_by_user( user_id )]
+    return _ical_http_response_from_event_list( elist, query )
+
+def ICalForGroup( request, group_id ): # {{{2
+    """ return all public events with a date in the future in icalendar format
+    belonging to a group """
+    group = Group.objects.filter(id = group_id)
+    elist = Event.objects.filter(calendar__group = group, public = True)
+    today = datetime.date.today()
+    elist = elist.filter (
+                Q(start__gte=today) |
+                Q(end__gte=today) |
+                Q(deadlines__deadline__gte=today) ).distinct()
+    elist = sorted(elist, key=Event.next_coming_date)
+    return _ical_http_response_from_event_list( elist, group.name )
+
+def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
+    """ return all events with a date in the future in icalendar format
+    belonging to a group """
+    user = ExtendedUser.objects.get(id = user_id)
+    if hash != user.get_hash():
+        return render_to_response('error.html',
+            {'title': 'error',
+            'message_col1': _(u"hash authentification failed")
+            },
+            context_instance=RequestContext(request))
+    group = Group.objects.get(id = group_id)
+    if not group.is_member(user_id):
+        return render_to_response('error.html',
+            {'title': 'error',
+            'message_col1': _(u"not a member of the tried group")
+            },
+            context_instance=RequestContext(request))
+    elist = Event.objects.filter(calendar__group = group)
+    today = datetime.date.today()
+    elist = elist.filter (
+                Q(start__gte=today) |
+                Q(end__gte=today) |
+                Q(deadlines__deadline__gte=today) ).distinct()
+    elist = sorted(elist, key=Event.next_coming_date)
+    return _ical_http_response_from_event_list( elist, group.name )
+
+def _ical_http_response_from_event_list( elist, filename ): # {{{2
+    if len(elist) == 1:
+        icalstream = elist[0].icalendar().serialize()
+    else:
+        ical = vobject.iCalendar()
+        ical.add('METHOD').value = 'PUBLISH' # IE/Outlook needs this
+        ical.add('PRODID').value = settings.PRODID
+        for event in elist:
+            event.icalendar(ical)
+        icalstream = ical.serialize()
+    response = HttpResponse( icalstream, 
+            mimetype = 'text/calendar;charset=UTF-8' )
+    filename = unicodedata.normalize('NFKD', filename).encode('ascii','ignore')
+    filename = filename.replace(' ','_')
+    if not filename[-4:] == '.ics':
+        filename = filename + '.ics'
+    response['Filename'] = filename  # IE needs this
+    response['Content-Disposition'] = 'attachment; filename=' + filename
+    return response
+
