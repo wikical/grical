@@ -586,7 +586,7 @@ def main( request ): # {{{1
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'base_main.html',
             {
-                'title': _( "Welcome to GridCalendar" ),
+                'title': _( "GridCalendar - the community Calendar" ),
                 'form': event_form,
                 'events': events,
                 'about_text': about_text,

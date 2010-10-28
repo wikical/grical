@@ -6,32 +6,32 @@
 <h2>{% trans "User" %}</h2>
 <ul>
     <li>{% trans "Username" %}: {{user.username}} </li>
+    {% comment %}
+    TODO: let the user introduce/change this date at user creation and here
+    see the end of http://code.google.com/p/django-registration/issues/detail?id=127
     <li>{% trans "Firstname" %}: {{user.firstname}} </li>
     <li>{% trans "Lastname" %}: {{user.lastname}} </li>
-    <li>{% trans "Email" %}: {{user.email}} </li>
-    <li>{% trans "Last login" %}: {{user.last_login}} </li>
+    {% endcomment %}
+    <li>{% trans "Email" %}: {{user.email}}</li>
+    <li>{% trans "Last login:" %} {{user.last_login}}</li>
 </ul>
 
 <p>
-<a href="{% url auth_password_change %}">change password</a>
+    <a href="{% url auth_password_change %}">{% trans "Change password" %}</a>
 </p>
 
 <p>
-<a href="{% url list_filters_my %}">my filters</a>
-
+    <a href="{% url list_filters_my %}">{% trans "My filters" %}</a>
+</p>
 {% include "settings_filters.html" %}
 
-</p>
-
 <p>
-<a href="{% url list_groups_my %}">list groups I am in</a>
-
+    <a href="{% url list_groups_my %}">{% trans "My groups" %}</a>
+</p>
 {% include "settings_groups.html" %}
-</p>
-
 
 <p>
-<a href="{% url group_new %}">create a group</a>
+    <a href="{% url group_new %}">{% trans "Create a group" %}</a>
 </p>
 
 {% endblock %}
