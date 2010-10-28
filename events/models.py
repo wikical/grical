@@ -962,8 +962,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # languages.
         if simple_fields.has_key(u'country'):
             for names in COUNTRIES:
-                if names[1].encode('utf-8') == \
-                simple_fields[u'country'].encode('utf-8'):
+                if names[1].lower().encode('utf-8') == \
+                simple_fields[u'country'].lower().encode('utf-8'):
                     simple_fields['country'] = names[0]
                     break
         # creates an event with a form
