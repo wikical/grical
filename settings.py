@@ -42,7 +42,7 @@ except NameError:
 # =============================================================================
 
 # for RSS feeds
-FEED_SIZE = 10
+FEED_SIZE = 50
 
 MAX_EVENTS_ON_ROOT_PAGE = 20
 
