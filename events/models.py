@@ -886,7 +886,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             complex_dic[current] = lines
         return simple_dic, complex_dic
 
-
     @classmethod
     def parse_text( cls, input_text_in, event_id = None, user_id = None ):
         # doc {{{2
@@ -1011,7 +1010,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             raise error
         return event
 
-
     @staticmethod
     def get_complex_fields():
         """ returns a tuple of names of user-editable fields (of events) which
@@ -1066,7 +1064,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             u"public", u"address", u"postcode", u"city", u"country", u"latitude",
             u"longitude", u"deadlines", u"timezone", u"sessions", u"description")
  
-
     @staticmethod
     def get_synonyms():
         """Returns a dictionay with names (strings) and the fields (strings)
@@ -1321,7 +1318,6 @@ class ExtendedUser(User): # {{{1
             if group.has_coming_events():
                 return True
         return False
-
 
 class EventUrl( models.Model ): # {{{1
     """ stores urls of events
@@ -2114,7 +2110,6 @@ class Membership( models.Model ): # {{{1
         unique_together = ( "user", "group" )
         verbose_name = _( u'Membership' )
         verbose_name_plural = _( u'Memberships' )
-
 
 class Calendar( models.Model ): # {{{1
     """Relation between events and groups."""

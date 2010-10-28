@@ -1,11 +1,9 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% comment %}
 {% block feeds %}
-<link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_filter_rss 1 %}" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url public_upcoming_events_rss %}" />
 {%endblock feeds%}
-{% endcomment %}
 
 {% block column1 %}
 

@@ -21,16 +21,19 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+# docs {{{1
 """ URLs """
 
 # imports {{{1
 from django.conf.urls.defaults import *
 
 from gridcalendar.events import views
+from gridcalendar.events.feeds import PublicUpcomingEventsFeed
 
+# main url {{{1
 urlpatterns = patterns('',            # root url {{{1 pylint: disable-msg=C0103
     url(r'^$', views.main, name='main'),
-)
+    )
 
 # urls for managing single event {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
@@ -50,7 +53,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.ICalForEvent,             name='event_show_ical'),
     url(r'^e/show/(?P<event_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         views.ICalForEventHash,  name='event_show_ical_hash'),
-)
+    )
 
 # urls for managing searches {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
@@ -66,9 +69,9 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.list_events_search, name='list_events_search'),
     url(r'^t/(?P<tag>[ \-\w]*)/$' ,
         views.list_events_tag,    name='list_events_tag'),
-)
+    )
 
-# events in a group 
+# events in a group {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/(?P<group_id>\d+)/ical/$',
         views.ICalForGroup,       name='list_events_group_ical'),
@@ -82,17 +85,20 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
         views.group_view, name='group_view'),
     # TODO: this should be a view with everything about the group for members
     # and not members; see also list_groups_my
-)
+    )
 
+# user related {{{1
 urlpatterns += patterns('', #  pylint: disable-msg=C0103
     url(r'^p/events/$',
         views.list_events_my,           name='list_events_my'),
 # not used for now because of privacy concerns:
 #   url(r'^e/list/user/(?P<username>\w+)/$',
 #       views.list_events_of_user,      name='list_events_of_user'),
-)
+    )
 
-# preferences # TODO: put everything together 
+# TODO: put everything together 
+
+# preferences {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     url(r'^p/settings/$',
         views.settings_page,            name='settings'),
@@ -100,9 +106,9 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.list_filters_my,          name='list_filters_my'),
     url(r'^p/groups/$',
         views.list_groups_my,    name='list_groups_my'),
-)
+    )
 
-# filter management: 
+# filter management:  {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     url(r'^f/new/$',
         views.filter_save,              name='filter_save'),
@@ -110,9 +116,9 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.filter_edit,              name='filter_edit'),
     url(r'^f/delete/(?P<filter_id>\d+)/$',
         views.filter_drop,              name='filter_drop'),
-)
+    )
 
-# groups
+# groups {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     url(r'^g/new/$',
         views.group_new,         name='group_new'),
@@ -126,4 +132,10 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.group_quit_sure,   name='group_quit_sure'),
     url(r'^e/group/(?P<event_id>\d+)/$',
         views.group_add_event,   name='group_add_event'),
-)
+    )
+
+# rss feeds {{{1
+urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+     url(r'^r/upcoming/$',
+         PublicUpcomingEventsFeed(), name='public_upcoming_events_rss'),
+     )
