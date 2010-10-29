@@ -437,7 +437,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['start']
         verbose_name = _( u'Event' )
         verbose_name_plural = _( u'Events' )
 
@@ -1208,6 +1207,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             pass
         elif isinstance(event, int):
             event = Event.objects.get(pk=event)
+        elif isinstance(event, unicode) or isinstance(event, str):
+            event = Event.objects.get( pk = int(event) )
         else:
             raise TypeError(
                 "'event' must be an Event or an integer but it was: " +
@@ -1221,6 +1222,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             pass
         elif isinstance(user, int):
             user = User.objects.get(pk=user)
+        elif isinstance(user, unicode) or isinstance(user, str):
+            user = User.objects.get( pk = int(user) )
         else: raise TypeError(
                 "'user' must be a User or an integer but it was: " +
                 str(user.__class__))
@@ -1289,8 +1292,15 @@ class ExtendedUser(User): # {{{1
 
     def get_hash(self):
         """ return the hash code to authenticate by url """
+        return ExtendedUser.calculate_hash(self.id)
+
+    @staticmethod
+    def calculate_hash(user_id):
+        """ returns the identification hash of the user or None """
+        if user_id is None:
+            return None
         return hashlib.sha256(
-                "%s!%s" % (settings.SECRET_KEY, self.id)).hexdigest()
+                "%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()
 
     def has_groups(self):
         """ returns True if the user is at least member of a group, False
@@ -1334,7 +1344,7 @@ class EventUrl( models.Model ): # {{{1
             u"Example: information about accomodation" ) )
     url = models.URLField( _( u'URL' ), blank = False, null = False )
     class Meta: # pylint: disable-msg=C0111
-        ordering = ['event', 'url_name']
+        ordering = ['url_name']
         unique_together = ( "event", "url_name" )
     def __unicode__( self ):
         return self.url
@@ -1444,7 +1454,7 @@ class EventDeadline( models.Model ): # {{{1
             "Example: call for papers deadline" ) )
     deadline = models.DateField( _( u'Deadline' ), blank = False, null = False )
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['event', 'deadline', 'deadline_name']
+        ordering = ['deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
     def __unicode__( self ):
         return unicode( self.deadline ) + u'    ' + self.deadline_name
@@ -1566,8 +1576,7 @@ class EventSession( models.Model ): # {{{1
     session_endtime = models.TimeField( 
             _( u'Session end time' ), blank = False, null = False )
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['event', 'session_date', 'session_starttime',
-                'session_endtime']
+        ordering = ['session_date', 'session_starttime']
         unique_together = ( "event", "session_name" )
         verbose_name = _( u'Session' )
         verbose_name_plural = _( u'Sessions' )
@@ -1752,7 +1761,6 @@ class Filter( models.Model ): # {{{1
             _(u'If set it sends an email to a user when a new event matches'))
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['modification_time']
         unique_together = ( "user", "name" )
         verbose_name = _( u'Filter' )
         verbose_name_plural = _( u'Filters' )
@@ -1765,23 +1773,45 @@ class Filter( models.Model ): # {{{1
         """ django utility ofr url look-up """
         return ( 'filter_edit', (), { 'filter_id': self.id } )
 
+    def upcoming_events( self, limit = 5 ):
+        """ return the next `limit` events matching `self.query` """
+        return Filter.matches( self.query, self.user, limit )
+
     @staticmethod
-    def matches( query, user, limit = 100 ):
-        """ returns a sorted (`Event.next_coming_date`) list of of `limit`
+    def matches( query, user, limit = 100 ): # {{{2
+        """ returns a sorted (`Event.next_coming_date`) list of `limit`
         events matching `query` viewable by `user`
         
-        - Single words are looked in `title`, `tags`, `city`, `country` and
-          `acronym` with or
         - A date in isoformat (yyyy-mm-dd) restrict the query to events with
           dates from them on, i.e. from the last one of all dates in the query
+        - If there is no date in the query it uses the default day of today
+        - Single words are looked in `title`, `tags`, `city`, `country` and
+          `acronym` with or
         - Tags (#tag) restrict the query to events with these tags
         - Locations (@location) restrict the query to events having these
           location in `city` or `country`
         - Groups (!group) restrict the query to events of the group
 
           """
+        queryset = Filter.matches_queryset(query, user)
+        # sort the list touching the database. FIXME: think about what happens
+        # if there are millions of events
+        elist = sorted(queryset, key=Event.next_coming_date)
+        # take the first `limit` 
+        return elist[0:limit]
+
+    def matches_count( self ): # {{{2
+        """ returns the number of events which would be returned without
+        `count` by `Filter.matches` """
+        return Filter.matches_queryset( self.query, self.user ).count()
+
+    @staticmethod
+    def matches_queryset( query, user ): # {{{2
+        """ returns a queryset without touching the database, see `Filter.matches` """
         if isinstance(user, int):
             user = User.objects.get(id = user)
+        elif isinstance(user, unicode) or isinstance(user, str):
+            user = User.objects.get(id = int(user))
         elif user is not None and user.id is None:
             user = None
         # TODO: use the catche system for queries
@@ -1814,9 +1844,11 @@ class Filter( models.Model ): # {{{1
             dates = [datetime.date(year, month, day) for year, month, day in
                     dates]
             date = sorted(dates)[-1] # last date
-            queryset = queryset.filter(
-                    Q(start__gte = date) | Q(end__gte = date) |
-                    Q(deadlines__deadline__gte = date) )
+        else:
+            date = datetime.date.today()
+        queryset = queryset.filter(
+                Q(start__gte = date) | Q(end__gte = date) |
+                Q(deadlines__deadline__gte = date) )
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)
         for word in regex.findall(query):
@@ -1833,11 +1865,10 @@ class Filter( models.Model ): # {{{1
         # filter events the user cannot see
         if user is not None:
             queryset.filter( Q( user = user) | Q(calendar__group__membership__user = user) )
-        #return sorted(queryset, key=Event.next_coming_date)[0:limit]
-        return queryset[0:limit]
+        return queryset
 
     @staticmethod
-    def notify_users_when_wanted(event):
+    def notify_users_when_wanted(event): # {{{2
         """ notifies users if `event` matches a filter of a user and the
         user wants to be notified for the matching filter and the user can see
         the event """
@@ -1928,10 +1959,15 @@ class Group( models.Model ): # {{{1
         "get internal URL of an event"
         return ( 'group_view', (), { 'group_id': self.id } )
 
-    # FIXME: rename to is_member
     def is_member( self, user ):
         """ returns True if `user` is a member of the group, False otherwise
         """
+        if isinstance(user, int):
+            user = User.objects.get(id = user)
+        elif isinstance(user, User):
+            pass
+        else:
+            user = User.objects.get( id = int(user) )
         if Membership.objects.get( group = self, user = user ):
             return True
         else:
@@ -1965,12 +2001,16 @@ class Group( models.Model ): # {{{1
             user_id = user.id
         elif isinstance(user, int):
             user_id = user
+        elif isinstance(user, unicode) or isinstance(user, str):
+            user_id = int(user)
         else:
             return False
         if isinstance(group, Group):
             group_id = group.id
         elif isinstance(group, int):
             group_id = group
+        elif isinstance(group, unicode) or isinstance(group, str):
+            group_id = int(group)
         else:
             return False
         times_user_in_group = Membership.objects.filter( 
@@ -2011,12 +2051,14 @@ class Group( models.Model ): # {{{1
         >>> assert(len(groups_of_user_1) == 1)
 
         """
-        if ( user is None or type ( user ) == AnonymousUser ):
+        if ( user is None or type( user ) == AnonymousUser ):
             return list()
         if isinstance(user, User):
             pass
         elif isinstance(user, int):
             user = User.objects.get(id=user)
+        elif isinstance(user, unicode) or isinstance(user, str):
+            user = User.objects.get( id = int( user ) )
         else: raise TypeError(
                 "'user' must be a User instance or an integer but it was " +
                 str(user.__class__))
@@ -2034,12 +2076,35 @@ class Group( models.Model ): # {{{1
         # events of a group shouldn't be big
         return sorted(events, key=Event.next_coming_date)[0:limit]
 
+    def get_coming_publc_events(self, limit=5):
+        """ Returns a list of maximal `limit` public events with at least one
+        date in the future (start, end or deadline).
+        """
+        today = datetime.date.today()
+        events = Event.objects.filter(
+                Q(public = True) & Q(calendar__group = self) & (
+                    Q(start__gte=today) | Q(end__gte=today) |
+                    Q(deadlines__deadline__gte=today) )).distinct()
+        # next line touches the date base, but notice that the number of future
+        # events of a group shouldn't be big
+        return sorted(events, key=Event.next_coming_date)[0:limit]
+
     def has_coming_events(self):
         """ returns True if the group has coming events (with `start`, `end` or
         a `deadline` of an event of the group in the future)
         """
         today = datetime.date.today()
         return Event.objects.filter( Q(calendar__group = self) & (
+                    Q(start__gte=today) | Q(end__gte=today) |
+                    Q(deadlines__deadline__gte=today) )).count() > 0
+
+    def has_coming_public_events(self):
+        """ returns True if the group has coming public events (with `start`,
+        `end` or a `deadline` of an event of the group in the future)
+        """
+        today = datetime.date.today()
+        return Event.objects.filter(
+                Q( public = True ) & Q( calendar__group = self ) & (
                     Q(start__gte=today) | Q(end__gte=today) |
                     Q(deadlines__deadline__gte=today) )).count() > 0
 

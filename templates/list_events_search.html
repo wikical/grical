@@ -11,10 +11,19 @@
     </form>
 </p>
 
-
-<a href="{% url list_events_search_ical query %}"><span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></span></a>
-<a href="{% url list_events_search_rss query %}"><span class="field_rss"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></span></a>
+{% if USER.is_authenticated %}
+    <a href="{% url list_events_search_ical_hashed query user_id hash %}">
+        <span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></span></a>
+    <a href="{% url list_events_search_rss_hashed query user_id hash %}">
+        <span class="field_rss"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></span></a>
+{% else %}
+    <a href="{% url list_events_search_ical query %}">
+        <span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></span></a>
+    <a href="{% url list_events_search_rss query %}">
+        <span class="field_rss"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></span></a>
+{% endif %}
 
 {% include "list_events_wrapper.html" %}
+
 {% endblock %}
 

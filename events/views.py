@@ -25,69 +25,34 @@
 """ VIEWS """
 
 # imports {{{1
-import hashlib
 import datetime
 import vobject
 import unicodedata
 
 from django.conf import settings
+from django.contrib.auth.models import User, AnonymousUser
 from django.core.urlresolvers import reverse
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.forms import ValidationError
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
-
-from django.contrib.auth.models import User, AnonymousUser
-from gridcalendar.events.decorators import login_required
-
-from gridcalendar.settings_local import SECRET_KEY
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.models import ( 
-    Event, EventUrl, EventSession, EventDeadline, Filter, Group,
-    Membership, GroupInvitation, )
+from gridcalendar.events.decorators import login_required
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
-    get_event_form, EventSessionForm, NewGroupForm, InviteToGroupForm )
+    get_event_form, EventSessionForm, NewGroupForm, InviteToGroupForm,
+    AddEventToGroupForm )
+from gridcalendar.events.models import ( 
+    Event, EventUrl, EventSession, EventDeadline, Filter, Group,
+    Membership, GroupInvitation, ExtendedUser, Calendar)
 from gridcalendar.events.lists import ( 
     filter_list, list_search_get )
-#from django.shortcuts import render_to_response
-#from django.http import HttpResponseRedirect
-#from django import forms
-#from django.conf import settings
-#import captcha
-#
-#class ContactForm( forms.Form ):
-#    message = forms.CharField()
-#
-#def contact( request ):
-#    if request.method == 'POST':
-#        # Check the captcha
-#        check_captcha = captcha.submit( \
-#                    request.POST['recaptcha_challenge_field'], \
-#                    request.POST['recaptcha_response_field'], \
-#                    settings.RECAPTCHA_PRIVATE_KEY, \
-#                    request.META['REMOTE_ADDR'] )
-#        if check_captcha.is_valid is False:
-#            # Captcha is wrong show a error ...
-#            return HttpResponseRedirect( '/url/error/' )
-#        form = ContactForm( request.POST )
-#        if form.is_valid():
-#            # Do form processing here...
-#            return HttpResponseRedirect( '/url/on_success/' )
-#    else:
-#        form = ContactForm()
-#        html_captcha = captcha.displayhtml( settings.RECAPTCHA_PUB_KEY )
-#    return render_to_response( 'contact.html', {'form': form, \
-#                                               'html_captcha': html_captcha} )
-
-# notice that an anonymous user get a form without the 'public' field
-# (simplified form)
+from gridcalendar.settings import PROJECT_NAME
 
 def _error( request, errors ): # {{{1
     """ Returns a view with an error message whereas 'errors' must be a list or
@@ -378,7 +343,35 @@ def list_events_search( request, query ): # {{{1
             {
                 'title': _( "search results" ),
                 'events': search_result,
-                'query': query
+                'query': query,
+                'user_id': request.user.id,
+                'hash': ExtendedUser.calculate_hash(request.user.id),
+            },
+            context_instance = RequestContext( request ) )
+
+def list_events_search_hashed( request, query, user_id, hash ): # {{{1
+    """ View to show the results of a search query with hashed authentification
+    """
+    if ExtendedUser.calculate_hash(user_id) != hash:
+        raise Http404
+    search_result = Filter.matches(query, user_id)
+    if len( search_result ) == 0:
+        return render_to_response( 'error.html',
+            {
+                'title': _( "GridCalendar - no search results" ),
+                'messages_col1': [_( u"Your search didn't get any result" ),],
+                'query': query,
+                'form': get_event_form( request.user ),
+            },
+            context_instance = RequestContext( request ) )
+    else:
+        return render_to_response( 'list_events_search.html',
+            {
+                'title': _( "search results" ),
+                'events': search_result,
+                'query': query,
+                'user_id': request.user.id,
+                'hash': ExtendedUser.calculate_hash(request.user.id),
             },
             context_instance = RequestContext( request ) )
 
@@ -471,13 +464,13 @@ def filter_drop( request, filter_id ): # {{{1
 @login_required
 def list_filters_my( request ): # {{{1
     """ View that lists the filters of the logged-in user """
-    list_of_filters = filter_list( request.user.id )
-    if len( list_of_filters ) == 0:
+    list_of_filters = Filter.objects.filter( user = request.user )
+    if list_of_filters is None or len( list_of_filters ) == 0:
         return _error( request,
             _( "You do not have any filters configured" ) )
     else:
         return render_to_response( 'list_filters_my.html',
-            {'title': 'list of my filters', 'filters': list_of_filters},
+            {'title': _( u'list of my filters' ), 'filters': list_of_filters},
             context_instance = RequestContext( request ) )
 
 def list_events_of_user( request, username ): # {{{1
@@ -605,8 +598,7 @@ def settings_page( request ): # {{{1
     list_of_filters = filter_list( request.user.id )
     user = User( request.user )
     groups = Group.objects.filter( membership__user = user )
-    hashvalue = hashlib.sha256( 
-            "%s!%s" % ( SECRET_KEY, request.user.id ) ).hexdigest()
+    hashvalue = ExtendedUser.calculate_hash(user.id)
     return render_to_response( 'settings.html',
             {
                 'title': _( "settings" ),
@@ -847,45 +839,6 @@ def group_invite_activate(request, activation_key): # {{{2
     else:
         return render_to_response('groups/invitation_activate_failed.html',
                 {'title': 'activate invitation failed', 'group_id': group_id},
-                context_instance=RequestContext(request))
-
-# rss views {{{1
-def rss_for_search(request, query): # {{{2
-    """ rss feed of a search """
-    f = feed(request = request, url = 's/' + query, feed_dict = {
-        u's': FeedSearchEvents,
-    })
-    return f
-
-def rss_for_filter(request, filter_id): # {{{2
-    """ rss feed of a filter """
-    f = feed(request = request, url = 'f/' + filter_id, feed_dict = {
-        u'f': FeedFilterEvents,
-    })
-    return f
-
-def rss_for_filter_hash(request, filter_id, user_id, hash): # {{{2
-    return rss_for_filter(request, filter_id)
-
-def rss_for_group(request, group_id): # {{{2
-    f = feed(request = request, url = 'g/' + group_id, feed_dict = {
-        u'g': FeedGroupEvents,
-    })
-    return f
-
-def rss_for_group_auth(request, group_id): # {{{2
-    return rss_for_group(request, group_id)
-
-def rss_for_group_hash(request, group_id, user_id, hash): # {{{2
-    g = Group.objects.filter(id=group_id)
-    u = User.objects.filter(id=user_id)
-    if (hash == hashlib.sha256("%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest())\
-     and (len(Membership.objects.filter(group=g).filter(user=u)) == 1):
-        return rss_for_group(request, group_id)
-    else:
-        return render_to_response('error.html',
-                {'title': 'error', 'form': get_event_form(request.user),
-                'message_col1': _("You are not allowed to see this RSS feed") + "."},
                 context_instance=RequestContext(request))
 
 # ical views {{{1
