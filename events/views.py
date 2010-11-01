@@ -238,24 +238,46 @@ def event_edit_raw( request, event ): # {{{1
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
     if ( not event.public ):
-        # events submitted by anonymous users cannot be non-public:
-        assert ( event.user != None and type ( event.user ) != AnonymousUser )
         if ( not request.user.is_authenticated() ):
             return _error( request,
-                _( 'You need to be logged-in to be able to edit the event \
-                    with the number:' ) + " " + str( event_id ) + ". " +
-                _( "Please log-in and try again" ) + "." )
+                _( ''.join('You need to be logged-in to be able to edit the ',
+                    'private event with the number %(event_id)d. ',
+                    'Please log in a try again.' ) ) % {'event_id': event_id} )
         else:
-            if ( not Event.is_event_viewable_by_user(
-                    event_id, request.user.id ) ):
+            if not Event.is_event_viewable_by_user(
+                    event_id, request.user.id ):
                 return _error( request,
-                    _( 'You are not allowed to edit the event with the \
-                    number:' ) + " " + str( event_id ) )
+                    _( ''.join('You are not allowed to edit the event with ',
+                        'the number %s(event_id)d' ) ) % \
+                                {'event_id': event_id} )
     if request.method == 'POST':
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
-            errors = event.parse_text(
-                    event_textarea, event_id, request.user.id )
+            try:
+                event = event.parse_text(
+                        event_textarea, event_id, request.user.id )
+            except ValidationError as err:
+                # found a validation error with one or more errors
+                error_messages = []
+                if hasattr( err, 'message_dict' ):
+                    # if hasattr(err, 'message_dict'), it looks like:
+                    # {'url': [u'Enter a valid value.']}
+                    for field_name, error_message in err.message_dict.items():
+                        error_messages.append(
+                                field_name + ": " + error_message )
+                elif hasattr( err, 'messages' ):
+                    for message in err.messages:
+                        error_messages.append( message )
+                elif hasattr( err, 'message' ):
+                    error_messages.append( err.message )
+                templates = {
+                        'title': _( "edit event as text" ),
+                        'event_textarea': event_textarea,
+                        'event_id': event_id,
+                        'messages_col1': error_messages,
+                        'example': Event.example() }
+                return render_to_response( 'event_edit_raw.html', templates,
+                        context_instance = RequestContext( request ) )
             if type( event ) == type( errors ):
             #if no errors, parse_text returns event instance
                 return HttpResponseRedirect( 
@@ -265,8 +287,8 @@ def event_edit_raw( request, event ): # {{{1
                 return _error( request, errors )
         else:
             return _error( request,
-                _( "You submitted an empty form, nothing was saved. Click the \
-                back button in your \ browser and try again." ) )
+                _( ''.join( 'You submitted an empty form, nothing was saved.',
+                    ' Click the back button in your browser and try again.' )))
     else:
         event_textarea = event.as_text()
         templates = {
@@ -643,8 +665,7 @@ def list_groups_my(request): # {{{2
     #    return render_to_response('error.html',
     #            {
     #                'title': 'error',
-    #                'message_col1': _("You must be logged in to list your \
-    #                    groups")
+    #                'messages_col1': [_("You must be logged in to list your groups"),]
     #            },
     #            context_instance=RequestContext(request))
     #else:
@@ -654,7 +675,7 @@ def list_groups_my(request): # {{{2
         return render_to_response('error.html',
             {
                 'title': 'error',
-                'message_col1': _("You are not a member of any group"),
+                'messages_col1': [_("You are not a member of any group"),]
             },
             context_instance=RequestContext(request))
     else:
@@ -673,8 +694,8 @@ def group_quit(request, group_id, sure): # {{{2
         return render_to_response('error.html',
                 {
                     'title': 'error',
-                    'message_col1': _("There is no such group, or you \
-                        are not a member of that group")
+                    'messages_col1': [_( ''.join("There is no such group, ",
+                        "or you are not a member of that group") ),]
                 },
                 context_instance=RequestContext(request))
     testsize = len(
@@ -719,8 +740,8 @@ def group_add_event(request, event_id): # {{{2
         return render_to_response('error.html',
                 {
                     'title': 'GridCalendar.net - error',
-                    'message_col1': _("You must be logged in to add an event \
-                            to a group")
+                    'messages_col1': [_(''.join_("You must be logged in to ",
+                        "add an event to a group")),]
                 },
                 context_instance=RequestContext(request))
     event = Event.objects.get(id=event_id)
@@ -751,9 +772,9 @@ def group_add_event(request, event_id): # {{{2
         return render_to_response('error.html',
                     {
                         'title': 'error',
-                        'message_col1': _("This event is already in all \
-                                groups that you are in, so you can't add it \
-                                to any more groups.")
+                        'messages_col1': [_(''.join("This event is already ",
+                            "in all groups that you are in, so you can't ",
+                            "add it to any more groups.")),]
                     },
                     context_instance=RequestContext(request))
 
@@ -782,8 +803,8 @@ def group_invite(request, group_id): # {{{2
         return render_to_response('error.html',
                 {
                     'title': 'error',
-                    'message_col1': _("You must be logged in to invite \
-                            someone to a group")
+                    'messages_col1': [_(''.join("You must be logged in to ",
+                        "invite someone to a group")),]
                 },
                 context_instance=RequestContext(request))
     else:
@@ -801,8 +822,9 @@ def group_invite(request, group_id): # {{{2
                     return render_to_response('error.html',
                         {
                             'title': 'error',
-                            'message_col1': _("There is no user with the \
-                                username: ") + username
+                            'messages_col1': [_(''.join("There is no user ",
+                                "with the username: %(username)s")) % \
+                                        {'username': username,},]
                         },
                         context_instance=RequestContext(request))
                 GroupInvitation.objects.create_invitation(host=request.user,
@@ -858,15 +880,15 @@ def ICalForEventHash (request, event_id, user_id, hash): # {{{2
     if hash != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
-            'message_col1': _(u"hash authentification failed")
+            'messages_col1': [_(u"hash authentification failed"),]
             },
             context_instance=RequestContext(request))
     event = Event.objects.get( id = event_id )
     if not event.is_viewable_by_user( user ):
         return render_to_response('error.html',
             {'title': 'error',
-            'message_col1':
-                _(u"user authentification for requested event failed")
+            'messages_col1': [
+                _(u"user authentification for requested event failed"),]
             },
             context_instance=RequestContext(request))
     return _ical_http_response_from_event_list(
@@ -878,7 +900,7 @@ def ICalForSearchHash( request, query, user_id, hash ): # {{{2
     if hash != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
-            'message_col1': _(u"hash authentification failed")
+            'messages_col1': [_(u"hash authentification failed"),]
             },
             context_instance=RequestContext(request))
     elist = list_search_get(query) # FIXME: it can be too long
@@ -905,14 +927,14 @@ def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
     if hash != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
-            'message_col1': _(u"hash authentification failed")
+            'messages_col1': [_(u"hash authentification failed"),]
             },
             context_instance=RequestContext(request))
     group = Group.objects.get(id = group_id)
     if not group.is_member(user_id):
         return render_to_response('error.html',
             {'title': 'error',
-            'message_col1': _(u"not a member of the tried group")
+            'messages_col1': [_(u"not a member of the tried group"),]
             },
             context_instance=RequestContext(request))
     elist = Event.objects.filter(calendar__group = group)
