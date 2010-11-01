@@ -1,17 +1,16 @@
 
 high priority
 -------------
+
 - use python-django-lint
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
 - Check that all strings to be translated uses the Python's standard named-string interpolation
   syntax, and not positional interpolation (e.g., %s or %d). See
   http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/
-- Show events whose end-time has not experid, for instance important for consultations.
-  Alternatively consultations start-time should be the expected results time with a dead line
-  before. Use the earlierst dead line to sort events, not the start time.
 - Implement optimistic looking and transactions when e.g. saving/changing an event as a text. See
     http://stackoverflow.com/questions/320096/django-how-can-i-protect-against-concurrent-modification-of-data-base-entries
+- urls with hashes should be different for each group, filter, etc.
 - When committing remove and create new data base creating automatically a new super user to avoid
   the question:
       You just installed Django's auth system, which means you don't have any superusers defined.
@@ -37,6 +36,7 @@ high priority
 
 medium priority
 ---------------
+
 - css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
@@ -55,6 +55,7 @@ medium priority
 
 low priority
 ------------
+
 - Add future events of past events listed on http://www.guckes.net/cal/
 - Add RSS support. See
   http://docs.djangoproject.com/en/1.0//ref/contrib/syndication/#ref-contrib-syndication
@@ -72,25 +73,28 @@ low priority
 - code a plugin for OpenSocial:
   http://www.heise.de/newsticker/meldung/OpenSocial-1-0-veroeffentlicht-955569.html
 - User profile can have external services attached. E.g.
-    - Google Calendar
-    - Facebook MyCalendar application
-      http://www.facebook.com/home.php?ref=home#/apps/application.php?id=38610296669&ref=nf
+
+  - Google Calendar
+  - Facebook MyCalendar application
+    http://www.facebook.com/home.php?ref=home#/apps/application.php?id=38610296669&ref=nf
+
   Each event entry should show an icon to add it when the user is logged in
 - GridCalendar api. See e.g. http://fi.am/entry/building-a-website-api-with-django-part-2a-api-aut/
 - OpenID. See
   http://www.heise.de/newsticker/Identity-Management-OpenID-mit-openid4java--/meldung/139607
 - Develop a client for mobile devices, maybe one with JavaFX, as they run on Android, Desktops and
   Java ME mobile devices. Idea from http://brightkite.com/
-     * Everywhere (default)
-     * Region (100 km)
-     * Metro (50 km)
-     * City (10 km)
-     * Area (4 km)
-     * Neighbornhood (2 km)
-     * Block (200 m)
-     * Close (20 m)
 
-- Idea for the main page:
+  - Everywhere (default)
+  - Region (100 km)
+  - Metro (50 km)
+  - City (10 km)
+  - Area (4 km)
+  - Neighbornhood (2 km)
+  - Block (200 m)
+  - Close (20 m)
+
+- Idea for the main page::
    
     what happen  |   search: _________________________  (tag:xxx / group:xxx / location:continent/country/city user:xxx)
     today        |                                                                 it should also work with e.g. "floss berlin"
@@ -108,7 +112,6 @@ low priority
                     A number and color show how many entries for each square
                     You can click on a square to see the entries and also to introduce a new entry
                     You can mark more than one square like in Google calender
-
 
 - Possible tag: for:user
     But the user must be in the system. Another option would be to have a list of contacts and for:user
