@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<p>{% trans "Next coming events of the group:" %}</p>
+<p>{% trans "Next coming dates for events in your groups:" %}</p>
 <ul>
     {% for group in USER.get_groups %}
         {% if group.has_coming_events %}
@@ -11,7 +11,9 @@
                     <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" /></a>
                 <a href="{% url group_view group.id %}"> {{ group.name }} </a>
             </li>
-            {% include "groups/group_coming_events.html" %}
+            {% for event in group.get_coming_events %}
+                <p> {% include "event_show_small.html" %} </p>
+            {% endfor %}
             <hr />
         {% endif %}
     {% endfor %}

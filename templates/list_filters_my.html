@@ -13,6 +13,7 @@
         </li>
 
         <ul>
+            <li>{% trans "Query:" %} {{ fil.query }}</li>
             {% for event in fil.upcoming_events %}
                 <li> {% include "event_show_small.html" %} </li>
             {% endfor %}
