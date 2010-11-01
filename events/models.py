@@ -335,6 +335,7 @@ GridCalendar will be presented
 
 """
 
+# FIXME: check this class
 class EventManager( models.Manager ):# {{{1 pylint: disable-msg=R0904
     """let event can show only public models for all
     and private model only for group members and owner"""
@@ -1865,7 +1866,12 @@ class Filter( models.Model ): # {{{1
         queryset = queryset.distinct()
         # filter events the user cannot see
         if user is not None:
-            queryset.filter( Q( user = user) | Q(calendar__group__membership__user = user) )
+            queryset.filter( 
+                    Q( user = user ) | 
+                    Q( calendar__group__membership__user = user ) |
+                    Q( public = True ) )
+        else:
+            queryset.filter( public = True )
         return queryset
 
     @staticmethod
