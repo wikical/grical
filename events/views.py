@@ -609,26 +609,27 @@ def main( request ): # {{{1
             event_form = SimplifiedEventForm()
         else:
             event_form = SimplifiedEventFormAnonymous()
-    if request.user.is_authenticated():
-        # FIXME: add events matching filters
-        pass
+    today = datetime.date.today()
+    elist = Event.objects.filter (
+                Q(start__gte=today) |
+                Q(end__gte=today) |
+                Q(deadlines__deadline__gte=today) )
+    if not request.user.is_authenticated():
+        elist = elist.filter(public = True)
     else:
-        # FIXME:
-        pass
-    events = list()
-    for event in Event.objects.all():
-        if not event.is_viewable_by_user(request.user): continue
-        if event.next_coming_date_or_start() != event.start:
-            events.append(event)
-        if len(events) >= settings.MAX_EVENTS_ON_ROOT_PAGE:
-            break
-    events = sorted(events, key=Event.next_coming_date_or_start)
+        elist = elist.filter(
+                Q( user = request.user ) |
+                Q( calendar__group__membership__user = request.user ) |
+                Q( public = True ) )
+    elist = elist.distinct()
+    elist = sorted(elist, key=Event.next_coming_date_or_start)
+    elist = elist[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'base_main.html',
             {
                 'title': _( "GridCalendar - the community Calendar" ),
                 'form': event_form,
-                'events': events,
+                'events': elist,
                 'about_text': about_text,
             },
             context_instance = RequestContext( request ) )
