@@ -207,12 +207,32 @@ def event_new_raw( request ): # {{{1
                 Event.parse_text( event_textarea, None, request.user.id )
                 # TODO: inform that the event was saved
                 return HttpResponseRedirect( reverse( 'main' ) )
-            except ValidationError, error:
-                return _error( request, error )
+            except ValidationError as err:
+                error_messages = []
+                if hasattr( err, 'message_dict' ):
+                    # if hasattr(err, 'message_dict'), it looks like:
+                    # {'url': [u'Enter a valid value.']}
+                    for field_name, error_message in err.message_dict.items():
+                        error_messages.append(
+                                field_name + ": " + error_message )
+                elif hasattr( err, 'messages' ):
+                    for message in err.messages:
+                        error_messages.append( message )
+                elif hasattr( err, 'message' ):
+                    error_messages.append( err.message )
+                templates = {
+                        'title': _( "edit event as text" ),
+                        'messages_col1': error_messages,
+                        'event_textarea': event_textarea,
+                        'example': Event.example() }
+                return render_to_response(
+                        'event_new_raw.html',
+                        templates,
+                        context_instance = RequestContext( request ) )
         else:
             return _error( request,
-                _( "You submitted an empty form, nothing was saved. Click the \
-                back button in your browser and try again." ) )
+                _( ''.join( "You submitted an empty form, nothing was saved. ",
+                    "Click the back button in your browser and try again." )))
     else:
         templates = { 'title': _( "edit event as text" ), \
                 'example': Event.example() }
