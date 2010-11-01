@@ -2,8 +2,8 @@
 
 <div class="field">
     <span class="field_dates">
-      {% if event.next_coming_date != event.start %}
-          ( {{ event.next_coming_date }} )
+      {% if event.next_coming_date_or_start != event.start %}
+          ( {{ event.next_coming_date_or_start }} )
       {% endif %}
       {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
     </span>
