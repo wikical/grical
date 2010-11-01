@@ -83,6 +83,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self._create_user('test_activation_web', True)
 
     def test_public_private_event_visibility(self): # {{{2
+        """ test that a private event cannot be seen by another user, but a
+        public one """
         user1 = self._create_user('tpev1', False)
         user2 = self._create_user('tpev2', False)
         event_public = Event.objects.create(
@@ -98,37 +100,9 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                 kwargs = {'query': '1234',} ) )
         self.assertTrue(event_public in response.context['events'])
         self.assertFalse(event_private in response.context['events'])
-        # old code of beret:
-        #"tests visibility private and public events for user"
-        #login = self.login_user( user_nr )
-        #self.assertTrue( login )
-        #user = self.get_user( user_nr )
-        #public_event = self.get_event( user, True, True )
-        #private_event = self.get_event( user, False, True )
-        #response = self.client.get( reverse( 'list_events_tag', \
-        #                                 kwargs = {'tag':'tag'} ) )
-        #txt = response.content
-        #self.assertTrue( public_event.title.decode('utf-8') in
-        #        txt.decode('utf-8') )
-        #self.assertTrue( private_event.title.decode('utf-8') in
-        #        txt.decode('utf-8') )
-        #for nr in range( USERS_COUNT ):# pylint: disable-msg=C0103
-        #    if nr != user_nr:
-        #        public_title = self.event_title( self.get_user( nr ), \
-        #                                         True, True )
-        #        private_title = self.event_title( self.get_user( nr ), \
-        #                                          False, True )
-        #        self.assertTrue(
-        #                public_title.decode('utf-8') in txt.decode('utf-8'),
-        #                u"not visible public event: %s" % \
-        #                public_title.decode('utf-8') )
-        #        self.assertFalse(
-        #                private_title.decode('utf-8') in txt.decode('utf-8'),
-        #                u"visible private event: %s" % \
-        #                private_title.decode('utf-8') )
-        #self.client.logout()
 
     def test_public_private_change_error(self): # {{{2
+        """ tests that an event cannot be changed from private to public """
         user = self._create_user('tppce', False)
         event = Event(user = user, public = True, title="test",
                 start=datetime.date.today(), tags="test")
@@ -136,17 +110,19 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         event.public = False
         self.assertRaises(AssertionError, event.save)
 
-#    def test_private_public_change_error(self): # {{{2
-#        user = self._create_user('tppce', False)
-#        event = Event(user = user, public = False, title="test",
-#                start=datetime.date.today(), tags="test")
-#        event.save()
-#        assert (event.public == False)
-#        event.public = True
-#        event.save()
-#        self.assertRaises(AssertionError, event.save)
+    def test_private_public_change_error(self): # {{{2
+        """ tests that an event cannot be changed from public to private """
+        user = self._create_user('tppce', False)
+        event = Event(user = user, public = False, title="test",
+                start=datetime.date.today(), tags="test")
+        event.save()
+        assert (event.public == False)
+        event.public = True
+        event.save()
+        self.assertRaises(AssertionError, event.save)
 
     def test_group_invitation(self): # {{{2
+        """ test group invitation """
         user1 = self._create_user('tgi1', True)
         user2 = self._create_user('tgi2', True)
         group = self._create_group( user = user1, name = "group", throw_web = True )
@@ -180,7 +156,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self.assertTrue(user2 in users)
         mail.outbox = []
 
+    def test_group_ical_rss( self ): # {{{2
+        pass
+
     def _create_user(self, name = None, throw_web = False): # {{{2
+        """ create a user either on the API or using the web and email """
         if name is None:
             name = datetime.datetime.now().isoformat()
         if not throw_web:
@@ -221,6 +201,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             return user
 
     def _create_group(self, user, name = None, throw_web = False): # {{{2
+        """ create a user either on the API or using the web and email """
         if name is None:
             chars = string.letters # you can append: + string.digits
             name = ''.join( [ choice(chars) for i in xrange(8) ] )
@@ -265,18 +246,22 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         result = response.read()
         self.assertTrue( 'Congratulations' in result, content )
 
-    def validate_rss( self, url ): # {{{2
+    def _validate_rss( self, url ): # {{{2
         "validate rss feed data"
         response = self.client.get( url )
         self.assertEqual( response.status_code, 200 )
-        content = response.content
-        if ONLINE:
-            params = urllib.urlencode( {'fragment':content} )
-            conn = httplib.HTTPConnection( "validator.w3.org" )
-            conn.request( "POST", "/check", params )
-            response = conn.getresponse()
-            result = response.read()
-            self.assertTrue( 'Congratulations' in result, content )
+        conn = httplib.HTTPConnection(
+                "http://feedvalidator.org/check.cgi?url=" + url )
+        conn.request()
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue( 'Congratulations!' in result, url )
+#            params = urllib.urlencode( {'fragment':content} )
+#            conn = httplib.HTTPConnection( "validator.w3.org" )
+#            conn.request( "POST", "/check", params )
+#            response = conn.getresponse()
+#            result = response.read()
+#            self.assertTrue( 'Congratulations' in result, content )
 
     def user_group_edit( self, user_nr ): # {{{2
         "tests edit private and public events for user \

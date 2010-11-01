@@ -576,11 +576,11 @@ def main( request ): # {{{1
     events = list()
     for event in Event.objects.all():
         if not event.is_viewable_by_user(request.user): continue
-        if event.next_coming_date():
+        if event.next_coming_date_or_start() != event.start:
             events.append(event)
         if len(events) >= settings.MAX_EVENTS_ON_ROOT_PAGE:
             break
-    events = sorted(events, key=Event.next_coming_date)
+    events = sorted(events, key=Event.next_coming_date_or_start)
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'base_main.html',
             {
@@ -895,7 +895,7 @@ def ICalForGroup( request, group_id ): # {{{2
                 Q(start__gte=today) |
                 Q(end__gte=today) |
                 Q(deadlines__deadline__gte=today) ).distinct()
-    elist = sorted(elist, key=Event.next_coming_date)
+    elist = sorted(elist, key=Event.next_coming_date_or_start)
     return _ical_http_response_from_event_list( elist, group.name )
 
 def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
@@ -921,7 +921,7 @@ def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
                 Q(start__gte=today) |
                 Q(end__gte=today) |
                 Q(deadlines__deadline__gte=today) ).distinct()
-    elist = sorted(elist, key=Event.next_coming_date)
+    elist = sorted(elist, key=Event.next_coming_date_or_start)
     return _ical_http_response_from_event_list( elist, group.name )
 
 def _ical_http_response_from_event_list( elist, filename ): # {{{2

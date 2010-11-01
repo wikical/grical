@@ -441,10 +441,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         verbose_name_plural = _( u'Events' )
 
     # methods {{{2
-    def next_coming_date(self):
+    def next_coming_date_or_start(self):
         """ returns the next most proximate date of an event to today, which
-        can be the start date, the end date or one of the deadlines; or None if
-        all are in the past
+        can be the start date, the end date or one of the deadlines; or the
+        start date if all are in the past
         
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -452,7 +452,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         ...     start=timedelta(days=1)+today,
         ...     end=timedelta(days=2)+today,
         ...     tags="test")
-        >>> assert today + timedelta(days=1) == event.next_coming_date()
+        >>> assert today + timedelta(days=1) == event.next_coming_date_or_start()
 
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -472,7 +472,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         ...         deadline = today)
         >>> event1_deadline.save()
         >>> list_events = [event3, event2, event1]
-        >>> sorted_list = sorted(list_events, key=Event.next_coming_date)
+        >>> sorted_list = sorted(list_events, key=Event.next_coming_date_or_start)
         >>> assert sorted_list[0] == event1
         >>> assert sorted_list[1] == event2
         >>> assert sorted_list[2] == event3
@@ -494,7 +494,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             # returns the smallest date
             return today + ( sorted(deltas)[0] )
         else:
-            return None
+            return self.start
 
     def icalendar( self, ical = None ):
         """ returns an iCalendar object of the event entry or add it to 'ical'
@@ -1779,7 +1779,7 @@ class Filter( models.Model ): # {{{1
 
     @staticmethod
     def matches( query, user, limit = 100 ): # {{{2
-        """ returns a sorted (`Event.next_coming_date`) list of `limit`
+        """ returns a sorted (`Event.next_coming_date_or_start`) list of `limit`
         events matching `query` viewable by `user`
         
         - A date in isoformat (yyyy-mm-dd) restrict the query to events with
@@ -1796,7 +1796,7 @@ class Filter( models.Model ): # {{{1
         queryset = Filter.matches_queryset(query, user)
         # sort the list touching the database. FIXME: think about what happens
         # if there are millions of events
-        elist = sorted(queryset, key=Event.next_coming_date)
+        elist = sorted(queryset, key=Event.next_coming_date_or_start)
         # take the first `limit` 
         return elist[0:limit]
 
@@ -1838,14 +1838,15 @@ class Filter( models.Model ): # {{{1
             queryset = TaggedItem.objects.get_intersection_by_model(
                     queryset, tags)
         # dates
-        regex = re.compile('(\d\d\d\d)-(\d\d)-(\d\d)')
-        dates = regex.findall(query)
+        date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*')
+        dates = date_regex.findall( query )
         if dates:
-            dates = [datetime.date(year, month, day) for year, month, day in
-                    dates]
+            dates = [ datetime.date(int(year), int(month), int(day)) for \
+                    year, month, day in dates ]
             date = sorted(dates)[-1] # last date
         else:
             date = datetime.date.today()
+        query = date_regex.sub("", query)
         queryset = queryset.filter(
                 Q(start__gte = date) | Q(end__gte = date) |
                 Q(deadlines__deadline__gte = date) )
@@ -2074,7 +2075,7 @@ class Group( models.Model ): # {{{1
                     Q(deadlines__deadline__gte=today) )).distinct()
         # next line touches the date base, but notice that the number of future
         # events of a group shouldn't be big
-        return sorted(events, key=Event.next_coming_date)[0:limit]
+        return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
 
     def get_coming_publc_events(self, limit=5):
         """ Returns a list of maximal `limit` public events with at least one
@@ -2087,7 +2088,7 @@ class Group( models.Model ): # {{{1
                     Q(deadlines__deadline__gte=today) )).distinct()
         # next line touches the date base, but notice that the number of future
         # events of a group shouldn't be big
-        return sorted(events, key=Event.next_coming_date)[0:limit]
+        return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
 
     def has_coming_events(self):
         """ returns True if the group has coming events (with `start`, `end` or

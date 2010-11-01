@@ -63,7 +63,7 @@ class EventsFeed(Feed): # {{{1
 
     def item_description(self, item):
         return _('next coming date: %(date)s') % {'date':
-                item.next_coming_date().isoformat()}
+                item.next_coming_date_or_start().isoformat()}
         # one could return the event as text with something like:
         # return '<!CDATA[' + item.as_text().replace('\n', '<br />') + ' ]]'
 
@@ -85,7 +85,7 @@ class PublicUpcomingEventsFeed(EventsFeed): # {{{1
                     Q(end__gte=today) |
                     Q(deadlines__deadline__gte=today)
                 ).distinct()
-        return sorted( elist, key=Event.next_coming_date )[:FEED_SIZE]
+        return sorted( elist, key=Event.next_coming_date_or_start )[:FEED_SIZE]
 
 
 class PublicSearchEventsFeed(EventsFeed): # {{{1
