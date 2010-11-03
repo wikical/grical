@@ -2,6 +2,8 @@
 high priority
 -------------
 
+- create a field for each event which stores the unix time (seconds from 1.1.1970) for the next
+  coming date. With this efficient sorting and slicing is possible
 - use python-django-lint
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
@@ -56,6 +58,7 @@ medium priority
 low priority
 ------------
 
+- include import of sessions from Pentabarf
 - Add future events of past events listed on http://www.guckes.net/cal/
 - Add RSS support. See
   http://docs.djangoproject.com/en/1.0//ref/contrib/syndication/#ref-contrib-syndication
@@ -82,6 +85,14 @@ low priority
 - GridCalendar api. See e.g. http://fi.am/entry/building-a-website-api-with-django-part-2a-api-aut/
 - OpenID. See
   http://www.heise.de/newsticker/Identity-Management-OpenID-mit-openid4java--/meldung/139607
+- Mobile devices applications:
+
+    - Pentabarf Android: http://github.com/mrud/pentabarf-android
+    - iPhone: http://github.com/leonbrussels/fosdem
+    - Maemo: https://sourceforge.net/projects/fosdem-maemo/
+    - Android: https://sourceforge.net/projects/fosdem-android/
+    - WebOS: http://raphael.kallensee.name/journal/fosdem-2010-schedule-application-for-webos/ 
+
 - Develop a client for mobile devices, maybe one with JavaFX, as they run on Android, Desktops and
   Java ME mobile devices. Idea from http://brightkite.com/
 

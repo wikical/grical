@@ -1,16 +1,19 @@
+
 {% extends "base.html" %}
 
 {% load i18n %}
+{% load event_tags %}
 
 {% block column1 %}
-
 <div class="field">
-    <a href="{% url event_edit event.id %}"><span class="field_link">{% trans "edit this event" %}</span></a>
-    &nbsp;
-    <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit this event as text" %}</span></a>
-    &nbsp;
-    <a href="{% url group_add_event event.id %}"><span class="field_link">{% trans "add this event to a group" %}</span></a>
+
+    <a href="{% url event_edit event.id %}"><span class="field_link">{% trans "edit" %}</span></a>
+    &nbsp;|&nbsp;
+    <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+    &nbsp;|&nbsp;
+    {% show_add_to_group %}
     <hr />
+
     <p>
         <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16"></span></a>
         {% if event.acro %}
@@ -23,82 +26,100 @@
         </span>
     </p>
 
-    <p>
-    {% if event.country %}
-        <span class="field_country">
-            (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country|urlencode }}">{{ event.country|escape }}</a>)
-        </span>
-    {% endif %}
-    {% if event.postcode %}
-            {{ event.postcode }}
-    {% endif %}
-    {% if event.city %}
-        &nbsp;<span class="field_city">
-            <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst|escape }}</a>
-        </span>
-    {% endif %}
-    {% if event.address %}
-        <br/>
-        {{ event.address|escape }}
-    {% endif %}
-    </p>
-
-    {% if event.latitude and event.longitude%}
-        <p>
-            Coordinates: {{ event.latitude }}, {{ event.longitude }}
-        </p>
-    {% endif %}
-
     {% if event.get_tags %}
-        <p>
-            <br />{% trans "Tags:" %} <span class="tags">
+        <h2>{% trans "Tags" %}</h2>
+        <ul>
             {% for tag in event.get_tags %}
-                <span class="tag"><a href="{% url list_events_tag tag %}">{{ tag }}</a>, </span>
+                <li><a href="{% url list_events_tag tag %}">{{ tag }}</a></li>
             {% endfor %}
-        </p>
+        </ul>
     {% endif %}
 
     {% if event.urls.all %}
-        <p>
-            URLS:
-            <ul>
-                {% for url in event.urls.all %}
-                    <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
-                {% endfor %}
-            </ul>
-        </p>
+        <h2>{% trans "URLs" %}</h2>
+        <ul>
+            {% for url in event.urls.all %}
+                <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
+            {% endfor %}
+        </ul>
     {% endif %}
 
     {% if event.deadlines.all %}
-        <p>
-            Deadlines:
-            <ul>
-                {% for deadline in event.deadlines.all %}
-                <li>{{ deadline.deadline }}&nbsp;&nbsp;&nbsp;&nbsp;{{ deadline.deadline_name|escape }}</li>
-                {% endfor %}
-            </ul>
-        </p>
+        <h2>{% trans "Deadlines" %}</h2>
+        <ul>
+            {% for deadline in event.deadlines.all %}
+            <li>{{ deadline.deadline }}&nbsp;&nbsp;&nbsp;&nbsp;{{ deadline.deadline_name|escape }}</li>
+            {% endfor %}
+        </ul>
     {% endif %}
             
     {% if event.sessions.all %}
-        <p>
-            Sessions:
-            <ul>
-                {% for session in event.sessions.all %}
+        <h2> {% trans "Sessions" %} </h2>
+        <ul>
+            {% for session in event.sessions.all %}
                 <li>{{ session.session_date }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_starttime|time:"H:i" }}-{{ session.session_endtime|time:"H:i" }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_name|escape }}</li>
-                {% endfor %}
-            </ul>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if event.address or event.postcode or event.city or event.country or event.latitude or event.longitude %}
+        <h2>{% trans "Venue" %}</h2>
+        <p>
+            {% if event.address %}
+                {{ event.address|escape }}
+            {% endif %}
+            {% if event.postcode %}
+                    {{ event.postcode }}
+            {% endif %}
+            {% if event.city %}
+                &nbsp;<span class="field_city">
+                    <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst|escape }}</a>
+                </span>
+            {% endif %}
+            {% if event.country %}
+                <span class="field_country">
+                    (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country|urlencode }}">{{ event.country|escape }}</a>)
+                </span>
+            {% endif %}
         </p>
+        {% if event.latitude and event.longitude %}
+            <p>
+                Coordinates: {{ event.latitude }}, {{ event.longitude }}
+            </p>
+            <!-- FIXME: see example http://openlayers.org/dev/examples/xhtml.html -->
+            <div id="mapdiv" class="smallmap"></div>
+            <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+            <script defer="defer" type="text/javascript">
+                function marker(lon, lat, image){
+                  return new OpenLayers.Marker(
+                    new OpenLayers.LonLat(lon, lat).transform(
+                      new OpenLayers.Projection("EPSG:4326"),
+                      map.getProjectionObject()
+                    ),
+                    new OpenLayers.Icon( image, new OpenLayers.Size(32, 32), new OpenLayers.Pixel(16, 16))
+                  );
+                }
+                map = new OpenLayers.Map("mapdiv");
+                map.addLayer(new OpenLayers.Layer.OSM());
+                var pois = new OpenLayers.Layer.Markers("My Points");
+                //These lines should be a list automatically generated by Django
+                pois.addMarker(this.marker({{ event.latitude }}, {{ event.longitude }}));
+                map.addLayer(pois);
+                mapArea = pois.getDataExtent().toArray();
+                // map.zoomToMaxExtent();
+                map.setCenter (
+                  new OpenLayers.LonLat((mapArea[0] + mapArea[2]) /2, (mapArea[1] + mapArea[3]) /2),
+                  map.getZoomForExtent(pois.getDataExtent(), true) -1
+                );
+            </script>
+        {% endif %}
     {% endif %}
 
     {% if event.description %}
-        <p>Description:</p>
-        <pre>
-        {% if event.description %}
-                {{ event.description }}
-        {% endif %}
-        </pre>
+        <h2>{% trans "Description" %}</h2>
+        <div class="description">
+            {{ event.description|escape|linebreaksbr|urlize }}
+        </div>
     {% endif %}
 </div>
-
 {% endblock %}

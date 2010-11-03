@@ -42,6 +42,7 @@ from random import choice
 import vobject
 
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.test import TestCase
 from django.test.client import Client
 from django.core.urlresolvers import reverse
@@ -110,6 +111,13 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         event.public = False
         self.assertRaises(AssertionError, event.save)
 
+    def test_none_user_private_event_error( self ):
+        """ tests that an event cannot be created without an owner and being
+        private """
+        event = Event(user = None, public = False, title="test",
+                start=datetime.date.today(), tags="test")
+        self.assertRaises(AssertionError, event.save)
+
     def test_private_public_change_error(self): # {{{2
         """ tests that an event cannot be changed from public to private """
         user = self._create_user('tppce', False)
@@ -117,8 +125,9 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                 start=datetime.date.today(), tags="test")
         event.save()
         assert (event.public == False)
+        transaction.commit()
+        assert ( Event.objects.get( id = event.id ) )
         event.public = True
-        event.save()
         self.assertRaises(AssertionError, event.save)
 
     def test_group_invitation(self): # {{{2

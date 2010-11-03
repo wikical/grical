@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block feeds %}
+{% block extraheaders %}
 <link rel="alternate" type="application/rss+xml" title="RSS" href="{% url public_upcoming_events_rss %}" />
-{%endblock feeds%}
+{%endblock extraheaders %}
 
 {% block column1 %}
 

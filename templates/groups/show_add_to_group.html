@@ -1,0 +1,4 @@
+{% load i18n %}
+{% if show_add_to_group %}
+    <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+{% endif %}

@@ -24,7 +24,7 @@
 http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
 """
 
-from gridcalendar.events.models import Event, Group, EventUrl, EventSession
+from gridcalendar.events.models import EventUrl, EventSession
 from gridcalendar.events.models import Membership, Calendar, EventDeadline
 
 from django.contrib import admin

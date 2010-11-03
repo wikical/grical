@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block feeds %}
+{% block extraheaders %}
 {% if user_is_in_group %}
     <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss_hashed group.id USER.id USER.get_hash %}" />
 {% else %}
     <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss group.id %}" />
 {% endif %}
-{%endblock feeds%}
+{%endblock extraheaders %}
 
 {% block column1 %}
 
