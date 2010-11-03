@@ -36,6 +36,7 @@ import vobject
 from django.core.mail import send_mail, BadHeaderError
 from django.utils.encoding import smart_str, smart_unicode
 from django.db import models
+# http://docs.djangoproject.com/en/1.2/topics/db/queries/#filters-can-reference-fields-on-the-model
 from django.db.models import Q
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
@@ -44,12 +45,13 @@ from django.forms import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db.models.query import CollectedObjects
-#from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import pre_save, post_save
 from gridcalendar.events.signals import user_auth_signal
-from gridcalendar.events.decorators import autoconnect
+# FIXME from gridcalendar.events.decorators import autoconnect
 
 from tagging.models import Tag
 from tagging.fields import TagField
+from tagging.models import TaggedItem
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -300,6 +302,7 @@ COUNTRIES = (
     ( 'VI', _( u'Virgin Islands, U.S.' ) ),
     ( 'WF', _( u'Wallis and Futuna' ) ),
     ( 'EH', _( u'Western Sahara' ) ),
+    ( 'WW', _( u'worldwide' ) ),
     ( 'YE', _( u'Yemen' ) ),
     ( 'ZM', _( u'Zambia' ) ),
     ( 'ZW', _( u'Zimbabwe' ) ),
@@ -336,49 +339,48 @@ GridCalendar will be presented
 """
 
 # FIXME: check this class
-class EventManager( models.Manager ):# {{{1 pylint: disable-msg=R0904
-    """let event can show only public models for all
-    and private model only for group members and owner"""
+#class EventManager( models.Manager ):# {{{1 pylint: disable-msg=R0904
+#    """let event can show only public models for all
+#    and private model only for group members and owner"""
+#
+#    _user = False
+#
+#    @classmethod
+#    def set_auth_user( cls, sender, user, **kwargs ):# pylint: disable-msg=W0613
+#        "set _user value after auth"
+#        cls.set_user( user )
+#
+#    @classmethod
+#    def set_user( cls, user ):
+#        "set user for queries"
+#        if type( user ) != AnonymousUser:
+#            cls._user = user
+#        else:
+#            cls._user = False
+#
+#    @classmethod
+#    def get_user( cls ):
+#        "get user for queries"
+#        return cls._user
+#
+#    def get_query_set( self ):
+#        user = self.get_user()
+#
+#        if user:
+#            if user.is_staff():
+#                return super( EventManager, self ).get_query_set()
+#            groups = Group.objects.filter( membership__user = user )
+#            query_set = super( EventManager, self ).get_query_set().filter(
+#                    Q( public = True ) |
+#                    Q( user = user ) |
+#                    Q( calendar__group__in = groups ) )
+#        else:
+#            query_set = super( EventManager, self )\
+#            .get_query_set().filter( public = True )
+#        return query_set
+#
+#user_auth_signal.connect( EventManager.set_auth_user )
 
-    _user = False
-
-    @classmethod
-    def set_auth_user( cls, sender, user, **kwargs ):# pylint: disable-msg=W0613
-        "set _user value after auth"
-        cls.set_user( user )
-
-    @classmethod
-    def set_user( cls, user ):
-        "set user for queries"
-        if type( user ) != AnonymousUser:
-            cls._user = user
-        else:
-            cls._user = False
-
-    @classmethod
-    def get_user( cls ):
-        "get user for queries"
-        return cls._user
-
-    def get_query_set( self ):
-        user = self.get_user()
-
-        if user:
-            if user.is_staff:
-                return super( EventManager, self ).get_query_set()
-            groups = Group.objects.filter( membership__user = user )
-            query_set = super( EventManager, self ).get_query_set().filter(
-                    Q( public = True ) |
-                    Q( user = user ) |
-                    Q( calendar__group__in = groups ) )
-        else:
-            query_set = super( EventManager, self )\
-            .get_query_set().filter( public = True )
-        return query_set
-
-user_auth_signal.connect( EventManager.set_auth_user )
-
-@autoconnect
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model """
     # fields {{{2
@@ -434,7 +436,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                null = True )
     " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105,C0301
 
-    objects = EventManager() # {{{2
+#    objects = EventManager() # {{{2
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -481,7 +483,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # creates a list with all dates of the event (self)
         dates = []
         dates.append(self.start)
-        if self.end: dates.append(self.end)
+        if self.end:
+            dates.append(self.end)
         deadlines = EventDeadline.objects.filter(event=self)
         if deadlines:
             for deadline in deadlines:
@@ -517,21 +520,27 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             vevent.add('CATEGORIES').value = self.tags.split(u' ')
         location = ""
         # rfc5545 specifies CRLF for new lines:
-        if self.address: location = self.address + " "
-        if self.postcode: location = location + self.postcode + " "
-        if self.city: location = location + self.city + " "
-        if self.country: location = location + self.country + " "
+        if self.address:
+            location = self.address + " "
+        if self.postcode:
+            location = location + self.postcode + " "
+        if self.city:
+            location = location + self.city + " "
+        if self.country:
+            location = location + self.country + " "
         vevent.add('LOCATION').value = location
         vevent.add('UID').value = \
                 settings.PROJECT_NAME + u'-' + \
                 hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
                 + unicode(self.id) + u'@' + \
                 settings.HOST_IP
-        if self.end: vevent.add('DTEND').value = self.end
+        if self.end:
+            vevent.add('DTEND').value = self.end
         if self.description: vevent.add('DESCRIPTION').value = self.description
         # see rfc5545 3.8.7.2. Date-Time Stamp
         vevent.add('DTSTAMP').value = self.modification_time
-        if self.public: vevent.add('CLASS').value = 'PUBLIC'
+        if self.public:
+            vevent.add('CLASS').value = 'PUBLIC'
         else: vevent.add('CLASS').value = 'PRIVATE'
         if self.latitude and self.longitude:
             vevent.add('GEO').value = \
@@ -626,32 +635,34 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 #                pass
 
     def save( self, *args, **kwargs ):
-        """ Call the real 'save' function after some assertions """
+        """ Call the real 'save' function after checking that a private event
+        has an owner, and that the public field is not changed ever after
+        creation """
         # It is not allowed to have a non-public event without owner:
         assert not ( ( self.public == False ) and ( 
-            self.user == None  or type (self.user) == AnonymousUser ) )
-        old_event = None
-        if self.pk != None:
-            try:
-                old_event = Event.objects.get( pk = self.pk )
-                # It is not allowed to modify the 'public' field:
-                assert ( self.public == old_event.public )
-            except Event.DoesNotExist:
-                pass
+            self.user == None  or self.user.id == None ) )
+        # checks that the public field is not changed if the Event already
+        # exists
+        try:
+            old_event = Event.objects.get( id = self.id )
+            # It is not allowed to modify the 'public' field:
+            assert ( self.public == old_event.public )
+        except Event.DoesNotExist:
+            pass
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
-
-    def post_save( self ):
+    @staticmethod
+    def post_save( sender, **kwargs ):
         """ notify users if a filter of a user matches the event. """
         # FIXME: implement a Queue, see comments on 
         # http://www.artfulcode.net/articles/threading-django/
         thread = threading.Thread(
-                target=Filter.notify_users_when_wanted(self),
-                args=[self,])
+                target=Filter.notify_users_when_wanted( kwargs['instance'] ),
+                args=[ kwargs['instance'], ] )
         thread.setDaemon(True)
         thread.start()
-#        #save history
+#       #FIXME: save history
 #        try:
 #            new_event = Event.objects.get( pk = self.pk )
 #            new = new_event.as_text()
@@ -714,13 +725,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     to_return += keyword + u": " + self.country + u"\n"
             elif keyword == u'timezone':
                 if self.timezone:
-                    to_return += keyword + u": " + unicode(self.timezone) + u"\n"
+                    to_return += keyword + u": " + unicode(self.timezone)+u"\n"
             elif keyword == u'latitude':
                 if self.latitude:
-                    to_return += keyword + u": " + unicode(self.latitude) + u"\n"
+                    to_return += keyword + u": " + unicode(self.latitude)+u"\n"
             elif keyword == u'longitude':
                 if self.longitude:
-                    to_return += keyword + u": " + unicode(self.longitude) + u"\n"
+                    to_return += keyword + u": " + unicode(self.longitude)+u"\n"
             elif keyword == u'acronym':
                 if self.acronym:
                     to_return += keyword + u": " + self.acronym + u"\n"
@@ -1259,6 +1270,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         cal_entry = Calendar.objects.get( event = self, group = group )
         cal_entry.delete()
 
+# post_save.connect {{{1
+# see http://docs.djangoproject.com/en/1.2/topics/signals/
+post_save.connect( Event.post_save, sender = Event, dispatch_uid="Event.post_save" )
+
 class ExtendedUser(User): # {{{1
     """ Some aditional funtions to users
     
@@ -1783,8 +1798,9 @@ class Filter( models.Model ): # {{{1
         """ returns a sorted (`Event.next_coming_date_or_start`) list of `limit`
         events matching `query` viewable by `user`
         
-        - A date in isoformat (yyyy-mm-dd) restrict the query to events with
-          dates from them on, i.e. from the last one of all dates in the query
+        - one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
+          dates from the the lowest to the highst, or to one day if there is
+          only one date
         - If there is no date in the query it uses the default day of today
         - Single words are looked in `title`, `tags`, `city`, `country` and
           `acronym` with or
@@ -1795,7 +1811,8 @@ class Filter( models.Model ): # {{{1
 
           """
         queryset = Filter.matches_queryset(query, user)
-        # sort the list touching the database. FIXME: think about what happens
+        # sort the list touching the database. FIXME: use a field for each
+        # event storing the unix time of the next coming event
         # if there are millions of events
         elist = sorted(queryset, key=Event.next_coming_date_or_start)
         # take the first `limit` 
@@ -1837,20 +1854,28 @@ class Filter( models.Model ): # {{{1
         tags = regex.findall(query)
         if tags:
             queryset = TaggedItem.objects.get_intersection_by_model(
-                    queryset, tags)
+                    queryset, tags )
         # dates
-        date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*')
+        date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
+        # FIXME: e.g. a2010-01-01 shouldn't work
         dates = date_regex.findall( query )
         if dates:
-            dates = [ datetime.date(int(year), int(month), int(day)) for \
+            dates = [ datetime.date( int(year), int(month), int(day) ) for \
                     year, month, day in dates ]
-            date = sorted(dates)[-1] # last date
+            sorted_dates = sorted( dates )
+            date1 = sorted_dates[0] # first date
+            date2 = sorted_dates[-1] # last date
+            queryset = queryset.filter(
+                    Q( start__range = (date1, date2) )  |
+                    Q( end__range = (date1, date2) ) |
+                    Q(deadlines__deadline__range = (date1, date2) ) )
+            # remove all dates (yyyy-mm-dd) from the query
+            query = date_regex.sub("", query)
         else:
             date = datetime.date.today()
-        query = date_regex.sub("", query)
-        queryset = queryset.filter(
-                Q(start__gte = date) | Q(end__gte = date) |
-                Q(deadlines__deadline__gte = date) )
+            queryset = queryset.filter(
+                    Q(start__gte = date) | Q(end__gte = date) |
+                    Q(deadlines__deadline__gte = date) )
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)
         for word in regex.findall(query):
@@ -1865,7 +1890,7 @@ class Filter( models.Model ): # {{{1
         # remove duplicates
         queryset = queryset.distinct()
         # filter events the user cannot see
-        if user is not None:
+        if user is not None and user.id is not None:
             queryset.filter( 
                     Q( user = user ) | 
                     Q( calendar__group__membership__user = user ) |
@@ -2129,9 +2154,9 @@ class Group( models.Model ): # {{{1
         if len(groups) == 0:
             return to_return
         for group in groups:
-                events = group.get_coming_events(limit)
-                if len(events) > 0:
-                    to_return[group] = events
+            events = group.get_coming_events(limit)
+            if len(events) > 0:
+                to_return[group] = events
         return to_return
 
     @classmethod

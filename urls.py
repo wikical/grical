@@ -6,24 +6,25 @@
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
-# 
+#
 # GridCalendar is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
-# 
+#
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License
 # for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 """ Main urls definition file. """
 # imports {{{1
 from django.conf import settings
-from django.conf.urls.defaults import patterns, include, url, handler500, handler404
+from django.conf.urls.defaults import ( patterns, include, url, handler500,
+        handler404 )
 from django.contrib import admin, databrowse
 from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:
@@ -64,7 +65,7 @@ urlpatterns += patterns( '',
 # see http://docs.djangoproject.com/en/1.0/howto/static-files/
 if settings.DEBUG:
     urlpatterns += patterns( '',
-        ( 
+        (
             '^' + settings.MEDIA_URL[1:] + '(?P<path>.*)$',
             'django.views.static.serve',
             {'document_root': settings.MEDIA_ROOT, 'show_indexes': True},

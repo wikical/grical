@@ -126,9 +126,9 @@ def event_edit( request, event_id ): # {{{1
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
-        return _error( request, ''.join( 
-                _( "The event with the following number doesn't exist" ), ": ",
-                str( event_id ) ), )
+        return _error( request, 
+                _( ''.join( [u"The event with the following number doesn't ",
+                    "exist: (%event_id)d" ] ) % {'event_id': event_id,} ) )
 
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
@@ -231,8 +231,8 @@ def event_new_raw( request ): # {{{1
                         context_instance = RequestContext( request ) )
         else:
             return _error( request,
-                _( ''.join( "You submitted an empty form, nothing was saved. ",
-                    "Click the back button in your browser and try again." )))
+                _( ''.join( ["You submitted an empty form, nothing was saved. ",
+                    "Click the back button in your browser and try again."] )))
     else:
         templates = { 'title': _( "edit event as text" ), \
                 'example': Event.example() }
@@ -260,15 +260,15 @@ def event_edit_raw( request, event ): # {{{1
     if ( not event.public ):
         if ( not request.user.is_authenticated() ):
             return _error( request,
-                _( ''.join('You need to be logged-in to be able to edit the ',
+                _( ''.join(['You need to be logged-in to be able to edit the ',
                     'private event with the number %(event_id)d. ',
-                    'Please log in a try again.' ) ) % {'event_id': event_id} )
+                    'Please log in a try again.'] )) % {'event_id': event_id} )
         else:
             if not Event.is_event_viewable_by_user(
                     event_id, request.user.id ):
                 return _error( request,
-                    _( ''.join('You are not allowed to edit the event with ',
-                        'the number %s(event_id)d' ) ) % \
+                    _( ''.join(['You are not allowed to edit the event with ',
+                        'the number %s(event_id)d'] ) ) % \
                                 {'event_id': event_id} )
     if request.method == 'POST':
         if 'event_astext' in request.POST:
@@ -298,17 +298,15 @@ def event_edit_raw( request, event ): # {{{1
                         'example': Event.example() }
                 return render_to_response( 'event_edit_raw.html', templates,
                         context_instance = RequestContext( request ) )
-            if type( event ) == type( errors ):
-            #if no errors, parse_text returns event instance
+            if isinstance(event, Event):
                 return HttpResponseRedirect( 
                     reverse( 'event_show', kwargs = {'event_id': event_id} ) )
             else:
-            #else, parse_text return errors list
-                return _error( request, errors )
+                return _error( request, event )
         else:
             return _error( request,
-                _( ''.join( 'You submitted an empty form, nothing was saved.',
-                    ' Click the back button in your browser and try again.' )))
+                _( ''.join( ['You submitted an empty form, nothing was saved.',
+                    ' Click the back button in your browser and try again.'])))
     else:
         event_textarea = event.as_text()
         templates = {
@@ -355,7 +353,7 @@ def event_show_raw( request, event_id ): # {{{1
         templates = {
                 'title': _( "view as text" ),
                 'event_textarea': event_textarea,
-                'event_id': event_id }
+                'event': event }
         return render_to_response( 'event_show_raw.html',
                 templates, context_instance = RequestContext( request ) )
 
@@ -715,8 +713,8 @@ def group_quit(request, group_id, sure): # {{{2
         return render_to_response('error.html',
                 {
                     'title': 'error',
-                    'messages_col1': [_( ''.join("There is no such group, ",
-                        "or you are not a member of that group") ),]
+                    'messages_col1': [_( ''.join(["There is no such group, ",
+                        "or you are not a member of that group"]) ),]
                 },
                 context_instance=RequestContext(request))
     testsize = len(
@@ -793,9 +791,9 @@ def group_add_event(request, event_id): # {{{2
         return render_to_response('error.html',
                     {
                         'title': 'error',
-                        'messages_col1': [_(''.join("This event is already ",
+                        'messages_col1': [_(''.join( ["This event is already ",
                             "in all groups that you are in, so you can't ",
-                            "add it to any more groups.")),]
+                            "add it to any more groups."] )),]
                     },
                     context_instance=RequestContext(request))
 
@@ -824,8 +822,8 @@ def group_invite(request, group_id): # {{{2
         return render_to_response('error.html',
                 {
                     'title': 'error',
-                    'messages_col1': [_(''.join("You must be logged in to ",
-                        "invite someone to a group")),]
+                    'messages_col1': [_(''.join(["You must be logged in to ",
+                        "invite someone to a group"])),]
                 },
                 context_instance=RequestContext(request))
     else:
@@ -843,8 +841,8 @@ def group_invite(request, group_id): # {{{2
                     return render_to_response('error.html',
                         {
                             'title': 'error',
-                            'messages_col1': [_(''.join("There is no user ",
-                                "with the username: %(username)s")) % \
+                            'messages_col1': [_(''.join( ["There is no user ",
+                                "with the username: %(username)s"] )) % \
                                         {'username': username,},]
                         },
                         context_instance=RequestContext(request))

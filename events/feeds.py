@@ -28,29 +28,23 @@
 # http://arnout.engelen.eu/icalendar-validator/validate/
 
 ### imports {{{1
-import vobject
-import unicodedata
 import datetime
 
 from django.contrib.sites.models import Site
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response, get_list_or_404
+from django.http import Http404
 from django.utils.translation import ugettext as _
-from django.template import RequestContext
-from django.contrib.auth.models import User
 from django.db.models import Q
-from django.contrib.syndication.views import Feed, FeedDoesNotExist
+from django.contrib.syndication.views import Feed
 from django.core.urlresolvers import reverse
 
 from gridcalendar.settings import FEED_SIZE, SITE_ID
-from gridcalendar.events.models import Event, Filter, Group, Membership, \
-        ExtendedUser
-from gridcalendar.events.lists import list_search_get
+from gridcalendar.events.models import ( Event, Filter, Group,
+        ExtendedUser )
 
 site_domain = Site.objects.get(id = SITE_ID).domain
 
 class EventsFeed(Feed): # {{{1
+    """ rss feed for a list of events """
 
     def item_title(self, item):
         return item.title

@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load event_tags %}
 
 <div class="event_medium">
   <span class="event_medium_title">
@@ -44,7 +45,6 @@
   &nbsp;|&nbsp;
   <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
   &nbsp;|&nbsp;
-  <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
-  &nbsp;&nbsp;
+  {% show_add_to_group %}
 </div>
 <hr />
