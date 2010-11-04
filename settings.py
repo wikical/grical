@@ -71,11 +71,24 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/a/accounts/login/'
 LOGOUT_URL = '/a/accounts/logout/'
 
-# for tagging application
+# =============================================================================
+# localization settings
+# =============================================================================
+
+SHORT_DATETIME_FORMAT = 'Y-m-d P'
+SHORT_DATE_FORMAT = 'Y-m-d'
+
+# =============================================================================
+# for the tagging application
+# =============================================================================
 # see http://django-tagging.googlecode.com/svn/trunk/docs/overview.txt
+
 FORCE_LOWERCASE_TAGS = True
 
+# =============================================================================
 # for the registration application
+# =============================================================================
+
 ACCOUNT_ACTIVATION_DAYS = 10
 
 # =============================================================================

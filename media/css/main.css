@@ -237,7 +237,7 @@ input#id_web, input#id_tags, input#id_title {
 .event_medium_title {
     vertical-align: middle ;
 }
-.event_medium_commands, .event_medium_commands a, .event_medium_commands p {
+.options_css_class, .options_css_class a, .options_css_class p {
     font-size: 0.9em;
     color: #808080;
     text-align: right;
