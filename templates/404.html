@@ -1,1 +1,7 @@
-<p>An object couldn't be retrieved</p>
+{% extends "base.html" %}
+{% load i18n %}
+{% block message_col1 %}
+<div id="message_col1">
+    <p>{% trans "An object couldn't be retrieved" %}</p>
+</div>
+{% endblock %}

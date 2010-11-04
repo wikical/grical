@@ -66,6 +66,7 @@ permission of the original author -->
     <div class="colleft">
         <div class="col1">
             <!-- Column 1 start -->
+            {% block message_col1 %}
             {% if messages_col1 and messages_col1|length > 0 %}
                 <div id="message_col1">
                     {% if messages_col1|length > 1 %}
@@ -79,6 +80,7 @@ permission of the original author -->
                     {% endif %}
                 </div>
             {% endif %}
+            {% endblock %}
             {% block column1 %}
             {% endblock %}
         </div>

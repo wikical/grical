@@ -1,1 +1,7 @@
-<p>Programming error</p>
+{% extends "base.html" %}
+{% load i18n %}
+{% block message_col1 %}
+<div id="message_col1">
+    <p>{% trans "blue screen of death, but you can continue to use this site and we will fix the error in no time, even if we are drunk, because we care" %}</p>
+</div>
+{% endblock %}
