@@ -40,7 +40,7 @@ private event can have only one group.
 Events as text
 --------------
 
-Events can be submitted per email to `event ät gridmind.org`. The subject of the email is ignored.
+Events can be submitted per email to event ät gridmind.org. The subject of the email is ignored.
 Example of the body of an email::
 
     acronym: GriCal
@@ -70,7 +70,7 @@ Example of the body of an email::
 
     GridCalendar will be presented
 
-The only required filters are `title`, `start`, `tags` and a `url` (which can be submitted in one
+The only required filters are title, start, tags and a url (which can be submitted in one
 line). Example::
 
     title: GridCalendar presentation
@@ -81,13 +81,9 @@ line). Example::
 Searches and filters
 --------------------
 
-- one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
-dates from the the lowest to the highest, or to one day if there is only one
-date
+- one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with dates from the the lowest to the highest, or to one day if there is only one date
 - If there is no date in the query only future events are showed
-- Single words are looked in `title`, `tags`, `city`, `country` and `acronym`
-with or
+- Single words are looked up in title, tags, city, country and acronym with or
 - Tags (#tag) restrict the query to events with these tags
-- Locations (@location) restrict the query to events having these location in
-`city` or `country`
+- Locations (@location) restrict the query to events having these location in city or country
 - Groups (!group) restrict the query to events of the groups

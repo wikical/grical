@@ -1909,9 +1909,9 @@ class Filter( models.Model ): # {{{1
         events matching `query` viewable by `user`
         
         - one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
-          dates from the the lowest to the highst, or to one day if there is
+          dates from the the lowest to the highest, or to one day if there is
           only one date
-        - If there is no date in the query it uses the default day of today
+        - If there is no date in the query only future events are showed
         - Single words are looked in `title`, `tags`, `city`, `country` and
           `acronym` with or
         - Tags (#tag) restrict the query to events with these tags
