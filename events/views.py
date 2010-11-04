@@ -357,14 +357,18 @@ def event_show_raw( request, event_id ): # {{{1
         return render_to_response( 'event_show_raw.html',
                 templates, context_instance = RequestContext( request ) )
 
-def query( request ): # {{{1
+def search( request ): # {{{1
     """ View to get the data of a search query calling `list_events_search` """
     # FIXME: replace everything using something like the first example at
     # http://www.djangobook.com/en/1.0/chapter07/
-    if 'q' in request.GET and request.GET['q']:
-        return HttpResponseRedirect( 
-                reverse( 'list_events_search',
-                kwargs = {'query': request.GET['q'], } ) )
+    if 'query' in request.POST and request.POST['query']:
+        return list_events_search ( request, request.POST['query'] )
+        # return HttpResponseRedirect( 
+        #         reverse( 'list_events_search',
+        #         kwargs = {'query': request.POST['query'], } ) )
+    else:
+        return _error( request,
+            _( u"A search request was submitted without a text" ) )
 
 def list_events_search( request, query ): # {{{1
     """ View to show the results of a search query """
@@ -985,3 +989,17 @@ def _ical_http_response_from_event_list( elist, filename ): # {{{2
     response['Content-Disposition'] = 'attachment; filename=' + filename
     return response
 
+def all_events_text ( request ):
+    if request.user.is_authenticated():
+        user = request.user
+        elist = Event.objects.filter(
+                Q( user = user ) | Q( group__membership__user = user ) |
+                Q( public = True ) )
+    else:
+        elist = Event.objects.filter( public = True )
+    text = Event.list_as_text( elist )
+    response = HttpResponse( text, mimetype = 'text/text;charset=UTF-8' )
+    filename =  PROJECT_NAME + '_' + datetime.datetime.now().isoformat()+'.txt'
+    response['Filename'] = filename
+    response['Content-Disposition'] = 'attachment; filename=' + filename
+    return response

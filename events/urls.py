@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
@@ -33,51 +33,71 @@ from gridcalendar.events.feeds import (
         PublicGroupEventsFeed, HashGroupEventsFeed )
 
 # main url {{{1
-urlpatterns = patterns('',            # root url {{{1 pylint: disable-msg=C0103
+urlpatterns = patterns('',            # pylint: disable-msg=C0103
     url(r'^$', views.main, name='main'),
     )
 
-# urls for managing single event {{{1
+# ^e single event {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/new/$',
         views.event_new,                name='event_new'),
+
     url(r'^e/new/raw/$',
         views.event_new_raw,            name='event_new_raw'),
+
     url(r'^e/edit/(?P<event_id>\d+)/$',
         views.event_edit,               name='event_edit'),
+
     url(r'^e/edit/(?P<event>\d+)/raw/$',
         views.event_edit_raw,           name='event_edit_raw'),
+
     url(r'^e/show/(?P<event_id>\d+)/$',
         views.event_show,               name='event_show'),
+
     url(r'^e/show/(?P<event_id>\d+)/raw/$',
         views.event_show_raw,           name='event_show_raw'),
+
     url(r'^e/show/(?P<event_id>\d+)/ical/$',
         views.ICalForEvent,             name='event_show_ical'),
+
     url(r'^e/show/(?P<event_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         views.ICalForEventHash,  name='event_show_ical_hash'),
+
+    url(r'^e/group/(?P<event_id>\d+)/$',
+        views.group_add_event,      name='group_add_event'),
     )
 
-# urls for managing searches {{{1
+# ^s searches urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
-    url(r'^q/',
-        views.query,              name='query'),
-    url(r'^s/(?P<query>.*)/ical/$',
-        views.ICalForSearch,      name='list_events_search_ical'),
-    url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        views.ICalForSearchHash,  name='list_events_search_ical_hashed'),
-    url(r'^s/(?P<query>.*)/rss/$',
-        PublicSearchEventsFeed(), name='list_events_search_rss'),
-    url(r'^s/(?P<query>.*)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
-        HashSearchEventsFeed(),  name='list_events_search_rss_hashed'),
+    url(r'^s/$',
+        views.search,              name='search'),
+
     url(r'^s/(?P<query>.*)/$',
         views.list_events_search, name='list_events_search'),
+
+    url(r'^s/(?P<query>.*)/ical/$',
+        views.ICalForSearch,      name='list_events_search_ical'),
+
+    url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+        views.ICalForSearchHash,  name='list_events_search_ical_hashed'),
+
+    url(r'^s/(?P<query>.*)/rss/$',
+        PublicSearchEventsFeed(), name='list_events_search_rss'),
+
+    url(r'^s/(?P<query>.*)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+        HashSearchEventsFeed(),  name='list_events_search_rss_hashed'),
+
     url(r'^s/(?P<query>.*)/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         views.list_events_search_hashed, name='list_events_search_hashed'),
+    )
+
+# ^t tags urls {{{1
+urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^t/(?P<tag>[ \-\w]*)/$' ,
         views.list_events_tag,    name='list_events_tag'),
     )
 
-# events in a group {{{1
+# ^g groups urls {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103
 
     url(r'^g/(?P<group_id>\d+)/ical/$',
@@ -110,13 +130,11 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/quit/(?P<group_id>\d+)/confirm/$',
         views.group_quit_sure,      name='group_quit_sure'),
 
-    url(r'^e/group/(?P<event_id>\d+)/$',
-        views.group_add_event,      name='group_add_event'),
     )
     # TODO: this should be a view with everything about the group for members
     # and not members; see also list_groups_my
 
-# user related {{{1
+# ^u user related urls {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
 
     url(r'^u/events/$',
@@ -135,7 +153,7 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     #   url(r'^e/list/user/(?P<username>\w+)/$',
     #       views.list_events_of_user,      name='list_events_of_user'),
 
-# filter management:  {{{1
+# ^f filter management urls  {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
 
     url(r'^f/new/$',
@@ -149,8 +167,14 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
     )
 
 
-# rss feeds {{{1
+# ^r rss main feed url {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
      url(r'^r/upcoming/$',
          PublicUpcomingEventsFeed(), name='public_upcoming_events_rss'),
+     )
+
+# ^o output urls {{{1
+urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+     url(r'^o/all/text/$',
+         views.all_events_text, name='all_events_text'),
      )

@@ -29,6 +29,8 @@
 
 from django.contrib.sites.models import Site
 from django.conf import settings
+from django.contrib.auth.models import User
+from gridcalendar.events.models import Event, Group
 
 from events.models import ExtendedUser
 
@@ -43,6 +45,9 @@ def global_template_vars(request):
         user = ExtendedUser.objects.get( id = request.user.id )
     else:
         user = None
+    users_nr = User.objects.count()
+    events_nr = Event.objects.count()
+    groups_nr = Group.objects.count()
     return {
             'PROJECT_NAME': settings.PROJECT_NAME,
             'PROTOCOL': protocol,
@@ -50,4 +55,7 @@ def global_template_vars(request):
             'MEDIA_URL': settings.MEDIA_URL,
             'USER': user,
             'VERSION': settings.VERSION,
+            'USERS_NR': users_nr,
+            'EVENTS_NR': events_nr,
+            'GROUPS_NR': groups_nr,
             }

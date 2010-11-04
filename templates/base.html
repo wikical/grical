@@ -28,6 +28,7 @@ permission of the original author -->
     <h1>{% trans "GridCalendar - Community Calendar" %}</h1>
     <h2>{% trans "An open community driven calendar" %}</h2>
     <h3 style="color:gray">{{ VERSION }}</h3>
+    <div class="options_css_class">{% trans "events:" %} {{ EVENTS_NR }} | {% trans "users:" %} {{ USERS_NR }} | {% trans "groups:" %}{{ GROUPS_NR }}</div>
     <!-- menu if needed
     <ul>
         <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column.htm">3 Column <span>Holy Grail</span></a></li>
@@ -47,8 +48,8 @@ permission of the original author -->
                 <a href="{% url auth_login %}">{% trans "log in" %}</a>
             {% endif %}
         </div>
-        <form action="{% url query %}" method="get">
-            <input type="text" size="40" name="q" value="{{ query }}">
+        <form action="{% url search %}" method="post">{% csrf_token %}
+            <input type="text" size="40" name="query" value="{{ query }}">
             <input type="submit" value="{% trans "Search" %}">
         </form>
         <div id="sitelinks">

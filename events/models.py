@@ -703,6 +703,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """
         return EXAMPLE
 
+    @staticmethod
+    def list_as_text( iterable ):
+        """ returns an utf-8 string of all events in `iterable` """
+        text = ''
+        for event in iterable:
+            text += '\nEVENT: BEGIN --------------------\n'
+            text += event.as_text()
+            text += '\nEVENT: END ----------------------\n'
+        return text
+
     def as_text( self ):
         """ Returns a unix multiline utf-8 string representation of the
         event."""
@@ -1765,6 +1775,7 @@ class EventHistory( models.Model ): # {{{1
 
 class Filter( models.Model ): # {{{1
     """ search queries of users """
+    # {{{2 attributes
     user = models.ForeignKey(
             User, unique = False, verbose_name = _( u'User' ) )
     modification_time = models.DateTimeField( _( u'Modification time' ),
@@ -1776,22 +1787,121 @@ class Filter( models.Model ): # {{{1
     email = models.BooleanField( _( u'Email' ), default = False, help_text =
             _(u'If set it sends an email to a user when a new event matches'))
 
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
+    class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         unique_together = ( "user", "name" )
         verbose_name = _( u'Filter' )
         verbose_name_plural = _( u'Filters' )
 
-    def __unicode__( self ):
+    def __unicode__( self ): # {{{2
         return self.name
 
     @models.permalink
-    def get_absolute_url( self ):
+    def get_absolute_url( self ): # {{{2
         """ django utility ofr url look-up """
         return ( 'filter_edit', (), { 'filter_id': self.id } )
 
-    def upcoming_events( self, limit = 5 ):
+    def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next `limit` events matching `self.query` """
         return Filter.matches( self.query, self.user, limit )
+
+    def matches_event( self, event ):
+        """ return True if the query matches the event, False otherwise 
+        
+        >>> from events.models import *
+        >>> from datetime import timedelta
+        >>> now = datetime.datetime.now().isoformat()
+        >>> today = datetime.date.today()
+        >>> group = Group.objects.create(name="group " + now)
+        >>> event = Event.objects.create(title="test for events " + now,
+        ...     start=timedelta(days=-1)+today, tags="test")
+        >>> event_deadline = EventDeadline(
+        ...         event = event, deadline_name = "test",
+        ...         deadline = today)
+        >>> event_deadline.save()
+        >>> calendar = Calendar.objects.create( group = group,
+        ...     event = event )
+        >>> calendar.save()
+        >>> user = User.objects.create(username = "user " + now)
+        >>> fil = Filter.objects.create(user=user, name=now, query='test')
+        >>> assert fil.matches_event(event)
+        >>> fil.query = today.isoformat()
+        >>> assert fil.matches_event(event)
+        >>> fil.query = ( timedelta(days=-1) + today ).isoformat()
+        >>> assert fil.matches_event(event)
+        >>> fil.query = '!' + group.name
+        >>> assert fil.matches_event(event)
+        >>> fil.query = '#test'
+        >>> assert fil.matches_event(event)
+        >>> fil.query = 'abcdef'
+        >>> assert not fil.matches_event(event)
+        """
+        # IMPORTANT: this code must be in accordance with
+        # `Filter.matches_queryset`
+        query = self.query
+        # groups
+        regex = re.compile('!(\w+)', UNICODE)
+        for name in regex.findall(query):
+            if not Group.objects.filter( Q( name__iexact = name ) &
+                    Q( calendar__event = event ) ).exists():
+                return False
+        # locations
+        regex = re.compile('@(\w+)', UNICODE)
+        for loc_name in regex.findall(query):
+            matches = False
+            if event.city and event.city.lower() == loc_name.lower():
+                matches = True
+            # FIXME: search for two-letters country and for name country
+            # TODO: use also translations of locations
+            if event.country and event.country.lower() == loc_name.lower():
+                matches = True
+            if not matches:
+                return False
+        # tags
+        regex = re.compile('#(\w+)', UNICODE)
+        for tag in regex.findall(query):
+            if not tag in event.tags:
+                return False
+        # dates
+        date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
+        # FIXME: e.g. a2010-01-01 shouldn't work
+        dates = date_regex.findall( query )
+        if dates:
+            dates = [ datetime.date( int(year), int(month), int(day) ) for \
+                    year, month, day in dates ]
+            sorted_dates = sorted( dates )
+            date1 = sorted_dates[0] # first date
+            date2 = sorted_dates[-1] # last date
+            if not (event.start >= date1 and event.start <= date2):
+                if not ( event.end and
+                        event.end >= date1 and event.end <= date2):
+                    matches = False
+                    for dea in EventDeadline.objects.filter(event = event):
+                        if (dea.deadline >= date1 and dea.deadline <= date2):
+                            matches = True
+                            break
+                    if not matches:
+                        return False
+            # remove all dates (yyyy-mm-dd) from the query
+            query = date_regex.sub("", query)
+        else:
+            today = datetime.date.today()
+            if not ( event.start >= today or
+                    ( event.end and event.end <= today ) or
+                    Event.objects.filter(deadlines__deadline__gte = today) ):
+                return False
+        # look for words
+        regex = re.compile('([^!@#]\w+)', UNICODE)
+        matches = False
+        for word in regex.findall(query):
+            word = word.lower()
+            if ( event.title.lower().find(word) != -1 or
+                    event.tags.lower().find(word) != -1 or
+                    ( event.city and event.city.lower() == word ) or
+                    ( event.country and event.country.lower() == word ) or
+                    ( event.acronym and event.acronym.lower() == word ) ):
+                matches = True
+                break
+        return matches
 
     @staticmethod
     def matches( query, user, limit = 100 ): # {{{2
@@ -1826,6 +1936,8 @@ class Filter( models.Model ): # {{{1
     @staticmethod
     def matches_queryset( query, user ): # {{{2
         """ returns a queryset without touching the database, see `Filter.matches` """
+        # IMPORTANT: this code must be in accordance with
+        # `Filter.matches_event`
         if isinstance(user, int):
             user = User.objects.get(id = user)
         elif isinstance(user, unicode) or isinstance(user, str):
@@ -1915,10 +2027,12 @@ class Filter( models.Model ): # {{{1
         # saves filters and can look up fast filters matching an event
         users = User.objects.all()
         for user in users:
+            if not event.is_viewable_by_user(user):
+                continue
             user_filters = Filter.objects.filter( user = user ).filter(
                     email = True)
             for fil in user_filters:
-                if fil.matches(event):
+                if fil.matches_event(event):
                     context = {
                         'name': user.username,
                         'event': event,

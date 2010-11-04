@@ -5,6 +5,7 @@ high priority
 - create a field for each event which stores the unix time (seconds from 1.1.1970) for the next
   coming date. With this efficient sorting and slicing is possible
 - use python-django-lint
+- try VimTrac: http://www.vim.org/scripts/script.php?script_id=2147
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
 - Check that all strings to be translated uses the Python's standard named-string interpolation
@@ -35,6 +36,7 @@ high priority
 - program logic for group invitation after clicking url in email, write the email templates, etc.
 - Think of a most generic error page (404). See
     http://stackoverflow.com/questions/1812470/django-custom-handler404-shows-404-but-gives-header-200
+- SEO: http://s1-suchmaschinenoptimierung.de/google-seo-starter-guide/
 
 medium priority
 ---------------
