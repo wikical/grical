@@ -26,59 +26,32 @@
         </span>
     </p>
 
-    {% if event.get_tags %}
-        <h2>{% trans "Tags" %}</h2>
-        <ul>
-            {% for tag in event.get_tags %}
-                <li><a href="{% url list_events_tag tag %}">{{ tag }}</a></li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    {% if event.urls.all %}
-        <h2>{% trans "URLs" %}</h2>
-        <ul>
-            {% for url in event.urls.all %}
-                <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    {% if event.deadlines.all %}
-        <h2>{% trans "Deadlines" %}</h2>
-        <ul>
-            {% for deadline in event.deadlines.all %}
-            <li>{{ deadline.deadline }}&nbsp;&nbsp;&nbsp;&nbsp;{{ deadline.deadline_name|escape }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-            
-    {% if event.sessions.all %}
-        <h2> {% trans "Sessions" %} </h2>
-        <ul>
-            {% for session in event.sessions.all %}
-                <li>{{ session.session_date }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_starttime|time:"H:i" }}-{{ session.session_endtime|time:"H:i" }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_name|escape }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
     {% if event.address or event.postcode or event.city or event.country or event.latitude or event.longitude %}
         <h2>{% trans "Venue" %}</h2>
         <p>
             {% if event.address %}
                 {{ event.address|escape }}
             {% endif %}
+            {% if event.address %}
+                {% if event.postcode or event.city or event.country %} , {% endif %}
+            {% endif %}
             {% if event.postcode %}
                     {{ event.postcode }}
+            {% endif %}
+            {% if event.address or event.postcode %}
+                {% if event.city or event.country %} , {% endif %}
             {% endif %}
             {% if event.city %}
                 &nbsp;<span class="field_city">
                     <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst|escape }}</a>
                 </span>
             {% endif %}
+            {% if event.address or event.postcode or event.city %}
+                {% if event.country %} , {% endif %}
+            {% endif %}
             {% if event.country %}
                 <span class="field_country">
-                    (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country|urlencode }}">{{ event.country|escape }}</a>)
+                    <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country|urlencode }}">{{ event.country|escape }}</a>
                 </span>
             {% endif %}
         </p>
@@ -113,6 +86,42 @@
                 );
             </script>
         {% endif %}
+    {% endif %}
+
+    {% if event.get_tags %}
+        <h2>{% trans "Tags" %}</h2>
+        <ul>
+            {% for tag in event.get_tags %}
+                <li><a href="{% url list_events_tag tag %}">{{ tag }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if event.urls.all %}
+        <h2>{% trans "URLs" %}</h2>
+        <ul>
+            {% for url in event.urls.all %}
+                <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if event.deadlines.all %}
+        <h2>{% trans "Deadlines" %}</h2>
+        <ul>
+            {% for deadline in event.deadlines.all %}
+            <li>{{ deadline.deadline }}&nbsp;&nbsp;&nbsp;&nbsp;{{ deadline.deadline_name|escape }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+            
+    {% if event.sessions.all %}
+        <h2> {% trans "Sessions" %} </h2>
+        <ul>
+            {% for session in event.sessions.all %}
+                <li>{{ session.session_date }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_starttime|time:"H:i" }}-{{ session.session_endtime|time:"H:i" }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_name|escape }}</li>
+            {% endfor %}
+        </ul>
     {% endif %}
 
     {% if event.description %}

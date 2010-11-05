@@ -15,7 +15,7 @@
         {% trans "You are not a member of any group" %}
     {% endif %}
 {% else %}
-    <h2>{% trans "What is GridCalendar.net?" %}</h2>
+    <h2>{% trans "What is GridCalendar?" %}</h2>
     {{ about_text|restructuredtext }}
     <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
 {% endif %}

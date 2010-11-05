@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # gpl {{{1
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 #############################################################################
 # Copyright 2010 Adam Beret Manczuk <beret@hipisi.org.pl>,
 # Ivan Villanueva <iv@gridmind.org>
@@ -40,6 +40,7 @@ import hashlib
 import string
 from random import choice
 import vobject
+from time import time
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -84,10 +85,9 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self._create_user('test_activation_web', True)
 
     def test_public_private_event_visibility(self): # {{{2
-        """ test that a private event cannot be seen by another user, but a
-        public one """
-        user1 = self._create_user('tpev1', False)
-        user2 = self._create_user('tpev2', False)
+        """ public/private visibility of events """
+        user1 = self._create_user('tpev1')
+        user2 = self._create_user('tpev2')
         event_public = Event.objects.create(
                 user = user1, title = "public 1234",
                 tags = "test", start=datetime.date.today() )
@@ -242,7 +242,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             self.assertEqual(response.status_code, 200)
 
     def _validate_ical( self, url ): # {{{2
-        "validate iCalendar url"
+        """ validate an ical file (the output of `url`) with an external online
+        validator """
         response = self.client.get( url )
         self.assertEqual( response.status_code, 200 )
         content = response.content
@@ -253,7 +254,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         conn.request( "POST", "/projects/icv/", params, headers )
         response = conn.getresponse()
         result = response.read()
-        self.assertTrue( 'Congratulations' in result, content )
+        #self.assertTrue( 'Congratulations' in result, content )
+        self.assertTrue( 'Congratulations' in result )
 
     def _validate_rss( self, url ): # {{{2
         "validate rss feed data"
@@ -631,8 +633,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
 
     def test_search_ical( self ): # {{{2
         "test for ical search"
+        Event.objects.create( title = 'berlin'+str(time()), tags = 'berlin',
+                start = datetime.date.today() )
         self._validate_ical( reverse( 'list_events_search_ical',
-                                      kwargs = {'query':'belin'} ) )
+                                      kwargs = {'query':'berlin'} ) )
+        # FIXME: text for a no match also
 
 #    def test_filter_rss( self ): # {{{2
 #        "test for the rss file of a filter"
