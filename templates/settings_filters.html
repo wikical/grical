@@ -1,23 +1,16 @@
 {% load i18n %}
 
 <ul>
-    {% for fil in filter_list %}
+    {% for fil in USER.get_filters %}
         <li>
             <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>
             &nbsp;
-            ({{ fil.results }})
+            ({{ fil.matches_count }})
             &nbsp;
             <a href="{% url filter_edit fil.id %}">edit</a>
             &nbsp;
             <a href="{% url filter_drop fil.id %}">delete</a>
             {% comment %}FIXME{% endcomment %}
-            {% if fil.errormessage %}
-                <p>
-                    <div id="message_col1">
-                    {{ fil.errormessage }}
-                    </div>
-                </p>
-            {% endif %}
         </li>
     {% endfor %}
 </ul>

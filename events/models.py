@@ -1306,7 +1306,7 @@ class ExtendedUser(User): # {{{1
     >>> f1 = Filter.objects.create(user = user, name = "f1", query = "query")
     >>> f2 = Filter.objects.create(user = user, name = "f2", query = "query")
     >>> assert ( len( euser.get_filters() ) == 2)
-    >>> assert euser.has_filter()
+    >>> assert euser.has_filters()
     >>> event = Event(title="test for ExtendedUser " + now,
     ...         start=datetime.date.today(), tags="test")
     >>> event.save()
@@ -1337,7 +1337,7 @@ class ExtendedUser(User): # {{{1
         """ returns a queryset of the user's groups """
         return Group.objects.filter( membership__user = self )
 
-    def has_filter(self):
+    def has_filters(self):
         """ returns True if the user has at least one filter, False
         otherwise """
         return Filter.objects.filter( user = self ).count() > 0
@@ -1809,9 +1809,11 @@ class Filter( models.Model ): # {{{1
         
         >>> from events.models import *
         >>> from datetime import timedelta
+        >>> from time import time
+        >>> time = str(time()).replace('.','')
         >>> now = datetime.datetime.now().isoformat()
         >>> today = datetime.date.today()
-        >>> group = Group.objects.create(name="group " + now)
+        >>> group = Group.objects.create(name="matchesevent" + time)
         >>> event = Event.objects.create(title="test for events " + now,
         ...     start=timedelta(days=-1)+today, tags="test")
         >>> event_deadline = EventDeadline(
@@ -1838,29 +1840,6 @@ class Filter( models.Model ): # {{{1
         # IMPORTANT: this code must be in accordance with
         # `Filter.matches_queryset`
         query = self.query
-        # groups
-        regex = re.compile('!(\w+)', UNICODE)
-        for name in regex.findall(query):
-            if not Group.objects.filter( Q( name__iexact = name ) &
-                    Q( calendar__event = event ) ).exists():
-                return False
-        # locations
-        regex = re.compile('@(\w+)', UNICODE)
-        for loc_name in regex.findall(query):
-            matches = False
-            if event.city and event.city.lower() == loc_name.lower():
-                matches = True
-            # FIXME: search for two-letters country and for name country
-            # TODO: use also translations of locations
-            if event.country and event.country.lower() == loc_name.lower():
-                matches = True
-            if not matches:
-                return False
-        # tags
-        regex = re.compile('#(\w+)', UNICODE)
-        for tag in regex.findall(query):
-            if not tag in event.tags:
-                return False
         # dates
         date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
         # FIXME: e.g. a2010-01-01 shouldn't work
@@ -1883,12 +1862,57 @@ class Filter( models.Model ): # {{{1
                         return False
             # remove all dates (yyyy-mm-dd) from the query
             query = date_regex.sub("", query)
+            # if there is nothing more in the query, returns True because the
+            # dates matched
+            if query == "":
+                return True
         else:
             today = datetime.date.today()
             if not ( event.start >= today or
                     ( event.end and event.end <= today ) or
                     Event.objects.filter(deadlines__deadline__gte = today) ):
                 return False
+        # groups
+        group_regex = re.compile('\s*!([\w-]+)\s*', UNICODE)
+        for name in group_regex.findall(query):
+            if not Group.objects.filter( Q( name__iexact = name ) &
+                    Q( calendar__event = event ) ).exists():
+                return False
+        # remove all groups (!group_name) from the query
+        query = group_regex.sub("", query)
+        # if there is nothing more in the query, returns True because the
+        # groups matched
+        if query == "":
+            return True
+        # locations
+        loc_regex = re.compile('\s*@([\w-]+)\s*', UNICODE)
+        for loc_name in loc_regex.findall(query):
+            matches = False
+            if event.city and event.city.lower() == loc_name.lower():
+                matches = True
+            # FIXME: search for two-letters country and for name country
+            # TODO: use also translations of locations
+            if event.country and event.country.lower() == loc_name.lower():
+                matches = True
+            if not matches:
+                return False
+        # remove all locations (@location) from the query
+        query = loc_regex.sub("", query)
+        # if there is nothing more in the query, returns True because the
+        # query matched
+        if query == "":
+            return True
+        # tags
+        tag_regex = re.compile('\s*#([\w-]+)\s*', UNICODE)
+        for tag in tag_regex.findall(query):
+            if not tag in event.tags:
+                return False
+        # remove all tags (#tag_name) from the query
+        query = tag_regex.sub("", query)
+        # if there is nothing more in the query, returns True because the
+        # tags matched
+        if query == "":
+            return True
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)
         matches = False
@@ -1938,18 +1962,21 @@ class Filter( models.Model ): # {{{1
         """ returns a queryset without touching the database, see `Filter.matches` """
         # IMPORTANT: this code must be in accordance with
         # `Filter.matches_event`
-        if isinstance(user, int):
-            user = User.objects.get(id = user)
-        elif isinstance(user, unicode) or isinstance(user, str):
-            user = User.objects.get(id = int(user))
-        elif user is not None and user.id is None:
+        if user is None or isinstance(user, User):
+            pass
+        elif isinstance(user, AnonymousUser):
             user = None
+        else:
+            try:
+                user = User.objects.get(id = int(user))
+            except User.DoesNotExist:
+                user = None
         # TODO: use the catche system for queries
         # TODO: implement it less restrictive, i.e. also showing later events
         # with only some of the specified tags
         queryset = Event.objects.all()
         # if no user get only public events
-        if user is None:
+        if user is None or user.id is None:
             queryset = queryset.filter(public = True)
         # groups
         regex = re.compile('!(\w+)', UNICODE)
@@ -2003,12 +2030,10 @@ class Filter( models.Model ): # {{{1
         queryset = queryset.distinct()
         # filter events the user cannot see
         if user is not None and user.id is not None:
-            queryset.filter( 
+            queryset = queryset.filter( 
                     Q( user = user ) | 
                     Q( calendar__group__membership__user = user ) |
                     Q( public = True ) )
-        else:
-            queryset.filter( public = True )
         return queryset
 
     @staticmethod

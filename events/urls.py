@@ -48,7 +48,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/edit/(?P<event_id>\d+)/$',
         views.event_edit,               name='event_edit'),
 
-    url(r'^e/edit/(?P<event>\d+)/raw/$',
+    url(r'^e/edit/(?P<event_id>\d+)/raw/$',
         views.event_edit_raw,           name='event_edit_raw'),
 
     url(r'^e/show/(?P<event_id>\d+)/$',
@@ -72,22 +72,22 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^s/$',
         views.search,              name='search'),
 
-    url(r'^s/(?P<query>.*)/$',
+    url(r'^s/(?P<query>[^/]*)/$',
         views.list_events_search, name='list_events_search'),
 
-    url(r'^s/(?P<query>.*)/ical/$',
+    url(r'^s/(?P<query>[^/]*)/ical/$',
         views.ICalForSearch,      name='list_events_search_ical'),
 
-    url(r'^s/(?P<query>.*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^s/(?P<query>[^/]*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         views.ICalForSearchHash,  name='list_events_search_ical_hashed'),
 
-    url(r'^s/(?P<query>.*)/rss/$',
+    url(r'^s/(?P<query>[^/]*)/rss/$',
         PublicSearchEventsFeed(), name='list_events_search_rss'),
 
-    url(r'^s/(?P<query>.*)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^s/(?P<query>[^/]*)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         HashSearchEventsFeed(),  name='list_events_search_rss_hashed'),
 
-    url(r'^s/(?P<query>.*)/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^s/(?P<query>[^/]*)/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         views.list_events_search_hashed, name='list_events_search_hashed'),
     )
 

@@ -10,6 +10,7 @@
 <br />
 
 {% if events %}
+    <hr />
     {% for event in events %}
         {% comment %}
         <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
@@ -18,6 +19,7 @@
         <a href="{% url list_events_search_rss_hashed fil.query fil.user_id fil.hash %}"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" /></a>
         {% endcomment %}
         {% include "event_show_medium.html" %}
+        <hr />
     {% endfor %}
 {% endif %}
 
