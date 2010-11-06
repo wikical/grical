@@ -149,16 +149,8 @@ def event_edit( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,}).status_code
     302
     """
-    event_id = int(event_id)
     """ Complete web-form to edit an event. """
-    # checks if the event exists
-    try:
-        event = Event.objects.get( pk = event_id )
-    except Event.DoesNotExist:
-        return _error( request, 
-                _( ''.join( [u"The event with the following number doesn't ",
-                    "exist: (%event_id)d" ] ) % {'event_id': event_id,} ) )
-
+    event = get_object_or_404( Event, pk = event_id )
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
@@ -289,12 +281,7 @@ def event_edit_raw( request, event_id ): # {{{1
     200
     """
     # checks if the event exists
-    try:
-        event = Event.objects.get( pk = event_id )
-    except Event.DoesNotExist:
-        return _error( request,
-            _( u"The event with the number $(number)d doesn't exist." ) %
-            {'number': str(event_id),})
+    event = get_object_or_404( Event, pk = event_id )
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
@@ -372,13 +359,7 @@ def event_show( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
-    event_id = int(event_id)
-    try:
-        event = Event.objects.get( pk = event_id )
-    except Event.DoesNotExist:
-        return _error( request,
-            _( "The event with the following number doesn't exist" ) + ": " +
-            str( event_id ) )
+    event = get_object_or_404( Event, pk = event_id )
     if not Event.is_event_viewable_by_user( event_id, request.user.id ):
         return _error( request,
             _( "You are not allowed to view the event with the following \
@@ -402,13 +383,7 @@ def event_show_raw( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
-    event_id = int(event_id)
-    try:
-        event = Event.objects.get( pk = event_id )
-    except Event.DoesNotExist:
-        return _error( request,
-            _( "The event with the following number doesn't exist" ) + ": " +
-            str( event_id ) )
+    event = get_object_or_404( Event, pk = event_id )
     if not Event.is_event_viewable_by_user( event_id, request.user.id ):
         return _error( request,
             _( "You are not allowed to view the event with the following \
@@ -580,12 +555,7 @@ def filter_edit( request, filter_id ): # {{{1
     ...         kwargs={'filter_id': f.id,}).status_code
     200
     """
-    try:
-        efilter = Filter.objects.get( pk = filter_id )
-    except efilter.DoesNotExist:
-        return _error( request,
-                _( "The saved search with the following number doesn't exist:" )
-                + " " + str( filter_id ) )
+    efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
         return _error( 'error.html',
@@ -633,13 +603,7 @@ def filter_drop( request, filter_id ): # {{{1
     ...         kwargs={'filter_id': f.id,}).status_code
     200
     """
-    try:
-        efilter = Filter.objects.get( pk = filter_id )
-    except Filter.DoesNotExist:
-        return _error(
-            request,
-            _( "The saved search with the following number doesn't exist:" ) +
-                str( filter_id ) )
+    efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
         return _error( request,
@@ -947,16 +911,7 @@ def group_quit(request, group_id, sure): # {{{2
     200
     """
     user = User(request.user)
-    try:
-        group = Group.objects.get(id=group_id, membership__user=user)
-    except Group.DoesNotExist:
-        return render_to_response('error.html',
-                {
-                    'title': 'error',
-                    'messages_col1': [_( ''.join(["There is no such group, ",
-                        "or you are not a member of that group"]) ),]
-                },
-                context_instance=RequestContext(request))
+    group = get_object_or_404( Group, id=group_id, membership__user=user )
     testsize = len(
             Membership.objects.filter(group=group).exclude(user=user))
     if (testsize > 0):
@@ -1056,7 +1011,7 @@ def group_add_event(request, event_id): # {{{2
                         "add an event to a group")),]
                 },
                 context_instance=RequestContext(request))
-    event = Event.objects.get(id=event_id)
+    event = get_object_or_404( Event, id = event_id )
     user = User(request.user)
     if len(Group.groups_for_add_event(user, event)) > 0:
         if request.POST:
@@ -1111,7 +1066,7 @@ def group_view(request, group_id): # {{{2
     ...         kwargs={'group_id': g.id,})).status_code
     200
     """
-    group = Group.objects.get( id = group_id )
+    group = get_object_or_404( Group, id = group_id )
     events = Event.objects.filter(calendar__group = group)
     return render_to_response(
             'groups/group_view.html',
@@ -1154,7 +1109,7 @@ def group_invite(request, group_id): # {{{2
                 },
                 context_instance=RequestContext(request))
     else:
-        group = Group.objects.get(id=group_id)
+        group = get_object_or_404(Group, id = group_id )
         if request.POST:
             username_dirty = request.POST['username']
             formdata = {'username': username_dirty,
@@ -1162,17 +1117,7 @@ def group_invite(request, group_id): # {{{2
             form = InviteToGroupForm(data=formdata)
             if form.is_valid():
                 username = form.cleaned_data['username']
-                try:
-                    user = User.objects.get(username=username)
-                except User.DoesNotExist:
-                    return render_to_response('error.html',
-                        {
-                            'title': 'error',
-                            'messages_col1': [_(''.join( ["There is no user ",
-                                "with the username: %(username)s"] )) % \
-                                        {'username': username,},]
-                        },
-                        context_instance=RequestContext(request))
+                user = get_object_or_404( User, username = username )
                 GroupInvitation.objects.create_invitation(host=request.user,
                         guest=user, group=group , as_administrator=True)
                 return HttpResponseRedirect(reverse('list_groups_my'))
@@ -1199,7 +1144,7 @@ def group_invite_activate(request, activation_key): # {{{2
     # FIXME: create test (see source code for user-sign-up code
     invitation = GroupInvitation.objects.get(activation_key=activation_key)
     group_id = invitation.id
-    group = Group.objects.get(id = group_id)
+    group = get_object_or_404(Group, id = group_id )
     activation = GroupInvitation.objects.activate_invitation(activation_key)
     if activation:
         return render_to_response('groups/invitation_activate.html',
@@ -1238,7 +1183,7 @@ def ICalForEvent( request, event_id ): # {{{2
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
-    event = Event.objects.get( id = event_id )
+    event = get_object_or_404( Event, id = event_id )
     elist = [event,]
     elist = [eve for eve in elist if eve.is_viewable_by_user(request.user)]
     return _ical_http_response_from_event_list( elist, event.title )
@@ -1260,14 +1205,14 @@ def ICalForEventHash (request, event_id, user_id, hash): # {{{2
     ...         'hash': u.get_hash()})).status_code
     200
     """
-    user = ExtendedUser.objects.get(id = user_id)
+    user = get_object_or_404( ExtendedUser, id = user_id )
     if hash != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
             'messages_col1': [_(u"hash authentification failed"),]
             },
             context_instance=RequestContext(request))
-    event = Event.objects.get( id = event_id )
+    event = get_object_or_404(Event, id = event_id )
     if not event.is_viewable_by_user( user ):
         return render_to_response('error.html',
             {'title': 'error',
@@ -1297,7 +1242,7 @@ def ICalForSearchHash( request, query, user_id, hash ): # {{{2
     ...         'hash': u.get_hash()})).status_code
     200
     """
-    user = ExtendedUser.objects.get(id = user_id)
+    user = get_object_or_404( ExtendedUser, id = user_id )
     if hash != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
@@ -1363,14 +1308,14 @@ def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
     ...         'hash': u.get_hash()})).status_code
     200
     """
-    user = ExtendedUser.objects.get(id = user_id)
+    user = get_object_or_404( ExtendedUser, id = user_id )
     if hash != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
             'messages_col1': [_(u"hash authentification failed"),]
             },
             context_instance=RequestContext(request))
-    group = Group.objects.get(id = group_id)
+    group = get_object_or_404( Group, id = group_id )
     if not group.is_member(user_id):
         return render_to_response('error.html',
             {'title': 'error',
