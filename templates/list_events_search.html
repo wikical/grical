@@ -27,3 +27,13 @@
 
 {% endblock %}
 
+{% if related_events and related_events|length > 0 %}
+    {% block column2 %}
+        <h3> {% trans "Related events" %} </h3>
+        {% for event in related_events %}
+            <br />
+            {% include "event_show_medium.html" %}
+            <br />
+        {% endfor %}
+    {% endblock %}
+{% endif %}

@@ -442,7 +442,8 @@ def search( request ): # {{{1
             _( u"A search request was submitted without a text" ) )
 
 def list_events_search( request, query ): # {{{1
-    """ View to show the results of a search query
+    """ View to show the results of a search query on the left column and
+    related events on the right column.
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -450,7 +451,7 @@ def list_events_search( request, query ): # {{{1
     ...         kwargs={'query': 'abc',})).status_code
     200
     """
-    search_result = Filter.matches(query, request.user)
+    search_result, related_events = Filter.matches(query, request.user)
     if len( search_result ) == 0:
         return render_to_response( 'error.html',
             {
@@ -479,6 +480,7 @@ def list_events_search( request, query ): # {{{1
                         _(u"results: %(number)d") % {'number':
                             len( search_result ),},],
                 'events': search_result,
+                'related_events': related_events,
                 'query': query,
                 'user_id': request.user.id,
                 'hash': ExtendedUser.calculate_hash(request.user.id),
@@ -501,7 +503,7 @@ def list_events_search_hashed( request, query, user_id, hash ): # {{{1
     """
     if ExtendedUser.calculate_hash(user_id) != hash:
         raise Http404
-    search_result = Filter.matches(query, user_id)
+    search_result = Filter.matches(query, user_id)[0]
     if len( search_result ) == 0:
         return render_to_response( 'error.html',
             {
@@ -1221,7 +1223,7 @@ def ICalForSearch( request, query ): # {{{2
     ...         kwargs={'query': 'berlin',})).status_code
     200
     """
-    elist = Filter.matches( query, request.user )
+    elist = Filter.matches( query, request.user )[0]
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForEvent( request, event_id ): # {{{2
@@ -1302,7 +1304,7 @@ def ICalForSearchHash( request, query, user_id, hash ): # {{{2
             'messages_col1': [_(u"hash authentification failed"),]
             },
             context_instance=RequestContext(request))
-    elist = Filter.matches( query, user_id )
+    elist = Filter.matches( query, user_id )[0]
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForGroup( request, group_id ): # {{{2
