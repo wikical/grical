@@ -49,9 +49,8 @@ from django.db.models.signals import pre_save, post_save
 from gridcalendar.events.signals import user_auth_signal
 # FIXME from gridcalendar.events.decorators import autoconnect
 
-from tagging.models import Tag
 from tagging.fields import TagField
-from tagging.models import TaggedItem
+from tagging.models import Tag, TaggedItem
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -444,7 +443,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         verbose_name_plural = _( u'Events' )
 
     # methods {{{2
-    def next_coming_date_or_start(self):
+
+    def next_coming_date_or_start(self): #{{{3
         """ returns the next most proximate date of an event to today, which
         can be the start date, the end date or one of the deadlines; or the
         start date if all are in the past
@@ -500,7 +500,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else:
             return self.start
 
-    def icalendar( self, ical = None ):
+    def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
 
         >>> event = Event.parse_text(EXAMPLE)
@@ -549,7 +549,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # rfc5545 ?
         return ical
 
-    def clone( self, public = False ):
+    def clone( self, public = False ): #{{{3
         """
         Make, save and return clone of object.
         Also make copy of all related objects,
@@ -589,29 +589,29 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     obj.save()
         return new
 
-    def get_clones( self ):
+    def get_clones( self ): #{{{3
         "get all clones of event"
         clones = Event.objects.filter( clone_of = self )
         return clones
 
     @classmethod
-    def set_user( cls, user ):
+    def set_user( cls, user ): # classmethod {{{3
         "set user context for class"
         cls.objects.set_user( user )
 
-    def set_tags( self, tags ):
+    def set_tags( self, tags ): #{{{3
         "set tags"
         Tag.objects.update_tags( self, tags )
 
-    def get_tags( self ):
+    def get_tags( self ): #{{{3
         "get tags"
         return Tag.objects.get_for_object( self )
 
-    def __unicode__( self ):
+    def __unicode__( self ): #{{{3
         return self.start.isoformat() + u" : " + self.title
 
     @models.permalink
-    def get_absolute_url( self ):
+    def get_absolute_url( self ): #{{{3
         "get internal URL of an event"
         #return '/e/show/' + str(self.id) + '/'
         #return (reverse('event_show', kwargs ={'event_id': str(self.id)}))
@@ -634,7 +634,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 #            except Event.DoesNotExist:
 #                pass
 
-    def save( self, *args, **kwargs ):
+    def save( self, *args, **kwargs ): #{{{3
         """ Call the real 'save' function after checking that a private event
         has an owner, and that the public field is not changed ever after
         creation """
@@ -653,7 +653,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         super( Event, self ).save( *args, **kwargs )
 
     @staticmethod
-    def post_save( sender, **kwargs ):
+    def post_save( sender, **kwargs ): #{{{3
         """ notify users if a filter of a user matches the event. """
         # FIXME: implement a Queue, see comments on 
         # http://www.artfulcode.net/articles/threading-django/
@@ -687,7 +687,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 #            pass
 
     @staticmethod
-    def example():
+    def example(): #{{{3
         """ returns an example of an event as unicode
         
         >>> from django.utils.encoding import smart_str
@@ -704,7 +704,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return EXAMPLE
 
     @staticmethod
-    def list_as_text( iterable ):
+    def list_as_text( iterable ): #{{{3
         """ returns an utf-8 string of all events in `iterable` """
         text = ''
         for event in iterable:
@@ -713,7 +713,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             text += '\nEVENT: END ----------------------\n'
         return text
 
-    def as_text( self ):
+    def as_text( self ): #{{{3
         """ Returns a unix multiline utf-8 string representation of the
         event."""
         # this code is tested with a doctest in the staticmethod example()
@@ -819,7 +819,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return smart_str(to_return)
 
     @staticmethod
-    def get_fields( text ):
+    def get_fields( text ): #{{{3
         """ parse an event as unicode text and returns a tuple with two
         dictionaries, or raises a ValidationError.
 
@@ -908,8 +908,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return simple_dic, complex_dic
 
     @classmethod
-    def parse_text( cls, input_text_in, event_id = None, user_id = None ):
-        # doc {{{2
+    def parse_text( cls, input_text_in, event_id = None, user_id = None ): #{{{3
+        # doc {{{4
         """It parses a text and saves it as a single event in the data base and
         return the event object, or doesn't save the event and raises a
         ValidationError or a Event.DoesNotExist when there is no event with
@@ -1032,14 +1032,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return event
 
     @staticmethod
-    def get_complex_fields():
+    def get_complex_fields(): #{{{3
         """ returns a tuple of names of user-editable fields (of events) which
         can contain many lines in the input text representation of an Event.
         """
         return ("urls", "deadlines", "sessions", "description",)
 
     @staticmethod
-    def get_simple_fields():
+    def get_simple_fields(): #{{{3
         """ returns a tuple of names of user-editable fields (of events) which
         have only one line in the input text representation of an Event.
         
@@ -1058,13 +1058,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return tuple(field_names)
  
     @staticmethod
-    def get_necessary_fields():
+    def get_necessary_fields(): #{{{3
         """ returns a tuple of names of the necessary filed fields of an event.
         """
         return (u"title", u"start", u"tags", u"urls")
 
     @staticmethod
-    def get_priority_list():
+    def get_priority_list(): #{{{3
         """ returns a tuple of names of fields in the order they
         should appear when showing an event as a text, i.e. in the output text
         representation of an Event.
@@ -1086,7 +1086,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             u"longitude", u"deadlines", u"timezone", u"sessions", u"description")
  
     @staticmethod
-    def get_synonyms():
+    def get_synonyms(): #{{{3
         """Returns a dictionay with names (strings) and the fields (strings)
         they refer.
 
@@ -1215,12 +1215,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # (*) can have multi-lines and are not simple text fields
         return synonyms
 
-    def is_viewable_by_user(self, user):
+    def is_viewable_by_user(self, user): #{{{3
         """ returns true if `user` can see `event` """
         return Event.is_event_viewable_by_user(self, user)
 
     @staticmethod
-    def is_event_viewable_by_user( event, user ):
+    def is_event_viewable_by_user( event, user ): #{{{3
         """ returns true if `user` can see `event` """
         # checking `event` parameter
         if event is None:
@@ -1259,14 +1259,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 return True
         return False
 
-    def groups_id_list( self ):
+    def groups_id_list( self ): #{{{3
         """ returns a list of ids of groups the event is member of """
         groups_id_list = list()
         for group in Group.objects.filter( events = self ):
             groups_id_list.append( group.id )
         return groups_id_list
 
-    def add_to_group( self, group_id ):
+    def add_to_group( self, group_id ): #{{{3
         """ add the event to a group """
         # TODO: make this more safe, e.g. accepting a user id and checking that
         # the user is member of the group
@@ -1274,7 +1274,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         cal_entry = Calendar( event = self, group = group )
         cal_entry.save()
 
-    def remove_from_group( self, group_id ):
+    def remove_from_group( self, group_id ): #{{{3
         """ remove event from group """
         group = Group.objects.get( id = group_id )
         cal_entry = Calendar.objects.get( event = self, group = group )
@@ -1802,7 +1802,7 @@ class Filter( models.Model ): # {{{1
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next `limit` events matching `self.query` """
-        return Filter.matches( self.query, self.user, limit )
+        return Filter.matches( self.query, self.user, limit )[0]
 
     def matches_event( self, event ):
         """ return True if the query matches the event, False otherwise 
@@ -1927,10 +1927,13 @@ class Filter( models.Model ): # {{{1
                 break
         return matches
 
+    # FIXME: add a parameter include_related=False and change the call to this
+    # elsewhere
     @staticmethod
     def matches( query, user, limit = 100 ): # {{{2
         """ returns a sorted (`Event.next_coming_date_or_start`) list of `limit`
-        events matching `query` viewable by `user`
+        events matching `query` viewable by `user` and a list of related events
+        viewable by `user` (i.e. it returns a tuple with two lists)
         
         - one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
           dates from the the lowest to the highest, or to one day if there is
@@ -1948,9 +1951,42 @@ class Filter( models.Model ): # {{{1
         # sort the list touching the database. FIXME: use a field for each
         # event storing the unix time of the next coming event
         # if there are millions of events
-        elist = sorted(queryset, key=Event.next_coming_date_or_start)
+        search_result = sorted(queryset, key=Event.next_coming_date_or_start)
+        search_result = search_result[0:limit]
+        # creates a list of maximal `limit` related events
+        used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
+        # note that according to the django-tagging documentation, counts refer
+        # to all instances of the model Event, not only to the queryset
+        # instances
+        used_tags = sorted( used_tags, key = lambda t: t.count )
+        used_tags.reverse()
+        related_events = set()
+        # takes the 5 more used tags and find related tags to them and its
+        # events, then with 4, and so on until 100 events are found
+        today = datetime.date.today()
+        for nr_of_tags in [5,4,3,2,1]:
+            if len( related_events ) >= limit:
+                break
+            related_tags = Tag.objects.related_for_model(
+                    used_tags[ 0 : nr_of_tags ], Event, counts = True )
+            related_tags = sorted( related_tags, key = lambda t: t.count )
+            related_tags.reverse()
+            for tag in related_tags:
+                if len( related_events ) >= limit:
+                    break
+                events = TaggedItem.objects.get_by_model(Event, tag)
+                for event in events:
+                    if ( event.next_coming_date_or_start() >= today and
+                            event.is_viewable_by_user( user ) and
+                            event not in search_result ):
+                        related_events.add(event)
+                        # TODO: if the query has no tag restriction, what to
+                        # do? include events with the same tags?
+        # sort the related_events
+        related_events = sorted( related_events,
+                key=Event.next_coming_date_or_start )
         # take the first `limit` 
-        return elist[0:limit]
+        return search_result, related_events[0:limit]
 
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
