@@ -1,24 +1,12 @@
-{% load i18n %}
-{% autoescape off %}
-{% blocktrans with fil.name as fil_name %}
-Hello {{ name }},
+{% load i18n %}{% autoescape off %}{% blocktrans with filter.name as filter_name %}Hello {{ username }},
 
-this is an automated email from {{ site }} to inform you as wished that
-the event below matches your filter with the name:
-{{ fil_name }}
-{% endblocktrans %}
+your filter '{{ filter_name }}' matches the following event.
+{% endblocktrans %}{% if event.next_coming_date_or_start != event.start %}
+( {{ event.next_coming_date_or_start }} ){% endif %}{{ event.start }} {% if event.end %} : {{ event.end }}{% endif %}{{ event.start }} : {{ event.title }}
+http://{{ current_site }}{{ event.get_absolute_url }}
 
-{{ event.start }} : {{ event.title }}
-{{ event.get_absolute_url }}
+{% trans "You can edit your filter at:" %}
+http://{{ current_site }}{{ filter.get_absolute_url }}
 
-{% trans "You can edit your matching filter (and also turn off notifications) at:" %}
-{{ fil.get_absolute_url }}
-
-{% trans "You can see and edit all your filters at:" %}
-{% url list_filters_my %}
-
---
-{% blocktrans %}
-Your {{ site }} team
-{% endblocktrans %}
-{% endautoescape %}
+--{% blocktrans %}
+Your {{ project_name }} team{% endblocktrans %}{% endautoescape %}
