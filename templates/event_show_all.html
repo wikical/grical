@@ -16,8 +16,8 @@
 
     <p>
         <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16"></span></a>
-        {% if event.acro %}
-            {{ event.acro }}
+        {% if event.acronym %}
+            {{ event.acronym|escape }}
         {% endif %}
 
         <a href="{% url event_show event.id %}"><span class="field_title"> {{ event.title|escape }} </span></a><br />
