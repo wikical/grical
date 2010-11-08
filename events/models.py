@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# GPL {{{1
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
@@ -33,6 +33,7 @@ import datetime
 
 import vobject
 
+from django.contrib.sites.models import Site
 from django.core.mail import send_mail, BadHeaderError
 from django.utils.encoding import smart_str, smart_unicode
 from django.db import models
@@ -612,10 +613,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     @models.permalink
     def get_absolute_url( self ): #{{{3
-        "get internal URL of an event"
-        #return '/e/show/' + str(self.id) + '/'
-        #return (reverse('event_show', kwargs ={'event_id': str(self.id)}))
-        return ( 'event_show', (), { 'event_id': self.id } )
+        "get URL of an event"
+        return ( 'event_show', (), {'event_id': self.id,} )
 
 #    def pre_save( self ):
 #        old_event = None
@@ -1797,8 +1796,8 @@ class Filter( models.Model ): # {{{1
 
     @models.permalink
     def get_absolute_url( self ): # {{{2
-        """ django utility ofr url look-up """
-        return ( 'filter_edit', (), { 'filter_id': self.id } )
+        "get internal URL of an event"
+        return ( 'filter_edit', (), {'filter_id': self.id,} )
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next `limit` events matching `self.query` """
@@ -2095,10 +2094,11 @@ class Filter( models.Model ): # {{{1
             for fil in user_filters:
                 if fil.matches_event(event):
                     context = {
-                        'name': user.username,
+                        'username': user.username,
                         'event': event,
                         'filter': fil,
-                        'site': settings.PROJECT_NAME, }
+                        'project_name': settings.PROJECT_NAME,
+                        'current_site': Site.objects.get_current(), }
                     # TODO: create the subject from a text template
                     subject = _(u'filter match: ') + event.title
                     # TODO: use a preferred language setting for users to send
@@ -2164,7 +2164,7 @@ class Group( models.Model ): # {{{1
     @models.permalink
     def get_absolute_url( self ):
         "get internal URL of an event"
-        return ( 'group_view', (), { 'group_id': self.id } )
+        return ( 'group_view', (), {'group_id': self.id,} )
 
     def is_member( self, user ):
         """ returns True if `user` is a member of the group, False otherwise
