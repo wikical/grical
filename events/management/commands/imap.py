@@ -38,6 +38,7 @@ from StringIO import StringIO
 
 # from django import template
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_str
@@ -57,7 +58,7 @@ class Command( NoArgsCommand ): # {{{1
     """ A management command which parses mails from imap server..
     """
 
-    help = "Parse mails from settings.IMAP_SERVER"
+    help = "Parses mails from settings.IMAP_SERVER"
 
     def __init__( self, *args, **kwargs ): # {{{2
         if settings.IMAP_SSL:
@@ -104,28 +105,43 @@ class Command( NoArgsCommand ): # {{{1
                                     part.get_content_charset(),
                                     'replace'
                                     )
+            # extracs subject
+            subject = ''
+            if msgobj['Subject'] is not None:
+                decodefrag = decode_header( msgobj['Subject'] )
+                subj_fragments = []
+                for string , enc in decodefrag:
+                    if enc:
+                        string = unicode( string , enc, 'replace' )
+                        #s = unicode( s , enc ).encode( 'utf8', \
+                        #                               'replace' )
+                    subj_fragments.append( string )
+                subject = u''.join( subj_fragments )
+            # 'from' field of the email received (TODO: better 'reply-to'?)
+            to_email = mail['From']
+            # sender of our emails
+            from_email = settings.DEFAULT_FROM_EMAIL
             try:
                 event = Event.parse_text( text )
                 assert( type( event ) == Event )
                 self.mv_mail( number, 'saved' )
                 self.stdout.write( smart_str(
                         u'Successfully added new event: ' + event.title ) )
+                message = render_to_string( 'mail/email_accepted_event.txt',
+                        {'project_name': settings.PROJECT_NAME,
+                        'current_site': Site.objects.get_current(),
+                        'event': event,
+                        'original_message': text,} )
+                mail = EmailMessage( subject, message, \
+                                     from_email, ( to_email, ) )
+                mail.send(fail_silently=False)
             except ValidationError as err:
                 # error found, saving the message in the imap forder 'errors'
                 self.mv_mail( number, 'errors' )
                 # sending a notification email to the sender {{{3
                 if msgobj['Subject'] is not None:
-                    decodefrag = decode_header( msgobj['Subject'] )
-                    subj_fragments = []
-                    for string , enc in decodefrag:
-                        if enc:
-                            string = unicode( string , enc, 'replace' )
-                            #s = unicode( s , enc ).encode( 'utf8', \
-                            #                               'replace' )
-                        subj_fragments.append( string )
-                    subject = u''.join( subj_fragments )
                     subject = \
-                        _( u'Validation error in: %(old_email_subject)s') \
+                        _( u'Validation error in: %(old_email_subject)s' ) \
                         % { 'old_email_subject': \
                         subject.replace( '\n', ' ' ), }
                     subject = subject.replace( '\n', ' ' )
@@ -167,8 +183,6 @@ class Command( NoArgsCommand ): # {{{1
                     self.stderr.write( smart_str(
                         u"Found errors in message with subject: %s" \
                         % mail['Subject'] ))
-                to_email = mail['From']
-                from_email = settings.DEFAULT_FROM_EMAIL
                 if subject and message and from_email:
                     mail = EmailMessage( subject, message, \
                                          from_email, ( to_email, ) )

@@ -57,7 +57,7 @@
         </p>
         {% if event.latitude and event.longitude %}
             <p>
-                Coordinates: {{ event.latitude }}, {{ event.longitude }}
+                Coordinates: <a href="http://www.openstreetmap.org/?lat={{ event.latitude }}&lon={{ event.longitude }}&zoom=15&layers=B000FTF">{{ event.latitude }}, {{ event.longitude }}</a>
             </p>
             <!-- FIXME: see example http://openlayers.org/dev/examples/xhtml.html -->
             <div id="mapdiv" class="smallmap"></div>
