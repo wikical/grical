@@ -2273,7 +2273,9 @@ class Group( models.Model ): # {{{1
 
     def get_coming_events(self, limit=5):
         """ Returns a list of maximal `limit` events with at least one date
-        in the future (start, end or deadline).
+        in the future (start, end or deadline). If `limit` is -1 it
+        returns all
+
         """
         today = datetime.date.today()
         events = Event.objects.filter( Q(calendar__group = self) & (
@@ -2281,11 +2283,15 @@ class Group( models.Model ): # {{{1
                     Q(deadlines__deadline__gte=today) )).distinct()
         # next line touches the date base, but notice that the number of future
         # events of a group shouldn't be big
-        return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
+        if limit == -1:
+            return sorted(events, key=Event.next_coming_date_or_start)
+        else:
+            return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
 
-    def get_coming_publc_events(self, limit=5):
+    def get_coming_public_events(self, limit=5):
         """ Returns a list of maximal `limit` public events with at least one
-        date in the future (start, end or deadline).
+        date in the future (start, end or deadline). If `limit` is -1 it
+        returns all
         """
         today = datetime.date.today()
         events = Event.objects.filter(
@@ -2294,7 +2300,10 @@ class Group( models.Model ): # {{{1
                     Q(deadlines__deadline__gte=today) )).distinct()
         # next line touches the date base, but notice that the number of future
         # events of a group shouldn't be big
-        return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
+        if limit == -1:
+            return sorted(events, key=Event.next_coming_date_or_start)
+        else:
+            return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
 
     def has_coming_events(self):
         """ returns True if the group has coming events (with `start`, `end` or

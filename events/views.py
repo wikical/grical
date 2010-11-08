@@ -1046,28 +1046,61 @@ def group_add_event(request, event_id): # {{{2
                     context_instance=RequestContext(request))
 
 def group_view(request, group_id): # {{{2
-    """ view that lists everything about a group
+    """ lists everything about a group for members of the group, and the
+    description and public events for everyone else
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> from django.contrib.auth.models import User
     >>> from gridcalendar.events.models import Group, Membership, Calendar
-    >>> u = User.objects.create_user('group_view', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
+    >>> u1g = User.objects.create_user('groupview1', '0@example.com', 'p')
+    >>> u2 = User.objects.create_user('groupview2', '0@example.com', 'p')
     >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m, c = Membership.objects.get_or_create(user = u, group = g)
-    >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
-    ...         start = datetime.date.today(), user = u )
-    >>> m = Calendar.objects.create(group = g, event = e)
-    >>> client.get(reverse('group_view',
-    ...         kwargs={'group_id': g.id,})).status_code
+    >>> m, c = Membership.objects.get_or_create(user = u1g, group = g)
+    >>> public_e = Event.objects.create(
+    ...         title = 'public group view', tags = 'group-view',
+    ...         start = datetime.date.today(), user = u1g )
+    >>> private_e = Event.objects.create( public = False,
+    ...         title = 'private group view', tags = 'group-view',
+    ...         start = datetime.date.today(), user = u1g )
+    >>> m, c = Calendar.objects.get_or_create(group = g, event = public_e)
+    >>> m, c = Calendar.objects.get_or_create(group = g, event = private_e)
+    >>> client = Client()
+    >>> response = client.get(reverse('group_view',
+    ...         kwargs={'group_id': g.id,}))
+    >>> response.status_code
     200
+    >>> 'public group view' in response.content
+    True
+    >>> 'private group view' in response.content
+    False
+    >>> client.login(username = u2.username, password = 'p')
+    True
+    >>> response = client.get(reverse('group_view',
+    ...         kwargs={'group_id': g.id,}))
+    >>> response.status_code
+    200
+    >>> 'public group view' in response.content
+    True
+    >>> 'private group view' in response.content
+    False
+    >>> client.login(username = u1g.username, password = 'p')
+    True
+    >>> response = client.get(reverse('group_view',
+    ...         kwargs={'group_id': g.id,}))
+    >>> response.status_code
+    200
+    >>> 'public group view' in response.content
+    True
+    >>> 'private group view' in response.content
+    True
     """
     group = get_object_or_404( Group, id = group_id )
-    events = Event.objects.filter(calendar__group = group)
+    if ( request.user.is_authenticated() and 
+                    Group.is_user_in_group(request.user, group) ):
+        events = group.get_coming_events( limit = -1 )
+    else:
+        events = group.get_coming_public_events( limit = -1 )
     return render_to_response(
             'groups/group_view.html',
             {
@@ -1079,6 +1112,7 @@ def group_view(request, group_id): # {{{2
                 'group': group,
                 'user_is_in_group': \
                     Group.is_user_in_group(request.user, group),
+                'events': events,
             },
             context_instance=RequestContext(request))
 

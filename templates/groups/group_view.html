@@ -29,7 +29,7 @@
     </a>
     {% if group.has_coming_events %}
         <h2> {% trans "Next coming dates for events of the group" %} </h2>
-        {% for event in group.get_coming_events %}
+        {% for event in events %}
             <p> {% include "event_show_small.html" %} </p>
         {% endfor %}
     {% else %}
@@ -49,8 +49,16 @@
     <a href="{% url list_events_group_ical group.id %}">
         <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />
     </a>
-    <p> {% trans "You are not a member of the group." %} <p>
-    {% comment %}TODO: show public events of the group{% endcomment %}
+    {% if group.has_coming_public_events %}
+        <h2> {% trans "Public coming events of this group" %} </h2>
+        <ul>
+            {% for event in events %}
+                <li> {% include "event_show_small.html" %} </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>{% trans "This group has no coming public events." %}</p>
+    {% endif %}
     {% comment %}TODO: link to ask to become a member of the group %}{% endcomment %}
 {% endif %}
 
