@@ -100,6 +100,9 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 # ^g groups urls {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103
 
+    url(r'^g/(?P<group_id>\d+)/$',
+        views.group_view,           name='group_view'),
+
     url(r'^g/(?P<group_id>\d+)/ical/$',
         views.ICalForGroup,         name='list_events_group_ical'),
 
@@ -111,9 +114,6 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
 
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
         HashGroupEventsFeed(),      name='list_events_group_rss_hashed'),
-
-    url(r'^g/(?P<group_id>\d+)/$',
-        views.group_view,           name='group_view'),
 
     url(r'^g/new/$',
         views.group_new,            name='group_new'),
