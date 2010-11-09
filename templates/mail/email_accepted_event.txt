@@ -1,0 +1,11 @@
+{% load i18n %}{% autoescape off %}{% blocktrans with event.title as event_title %}Hello,
+
+you submitted by email an event which has been accepted.
+Title: {{ event_title }}{% endblocktrans %}
+http://{{ current_site }}{{ event.get_absolute_url }}
+
+--{% blocktrans %}
+Your {{ project_name }} team{% endblocktrans %}
+
+==== {% trans "original message" %} ====
+{{ original_message }}{% endautoescape %}
