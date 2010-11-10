@@ -730,7 +730,7 @@ def list_events_tag( request, tag ): # {{{1
     200
     >>> Client().get(reverse('list_events_tag',
     ...         kwargs={'tag': 'abcdef',})).status_code
-    404
+    200
     """
     query_tag = get_object_or_404( Tag, name = tag )
     events = TaggedItem.objects.get_by_model( Event, query_tag )
@@ -1373,7 +1373,7 @@ def _ical_http_response_from_event_list( elist, filename ): # {{{2
     response['Content-Disposition'] = 'attachment; filename=' + filename
     return response
 
-def all_events_text ( request ):
+def all_events_text ( request ): #{{{1
     """ returns a text file with all events which the logged-in user can see,
     only public events if there is no logged-in user
     
@@ -1399,3 +1399,21 @@ def all_events_text ( request ):
     response['Filename'] = filename
     response['Content-Disposition'] = 'attachment; filename=' + filename
     return response
+
+def handler404(request): #{{{1
+    """ custom 404 handler to use the context-processors. """
+    return render_to_response( '404.html',
+            {
+                'title': _( " %(project_name)s - error - object not found" )%\
+                        {'project_name': PROJECT_NAME,},
+            },
+            context_instance = RequestContext( request ) )
+
+def handler500(request): #{{{1
+    """ custom 500 handler to use the context-processors. """
+    return render_to_response( '500.html',
+            {
+                'title': _( " %(project_name)s - bug" ) % \
+                        {'project_name': PROJECT_NAME,},
+            },
+            context_instance = RequestContext( request ) )
