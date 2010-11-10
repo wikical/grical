@@ -5,6 +5,8 @@ high priority
 - create a field for each event which stores the unix time (seconds from 1.1.1970) for the next
   coming date. With this efficient sorting and slicing is possible
 - use python-django-lint
+- use user profiles and store their location and language preference. See
+  http://docs.djangoproject.com/en/1.2/topics/auth/#storing-additional-information-about-users
 - try VimTrac: http://www.vim.org/scripts/script.php?script_id=2147
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
@@ -60,6 +62,7 @@ medium priority
 low priority
 ------------
 
+- include a picture when the server is under heavy load. Example: http://wurstball.de/41101/
 - include import of sessions from Pentabarf
 - Add future events of past events listed on http://www.guckes.net/cal/
 - Add RSS support. See

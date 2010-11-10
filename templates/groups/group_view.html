@@ -28,7 +28,7 @@
         <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />
     </a>
     {% if group.has_coming_events %}
-        <h2> {% trans "Next coming dates for events of the group" %} </h2>
+        <h2> {% trans "Next coming dates for events in the group" %} </h2>
         {% for event in events %}
             <p> {% include "event_show_small.html" %} </p>
         {% endfor %}

@@ -28,6 +28,7 @@ from django.forms import (CharField, IntegerField, HiddenInput,
         ModelMultipleChoiceField, URLField, ModelForm, ValidationError,
         TextInput, CheckboxSelectMultiple, Form)
 from django.contrib.auth.models import User
+from django.utils.translation import ugettext as _
 
 from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
@@ -134,16 +135,31 @@ class AddEventToGroupForm(Form):
 class InviteToGroupForm(Form):
     """ Form for a user name to invite to a group """
     group_id = IntegerField(widget=HiddenInput)
-    username = CharField(max_length=30) # TODO: use the CharField of the User
-                                        # Model if possible
+    # TODO: use the constrains of the model User
+    username = CharField(max_length=30)
     def clean(self):
-        """ Raises a `ValidationError` if the user is already in the group """
+        """ Cheks that the user and group exist and the user is not in the
+        group already """
+        # see http://docs.djangoproject.com/en/1.2/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
         cleaned_data = self.cleaned_data
         group_id = cleaned_data.get("group_id")
         username = cleaned_data.get("username")
-        group = Group.objects.get(id=group_id)
-        user = User.objects.filter(username=username)
-        user_in_group = Membership.objects.filter(user=user, group=group)
-        if len(user_in_group) > 0:
-            raise ValidationError("This user is already in this group.")
+        if group_id and username:
+            # no errors found so far
+            try:
+                group = Group.objects.get( id = group_id )
+                user = User.objects.get( username = username )
+                if Membership.objects.filter(
+                        user = user, group = group).exists():
+                    msg = _( u"This user is already in the group" )
+                    self._errors['username'] = self.error_class([msg])
+                    del cleaned_data['username']
+            except Group.DoesNotExist:
+                msg = _( u"The group doesn't exist" )
+                self._errors['group_id'] = self.error_class([msg])
+                del cleaned_data['group_id']
+            except User.DoesNotExist:
+                msg = _( u"The user doesn't exist" )
+                self._errors['username'] = self.error_class([msg])
+                del cleaned_data['username']
         return cleaned_data
