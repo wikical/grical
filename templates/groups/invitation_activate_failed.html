@@ -1,5 +1,11 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block column1 %}
-Your activation key is invalid. Maybe it's because it's already been used, and you are alerady a member of that group?
+    <br />
+    <p>
+        {% blocktrans with group.name as group_name %}
+            Your activation key for the following group is invalid: '{{ group_name }}'
+        {% endblocktrans %}
+    </p>
 {% endblock %}

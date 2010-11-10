@@ -53,7 +53,7 @@ from registration.models import RegistrationProfile
 import settings
 from gridcalendar.events import models,views
 from events.models import Event, Group, Filter, EventUrl, Membership, \
-        Calendar
+        Calendar, GroupInvitation
 
 
 def suite(): #{{{1
@@ -140,21 +140,30 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self.assertEqual(users[0], user1)
         self._login( user1 )
         response = self.client.post(
-                reverse( 'group_invite', kwargs = {'group_id': group.id} ),
+                reverse( 'group_invite', kwargs = {
+                    'group_id': group.id,} ),
                 {'username': user2.username,} )
-                # {'username': user2.name, 'group_id': group.id} )
         self.assertTrue(response.status_code, 200)
+        invitation = GroupInvitation.objects.get( host = user1, guest = user2,
+                group = group )
+        self.assertFalse( invitation.activation_key_expired() )
         self.client.logout()
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to[0], user2.email)
         body = mail.outbox[0].body
-        regex = re.compile('^.*g/invite/confirm/(.*)/.*$') # TODO: use reverse
+        regex = re.compile('^.*g/invite/confirm/(.*)/.*$')
         matched = False
         for line in body.split('\n'):
             matcher = regex.match(line)
             if matcher:
-                response = self.client.get(
-                        '/g/invite/confirm/' + matcher.group(1) + '/')
+                self.assertEqual(matcher.group(1), invitation.activation_key)
+                invitation = GroupInvitation.objects.get( activation_key =
+                        matcher.group(1) )
+                self.assertFalse( invitation.activation_key_expired() )
+                url = reverse(
+                        'group_invite_activate',
+                        kwargs = {'activation_key': matcher.group(1),} )
+                response = self.client.get( url )
                 self.assertEqual(response.status_code, 200)
                 matched = True
                 break

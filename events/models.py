@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
@@ -2441,6 +2441,8 @@ class GroupInvitationManager( models.Manager ): # {{{1
         ``ALREADY_ACTIVATED`` after successful activation.
 
         """
+        # TODO: inform the user after all possible cases explained above
+
         # Make sure the key we're trying conforms to the pattern of a
         # SHA1 hash; if it doesn't, no point trying to look it up in
         # the database.
@@ -2449,6 +2451,12 @@ class GroupInvitationManager( models.Manager ): # {{{1
                 invitation = self.get( activation_key = activation_key )
             except self.model.DoesNotExist:
                 return False
+
+            # expiration_date = \
+            #     datetime.timedelta( days = settings.ACCOUNT_ACTIVATION_DAYS )
+            # assert ( invitation.issue_date + expiration_date >= datetime.date.today() )
+            # assert not invitation.activation_key == invitation.ACTIVATED
+
             if not invitation.activation_key_expired():
                 host = invitation.host
                 guest = invitation.guest
@@ -2510,7 +2518,7 @@ class GroupInvitationManager( models.Manager ): # {{{1
             ``site`` will be the currently-active
             ``django.contrib.sites.models.Site`` instance,
             ``host`` will be the user name of the person inviting and
-            ``group`` will be the name of the gropu.
+            ``group`` will be the name of the group.
 
         """
         salt = hashlib.sha1( str( random.random() ) ).hexdigest()[:5]
@@ -2577,9 +2585,11 @@ class GroupInvitation( models.Model ): # {{{1
     group = models.ForeignKey( 
             Group, verbose_name = _( u'group' ) )
     as_administrator = models.BooleanField( 
-            _( u'as administrator' ), default = False )
+            _( u'as administrator' ), default = True )
     activation_key = models.CharField( 
             _( u'activation key' ), max_length = 40 )
+    issue_date = models.DateField( 
+            _( u'issue_date' ), editable = False, auto_now_add = True )
 
     # see http://docs.djangoproject.com/en/1.0/topics/db/managers/
     objects = GroupInvitationManager()
@@ -2619,12 +2629,11 @@ class GroupInvitation( models.Model ): # {{{1
         expiration_date = \
             datetime.timedelta( days = settings.ACCOUNT_ACTIVATION_DAYS )
         return self.activation_key == self.ACTIVATED or \
-               ( self.guest.date_joined + \
-                       expiration_date <= datetime.datetime.now() )
+               ( self.issue_date + expiration_date <= datetime.date.today() )
     # TODO: find out and explain here what this means:
     activation_key_expired.boolean = True
 
-
+# old code and comments {{{1
 # TODO: add setting info to users. See the auth documentation because there is
 # a method for adding fields to User. E.g.
 #   - interesting locations

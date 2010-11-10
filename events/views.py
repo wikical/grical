@@ -1130,63 +1130,51 @@ def group_invite(request, group_id): # {{{2
     True
     >>> g, c = Group.objects.get_or_create(name = 'test')
     >>> m, c = Membership.objects.get_or_create(user = u, group = g)
-    >>> client().get(reverse('group_invite',
+    >>> client.get(reverse('group_invite',
     ...         kwargs={'group_id': g.id,})).status_code
     200
     """
-    if ((not request.user.is_authenticated()) or (request.user.id is None)):
-        return render_to_response('error.html',
-                {
-                    'title': 'error',
-                    'messages_col1': [_(''.join(["You must be logged in to ",
-                        "invite someone to a group"])),]
-                },
-                context_instance=RequestContext(request))
+    group = get_object_or_404(Group, id = group_id )
+    if not Membership.objects.filter(
+            user = request.user, group = group).exists():
+        return _error( request, 
+            _( u''.join(["Your have tried to add a member to the group ",
+        "'%(group_name)s', but you are yourself not a member of it"]) ) % \
+        {'group_name': group.name,} )
+    if request.POST:
+        username_dirty = request.POST['username']
+        formdata = {'username': username_dirty,
+                    'group_id': group_id}
+        form = InviteToGroupForm(data=formdata)
+        if form.is_valid():
+            guest = get_object_or_404(
+                    User, username = form.cleaned_data['username'] )
+            GroupInvitation.objects.create_invitation( host = request.user,
+                    guest = guest, group = group , as_administrator = True )
+            return HttpResponseRedirect(reverse('list_groups_my'))
     else:
-        group = get_object_or_404(Group, id = group_id )
-        if request.POST:
-            username_dirty = request.POST['username']
-            formdata = {'username': username_dirty,
-                        'group_id': group_id}
-            form = InviteToGroupForm(data=formdata)
-            if form.is_valid():
-                username = form.cleaned_data['username']
-                user = get_object_or_404( User, username = username )
-                GroupInvitation.objects.create_invitation(host=request.user,
-                        guest=user, group=group , as_administrator=True)
-                return HttpResponseRedirect(reverse('list_groups_my'))
-            else:
-                request.user.message_set.create(
-                        message='Please check your data.')
-        else:
-#            form = InviteToGroupForm(instance=invitation)
-#            formdata = {
-#                        'username': None,
-#                        'group_id': group_id}
-#            form = InviteToGroupForm(data=formdata)
-            form = InviteToGroupForm()
-        return render_to_response('groups/invite.html',
-                {
-                    'title': 'invite to group',
-                    'group_id': group_id,
-                    'form': form
-                },
-                context_instance=RequestContext(request))
+        form = InviteToGroupForm()
+    return render_to_response('groups/invite.html',
+            {
+                'title': 'invite to group',
+                'group_id': group_id,
+                'form': form,
+            },
+            context_instance=RequestContext(request))
 
 def group_invite_activate(request, activation_key): # {{{2
     """ A user clicks on activation link """
     # FIXME: create test (see source code for user-sign-up code
-    invitation = GroupInvitation.objects.get(activation_key=activation_key)
-    group_id = invitation.id
-    group = get_object_or_404(Group, id = group_id )
-    activation = GroupInvitation.objects.activate_invitation(activation_key)
+    invitation = get_object_or_404( GroupInvitation, activation_key=activation_key )
+    activation = GroupInvitation.objects.activate_invitation( activation_key )
+    group = get_object_or_404(Group, id = invitation.group.id )
     if activation:
         return render_to_response('groups/invitation_activate.html',
                 {'title': _(u'invitation activated'), 'group': group},
                 context_instance=RequestContext(request))
     else:
         return render_to_response('groups/invitation_activate_failed.html',
-                {'title': 'activate invitation failed', 'group_id': group_id},
+                {'title': 'activate invitation failed', 'group': group},
                 context_instance=RequestContext(request))
 
 # ical views {{{1

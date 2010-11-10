@@ -3,20 +3,25 @@
 
 {% block column1 %}
 <p>
-    {% blocktrans with group.name as name %}
-        You have joined the group {{ name }}
+    {% blocktrans with group.name as group_name %}
+        You have joined the group '{{ group_name }}'
     {% endblocktrans %}
 </p>
 <p>
     <a href="{% url group_view group.id %}">
-        {% blocktrans with group.name as name %}
-        You can now visit the {{ name }} group page.
+        {% blocktrans with group.name as group_name %}
+        You can now visit the {{ group_name }}'s group page.
         {% endblocktrans %}
     </a>
 </p>
 
+<h2>{% trans "Coming events in the group" %}</h2>
 {% if group.has_coming_events %}
-    {% include "groups/groups_coming_events.html" %}
+    {% for event in group.get_coming_events %}
+        <p> {% include "event_show_small.html" %} </p>
+    {% endfor %}
+{% else %}
+    {% trans "No coming events in the group at the moment" %}
 {% endif %}
 
 {% endblock %}
