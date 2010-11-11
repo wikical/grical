@@ -103,6 +103,9 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/(?P<group_id>\d+)/$',
         views.group_view,           name='group_view'),
 
+    url(r'^(?P<group_name>\w{2,})/$',
+        views.group_name_view,           name='group_name_view'),
+
     url(r'^g/(?P<group_id>\d+)/ical/$',
         views.ICalForGroup,         name='list_events_group_ical'),
 
