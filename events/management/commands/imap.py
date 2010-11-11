@@ -132,8 +132,8 @@ class Command( NoArgsCommand ): # {{{1
                         'current_site': Site.objects.get_current(),
                         'event': event,
                         'original_message': text,} )
-                mail = EmailMessage( subject, message, \
-                                     from_email, ( to_email, ) )
+                mail = EmailMessage( ''.join( subject.splitlines()),
+                        message, from_email, ( to_email, ) )
                 mail.send(fail_silently=False)
             except ValidationError as err:
                 # error found, saving the message in the imap forder 'errors'
