@@ -43,6 +43,7 @@ high priority
 medium priority
 ---------------
 
+- add hCalendar_ (which is provided by the vobjects library, see the example about hcalendar at http://svn.osafoundation.org/vobject/trunk/test_vobject.py
 - css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
@@ -144,3 +145,5 @@ low priority
 - use audio (netzsprecher or own VoIP) to
     a) comment entries
     b) automatic call for rememberings
+
+.. hCalendar: http://en.wikipedia.org/wiki/HCalendar

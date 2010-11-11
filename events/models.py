@@ -382,7 +382,9 @@ GridCalendar will be presented
 #user_auth_signal.connect( EventManager.set_auth_user )
 
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
-    """ Event model """
+    """ Event model
+    
+    """
     # fields {{{2
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
@@ -2170,15 +2172,15 @@ class Group( models.Model ): # {{{1
         """ returns True if `user` is a member of the group, False otherwise
         """
         if isinstance(user, int):
-            user = User.objects.get(id = user)
+            try:
+                user = User.objects.get(id = user)
+            except User.DoesNotExist:
+                return False
         elif isinstance(user, User):
             pass
         else:
             user = User.objects.get( id = int(user) )
-        if Membership.objects.get( group = self, user = user ):
-            return True
-        else:
-            return False
+        return Membership.objects.filter( group = self, user = user ).exists()
 
     def get_users( self ):
         """ returns a queryset (which can be used as a list) of ExtendedUsers

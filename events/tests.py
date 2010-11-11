@@ -22,7 +22,7 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 # doc {{{1
-""" tests for events application 
+""" tests for events application.
 
 Some used ideas are from http://toastdriven.com/fresh/django-doctest-tips/ and 
 http://stackoverflow.com/questions/1615406/configure-django-to-find-all-doctests-in-all-modules
@@ -52,8 +52,8 @@ from registration.models import RegistrationProfile
 
 import settings
 from gridcalendar.events import models,views
-from events.models import Event, Group, Filter, EventUrl, Membership, \
-        Calendar, GroupInvitation
+from events.models import ( Event, Group, Filter, EventUrl, Membership,
+        Calendar, GroupInvitation, ExtendedUser )
 
 
 def suite(): #{{{1
@@ -74,6 +74,103 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     def setUp( self ): # {{{2 pylint: disable-msg=C0103
         pass
 
+    def _create_user(self, name = None, throw_web = False): # {{{2
+        """ create a user either on the API or using the web and email """
+        if name is None:
+            name = datetime.datetime.now().isoformat()
+        if not throw_web:
+            user = User.objects.create_user(username = name,
+                    email = name + '@example.com', password = 'p')
+            user.save()
+            return user
+        else:
+            response = self.client.post('/a/accounts/register/', {
+                'username': name,
+                'email': name + '@example.com',
+                'password1': 'p',
+                'password2': 'p',})
+            self.assertRedirects(response, '/a/accounts/register/complete/')
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertEqual(mail.outbox[0].subject,
+                    u'[example.com] Activation email')
+            body = mail.outbox[0].body
+            profile = RegistrationProfile.objects.get(
+                    user__username=name)
+            key = profile.activation_key
+            regex = re.compile('^.*/a/accounts/activate/(.*)/$')
+            for line in body.split('\n'):
+                matcher = regex.match(line)
+                if matcher:
+                    self.assertEqual(key, matcher.group(1))
+                    response = self.client.get('/a/accounts/activate/' + key)
+                    # the above line returns a HttpResponsePermanentRedirect (I,
+                    # ivan, don't know why). items()[1][1] is where it redirects
+                    # to.
+                    response = self.client.get(response.items()[1][1])
+                    # TODO: test the page
+                    self.failUnless(User.objects.get(username=name).is_active)
+                    break
+            user = User.objects.get(username=name)
+            self.assertEqual(user.email, name + '@example.com')
+            mail.outbox = []
+            return user
+
+    def _create_group(self, user, name = None, throw_web = False): # {{{2
+        """ create a user either on the API or using the web and email """
+        if name is None:
+            chars = string.letters # you can append: + string.digits
+            name = ''.join( [ choice(chars) for i in xrange(8) ] )
+        if not throw_web:
+            group = Group.objects.create(name = name)
+            m = Membership.objects.create(user = user, group = group)
+            return group
+        else:
+            self.client.login(
+                    username = user.username, password = 'p' )
+            response = self.client.post ( reverse('group_new'),
+                    {'name': name, 'description': u'create_group'} )
+            self.assertEqual( response.status_code, 302 )
+            return Group.objects.get(name = name)
+
+    def _login(self, user, throw_web = False): # {{{2
+        """ logs in `user` """
+        if not throw_web:
+            login = self.client.login(
+                    username = user.username, password = 'p' )
+            self.failUnless(login, 'Could not log in')
+            response = self.client.get(reverse('group_new'))
+            self.failUnlessEqual(response.status_code, 200)
+        else:
+            response = self.Client.post('/a/accounts/login/',
+                    {'username':user.username, 'password':'p'})
+            self.assertEqual(response.status_code, 200)
+
+    def _validate_ical( self, url ): # {{{2
+        """ validate an ical file (the output of `url`) with an external online
+        validator """
+        response = self.client.get( url )
+        self.assertEqual( response.status_code, 200 )
+        content = response.content
+        headers = {"Content-type": "application/x-www-form-urlencoded",
+                   "Accept": "text/plain"}
+        params = urllib.urlencode( {'snip':content} )
+        conn = httplib.HTTPConnection( "severinghaus.org" )
+        conn.request( "POST", "/projects/icv/", params, headers )
+        response = conn.getresponse()
+        result = response.read()
+        #self.assertTrue( 'Congratulations' in result, content )
+        self.assertTrue( 'Congratulations' in result )
+
+    def _validate_rss( self, url ): # {{{2
+        "validate rss feed data"
+        response = self.client.get( url )
+        self.assertEqual( response.status_code, 200 )
+        conn = httplib.HTTPConnection(
+                "http://feedvalidator.org/check.cgi?url=" + url )
+        conn.request()
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue( 'Congratulations!' in result, url )
     def test_anonymous_private_error(self): # {{{2
         """ tests that an Event of the anonymous user cannot be private """
         e = Event(user=None, public=False, title="test",
@@ -174,114 +271,83 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self.assertTrue(user2 in users)
         mail.outbox = []
 
-    def test_group_ical_rss( self ): # {{{2
-        pass
+    def test_group_ical( self ): # {{{2
+        """ tests for public and private icals of groups """
+        user1 = self._create_user()
+        event1 = Event.objects.create( title = 'public',
+                tags = 'test', start = datetime.date.today(), user = user1 )
+        event2 = Event.objects.create( title = 'private',
+                tags = 'test', start = datetime.date.today(), user = user1,
+                public = False )
+        # self.client.login( username = user1.username, password = 'p' )
+        group = self._create_group( user1 )
+        Calendar.objects.create( group = group, event = event1 )
+        Calendar.objects.create( group = group, event = event2 )
+        # user1
+        url_user1_hashed = reverse( 'list_events_group_ical_hashed',
+            kwargs = {'group_id': group.id, 'user_id': user1.id,
+                'hash': ExtendedUser.calculate_hash( user1.id )} )
+        self._validate_ical( url_user1_hashed )
+        content = self.client.get( url_user1_hashed ).content
+        vevents = vobject.readComponents(
+                content, validate = True ).next().vevent_list
+        self.assertEqual( len(vevents), 2 )
+        self.assertEqual( vevents[0].summary.value, "public" )
+        self.assertEqual( vevents[1].summary.value, "private" )
+        # user2
+        user2 = self._create_user()
+        url_user2_hashed = reverse( 'list_events_group_ical_hashed',
+            kwargs = {'group_id': group.id, 'user_id': user2.id,
+                'hash': ExtendedUser.calculate_hash( user2.id )} )
+        content = self.client.get( url_user2_hashed ).content
+        self.assertTrue( 'not a member' in content )
+        # anonymous
+        url_non_hashed = reverse( 'list_events_group_ical',
+                kwargs = {'group_id': group.id,} )
+        self._validate_ical( url_non_hashed )
+        content = self.client.get( url_non_hashed ).content
+        vevents = vobject.readComponents(
+                content, validate = True ).next().vevent_list
+        self.assertEqual( len(vevents), 1 )
+        self.assertEqual( vevents[0].summary.value, "public" )
 
-    def _create_user(self, name = None, throw_web = False): # {{{2
-        """ create a user either on the API or using the web and email """
-        if name is None:
-            name = datetime.datetime.now().isoformat()
-        if not throw_web:
-            user = User.objects.create_user(username = name,
-                    email = name + '@example.com', password = 'p')
-            user.save()
-            return user
-        else:
-            response = self.client.post('/a/accounts/register/', {
-                'username': name,
-                'email': name + '@example.com',
-                'password1': 'p',
-                'password2': 'p',})
-            self.assertRedirects(response, '/a/accounts/register/complete/')
-            self.assertEqual(len(mail.outbox), 1)
-            self.assertEqual(mail.outbox[0].subject,
-                    u'[example.com] Activation email')
-            body = mail.outbox[0].body
-            profile = RegistrationProfile.objects.get(
-                    user__username=name)
-            key = profile.activation_key
-            regex = re.compile('^.*/a/accounts/activate/(.*)/$')
-            for line in body.split('\n'):
-                matcher = regex.match(line)
-                if matcher:
-                    self.assertEqual(key, matcher.group(1))
-                    response = self.client.get('/a/accounts/activate/' + key)
-                    # the above line returns a HttpResponsePermanentRedirect (I,
-                    # ivan, don't know why). items()[1][1] is where it redirects
-                    # to.
-                    response = self.client.get(response.items()[1][1])
-                    # TODO: test the page
-                    self.failUnless(User.objects.get(username=name).is_active)
-                    break
-            user = User.objects.get(username=name)
-            self.assertEqual(user.email, name + '@example.com')
-            mail.outbox = []
-            return user
-
-    def _create_group(self, user, name = None, throw_web = False): # {{{2
-        """ create a user either on the API or using the web and email """
-        if name is None:
-            chars = string.letters # you can append: + string.digits
-            name = ''.join( [ choice(chars) for i in xrange(8) ] )
-        """ creates a group and add `user` to it; if `throw_web` `user`
-        creates the group throw the web """
-        if not throw_web:
-            group = Group.objects.create(name = name)
-            m = Membership.objects.create(user = user, group = group)
-            return group
-        else:
-            self.client.login(
-                    username = user.username, password = 'p' )
-            response = self.client.post ( reverse('group_new'),
-                    {'name': name, 'description': u'create_group'} )
-            self.assertEqual( response.status_code, 302 )
-            return Group.objects.get(name = name)
-
-    def _login(self, user, throw_web = False): # {{{2
-        """ logs in `user` """
-        if not throw_web:
-            login = self.client.login(
-                    username = user.username, password = 'p' )
-            self.failUnless(login, 'Could not log in')
-            response = self.client.get(reverse('group_new'))
-            self.failUnlessEqual(response.status_code, 200)
-        else:
-            response = self.Client.post('/a/accounts/login/',
-                    {'username':user.username, 'password':'p'})
-            self.assertEqual(response.status_code, 200)
-
-    def _validate_ical( self, url ): # {{{2
-        """ validate an ical file (the output of `url`) with an external online
-        validator """
-        response = self.client.get( url )
-        self.assertEqual( response.status_code, 200 )
-        content = response.content
-        headers = {"Content-type": "application/x-www-form-urlencoded",
-                   "Accept": "text/plain"}
-        params = urllib.urlencode( {'snip':content} )
-        conn = httplib.HTTPConnection( "severinghaus.org" )
-        conn.request( "POST", "/projects/icv/", params, headers )
-        response = conn.getresponse()
-        result = response.read()
-        #self.assertTrue( 'Congratulations' in result, content )
-        self.assertTrue( 'Congratulations' in result )
-
-    def _validate_rss( self, url ): # {{{2
-        "validate rss feed data"
-        response = self.client.get( url )
-        self.assertEqual( response.status_code, 200 )
-        conn = httplib.HTTPConnection(
-                "http://feedvalidator.org/check.cgi?url=" + url )
-        conn.request()
-        response = conn.getresponse()
-        result = response.read()
-        self.assertTrue( 'Congratulations!' in result, url )
-#            params = urllib.urlencode( {'fragment':content} )
-#            conn = httplib.HTTPConnection( "validator.w3.org" )
-#            conn.request( "POST", "/check", params )
-#            response = conn.getresponse()
-#            result = response.read()
-#            self.assertTrue( 'Congratulations' in result, content )
+    def test_group_rss( self ): # {{{2
+        """ tests for public and private rss feeds of groups """
+        user1 = self._create_user()
+        event1 = Event.objects.create( title = 'public',
+                tags = 'test', start = datetime.date.today(), user = user1 )
+        event2 = Event.objects.create( title = 'private',
+                tags = 'test', start = datetime.date.today(), user = user1,
+                public = False )
+        # self.client.login( username = user1.username, password = 'p' )
+        group = self._create_group( user1 )
+        Calendar.objects.create( group = group, event = event1 )
+        Calendar.objects.create( group = group, event = event2 )
+        # user1
+        url_user1_hashed = reverse( 'list_events_group_rss_hashed',
+            kwargs = {'group_id': group.id, 'user_id': user1.id,
+                'hash': ExtendedUser.calculate_hash( user1.id )} )
+        self._validate_ical( url_user1_hashed )
+        content = self.client.get( url_user1_hashed ).content
+        self._validate_rss( content )
+        self.assertTrue( 'public' in content )
+        self.assertTrue( 'private' in content )
+        # user2
+        user2 = self._create_user()
+        url_user2_hashed = reverse( 'list_events_group_rss_hashed',
+            kwargs = {'group_id': group.id, 'user_id': user2.id,
+                'hash': ExtendedUser.calculate_hash( user2.id )} )
+        self._validate_ical( url_user2_hashed )
+        content = self.client.get( url_user2_hashed ).content
+        self.assertTrue( 'not a member' in content )
+        # anonymous
+        url_non_hashed = reverse( 'list_events_group_rss',
+                kwargs = {'group_id': group.id,} )
+        self._validate_ical( url_non_hashed )
+        content = self.client.get( url_non_hashed ).content
+        self._validate_rss( content )
+        self.assertTrue( 'public' in content )
+        self.assertFalse( 'private' in content )
 
     def user_group_edit( self, user_nr ): # {{{2
         "tests edit private and public events for user \
@@ -336,23 +402,6 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                         u"not visible private event from group: %s" \
                         % private_title.decode('utf-8') )
         self.client.logout()
-
-
-    def user_add_event( self, user_nr ): # {{{2
-        "add event to user's group"
-        mail.outbox = []
-        login = self.login_user( user_nr )
-        self.assertTrue( login )
-        user = self.get_user( user_nr )
-        public_event = self.get_event( user, True, True )
-        private_event = self.get_event( user, False, True )
-        group = Group.objects.get( name = user.username )
-        for event in ( public_event, private_event ):
-            self.client.post( reverse( 'group_add_event', \
-                                            kwargs = {'event_id':event.id} ), \
-                                    {'grouplist': group.id} )
-        # is no message after add new event to group
-        # print map(lambda x: (x.to[0],x.body), mail.outbox)
 
     #FIXME: create a user with a filter, introduce an event anonymously
     # matching the filter, check that an email has been sent
@@ -575,43 +624,6 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
             self.validate_rss( reverse( 'list_events_group_rss',
                                       kwargs = {'group_id':group.id} ) )
 
-#    def test_group_ical_rss( self ): # {{{2
-#        "test the ical file of a group"
-#        user1 = self._create_user()
-#        user2 = self._create_user()
-#        group = self._create_group(user1)
-#        membership = Membership.objects.create(user=user2, group=group)
-#        membership.save()
-#        event1 = Event(user = user1, public = True, title="public",
-#                    start=datetime.date.today() + timedelta(days=+1),
-#                    tags="test")
-#        event1.save()
-#        cal = Calendar.objects.create(event = event1, group = group)
-#        cal.save()
-#        event2 = Event(user = user1, public = False, title="private",
-#                    start=datetime.date.today() + timedelta(days=+2),
-#                    tags="test")
-#        event2.save()
-#        cal = Calendar.objects.create(event = event2, group = group)
-#        cal.save()
-#        self._login(user2)
-#        # test ical
-#        url =  reverse( 'list_events_group_ical',
-#                                      kwargs = {'group_id': group.id, } )
-#        self._validate_ical(url)
-#        content = self.client.get( url ).content
-#        generator = vobject.readComponents(content)
-#        self.assertEqual(generator.next().vevent.title.value, "public")
-#        self.assertEqual(generator.next().vevent.title.value, "private")
-#        # test rss
-#        url =  reverse( 'list_events_group_rss',
-#                                      kwargs = {'group_id':group.id}, )
-#        self._validate_ical( url )
-#        content = self.client.get( url ).content
-#        generator = vobject.readComponents( content )
-#        self.assertEqual( generator.next().vevent.title.value, "public" )
-#        self.assertEqual( generator.next().vevent.title.value, "private" )
-#        # FIXME test rss content
 
     def test_visibility_private_event_in_group_when_searching( self ): # {{{2
         """ test that a private event added to a group is visible in the result
@@ -689,12 +701,6 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
 #        self._validate_ical( reverse( 'list_events_filter_ical',
 #                                      kwargs = {'filter_id':fil.id} ) )
 #        # FIXME: check that all the events are correct
-
-    @staticmethod # user_hash {{{2
-    def user_hash( user_id ):
-        "return correct hash for user_id"
-        return hashlib.sha256( "%s!%s" %
-                              ( settings.SECRET_KEY, user_id ) ).hexdigest()
 
 #    def test_hash_filter_rss( self ): # {{{2
 #        "test for one rss.xml icon for each filter"
