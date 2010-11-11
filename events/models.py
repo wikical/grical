@@ -692,15 +692,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns an example of an event as unicode
         
         >>> from django.utils.encoding import smart_str
-        >>> text = Event.example()
+        >>> example = Event.example()
+        >>> event = Event.parse_text(example)
+        >>> assert (smart_str(example) == event.as_text())
+        >>> text = example.replace(u'DE', u'Germany')
         >>> event = Event.parse_text(text)
-        >>> assert (smart_str(text) == event.as_text())
-        >>> # test also that it works when using an English name for the
-        >>> # country
-        >>> text = text.replace(u'DE', u'Germany')
+        >>> assert (smart_str(example) == event.as_text())
+        >>> text = text.replace(u'Germany', u'de')
         >>> event = Event.parse_text(text)
-        >>> text = text.replace(u'Germany', u'DE')
-        >>> assert (smart_str(text) == event.as_text())
+        >>> assert (smart_str(example) == event.as_text())
         """
         return EXAMPLE
 
@@ -980,11 +980,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         smart_unicode(field))
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
-        # languages.
+        # languages but taking care of colisions
         if simple_fields.has_key(u'country'):
             for names in COUNTRIES:
-                if names[1].lower().encode('utf-8') == \
-                simple_fields[u'country'].lower().encode('utf-8'):
+                long_name = names[1].lower()
+                short_name = names[0].lower()
+                parsed = simple_fields[u'country'].lower()
+                if parsed == long_name or parsed == short_name:
                     simple_fields['country'] = names[0]
                     break
         # creates an event with a form
