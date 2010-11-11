@@ -1045,6 +1045,12 @@ def group_add_event(request, event_id): # {{{2
                     },
                     context_instance=RequestContext(request))
 
+def group_name_view(request, group_name): # {{{2
+    """ lists everything about a group for members of the group, and the
+    description and public events for everyone else. """
+    group = get_object_or_404(Group, name__iexact = group_name)
+    return group_view( request, group.id )
+
 def group_view(request, group_id): # {{{2
     """ lists everything about a group for members of the group, and the
     description and public events for everyone else
