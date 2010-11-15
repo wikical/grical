@@ -967,9 +967,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # code {{{2
         if not isinstance(input_text_in, unicode):
             input_text_in = smart_unicode(input_text_in)
-        if user_id is not None:
-            # the following line can raise a User.DoesNotExist
-            user = User.objects.get(id = user_id)
         # test that the necessary fields are present
         simple_fields, complex_fields = Event.get_fields(input_text_in)
         for field in Event.get_necessary_fields():
@@ -978,6 +975,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 raise ValidationError(
                         _(u"The following necessary field is not present: ") +
                         smart_unicode(field))
+        if user_id is not None:
+            # the following line can raise a User.DoesNotExist
+            user = User.objects.get(id = user_id)
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
         # languages but taking care of colisions
@@ -1002,36 +1002,46 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     raise RuntimeError(
                         _(u'the event is not viewable by the user'))
             event_form = EventForm( simple_fields, instance = event )
-        if event_form.is_valid():
-            event = event_form.save()
-            event_id = event.id
-            if (user_id is not None) and (event.user == None):
-                event.user = user
-        else:
+        if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
-        # processing complex fields if present
-        try:
-            if complex_fields.has_key(u'urls'):
-                EventUrl.parse_text(event,
-                        u'\n'.join(complex_fields[u'urls']))
-                del complex_fields[u'urls']
-            if complex_fields.has_key(u'deadlines'):
-                EventDeadline.parse_text(event,
-                        u'\n'.join(complex_fields[u'deadlines']))
-                del complex_fields[u'deadlines']
-            if complex_fields.has_key(u'sessions'):
-                EventSession.parse_text(event,
-                        u'\n'.join(complex_fields[u'sessions']))
-                del complex_fields[u'sessions']
-            if complex_fields.has_key(u'description'):
-                description = u"\n".join(complex_fields[u'description'])
-                # remove the word 'description'
-                event.description = description[13:]
-                del complex_fields[u'description']
-            assert(len(complex_fields) == 0)
-        except ValidationError as error:
-            Event.objects.get( id = event_id ).delete()
-            raise error
+        # check syntax of complex fields before saving the form
+        if complex_fields.has_key(u'urls'):
+            urls = EventUrl.get_urls(
+                    u'\n'.join(complex_fields[u'urls']) )
+        else:
+            urls = None
+        if complex_fields.has_key(u'deadlines'):
+            deadlines = EventDeadline.get_deadlines(
+                    u'\n'.join(complex_fields[u'deadlines']))
+        else:
+            deadlines = None
+        if complex_fields.has_key(u'sessions'):
+            sessions = EventSession.get_sessions(
+                    u'\n'.join(complex_fields[u'sessions']))
+        else:
+            sessions = None
+        # save the form and get the event
+        event = event_form.save()
+        event_id = event.id
+        # adding complex fields data
+        if complex_fields.has_key(u'urls'):
+            EventUrl.parse_text(event,
+                    u'\n'.join(complex_fields[u'urls']), urls)
+            del complex_fields[u'urls']
+        if complex_fields.has_key(u'deadlines'):
+            EventDeadline.parse_text(event,
+                    u'\n'.join(complex_fields[u'deadlines']), deadlines)
+            del complex_fields[u'deadlines']
+        if complex_fields.has_key(u'sessions'):
+            EventSession.parse_text(event,
+                    u'\n'.join(complex_fields[u'sessions']), sessions)
+            del complex_fields[u'sessions']
+        if complex_fields.has_key(u'description'):
+            description = u"\n".join(complex_fields[u'description'])
+            # remove the word 'description'
+            event.description = description[13:]
+            del complex_fields[u'description']
+        assert(len(complex_fields) == 0)
         return event
 
     @staticmethod
@@ -1379,7 +1389,45 @@ class EventUrl( models.Model ): # {{{1
         return self.url
 
     @staticmethod
-    def parse_text(event, text):
+    def get_urls( text ):
+        """ validates text lines containing EventUrl entries, raising
+        ValidationErrors if there are errors, otherwise it returns a dictionary
+        with names and urls (both unicode objects).
+        """
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
+        lines = text.splitlines()
+        if (len(lines[0]) < 1):
+            raise ValidationError(_(u"text was empty") )
+        # test for default URL
+        field_m = field_p.match(lines[0])
+        if not field_m:
+            raise ValidationError(
+                    _(u"first line for urls is malformed: ") +
+                    lines[0])
+        syns = Event.get_synonyms()
+        if syns[field_m.group(1).lower()] != u'urls':
+            raise ValidationError(
+                    _(u"first line for urls doesn't contain a \
+                    synonym of 'urls' before the colon: ") + lines[0])
+        urls = {} # keys are url-names, values are urls
+        if field_m.group(2) != u'':
+            urls['url'] = field_m.group(2) # default url
+        if len(lines) > 1:
+            field_p = re.compile(r"^\s+(.*)\s+(.+?)\s*$")
+            for line in lines[1:]:
+                field_m = field_p.match(line)
+                if not field_m:
+                    empty_line_p = re.compile("^\s*$")
+                    if empty_line_p.match(line):
+                        raise ValidationError(
+                            _(u"an unexpected empty line was found."))
+                    raise ValidationError(
+                            _(u"the following line is malformed: ") + line)
+                urls[ field_m.group(1) ] = field_m.group(2)
+        return urls
+
+    @staticmethod
+    def parse_text(event, text, urls = None):
         """ validates and saves text lines containing EventUrl entries, raising
         ValidationErrors if there are errors
 
@@ -1413,39 +1461,10 @@ class EventUrl( models.Model ): # {{{1
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
-        text = smart_unicode(text)
-        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
-        lines = text.split('\n')
-        if (len(lines[0]) < 1):
-            raise ValidationError(_(u"text was empty") )
-        # test for default URL
-        field_m = field_p.match(lines[0])
-        if not field_m:
-            raise ValidationError(
-                    _(u"first line for urls is malformed: ") +
-                    lines[0])
-        syns = Event.get_synonyms()
-        if syns[field_m.group(1).lower()] != u'urls':
-            raise ValidationError(
-                    _(u"first line for urls doesn't contain a \
-                    synonym of 'urls' before the colon: ") + lines[0])
-        urls = {} # keys are url-names, values are urls
-        if field_m.group(2) != u'':
-            urls['url'] = field_m.group(2) # default url
-        if len(lines) > 1:
-            field_p = re.compile(r"^\s+(.*)\s+(.+?)\s*$")
-            for line in lines[1:]:
-                field_m = field_p.match(line)
-                if not field_m:
-                    empty_line_p = re.compile("^\s*$")
-                    if empty_line_p.match(line):
-                        raise ValidationError(
-                            _(u"an unexpected empty line was found."))
-                    raise ValidationError(
-                            _(u"the following line is malformed: ") + line)
-                urls[ field_m.group(1) ] = field_m.group(2)
+        if not isinstance(text, unicode):
+            text = smart_unicode(text)
+        if urls is None:
+            urls = EventUrl.get_urls( text )
         event_urls = list() # stores EventURLs to be saved at the end
         for url_name, url in urls.items():
             try:
@@ -1489,42 +1508,14 @@ class EventDeadline( models.Model ): # {{{1
         return unicode( self.deadline ) + u'    ' + self.deadline_name
 
     @staticmethod
-    def parse_text(event, text):
-        """ validates and saves text lines containing EventDeadline entries,
-        raising ValidationErrors if there are errors
-
-        It also removes all previous EventDeadlines for `event` if no errors
-        occur.
-
-        >>> now = datetime.datetime.now().isoformat()
-        >>> event = Event(title="test for parse_text in EventDeadline " + now,
-        ...         start=datetime.date(2020, 1, 1), tags="test")
-        >>> event.save()
-        >>> event_deadline = EventDeadline(
-        ...         event = event, deadline_name = "test1",
-        ...         deadline = datetime.date(2020,1,1))
-        >>> event_deadline.save()
-        >>> text = u"deadlines:\\n    2010-01-02 test1\\n    2010-02-02 test2"
-        >>> EventDeadline.parse_text(event, text)
-        >>> event_deadlines = EventDeadline.objects.filter(event=event)
-        >>> assert(len(event_deadlines) == 2)
-        >>> text = u"deadlines:\\n    2010-03-03 test3"
-        >>> EventDeadline.parse_text(event, text)
-        >>> event_deadlines = EventDeadline.objects.filter(event=event)
-        >>> assert(len(event_deadlines) == 1)
-        >>> assert(event_deadlines[0].deadline_name == u'test3')
-        """
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int):
-            event = Event.objects.get(pk = event)
-        else:
-            event = Event.objects.get(pk = int(event))
-        text = smart_unicode(text)
-        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
+    def get_deadlines( text ):
+        """ validates text lines containing EventDeadline entries,
+        raising ValidationErrors if there are errors, otherwise it returns a
+        dictionary with names and dates. """
+        if not isinstance(text, unicode):
+            text = smart_unicode(text)
         field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
-        lines = text.split('\n')
+        lines = text.splitlines()
         if (len(lines[0]) < 1):
             raise ValidationError(
                     _(u"text of first line for deadlines was empty"))
@@ -1562,7 +1553,49 @@ class EventDeadline( models.Model ): # {{{1
                 deadlines[ field_m.group(4) ] = datetime.date(
                         int(field_m.group(1)), int(field_m.group(2)),
                         int(field_m.group(3)))
-        event_deadlines = list() # stores EventDeadlines to be saved at the end
+        return deadlines
+
+    @staticmethod
+    def parse_text(event, text, deadlines = None ):
+        """ validates and saves text lines containing EventDeadline entries,
+        raising ValidationErrors if there are errors.
+
+        ``deadlines`` can be a dictionary of deadline names and dates. If it is
+        None, ``text`` is parsed to build ``deadlines``
+
+        It also removes all previous EventDeadline instances for `event` if no
+        errors occur.
+
+        >>> now = datetime.datetime.now().isoformat()
+        >>> event = Event(title="test for parse_text in EventDeadline " + now,
+        ...         start=datetime.date(2020, 1, 1), tags="test")
+        >>> event.save()
+        >>> event_deadline = EventDeadline(
+        ...         event = event, deadline_name = "test1",
+        ...         deadline = datetime.date(2020,1,1))
+        >>> event_deadline.save()
+        >>> text = u"deadlines:\\n    2010-01-02 test1\\n    2010-02-02 test2"
+        >>> EventDeadline.parse_text(event, text)
+        >>> event_deadlines = EventDeadline.objects.filter(event=event)
+        >>> assert(len(event_deadlines) == 2)
+        >>> text = u"deadlines:\\n    2010-03-03 test3"
+        >>> EventDeadline.parse_text(event, text)
+        >>> event_deadlines = EventDeadline.objects.filter(event=event)
+        >>> assert(len(event_deadlines) == 1)
+        >>> assert(event_deadlines[0].deadline_name == u'test3')
+        """
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
+        if not isinstance(text, unicode):
+            text = smart_unicode(text)
+        if deadlines is None:
+            deadlines = EventDeadline.get_deadlines( text )
+        event_deadlines = list() # stores EventDeadline instances to be saved
+                                 # at the end
         for name, deadline in deadlines.items():
             try:
                 previous_event_deadline = EventDeadline.objects.get(
@@ -1615,52 +1648,15 @@ class EventSession( models.Model ): # {{{1
                 unicode( self.session_endtime ) + u'    ' + self.session_name
 
     @staticmethod
-    def parse_text(event, text):
-        """ validates and saves text lines containing EventSession entries,
-        raising ValidationErrors if there are errors
-
-        It also removes all previous EventSessions for `event` if no errors
-        occur.
-
-        Example::
-
-            sessions:
-                2009-01-01 10:00-16:00 first day
-                2009-01-01 11:00-12:00 speech about GridCalendar
-
-        >>> import datetime
-        >>> now = datetime.datetime.now().isoformat()
-        >>> event = Event(title="test for parse_text in EventSession " + now,
-        ...         start=datetime.date(2020, 1, 1), tags="test")
-        >>> event.save()
-        >>> event_session = EventSession(
-        ...     event=event, session_name="test1",
-        ...     session_date = datetime.date(2010,1,1),
-        ...     session_starttime = datetime.time(0,0),
-        ...     session_endtime = datetime.time(1,0))
-        >>> event_session.save()
-        >>> text = u"sessions:\\n    2010-01-02 11:00-12:00 test1\\n"
-        >>> text = text +      "    2010-01-03 12:00-13:00 test2"
-        >>> EventSession.parse_text(event, text)
-        >>> event_sessions = EventSession.objects.filter(event=event)
-        >>> assert(len(event_sessions) == 2)
-        >>> text = u"sessions:\\n    2010-01-02 13:00-14:00 test1"
-        >>> EventSession.parse_text(event, text)
-        >>> event_sessions = EventSession.objects.filter(event=event)
-        >>> assert(len(event_sessions) == 1)
-        >>> assert(event_sessions[0].session_name == u'test1')
+    def get_sessions( text ):
+        """ validates text lines containing EventSession entries,
+        raising ValidationErrors if there are errors, otherwise it returns a
+        dictionary with session names as keys and Session instances as values.
         """
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int):
-            event = Event.objects.get(pk = event)
-        else:
-            event = Event.objects.get(pk = int(event))
-        text = smart_unicode(text)
-        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        if not isinstance(text, unicode):
+            text = smart_unicode(text)
         field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
-        lines = text.split('\n')
+        lines = text.splitlines()
         # test for default deadline
         field_m = field_p.match(lines[0])
         if not field_m:
@@ -1671,12 +1667,6 @@ class EventSession( models.Model ): # {{{1
             raise ValidationError(
                     _(u"first line for sessions doesn't contain a " +
                     "synonym of 'sessions' before the colon"))
-        class Session:
-            def __init__(self, date=None, start=None, end=None, name=None):
-                self.date = date
-                self.start = start
-                self.end = end
-                self.name = name
         sessions = list()
         if field_m.group(2) != u'': # default session
             times_p = re.compile(r"^(\d\d):(\d\d)-(\d\d):(\d\d)\s*$")
@@ -1725,6 +1715,57 @@ class EventSession( models.Model ): # {{{1
                     raise ValidationError(
                             _(u"a time/date entry was wrong for line: ") + line)
                 # TODO: use local time of event if present
+        return sessions
+
+    @staticmethod
+    def parse_text( event, text, sessions = None ):
+        """ validates and saves text lines containing EventSession entries,
+        raising ValidationErrors if there are errors.
+
+        ``sessions`` is a dictionary of session names and instances of the
+        class ``Session``. If it is None ``text`` is parsed to build the
+        dictionary.
+
+        It also removes all previous EventSessions for `event` if no errors
+        occur.
+
+        Example::
+
+            sessions:
+                2009-01-01 10:00-16:00 first day
+                2009-01-01 11:00-12:00 speech about GridCalendar
+
+        >>> import datetime
+        >>> now = datetime.datetime.now().isoformat()
+        >>> event = Event(title="test for parse_text in EventSession " + now,
+        ...         start=datetime.date(2020, 1, 1), tags="test")
+        >>> event.save()
+        >>> event_session = EventSession(
+        ...     event=event, session_name="test1",
+        ...     session_date = datetime.date(2010,1,1),
+        ...     session_starttime = datetime.time(0,0),
+        ...     session_endtime = datetime.time(1,0))
+        >>> event_session.save()
+        >>> text = u"sessions:\\n    2010-01-02 11:00-12:00 test1\\n"
+        >>> text = text +      "    2010-01-03 12:00-13:00 test2"
+        >>> EventSession.parse_text(event, text)
+        >>> event_sessions = EventSession.objects.filter(event=event)
+        >>> assert(len(event_sessions) == 2)
+        >>> text = u"sessions:\\n    2010-01-02 13:00-14:00 test1"
+        >>> EventSession.parse_text(event, text)
+        >>> event_sessions = EventSession.objects.filter(event=event)
+        >>> assert(len(event_sessions) == 1)
+        >>> assert(event_sessions[0].session_name == u'test1')
+        """
+        if isinstance(event, Event):
+            pass
+        elif isinstance(event, int):
+            event = Event.objects.get(pk = event)
+        else:
+            event = Event.objects.get(pk = int(event))
+        if not isinstance(text, unicode):
+            text = smart_unicode(text)
+        sessions = EventSession.get_sessions( text )
         event_sessions = list() # stores EventSessions to be saved at the end
         for session in sessions:
             try:
@@ -2636,6 +2677,13 @@ class GroupInvitation( models.Model ): # {{{1
                ( self.issue_date + expiration_date <= datetime.date.today() )
     # TODO: find out and explain here what this means:
     activation_key_expired.boolean = True
+
+class Session: #{{{1
+    def __init__(self, date=None, start=None, end=None, name=None):
+        self.date = date
+        self.start = start
+        self.end = end
+        self.name = name
 
 # old code and comments {{{1
 # TODO: add setting info to users. See the auth documentation because there is
