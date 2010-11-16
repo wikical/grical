@@ -93,7 +93,8 @@ class Command( NoArgsCommand ): # {{{1
         #re_charset = re.compile( r'charset=([^\s]*)', re.IGNORECASE )
         for number in self.get_list():
             typ, data = self.mailbox.fetch( number, '(RFC822 UID BODY[TEXT])' )
-            if (not data) or len( data ) < 1 or len( data[0] ) < 2:
+            if (data is None) or (len(data) < 1) or (data[0] is None) or \
+                    (len(data[0]) < 2):
                 continue
             mail = email.message_from_string( data[0][1] )
             text = u""

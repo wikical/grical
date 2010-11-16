@@ -1017,7 +1017,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             deadlines = None
         if complex_fields.has_key(u'sessions'):
             sessions = EventSession.get_sessions(
-                    u'\n'.join(complex_fields[u'sessions']))
+                    u'\n'.join(complex_fields[u'sessions']),
+                    event_form.fields['start'] )
         else:
             sessions = None
         # save the form and get the event
@@ -1648,10 +1649,17 @@ class EventSession( models.Model ): # {{{1
                 unicode( self.session_endtime ) + u'    ' + self.session_name
 
     @staticmethod
-    def get_sessions( text ):
+    def get_sessions( text , default_date ):
         """ validates text lines containing EventSession entries,
         raising ValidationErrors if there are errors, otherwise it returns a
         dictionary with session names as keys and Session instances as values.
+
+        ``default_date`` is used for shorthand entries (which will have the
+        default name ``time``). Example::
+
+            time: 10:00-11:00
+
+        Notice in the example above that ``time`` is a synonym of ``sessions``
         """
         if not isinstance(text, unicode):
             text = smart_unicode(text)
@@ -1677,7 +1685,7 @@ class EventSession( models.Model ): # {{{1
                         'form nn:nn-nn:nn It was: ') + field_m.group(2))
             try:
                 sessions.append(Session(
-                    date = event.start,
+                    date = default_date,
                     start = datetime.time(
                         int(times_m.group(1)),
                         int(times_m.group(2))),
@@ -1765,7 +1773,7 @@ class EventSession( models.Model ): # {{{1
             event = Event.objects.get(pk = int(event))
         if not isinstance(text, unicode):
             text = smart_unicode(text)
-        sessions = EventSession.get_sessions( text )
+        sessions = EventSession.get_sessions( text, event.start )
         event_sessions = list() # stores EventSessions to be saved at the end
         for session in sessions:
             try:
