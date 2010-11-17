@@ -24,9 +24,6 @@
 # docs {{{1
 """ views for RSS """
 
-# TODO: validate with test iCal and RSS output using validations like e.g.
-# http://arnout.engelen.eu/icalendar-validator/validate/
-
 ### imports {{{1
 import datetime
 
@@ -41,7 +38,7 @@ from gridcalendar.settings import FEED_SIZE, SITE_ID
 from gridcalendar.events.models import ( Event, Filter, Group,
         ExtendedUser )
 
-site_domain = Site.objects.get(id = SITE_ID).domain
+SITE_DOMAIN = Site.objects.get(id = SITE_ID).domain
 
 class EventsFeed(Feed): # {{{1
     """ rss feed for a list of events """
@@ -53,6 +50,7 @@ class EventsFeed(Feed): # {{{1
         return item.get_absolute_url()
 
     def item_pubdate(self, item):
+        """ uses the modification_time of the event """
         return item.modification_time
 
     def item_description(self, item):
@@ -66,7 +64,7 @@ class PublicUpcomingEventsFeed(EventsFeed): # {{{1
     ordered by next coming date. """
 
     title = _(u"%(domain)s upcoming public events feed") % \
-            {'domain': site_domain,}
+            {'domain': SITE_DOMAIN,}
     link = "/r/upcoming"
     description = _("Next %(count)s upcoming events." \
             % {"count": FEED_SIZE}, )
@@ -83,48 +81,71 @@ class PublicUpcomingEventsFeed(EventsFeed): # {{{1
 
 
 class PublicSearchEventsFeed(EventsFeed): # {{{1
+    """ feed for the result of a search for AnonymousUser """
     
     def get_object(self, request, query):
         return query
 
     def title(self, obj):
-        return _(u'%(domain)s search results') % {'domain': site_domain,}
+        """ title """
+        return _(u'%(domain)s search results') % {'domain': SITE_DOMAIN,}
 
     def link(self, obj):
+        """ return a link to a search with get http method """
+        # TODO: if the search query is '#tag' if won't work, fix it
         return reverse( 'list_events_search', kwargs = {'query': obj,} )
 
     def description(self, obj):
+        """ description """
         return _(u'%(domain)s search results for %(query)s') % \
-                {'domain': site_domain, 'query': obj,}
+                {'domain': SITE_DOMAIN, 'query': obj,}
 
     def items(self, obj):
-        return Filter.matches(
-                obj['query'], None, FEED_SIZE )
+        """ items """
+        matches, related = Filter.matches( obj, None, FEED_SIZE )
+        # if matches are less than FEED_SIZE, it adds some events from
+        # related matches
+        if len( matches ) < FEED_SIZE:
+            to_take = FEED_SIZE - len( related )
+            matches += related[0:to_take]
+        return matches
 
 
 class HashSearchEventsFeed(EventsFeed): # {{{1
+    """ feed for the result of a search with hash authentification """
     
-    def get_object(self, request, query, user_id, hash):
-        if hash != ExtendedUser.calculate_hash(user_id):
+    def get_object(self, request, query, user_id, hashcode):
+        if hashcode != ExtendedUser.calculate_hash(user_id):
             raise Http404
-        return {'query': query, 'user_id': user_id, 'hash': hash}
+        return {'query': query, 'user_id': user_id, 'hash': hashcode}
 
     def title(self, obj):
-        return _(u'%(domain)s search results') % {'domain': site_domain,}
+        """ title """
+        return _(u'%(domain)s search results') % {'domain': SITE_DOMAIN,}
 
     def link(self, obj):
+        """ link """
         return reverse( 'list_events_search_hashed', kwargs = obj )
 
     def description(self, obj):
+        """ description """
         return _(u'%(domain)s search results for %(query)s') % \
-                {'domain': site_domain, 'query': obj,}
+                {'domain': SITE_DOMAIN, 'query': obj,}
 
     def items(self, obj):
-        return Filter.matches(
+        """ items """
+        matches, related = Filter.matches(
                 obj['query'], obj['user_id'], FEED_SIZE )
+        # if matches are less than FEED_SIZE, it adds some events from
+        # related matches
+        if len( matches ) < FEED_SIZE:
+            to_take = FEED_SIZE - len( related )
+            matches += related[0:to_take]
+        return matches
 
 
 class PublicGroupEventsFeed(EventsFeed): # {{{1
+    """ feed with the public events of a group """
 
     def get_object(self, request, group_id):
         group_name = Group.objects.get(id = group_id)
@@ -133,91 +154,57 @@ class PublicGroupEventsFeed(EventsFeed): # {{{1
         return {'group_id': group_id, 'group_name': group_name}
 
     def title(self, obj):
+        """ title """
         return _(u'%(domain)s group %(group_name)s') % \
-                {'domain': site_domain, 'group_name': obj['group_name']}
+                {'domain': SITE_DOMAIN, 'group_name': obj['group_name']}
 
     def link(self, obj):
+        """ link """
         return reverse( 'group_view', kwargs = {'group_id': obj['group_id'],} )
 
     def description(self, obj):
-        group_name = Group.objects.get(id = obj).name
-        return _(u'public events on %(domain)s for the group %(group_name)s') % \
-                {'domain': site_domain, 'group_name': obj['group_name'],}
+        """ description """
+        return _(u'public events on %(domain)s for the group %(group_name)s')% \
+                {'domain': SITE_DOMAIN, 'group_name': obj['group_name'],}
 
     def items(self, obj):
+        """ items """
         return Event.objects.filter(public = True).filter(
                 calendar__group__id = obj['group_id'] )
 
 class HashGroupEventsFeed(EventsFeed): # {{{1
+    """ feed with the events of a group with hash authentification """
+    # FIXME write a text for it
 
-    def get_object(self, request, group_id, user_id, hash):
+    def get_object(self, request, group_id, user_id, hashcode):
         group_name = Group.objects.get(id = group_id)
         if not group_name:
             raise Http404
-        if hash != ExtendedUser.calculate_hash(user_id):
+        if hashcode != ExtendedUser.calculate_hash(user_id):
             raise Http404
         return { 'group_id': group_id,
                 'group_name': group_name,
                 'user_id': user_id }
 
     def title(self, obj):
+        """ title """
         return _(u'%(domain)s group %(group_name)s') % \
-                {'domain': site_domain, 'group_name': obj['group_name']}
+                {'domain': SITE_DOMAIN, 'group_name': obj['group_name']}
 
     def link(self, obj):
+        """ link """
         return reverse( 'group_view', kwargs = {'group_id': obj['group_id'],} )
 
     def description(self, obj):
-        group_name = Group.objects.get( id = obj['group_id'] ).name
+        """ description """
         return _(u'events on %(domain)s for the group %(group_name)s') % \
-                {'domain': site_domain, 'group_name': obj['group_name'],}
+                {'domain': SITE_DOMAIN, 'group_name': obj['group_name'],}
 
     def items(self, obj):
+        """ items """
         group = Group.objects.get( id = obj['group_id'] )
         if Group.is_user_in_group( obj['user_id'], obj['group_id'] ):
             return group.get_coming_events( limit = FEED_SIZE )
         else:
             return group.get_coming_public_events( limit = FEED_SIZE )
 
-#    """ Used for a feed for events of a group """
-#    title_template = 'rss/groupevents_title.html'
-#    description_template = 'rss/groupevents_description.html'
-#
-#    def get_object(self, bits): # pylint: disable-msg=C0111
-#        if len(bits) != 1:
-#            raise ObjectDoesNotExist
-#        group_id = bits[0]
-#        return Group.objects.get(id=group_id)
-#
-#    def title(self, obj): # pylint: disable-msg=C0111
-#        if obj is None:
-#            return "You are not allowed to view this feed."
-#        else:
-#            return "events in group '%s'" % obj.name
-#
-#    def link(self, obj): # pylint: disable-msg=C0111
-#        if obj is None:
-#            return '/'
-#        elif not obj:
-#            raise FeedDoesNotExist
-#        else:
-#            return obj.get_absolute_url()
-#
-#    def description(self, obj):
-#        """ feed description """
-#        if obj is None: # pylint: disable-msg=C0111
-#            return "You are not allowed to view this feed."
-#        else:
-#            return "events in group %s" % obj.name
-#
-#    def items(self, obj):
-#        if obj is None: # pylint: disable-msg=C0111
-#            return Event.objects.none()
-#        else:
-#            filter_list = Event.objects.filter(group=obj).order_by('start')
-#            return filter_list[:settings.FEED_SIZE]
-#
-#    # does not work, because 'datetime.date' object has no attribute 'tzinfo'
-#    #    def item_pubdate(self, item):
-#    #        return item.start
-#

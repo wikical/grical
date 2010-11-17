@@ -462,7 +462,7 @@ def list_events_search( request, query ): # {{{1
             },
             context_instance = RequestContext( request ) )
 
-def list_events_search_hashed( request, query, user_id, hash ): # {{{1
+def list_events_search_hashed( request, query, user_id, hashcode ): # {{{1
     """ View to show the results of a search query with hashed authentification
 
     >>> from django.test import Client
@@ -473,10 +473,10 @@ def list_events_search_hashed( request, query, user_id, hash ): # {{{1
     >>> u = ExtendedUser.objects.get( pk = u.pk )
     >>> Client().get(reverse('list_events_search_hashed',
     ...         kwargs={'query': 'abcdef', 'user_id': u.id,
-    ...         'hash': u.get_hash()})).status_code
+    ...         'hashcode': u.get_hash()})).status_code
     200
     """
-    if ExtendedUser.calculate_hash(user_id) != hash:
+    if ExtendedUser.calculate_hash(user_id) != hashcode:
         raise Http404
     search_result = Filter.matches(query, user_id)[0]
     if len( search_result ) == 0:
@@ -1216,7 +1216,7 @@ def ICalForEvent( request, event_id ): # {{{2
     elist = [eve for eve in elist if eve.is_viewable_by_user(request.user)]
     return _ical_http_response_from_event_list( elist, event.title )
 
-def ICalForEventHash (request, event_id, user_id, hash): # {{{2
+def ICalForEventHash (request, event_id, user_id, hashcode): # {{{2
     """ 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -1230,11 +1230,11 @@ def ICalForEventHash (request, event_id, user_id, hash): # {{{2
     >>> u = ExtendedUser.objects.get( pk = u.pk )
     >>> Client().get(reverse('event_show_ical_hash',
     ...         kwargs={'event_id': e.id, 'user_id': u.id,
-    ...         'hash': u.get_hash()})).status_code
+    ...         'hashcode': u.get_hash()})).status_code
     200
     """
     user = get_object_or_404( ExtendedUser, id = user_id )
-    if hash != user.get_hash():
+    if hashcode != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
             'messages_col1': [_(u"hash authentification failed"),]
@@ -1252,7 +1252,7 @@ def ICalForEventHash (request, event_id, user_id, hash): # {{{2
             [event,], event.title)
             
 
-def ICalForSearchHash( request, query, user_id, hash ): # {{{2
+def ICalForSearchHash( request, query, user_id, hashcode ): # {{{2
     """ ical file for the result of a search with hash authentification
 
     >>> from django.test import Client
@@ -1267,11 +1267,11 @@ def ICalForSearchHash( request, query, user_id, hash ): # {{{2
     >>> u = ExtendedUser.objects.get( pk = u.pk )
     >>> Client().get(reverse('list_events_search_ical_hashed',
     ...         kwargs={'query': 'berlin', 'user_id': u.id,
-    ...         'hash': u.get_hash()})).status_code
+    ...         'hashcode': u.get_hash()})).status_code
     200
     """
     user = get_object_or_404( ExtendedUser, id = user_id )
-    if hash != user.get_hash():
+    if hashcode != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
             'messages_col1': [_(u"hash authentification failed"),]
@@ -1313,7 +1313,7 @@ def ICalForGroup( request, group_id ): # {{{2
     elist = sorted(elist, key=Event.next_coming_date_or_start)
     return _ical_http_response_from_event_list( elist, group.name )
 
-def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
+def ICalForGroupHash( request, group_id, user_id, hashcode ): # {{{2
     """ return all events with a date in the future in icalendar format
     belonging to a group
 
@@ -1333,11 +1333,11 @@ def ICalForGroupHash( request, group_id, user_id, hash ): # {{{2
     >>> c = Calendar.objects.get_or_create(group = g, event = e)
     >>> Client().get(reverse('list_events_group_ical_hashed',
     ...         kwargs={'group_id': g.id, 'user_id': u.id,
-    ...         'hash': u.get_hash()})).status_code
+    ...         'hashcode': u.get_hash()})).status_code
     200
     """
     user = get_object_or_404( ExtendedUser, id = user_id )
-    if hash != user.get_hash():
+    if hashcode != user.get_hash():
         return render_to_response('error.html',
             {'title': 'error',
             'messages_col1': [_(u"hash authentification failed"),]

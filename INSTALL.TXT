@@ -8,7 +8,12 @@ Installation instructions for Debian based systems
    cd /usr/local/
    hg clone http://gridcalendar.net:8001 gridcalendar
 
-1. Install the following packages: `python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools`
+1. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``
+
+1. If you want to develop GridCalendar (or just run the tests) install ``python-webtest`` and ``django-webtest``. As root::
+
+    aptitude install python-webtest
+    easy_install django-webtest
 
 1. Create and edit `settings_local.py` (see an example at the end of the file `settings.py`)
 
@@ -16,7 +21,7 @@ Installation instructions for Debian based systems
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
-1. If using Apache use something like the following as `/etc/apache2/sites-available/gridcalendar.net`::
+1. If using Apache use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
 
     <VirtualHost *:80>
         ServerName gridcalendar.net
@@ -37,19 +42,19 @@ Installation instructions for Debian based systems
     
     </VirtualHost>
 
-1. Create the necessary files or symlinks under `/var/www/gridcalendar` which are mentioned in the above configuration.
+1. Create the necessary files or symlinks under ``/var/www/gridcalendar`` which are mentioned in the above configuration.
 
-1. Don't forgett to create a file `/var/www/gridcalendar/robots.txt` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+1. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
-1. If Apache is used, for development it is recommended to include the following line in `/etc/apache2/apache2.conf`. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
+1. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
 
         MaxRequestsPerChild 1
    
-1. If you want to use a single `sqlite` file for storing your data:
+1. If you want to use a single ``sqlite`` file for storing your data:
 
-   1. Install the packages `python-pysqlite2` and `sqlite3`
+   1. Install the packages ``python-pysqlite2`` and ``sqlite3``
    
-   1. configure `settings_local.py` accordingly and make sure that the file is writable by the web server username (`www-data` in Debian). In the `settings_local.py` you can put::
+   1. configure ``settings_local.py`` accordingly and make sure that the file is writable by the web server username (``www-data`` in Debian). In the ``settings_local.py`` you can put::
 
         DATABASE_ENGINE   = 'sqlite3'
         DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
@@ -63,7 +68,7 @@ Installation instructions for Debian based systems
         Would you like to create one now? (yes/no): yes
         ...
 
-    1. Configure the `django_site` table::
+    1. Configure the ``django_site`` table::
 
         cd /usr/local/gridcalendar
         sqlite3 gridcalendar.sqlite
@@ -71,13 +76,13 @@ Installation instructions for Debian based systems
 
 1. If you want to use postgresql (instead of sqlite) for storing your data:
    
-   1. Install the packages `postgresql-8.3` and `python-psycopg2`
+   1. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
 
-   1. as root edit your `/etc/postgresql/*/main/pg_hba.conf` file to include: `local all gridcalendar md5`
+   1. as root edit your ``/etc/postgresql/*/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
 
-   1. reload the configuration: `killall -HUP postgres`
+   1. reload the configuration: ``killall -HUP postgres``
 
-   1. create the GridCalendar `postgres` user with a password::
+   1. create the GridCalendar ``postgres`` user with a password::
 
         $ su
         # su postgres
