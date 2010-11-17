@@ -60,7 +60,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/show/(?P<event_id>\d+)/ical/$',
         views.ICalForEvent,             name='event_show_ical'),
 
-    url(r'^e/show/(?P<event_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^e/show/(?P<event_id>\d+)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
         views.ICalForEventHash,  name='event_show_ical_hash'),
 
     url(r'^e/group/(?P<event_id>\d+)/$',
@@ -78,16 +78,16 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^s/(?P<query>[^/]*)/ical/$',
         views.ICalForSearch,      name='list_events_search_ical'),
 
-    url(r'^s/(?P<query>[^/]*)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^s/(?P<query>[^/]*)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
         views.ICalForSearchHash,  name='list_events_search_ical_hashed'),
 
     url(r'^s/(?P<query>[^/]*)/rss/$',
         PublicSearchEventsFeed(), name='list_events_search_rss'),
 
-    url(r'^s/(?P<query>[^/]*)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^s/(?P<query>[^/]*)/rss/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
         HashSearchEventsFeed(),  name='list_events_search_rss_hashed'),
 
-    url(r'^s/(?P<query>[^/]*)/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^s/(?P<query>[^/]*)/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
         views.list_events_search_hashed, name='list_events_search_hashed'),
     )
 
@@ -109,13 +109,13 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/(?P<group_id>\d+)/ical/$',
         views.ICalForGroup,         name='list_events_group_ical'),
 
-    url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
         views.ICalForGroupHash,     name='list_events_group_ical_hashed'),
 
     url(r'^g/(?P<group_id>\d+)/rss/$',
         PublicGroupEventsFeed(),    name='list_events_group_rss'),
 
-    url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hash>\w+)/$',
+    url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
         HashGroupEventsFeed(),      name='list_events_group_rss_hashed'),
 
     url(r'^g/new/$',
