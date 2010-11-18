@@ -432,11 +432,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
 
-    clone_of = models.ForeignKey( 'self', \
-                               editable = False, \
-                               blank = True, \
-                               null = True )
-    " Relation to orginal object, or null if this is orginal "# pylint: disable-msg=W0105,C0301
+    clone_of = models.ForeignKey( 'self',
+            editable = False, blank = True, null = True )
+    """ Relation to orginal object, or null if this is orginal """
 
 #    objects = EventManager() # {{{2
 
@@ -553,12 +551,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return ical
 
     def clone( self, public = False ): #{{{3
-        """
-        Make, save and return clone of object.
-        Also make copy of all related objects,
-        and relate then to clone.
-        Set in clone relation to orginal.
-        """
+        """ Make, save and return clone of object.  Also make copy of all
+        related objects, and relate then to clone.  Set in clone relation to
+        orginal.  """
+        # FIXME: check this code, see (also the comment)
+        # http://djangosnippets.org/snippets/1282/
+        # IMPORTANT: in the comment the identation is different
         orginal_pk = self.pk
         collected_objs = CollectedObjects()
         self._collect_sub_objects( collected_objs )
@@ -568,18 +566,20 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         for model in reversed( related_models ):
             # Find all field keys on `model` that point to a `related_model`.
             field_keys = []
-            for field in model._meta.fields:# pylint: disable-msg=W0212
-                if isinstance( field, models.ForeignKey ) \
-                and field.rel.to in related_models:
+            for field in model._meta.fields: # pylint: disable-msg=W0212
+                if isinstance( field, models.ForeignKey ) and \
+                        field.rel.to in related_models:
                     field_keys.append( field )
             # Replace each `sub_obj` with a duplicate.
             sub_obj = collected_objs[model]
-            for pk_val, obj in sub_obj.iteritems():# pylint: disable-msg=W0612
+            for pk_val, obj in sub_obj.iteritems(): # pylint: disable-msg=W0612
                 for field_key in field_keys:
                     field_key_value = getattr( obj, "%s_id" % field_key.name )
+                    # if this field_key has been duplicated then point to the
+                    # duplicate
                     if field_key_value in collected_objs[field_key.rel.to]:
                         dupe_obj = \
-                        collected_objs[field_key.rel.to][field_key_value]
+                            collected_objs[field_key.rel.to][field_key_value]
                         setattr( obj, field_key.name, dupe_obj )
                 # Duplicate the object and save it.
                 obj.id = None
@@ -2398,9 +2398,9 @@ class Group( models.Model ): # {{{1
 
     @classmethod
     def groups_for_add_event( cls, user, event ):
-        """ return groups for event to add.
+        """ return groups for event to add. """
         
-        FIXME: what is this? check """
+        # FIXME: what is this? check
         if isinstance(event, Event):
             pass
         elif isinstance(event, int):
