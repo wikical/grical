@@ -43,6 +43,12 @@ high priority
 medium priority
 ---------------
 
+- have some graphics to add to events with some flags, i.e. a floss-graphic
+- marking events as "uninteresting", "interesting", "very interesting", "attending". Later:
+    - uninteresting events can be left out in filters, notifications, etc.
+    - other users can see which users are attending an event
+    - other users can see the interesting events for a user
+    - the system can tell you interesting users to you, i.e. users with similar interests to you
 - add hCalendar_ (which is provided by the vobjects library, see the example about hcalendar at http://svn.osafoundation.org/vobject/trunk/test_vobject.py
 - css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
