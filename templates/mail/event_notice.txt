@@ -1,8 +1,9 @@
 {% load i18n %}{% autoescape off %}{% blocktrans with filter.name as filter_name %}Hello {{ username }},
 
 your filter '{{ filter_name }}' matches the following event.
+
 {% endblocktrans %}{% if event.next_coming_date_or_start != event.start %}
-( {{ event.next_coming_date_or_start }} ){% endif %}{{ event.start }} {% if event.end %} : {{ event.end }}{% endif %}{{ event.start }} : {{ event.title }}
+( {{ event.next_coming_date_or_start }} ){% endif %} {{ event.start }}{% if event.end %}:{{ event.end }}{% endif %}  {{ event.title }}
 http://{{ current_site }}{{ event.get_absolute_url }}
 
 {% trans "You can edit your filter at:" %}
