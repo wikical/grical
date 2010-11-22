@@ -60,6 +60,8 @@ class Command( NoArgsCommand ): # {{{1
 
     help = "Parses mails from settings.IMAP_SERVER"
 
+    mailbox = None
+
     def __init__( self, *args, **kwargs ): # {{{2
         if settings.IMAP_SSL:
             self.mailbox = IMAP4_SSL( settings.IMAP_SERVER )
