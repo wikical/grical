@@ -398,8 +398,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     acronym = models.CharField( _( u'Acronym' ), max_length = 20, blank = True,
             null = True, help_text = _( u'Example: 26C3' ) )
     title = models.CharField( _( u'Title' ), max_length = 200, blank = False,
-            help_text = _( u'Example: Demostration in Munich against software \
-                patents organised by the German association FFII e.V.' ) )
+            help_text = _( u'Example: Demonstration against software patents' ) )
     start = models.DateField( _( u'Start' ), blank = False,
             help_text = _( u"Example: 2006-10-25"))
     end = models.DateField( _( u'End' ), null = True, blank = True )
@@ -560,9 +559,19 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         orginal_pk = self.pk
         collected_objs = CollectedObjects()
         self._collect_sub_objects( collected_objs )
+        # collected_objs is now a list of tuples. Each tuple contains a model
+        # class and a dictionary with keys pks and values instances of the
+        # class. Example:
+        # [(<class 'gridcalendar.events.models.EventUrl'>,
+        #   {9: <EventUrl: http://www.oaod2010.de/>}),
+        #  (<class 'gridcalendar.events.models.Calendar'>,
+        #   {5: <Calendar: Calendar object>}),
+        #  (<class 'gridcalendar.events.models.Event'>,
+        #   {8: <Event: 2010-12-13 : Expert Conference on OPENACCESS and OPENDATA>})]
         related_models = collected_objs.keys()
+        # related_models is now a list of model classes
         new = None
-        # Traverse the related models in reverse deletion order.    
+        # Traverse the related models in reverse order.    
         for model in reversed( related_models ):
             # Find all field keys on `model` that point to a `related_model`.
             field_keys = []
