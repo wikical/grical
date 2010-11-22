@@ -214,8 +214,9 @@ class Command( NoArgsCommand ): # {{{1
         self.mailbox.expunge()
 
     def __del__( self, *args, **kwargs ): # {{{2
-        self.mailbox.close()
-        self.mailbox.logout()
+        if self.mailbox is not None:
+            self.mailbox.close()
+            self.mailbox.logout()
 
 # setting stdout and stderr {{{1
 
