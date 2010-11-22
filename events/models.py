@@ -1900,6 +1900,8 @@ class Filter( models.Model ): # {{{1
         """
         # IMPORTANT: this code must be in accordance with
         # `Filter.matches_queryset`
+        # FIXME: create a text with some queries that check the concordance of
+        # the output of both methods
         query = self.query
         # dates
         date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
@@ -2079,18 +2081,21 @@ class Filter( models.Model ): # {{{1
         regex = re.compile('!(\w+)', UNICODE)
         for group_name in regex.findall(query):
             queryset = queryset.filter(calendar__group__name__iexact = group_name)
+        query = regex.sub("", query)
         # locations
         regex = re.compile('@(\w+)', UNICODE)
         for loc_name in regex.findall(query):
             queryset = queryset.filter(
                     Q( city__iexact = loc_name ) | Q( country__iexact = loc_name ) )
                     # TODO: use also translations of locations
+        query = regex.sub("", query)
         # tags
         regex = re.compile('#(\w+)', UNICODE)
         tags = regex.findall(query)
         if tags:
             queryset = TaggedItem.objects.get_intersection_by_model(
                     queryset, tags )
+        query = regex.sub("", query)
         # dates
         date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
         # FIXME: e.g. a2010-01-01 shouldn't work
@@ -2110,7 +2115,7 @@ class Filter( models.Model ): # {{{1
         else:
             date = datetime.date.today()
             queryset = queryset.filter(
-                    Q(start__gte = date) | Q(end__gte = date) |
+                    Q(start__gte = date) | Q(end__lte = date) |
                     Q(deadlines__deadline__gte = date) )
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)

@@ -88,7 +88,8 @@ class PublicSearchEventsFeed(EventsFeed): # {{{1
 
     def title(self, obj):
         """ title """
-        return _(u'%(domain)s search results') % {'domain': SITE_DOMAIN,}
+        return _(u'%(domain)s search results for %(query)s') % \
+                {'domain': SITE_DOMAIN, 'query': obj}
 
     def link(self, obj):
         """ return a link to a search with get http method """
@@ -103,11 +104,6 @@ class PublicSearchEventsFeed(EventsFeed): # {{{1
     def items(self, obj):
         """ items """
         matches, related = Filter.matches( obj, None, FEED_SIZE )
-        # if matches are less than FEED_SIZE, it adds some events from
-        # related matches
-        if len( matches ) < FEED_SIZE:
-            to_take = FEED_SIZE - len( related )
-            matches += related[0:to_take]
         return matches
 
 
@@ -136,11 +132,6 @@ class HashSearchEventsFeed(EventsFeed): # {{{1
         """ items """
         matches, related = Filter.matches(
                 obj['query'], obj['user_id'], FEED_SIZE )
-        # if matches are less than FEED_SIZE, it adds some events from
-        # related matches
-        if len( matches ) < FEED_SIZE:
-            to_take = FEED_SIZE - len( related )
-            matches += related[0:to_take]
         return matches
 
 
