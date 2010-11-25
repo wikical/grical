@@ -2115,7 +2115,7 @@ class Filter( models.Model ): # {{{1
         else:
             date = datetime.date.today()
             queryset = queryset.filter(
-                    Q(start__gte = date) | Q(end__lte = date) |
+                    Q(start__gte = date) | Q(end__gte = date) |
                     Q(deadlines__deadline__gte = date) )
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)
