@@ -3,7 +3,7 @@
 
 {% if USER.username %}
     {% if USER.has_groups %}
-        <h2 align="center">{% trans "Groups" %}</h2>
+        <h1 align="center">{% trans "Groups" %}</h1>
         <p align="right"><a href="{% url group_new %}">{% trans "Create a new group" %}</a></p>
         {% if USER.has_groups_with_coming_events %}
             {% include "groups/groups_coming_events.html" %}
@@ -15,7 +15,7 @@
         {% trans "You are not a member of any group" %}
     {% endif %}
 {% else %}
-    <h2>{% trans "What is GridCalendar?" %}</h2>
+    <h1>{% trans "What is GridCalendar?" %}</h1>
     {{ about_text|restructuredtext }}
     <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
 {% endif %}

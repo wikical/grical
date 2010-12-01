@@ -1,22 +1,8 @@
 {% extends "base.html" %}
-{% load i18n %}
 {% load markup %}
 
-{% block column1 %}
+{% block container %}
 
 {{ usage_text|restructuredtext }}
 
 {% endblock %}
-
-{% block column2 %}
-
-{% include "events_in_groups_or_intro.html" %}
-
-{% endblock %}
-
-
-
-{% block column3 %}
-
-{% endblock %}
-

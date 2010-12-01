@@ -1,45 +1,34 @@
-
 {% extends "base.html" %}
 
 {% load i18n %}
-{% load event_tags %}
+{% load event_tags %} 
+{% block container %}
+<div class="event_full">
 
-{% block column1 %}
-<div class="field">
-
-    <a href="{% url event_edit event.id %}"><span class="field_link">{% trans "edit" %}</span></a>
-    &nbsp;|&nbsp;
-    <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
-    &nbsp;|&nbsp;
-    {% show_add_to_group %}
-    <hr />
-
-    <p>
-        <a href="{% url event_show_ical event.id %}"><span class="field_ical"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16"></span></a>
-        {% if event.acronym %}
-            {{ event.acronym|escape }}
-        {% endif %}
-
-        <a href="{% url event_show event.id %}"><span class="field_title"> {{ event.title|escape }} </span></a><br />
-        <span class="field_dates">
-            {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
-        </span>
-    </p>
-
+    <h1>{% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
+    <div class="options">
+        <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+        &nbsp;|&nbsp;
+        <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+        &nbsp;|&nbsp;
+        <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+        &nbsp;|&nbsp;
+        {% show_add_to_group %}
+    </div>
+    <div class="dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}</div>
     {% if event.address or event.postcode or event.city or event.country or event.latitude or event.longitude %}
-        <h2>{% trans "Venue" %}</h2>
         <p>
             {% if event.address %}
                 {{ event.address|escape }}
             {% endif %}
             {% if event.address %}
-                {% if event.postcode or event.city or event.country %} , {% endif %}
+                {% if event.postcode or event.city or event.country %},{% endif %}
             {% endif %}
             {% if event.postcode %}
                     {{ event.postcode }}
             {% endif %}
             {% if event.address or event.postcode %}
-                {% if event.city or event.country %} , {% endif %}
+                {% if event.city or event.country %},{% endif %}
             {% endif %}
             {% if event.city %}
                 &nbsp;<span class="field_city">
@@ -47,7 +36,7 @@
                 </span>
             {% endif %}
             {% if event.address or event.postcode or event.city %}
-                {% if event.country %} , {% endif %}
+                {% if event.country %},{% endif %}
             {% endif %}
             {% if event.country %}
                 <span class="field_country">
@@ -56,27 +45,32 @@
             {% endif %}
         </p>
         {% if event.latitude and event.longitude %}
+            {% comment %}FIXME: if the window of the browser is too small, the map breaks
+            everything. Solution: check with JavaScript the size of the window and reduce the map
+            accordingly. Note: the size is given in main.css currently {% endcomment %}
             <p>
-                Coordinates: <a href="http://www.openstreetmap.org/?lat={{ event.latitude }}&lon={{ event.longitude }}&zoom=15&layers=B000FTF">{{ event.latitude }}, {{ event.longitude }}</a>
+                Coordinates: <a href="http://www.openstreetmap.org/?lat={{ event.latitude }}&amp;lon={{ event.longitude }}&amp;zoom=15&amp;layers=B000FTF">{{ event.latitude }}, {{ event.longitude }}</a>
             </p>
-            <!-- FIXME: see example http://openlayers.org/dev/examples/xhtml.html -->
-            <div id="mapdiv" class="smallmap"></div>
-            <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+            <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
+            <div id="map" class="smallmap"></div>
+            <!-- <script type="text/javascript" src="http://www.openlayers.org/dev/OpenLayers.js"></script>
+            there is also another at ....org/api/OpenLayers.js-->
+            <script type="text/javascript" src="{{ MEDIA_URL }}js/OpenLayers.js"></script>
             <script defer="defer" type="text/javascript">
                 function marker(lon, lat, image){
-                  return new OpenLayers.Marker(
-                    new OpenLayers.LonLat(lon, lat).transform(
-                      new OpenLayers.Projection("EPSG:4326"),
-                      map.getProjectionObject()
-                    ),
-                    new OpenLayers.Icon( image, new OpenLayers.Size(32, 32), new OpenLayers.Pixel(16, 16))
-                  );
+                    return new OpenLayers.Marker(
+                        new OpenLayers.LonLat(lon, lat).transform(
+                            new OpenLayers.Projection("EPSG:4326"),
+                            map.getProjectionObject()
+                        ),
+                        new OpenLayers.Icon( image, new OpenLayers.Size(32, 32), new OpenLayers.Pixel(16, 16) )
+                    );
                 }
-                map = new OpenLayers.Map("mapdiv");
+                map = new OpenLayers.Map("map");
                 map.addLayer(new OpenLayers.Layer.OSM());
                 var pois = new OpenLayers.Layer.Markers("My Points");
                 //These lines should be a list automatically generated by Django
-                pois.addMarker(this.marker({{ event.latitude }}, {{ event.longitude }}));
+                pois.addMarker(this.marker({{ event.longitude }}, {{ event.latitude }}, "{{ MEDIA_URL }}marker_red.png"));
                 map.addLayer(pois);
                 mapArea = pois.getDataExtent().toArray();
                 // map.zoomToMaxExtent();
@@ -108,20 +102,29 @@
 
     {% if event.deadlines.all %}
         <h2>{% trans "Deadlines" %}</h2>
-        <ul>
+        <table>
             {% for deadline in event.deadlines.all %}
-            <li>{{ deadline.deadline }}&nbsp;&nbsp;&nbsp;&nbsp;{{ deadline.deadline_name|escape }}</li>
+                <tr>
+                    <td>{{ deadline.deadline }}</td><td>{{ deadline.deadline_name|escape }}</td>
+                </tr>
             {% endfor %}
-        </ul>
+        </table>
     {% endif %}
             
     {% if event.sessions.all %}
         <h2> {% trans "Sessions" %} </h2>
-        <ul>
+        {% if event.timezone %}
+            <p>{% trans "Timezone:" %}&nbsp;{{ event.timezone }}</p>
+        {% endif %}
+        <table>
             {% for session in event.sessions.all %}
-                <li>{{ session.session_date }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_starttime|time:"H:i" }}-{{ session.session_endtime|time:"H:i" }}&nbsp;&nbsp;&nbsp;&nbsp;{{ session.session_name|escape }}</li>
+                <tr>
+                    <td>{{ session.session_date }}</td>
+                    <td>{{ session.session_starttime|time:"H:i" }} - {{ session.session_endtime|time:"H:i" }}</td>
+                    <td>{{ session.session_name|escape }}</td>
+                </tr>
             {% endfor %}
-        </ul>
+        </table>
     {% endif %}
 
     {% if event.description %}

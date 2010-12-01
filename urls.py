@@ -57,9 +57,10 @@ urlpatterns = patterns( '', # pylint: disable-msg=C0103
 
 # h pattern for help and legal_notice {{{1
 urlpatterns += patterns( '',
-        url( r'^h/help/', 'gridcalendar.events.views.help', name = "help" ),
+        url( r'^h/help/', 'gridcalendar.events.views.help_page',
+            name = "help" ),
         url( r'^h/legal_notice/', 'gridcalendar.events.views.legal_notice',
-                name = "legal_notice" ),
+            name = "legal_notice" ),
  )
 
 # include events.urls {{{1
@@ -77,11 +78,6 @@ if settings.DEBUG:
             {'document_root': settings.MEDIA_ROOT, 'show_indexes': True},
         ),
     )
-
-# recaptcha {{{1
-#urlpatterns += patterns( '',
-#        ( r'^contact/$', 'gridcalendar.events.views.contact' ),
-# )
 
 # comments {{{1
 #urlpatterns += patterns( '',

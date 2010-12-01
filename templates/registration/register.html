@@ -1,7 +1,7 @@
 {% load i18n %}
 {% extends "base.html" %}
 
-{% block column1 %}
+{% block container %}
 <h1>{% trans "Create an account" %}</h1>
 <form action="" method="post">{% csrf_token %}
   {{ form.as_p }}
