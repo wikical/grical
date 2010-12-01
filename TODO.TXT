@@ -1,3 +1,7 @@
+show-stopping
+-------------
+
+- bug: in text mode introduce one or more urls which are not called web
 
 high priority
 -------------

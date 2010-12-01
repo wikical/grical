@@ -1,170 +1,190 @@
-/* This file is based on
- * http://matthewjamestaylor.com/blog/perfect-2-column-double-page.htm
- * */
+/**
+ * CSS Reset
+ * From Blueprint reset.css
+ * http://blueprintcss.googlecode.com
+ */
+html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, code, del, dfn, em, img, q, dl, dt, dd, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {margin:0;padding:0;border:0;font-weight:inherit;font-style:inherit;font-size:100%;font-family:inherit;vertical-align:baseline;}
+body {line-height:1.5;}
+table {border-collapse:separate;border-spacing:0;}
+caption, th, td {text-align:left;font-weight:normal;}
+table, td, th {vertical-align:middle;}
+blockquote:before, blockquote:after, q:before, q:after {content:"";}
+blockquote, q {quotes:"" "";}
+a img {border:none;}
 
-/* General styles */
+/**
+ * Basic Typography
+ */
 body {
-    margin:0;
-    padding:0;
-    border:0;           /* This removes the border around the viewport in old versions of IE */
-    width:100%;
-    background:#fff;
-    min-width:600px;    /* Minimum width of layout - remove line if not required */
-                        /* The min-width property does not work in old versions of Internet Explorer */
-    font-size:90%;
+    font-family: "Lucida Grande", Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+    color: #222;
+    background: #fff;
 }
-a {
-    color:#548;
-    text-decoration:none;
+pre, code {
+    margin: 1.5em 0;
+    white-space: pre;
 }
-a:hover {
-    color:#fff;
-    background:#369;
-    text-decoration:none;
+pre, code {
+    font: 1em 'andale mono', 'lucida console', monospace;
+    line-height:1.5;
 }
-h1, h2, h3 {
-    margin:.8em 0 .2em 0;
-    padding:0;
-    color:#855;
+a[href] {
+    color: #436976;
+    background-color: transparent;
 }
-p {
-    margin:.4em 0 .8em 0;
-    padding:0;
+h1, h2, h3, h4, h5, h6 {
+    color: #003a6b;
+    background-color: transparent;
+    font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding-top: 0.5em;
 }
-img {
-    margin:10px 0 5px;
-    border: 0;
+h1 {
+    font-size: 130%;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #fcb100;
 }
-/* Header styles */
+h2 {
+    font-size: 120%;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #aaa;
+}
+h3 {
+    font-size: 110%;
+    margin-bottom: 0.5em;
+    text-decoration: underline;
+}
+h4 {
+    font-size: 100%;
+    font-weight: bold;
+}
+h5 {
+    font-size: 100%;
+    font-weight: bold;
+}
+h6 {
+    font-size: 80%;
+    font-weight: bold;
+}
+
+/**
+ * Elements
+ */
+
 #header {
-    clear:both;
-    float:left;
-    width:100%;
+    padding:5px;
+    border-bottom: 1px solid #003A6B;
 }
-#header {
-    border-bottom:2px solid #855;
-}
-#header p,
-#header h1,
-#header h2 {
-    padding:.4em 15px 0 15px;
-    margin:0;
-}
-#header ul {
-    clear:left;
-    float:left;
-    width:100%;
-    list-style:none;
-    margin:10px 0 0 0;
-    padding:0;
-}
-#header ul li {
-    display:inline;
-    list-style:none;
-    margin:0;
-    padding:0;
-}
-#header ul li a {
-    display:block;
-    float:left;
-    margin:0 0 0 1px;
-    padding:3px 10px;
+#header #navigation-and-search {
+    padding:10px;
+    float:right;
     text-align:center;
-    background:#ccd;
-    color:#000;
-    text-decoration:none;
-    position:relative;
-    left:15px;
-    line-height:1.3em;
-}
-#header ul li a:hover {
-    background:#369;
-    color:#fff;
-}
-#header ul li a.active,
-#header ul li a.active:hover {
-    color:#fff;
-    background:#000;
     font-weight:bold;
 }
-#header ul li a span {
-    display:block;
+#header #description {
+    padding-left:5px;
 }
-#header img {
-    float:left;
-    border: 0;
-    padding: 0 2em 0 0 ;
-    text-align:center;
+#header form { display:inline }
+#header #banners { text-align: right; padding-top: 10px; }
+
+.container {
+    margin: 0px 10px 10px 10px;
 }
 
-#navigation {
-    clear:both;
-    background:#ccd; /* color of the line behing the logo */
-    border-top:4px solid #855;
-    margin:0;
-    padding:6px 15px !important;
-    text-align:left;
-}
-#navigation form { display:inline }
-#userlinks { display:inline ; padding:0 1em 0 1em }
-#sitelinks { display:inline ; padding:0 1em 0 1em }
-
-/* column container */
-.colmask {
-    clear:both;
-    float:left;
-    width:100%;         /* width of whole page */
-    overflow:hidden;        /* This chops off any overhanging divs */
-}
-/* common column settings */
-.colright,
-.colmid,
-.colleft {
-    float:left;
-    width:100%;
-    position:relative;
-}
-.col1,
-.col2,
-.col3 {
-    float:left;
-    position:relative;
-    padding:0 0 1em 0;
-    overflow:hidden;
-}
-/* 2 Column (double page) settings */
-.doublepage {
-    background:#ccd;        /* right column background colour */
-}
-.doublepage .colleft {
-    right:50%;          /* right column width */
-    background:#fff;        /* left column background colour */
-}
-.doublepage .col1 {
-    width:46%;          /* left column content width (column width minus left and right padding) */
-    left:52%;           /* right column width plus left column left padding */
-}
-.doublepage .col2 {
-    width:46%;          /* right column content width (column width minus left and right padding) */
-    left:56%;           /* (right column width) plus (left column left and right padding) plus (right column left padding) */
-}
-/* Footer styles */
+/* footer */
 #footer {
-    clear:both;
+    background-color: #3176b9;
+    color: white;
+    padding: 1.2em 0.8em ;
+    margin-top: 2em;
+    clear: both;
+    font-size: 0.8em;
+    line-height: 2;
+}
+#footer a[href] {
+    color: #8fc9ff;
+}
+#footer ul, #footer li {
+    display: inline ;
+    margin: 0 2em 0 0 ;
+    padding: 0;
+}
+#footer li:before {
+    content: "\00BB \0020";
+}
+#footer .title {
+    float:left ;
+    max-width:8em;
+}
+#footer .info {
+    margin-left:8em;
+}
+
+/* two columns */
+.rightcolumn50 {
+    float:right;
+    max-width: 30em;
+}
+.rightcolumn50 p {
+    font-size: 90%;
+}
+.leftcolumn50  {
+    margin-right:31em;
+    min-width: 25em;
+}
+
+/*
+ * event medium format (shown in main page, search results, related events, etc.
+ */
+.event_medium {
     float:left;
-    width:100%;
-    border-top:1px solid #000;
+    margin: 0.5em;
 }
-#footer p {
-    padding:10px;
-    margin:0;
+.event_medium .content {
+    border: 1px solid #3176b9;
+    padding: 0.5em;
+}
+.event_medium .options {
+    font-size: 0.7em;
+    text-align: right;
+}
+.event_medium .title {
+    font-weight: bold;
+}
+.event_medium .tags {
+    font-size: 0.8em;
+}
+.event_medium .dates {
+    color: #fcb100;
 }
 
-.tags {
-    font-size:0.8em
+/*
+ * event full format 
+ */
+.event_full h1 a[href] {
+    text-decoration:none;
+}
+.event_full .dates {
+    color: #fcb100;
+    display: inline ;
+}
+.event_full .options {
+    font-size: 0.8em;
+    text-align: right;
+    float: right;
+}
+.event_full ul, .event_full li {
+    display: inline ;
+    margin: 0 1em 0 0 ;
+}
+.event_full li:before {
+    content: "\00BB \0020";
+}
+.event_full td {
+    border: 1px solid #aaa;
+    padding:0.5em;
 }
 
-/* Web application (Django) specific */
 
 /* errors produces by wrong entries in forms */
 .errorlist {
@@ -172,75 +192,137 @@ img {
     color:red;
 }
 
-.info {
-    font-size: 0.8em;
-    color: #808080;
-    text-align: right;
+/* error messages and error_messages */
+#error_messages {
+    font-size:90%;
+    color:red;
+}
+#messages {
+    font-size:90%;
+    color:blue;
+}
+#messages ul, #error_messages ul {
+    display: inline ;
+    margin: 0 1em 0 0 ;
+}
+#messages ul li, #error_messages ul li {
+    display: inline ;
+    margin: 0 1em 0 0 ;
+}
+#messages li:before, #error_messages li:before {
+    content: "\00BB \0020";
 }
 
-/* table of URLs of an Event */
-.url_table {
-    background:#ccf
+/* list of groups and some events */
+#groups ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#groups ul li:before {
+    color: red;
+    content: "\00BB \0020";
 }
 
-/* table of sessions (times) of an Event */
-.session_table {
-    background:#ffc
+/* for tags cloud */
+.tag_1  { font-size:0.8em; }
+.tag_2  { font-size:1.0em; }
+.tag_3  { font-size:1.2em; }
+.tag_4  { font-size:1.4em; }
+.tag_5  { font-size:1.6em; }
+.tag_6  { font-size:1.8em; }
+.tag_7  { font-size:2.0em; }
+.tag_8  { font-size:2.2em; }
+.tag_9  { font-size:2.4em; }
+.tag_10 { font-size:2.6em; }
+
+/* for all forms */
+input[type="text"], textarea {
+    border: solid 1px #3176b9;
 }
 
-/* table of deadlines of an Event */
-.deadline_table {
-    background:#fcc
+/* simplified event form */
+#simplified_event_form fieldset {
+  padding: 0.5em;
+  border:1px solid #fcb100;
+}
+#simplified_event_form legend {
+  padding: 0.2em 0.5em;
+  border:1px solid #fcb100;
+  color:#003a6b;
+  text-align:right;
+}
+#simplified_event_form label {
+    float:left;
+    position: absolute;
+}
+#simplified_event_form input[type="text"] {
+    width: 87%;
+    margin-left:12%;
+}
+#simplified_event_form .help_text {
+    font-size:0.8em;
+    color: gray;
 }
 
-/* messages displayed on the first column */
-#message_col1 {
-    background:#d44;
-    padding:5px;
-    margin:5px;
+/* complete event form */
+#event_form label {
+  float:left;
+  width: auto;
+  text-align:right;
+  margin-right:0.5em
 }
-
-#event_form {
-    background:#ccd;
-    color:gray;
-    font-size:80%;
-    border:1px solid #000;
-    padding:5px ;
+#event_form input {
+    margin: 0.1em 0 0.1em 0;
+}
+#event_form td {
+    font-size:0.8em;
+    color: gray;
+    padding-bottom:1em;
 }
 #event_form label {
-    color:black;
-    font-size:120%;
-    font-weight:bold;
+    /* font-size:1.4em; */
+    color: #003a6b;
+    font-weight: bold;
+    min-width:10em;
 }
 #event_form th {
-    vertical-align: top;
-    text-align: left;
+    vertical-align:top;
+}
+#url_table, #session_table, #deadline_table {
+    margin-top:1.5em;
+}
+#url_table th, #session_table th, #deadline_table th {
+    text-align:center;
+    color: #003a6b;
+    font-weight: bold;
+}
+#url_table td, #session_table td, #deadline_table td {
+    padding: 0.5em 0.5em 0.5em 0;
+    text-align:center;
+}
+#url_table input[name$="-url_name"] {
+    width: 10em;
+}
+#url_table input[name$="-url"] {
+    width: 40em;
+}
+#session_table th {
+    padding: 0 1em ;
 }
 
-input#id_web, input#id_tags, input#id_title {
-    width: 100%
+/**
+ * Map Specific
+ */
+.smallmap {
+    width: 768px;
+    height: 512px;
+    border: 1px solid #ccc;
+}
+#tags {
+    display: none;
 }
 
-.event_medium {
-    background:#ccd;
-    padding:5px;
-    border:0px solid white;
-}
-.event_medium_ical_logo {
-    vertical-align: middle ;
-}
-.event_medium_ical_logo img {
-    vertical-align: middle ;
-    margin: 0px 0px;
-    border: 0px ;
-}
-.event_medium_title {
-    vertical-align: middle ;
-}
-.options_css_class, .options_css_class a, .options_css_class p {
-    font-size: 0.9em;
-    color: #808080;
-    text-align: right;
-    text-decoration:none;
-    margin: 0px 0px ;
+#docs p {
+    margin-bottom: 0.5em;
 }

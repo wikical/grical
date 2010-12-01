@@ -1,5 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_2columns.html" %}
 {% load i18n %}
+
 
 {% block extraheaders %}
 <link rel="alternate" type="application/rss+xml" title="RSS" href="{% url public_upcoming_events_rss %}" />
@@ -10,16 +11,8 @@
 <br />
 
 {% if events %}
-    <hr />
     {% for event in events %}
-        {% comment %}
-        <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>&nbsp;
-        FIXME
-        <a href="{% url list_events_filter_ical_hashed fil.id fil.user_id fil.hash %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>&nbsp;
-        <a href="{% url list_events_search_rss_hashed fil.query fil.user_id fil.hash %}"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" /></a>
-        {% endcomment %}
         {% include "event_show_medium.html" %}
-        <hr />
     {% endfor %}
 {% endif %}
 
@@ -28,34 +21,38 @@
 
 {% block column2 %}
 
-<p class="info">
-    {% trans "Submit a new event" %} ({% trans "more info can be added after submitting" %})<br />
-    <a href="{% url event_new_raw %}">{% trans "You can alternatively submit an event with a single textarea" %}</a>
-</p>
-<div id="event_form">
-    {% if form.errors %}
-        <p style="color: red;">
-        {% blocktrans count form.errors|length as counter %}
-        Please correct the following error
-        {% plural %}Please correct the following errors
-        {% endblocktrans %}:
-        </p>
+    <br />
+    <div id="simplified_event_form">
+        <form action="" method="post">{% csrf_token %}
+            <fieldset>
+                <legend>{% trans "Submit an event" %}</legend>
+                {% for field in form.visible_fields %}
+                    {# Include the hidden fields in the form #}
+                    {% if forloop.first %}
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                    {% endif %}
+                    {{ field.errors }}
+                    <div class="field">{{ field.label_tag }} {{ field }}</div>
+                    <div class="help_text">{{ field.help_text }}</div>
+                {% endfor %}
+                <input type="submit" value="{% trans "Submit" %}" />
+            </fieldset>
+        </form>
+    </div>
+
+    <p>
+        <a href="{% url event_new_raw %}">{% trans "You can alternatively submit an event with a single textarea" %}</a>
+    </p>
+
+    {% comment %}
+    {% if user.username %}
+    <p class="info">{% trans "Change what is displayed here in" %}:
+        <a href="{% url settings %}">{% trans "filters" %}</a></p>
     {% endif %}
-    <form action="" method="post">{% csrf_token %}
-        <table>
-            {{ form.as_table }}
-        </table>
-        <input type="submit" value={% trans "Submit" %}>
-    </form>
-</div>
+    {% endcomment %}
 
-
-<!--
-{% if user.username %}
-<p class="info">{% trans "Change what is displayed here in" %}:
-    <a href="{% url settings %}">{% trans "filters" %}</a></p>
-{% endif %}
--->
-{% include "events_in_groups_or_intro.html" %}
+    {% include "events_in_groups_or_intro.html" %}
 
 {% endblock %}

@@ -1,24 +1,47 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block column1 %}
+{% block container %}
 
-<br />
-<br />
+<h1 id="legal">{% trans "Legal notice" %}</h1>
 
-{% trans "GridCalendar is a project of the start-up:" %}
+<p>
+{% trans "GridCalendar (abbreviated as GriCal) is a project of the German-based start-up:" %}
+</p>
 
 <pre>
-Vorgründungsgesellschaft GridMind Ivan Fernando Villanueva Barrio EU
-Malmöer Str. 6
-10439 Berlin
-Germany
-
-Tel:   +493039820596
-Fax:   +493034060473
-Email: office ät gridmind.org
+    Vorgründungsgesellschaft GridMind Ivan Fernando Villanueva Barrio EU
+    Malmöer Str. 6
+    10439 Berlin
+    Germany
+    
+    Tel:   +493039820596
+    Fax:   +493034060473
+    Email: office ät gridmind.org
 </pre>
 
+<p>{% blocktrans %}
+Value added tax identification number (in Germany called
+<tt>Umsatzsteuer-Identifikationsnummer</tt>) according to German law <tt>§ 27 a
+    Umsatzsteuergesetz</tt>: DE270095377
+{% endblocktrans %}
+</p>
+
+<p>
+{% blocktrans %}
+Responsible for the content according to German law <tt>§ 55 Abs. 2 RStV</tt>: Ivan Fernando
+Villanueva Barrio (address as before)
+{% endblocktrans %}
+</p>
+
+<p>
+{% blocktrans %}
+<b>Disclaimer</b>: Despite careful control we assume no liability for the content of external links. For
+the content of linked pages are their operators the only responsible.
+{% endblocktrans %}
+</p>
+
+<h1 id="terms">{% trans "Terms of use" %}</h1>
 <p>
 {% blocktrans %}
 
@@ -26,7 +49,7 @@ GridCalendar is an online open-content collaborative site, that is, a voluntary 
 individuals and groups working to develop a common resource of human knowledge. Please be advised
 that nothing found here has necessarily been reviewed by people with the expertise required to 
 provide you with complete, accurate or reliable information. You can find more about the project at
-http://code.gridcalendar.net
+<a href="http://code.gridcalendar.net">the GridCalendar's project page</a>
 
 {% endblocktrans %}
 </p>
@@ -62,11 +85,14 @@ other users.
 <p>
 {% blocktrans %}
 
-There is no agreement or understanding between you and GridCalendar regarding your use or modification
-of this information beyond the Creative Commons Attribution-Sharealike 3.0 Unported License
-(CC-BY-SA); neither is anyone at GridCalendar responsible
-should someone change, edit, modify or remove any information that you may post on GridCalendar or any
-of its associated projects.
+There is no agreement or understanding between you and GridCalendar regarding your use or
+modification of this information beyond the
+<a href="http://creativecommons.org/licenses/by-sa/3.0/">
+    Creative Commons Attribution-Sharealike 3.0 Unported License (CC-BY-SA)
+</a>
+; neither is anyone at GridCalendar responsible should someone change, edit,
+modify or remove any information that you may post on GridCalendar or any of its associated
+projects.
 
 {% endblocktrans %}
 </p>
@@ -80,15 +106,15 @@ You are solely responsible for ensuring that you do not infringe someone else's 
 </p>
 
 <hr />
-<p>
+<p style="font-size:80%">
 {% blocktrans %}
-Text is available under the Creative Commons Attribution-ShareAlike License and is based
-on the text at http://en.wikipedia.org/wiki/Wikipedia:General_disclaimer
+This text is available under the Creative Commons Attribution-ShareAlike License and is based
+on the
+<a href="http://en.wikipedia.org/wiki/Wikipedia:General_disclaimer">
+    General Disclaimer of the Wikipedia
+</a>
+.
 {% endblocktrans %}
 </p>
-
-{% endblock %}
-
-{% block column2 %}
 
 {% endblock %}

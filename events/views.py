@@ -35,7 +35,8 @@ from django.core.urlresolvers import reverse
 from django.db.models import Max, Q
 from django.forms import ValidationError
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
+        HttpResponseForbidden, HttpResponseBadRequest )
 from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
 from django.template import RequestContext
@@ -46,29 +47,15 @@ from tagging.models import Tag, TaggedItem
 from gridcalendar.events.decorators import login_required
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
-    get_event_form, EventSessionForm, NewGroupForm, InviteToGroupForm,
+    EventSessionForm, NewGroupForm, InviteToGroupForm,
     AddEventToGroupForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar)
 from gridcalendar.settings import PROJECT_NAME
 
-# FIXME: use everywhere when possible get_object_or_404 and get_list_or_404
-def _error( request, errors ): # {{{1
-    """ Returns a view with an error message whereas 'errors' must be a list or
-    a unicode """
-    if not isinstance(errors, list):
-        assert (isinstance(errors, unicode))
-        errors = [errors,]
-    return render_to_response( 'error.html',
-            {
-                'title': _( "GridCalendar - error" ),
-                'form': get_event_form( request.user ),
-                'messages_col1': errors
-            },
-            context_instance = RequestContext( request ) )
 
-def help( request ): # {{{1
+def help_page( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
     USAGE.TXT
     
@@ -80,7 +67,7 @@ def help( request ): # {{{1
     usage_text = open( settings.PROJECT_ROOT + '/USAGE.TXT', 'r' ).read()
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'help.html', {
-            'title': _( 'GridCalendar - help' ),
+            'title': settings.PROJECT_NAME + " - " + _( 'help' ),
             'usage_text': usage_text,
             'about_text': about_text,
             }, context_instance = RequestContext( request ) )
@@ -94,7 +81,7 @@ def legal_notice( request ): # {{{1
     200
     """
     return render_to_response( 'legal_notice.html', {
-            'title': _( 'GridCalendar - legal notice' ),
+            'title': settings.PROJECT_NAME + ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
 def event_new( request ): # {{{1
@@ -130,7 +117,7 @@ def event_new( request ): # {{{1
             # email notification and send it
         else:
             return render_to_response( 'base_main.html',
-                    {'title': _( "GridCalendar" ), 'form': sef},
+                    {'title': settings.PROJECT_NAME, 'form': sef},
                     context_instance = RequestContext( request ) )
     else:
         return HttpResponseRedirect( reverse( 'main' ) )
@@ -149,7 +136,6 @@ def event_edit( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,}).status_code
     302
     """
-    """ Complete web-form to edit an event. """
     event = get_object_or_404( Event, pk = event_id )
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
@@ -158,16 +144,17 @@ def event_edit( request, event_id ): # {{{1
         # events submitted by anonymous users cannot be non-public:
         assert ( event.user != None and type ( event.user ) != AnonymousUser )
         if ( not request.user.is_authenticated() ):
-            return _error( request,
-                _( 'You need to be logged-in to be able to edit the event \
-                with the number:' ) + " " + str( event_id ) +
-                _( "Please log-in and try again" ) + "." )
+            return main( request, error_messages =
+                _( ''.join(['You need to be logged-in to be able to edit the ',
+                    'event with the number %(event_id)d.']) ) % \
+                            {'event_id': event_id,} )
         else:
             if ( not Event.is_event_viewable_by_user(
                     event_id, request.user.id ) ):
-                return _error( request,
-                    _( 'You are not allowed to edit the event with the \
-                        number:' ) + " " + str( event_id ) )
+                return main( request, error_messages =
+                    _( ''.join(['You are not allowed to edit the event with ',
+                        'the number %(event_id)d.']) ) % \
+                            {'event_id': event_id,} )
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4 )
     evetn_deadlines_factory = inlineformset_factory( 
@@ -249,7 +236,7 @@ def event_new_raw( request ): # {{{1
                     error_messages.append( err.message )
                 templates = {
                         'title': _( "edit event as text" ),
-                        'messages_col1': error_messages,
+                        'error_messages': error_messages,
                         'event_textarea': event_textarea,
                         'example': Event.example() }
                 return render_to_response(
@@ -257,9 +244,9 @@ def event_new_raw( request ): # {{{1
                         templates,
                         context_instance = RequestContext( request ) )
         else:
-            return _error( request,
+            return main( request, error_messages =
                 _( ''.join( ["You submitted an empty form, nothing was saved. ",
-                    "Click the back button in your browser and try again."] )))
+                "Click the back button in your browser and try again."])) )
     else:
         templates = { 'title': _( "edit event as text" ), \
                 'example': Event.example() }
@@ -287,14 +274,15 @@ def event_edit_raw( request, event_id ): # {{{1
     # and the group the event belongs to
     if ( not event.public ):
         if ( not request.user.is_authenticated() ):
-            return _error( request,
+            return main( request, error_messages =
                 _( ''.join(['You need to be logged-in to be able to edit the ',
                     'private event with the number %(event_id)d. ',
-                    'Please log in a try again.'] )) % {'event_id': event_id} )
+                    'Please log in a try again.'] )) % \
+                            {'event_id': event_id} )
         else:
             if not Event.is_event_viewable_by_user(
                     event_id, request.user.id ):
-                return _error( request,
+                return main( request, error_messages =
                     _( ''.join(['You are not allowed to edit the event with ',
                         'the number %s(event_id)d'] ) ) % \
                                 {'event_id': event_id} )
@@ -311,6 +299,8 @@ def event_edit_raw( request, event_id ): # {{{1
                     # if hasattr(err, 'message_dict'), it looks like:
                     # {'url': [u'Enter a valid value.']}
                     for field_name, error_message in err.message_dict.items():
+                        if isinstance(error_message, list):
+                            error_message = " ; ".join(error_message)
                         error_messages.append(
                                 field_name + ": " + error_message )
                 elif hasattr( err, 'messages' ):
@@ -322,7 +312,7 @@ def event_edit_raw( request, event_id ): # {{{1
                         'title': _( "edit event as text" ),
                         'event_textarea': event_textarea,
                         'event_id': event_id,
-                        'messages_col1': error_messages,
+                        'error_messages': error_messages,
                         'example': Event.example() }
                 return render_to_response( 'event_edit_raw.html', templates,
                         context_instance = RequestContext( request ) )
@@ -330,9 +320,9 @@ def event_edit_raw( request, event_id ): # {{{1
                 return HttpResponseRedirect( 
                     reverse( 'event_show', kwargs = {'event_id': event_id} ) )
             else:
-                return _error( request, event )
+                return main( request, error_messages = event )
         else:
-            return _error( request,
+            return main( request, error_messages = 
                 _( ''.join( ['You submitted an empty form, nothing was saved.',
                     ' Click the back button in your browser and try again.'])))
     else:
@@ -361,11 +351,22 @@ def event_show( request, event_id ): # {{{1
     """
     event = get_object_or_404( Event, pk = event_id )
     if not Event.is_event_viewable_by_user( event_id, request.user.id ):
-        return _error( request,
-            _( "You are not allowed to view the event with the following \
-            number" ) + ": " + str( event_id ) )
+        return main( request, error_messages =
+            _( ''.join(['You are not allowed to view the event with the ',
+                'number %(event_id)d']) ) % {'event_id': event_id,} )
     else:
-        templates = {'title': _( "view event detail" ), 'event': event }
+        about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+        title = unicode(event.next_coming_date_or_start())
+        if event.city:
+            title += " " + event.city
+        if event.country:
+            title += " (" + event.country + ")"
+        title += " - " + event.title + " | " + settings.PROJECT_NAME
+        templates = {
+                'title': title,
+                'event': event,
+                'about_text': about_text,
+                }
         return render_to_response( 'event_show_all.html', templates,
                 context_instance = RequestContext( request ) )
 
@@ -385,9 +386,9 @@ def event_show_raw( request, event_id ): # {{{1
     """
     event = get_object_or_404( Event, pk = event_id )
     if not Event.is_event_viewable_by_user( event_id, request.user.id ):
-        return _error( request,
-            _( "You are not allowed to view the event with the following \
-                    number:" ) + " " + str( event_id ) )
+        return main( request, error_messages =
+            _( ''.join(['You are not allowed to view the event with the ',
+                'number %(event_id)d']) ) % {'event_id': event_id,} )
     else:
         event_textarea = event.as_text()
         templates = {
@@ -413,8 +414,8 @@ def search( request ): # {{{1
         #         reverse( 'list_events_search',
         #         kwargs = {'query': request.POST['query'], } ) )
     else:
-        return _error( request,
-            _( u"A search request was submitted without a text" ) )
+        return main( request, error_messages = 
+            _( u"A search was submitted without a query text" ) )
 
 def list_events_search( request, query ): # {{{1
     """ View to show the results of a search query on the left column and
@@ -427,40 +428,25 @@ def list_events_search( request, query ): # {{{1
     200
     """
     search_result, related_events = Filter.matches(query, request.user)
-    if len( search_result ) == 0:
-        return render_to_response( 'error.html',
-            {
-                'title': _( "GridCalendar - no search results" ),
-                'messages_col1': [
-                        _(u'time: %(date_time)s') % {'date_time':
-                            datetime.datetime.now().strftime(
-                                '%Y-%m-%d %H:%M:%S'),},
-                        _(u'search: %(query)s') % {'query':
-                            query.decode("string_escape"),},
-                        _(u"results: %(number)d") % {'number': 0,},],
-                'query': query,
-                'form': get_event_form( request.user ),
-            },
-            context_instance = RequestContext( request ) )
-    else:
-        return render_to_response( 'list_events_search.html',
-            {
-                'title': _( "search results" ),
-                'messages_col1': [
-                        _(u'time: %(date_time)s') % {'date_time':
-                            datetime.datetime.now().strftime(
-                                '%Y-%m-%d %H:%M:%S'),},
-                        _(u'search: %(query)s') % {'query':
-                            query.decode("string_escape"),},
-                        _(u"results: %(number)d") % {'number':
-                            len( search_result ),},],
-                'events': search_result,
-                'related_events': related_events,
-                'query': query,
-                'user_id': request.user.id,
-                'hash': ExtendedUser.calculate_hash(request.user.id),
-            },
-            context_instance = RequestContext( request ) )
+    return render_to_response( 'list_events_search.html',
+        {
+            'title': _( "%(project_name)s search results" ) % {'project_name':
+                settings.PROJECT_NAME,},
+            'messages': [
+                    _(u'search: %(query)s') % {'query':
+                        query.decode("string_escape"),},
+                    _(u'time: %(date_time)s') % {'date_time':
+                        datetime.datetime.now().strftime(
+                            '%Y-%m-%d %H:%M:%S'),},
+                    _(u"results: %(number)d") % {'number':
+                        len( search_result ),},],
+            'events': search_result,
+            'related_events': related_events,
+            'query': query,
+            'user_id': request.user.id,
+            'hash': ExtendedUser.calculate_hash(request.user.id),
+        },
+        context_instance = RequestContext( request ) )
 
 def list_events_search_hashed( request, query, user_id, hashcode ): # {{{1
     """ View to show the results of a search query with hashed authentification
@@ -480,14 +466,8 @@ def list_events_search_hashed( request, query, user_id, hashcode ): # {{{1
         raise Http404
     search_result = Filter.matches(query, user_id)[0]
     if len( search_result ) == 0:
-        return render_to_response( 'error.html',
-            {
-                'title': _( "GridCalendar - no search results" ),
-                'messages_col1': [_( u"Your search didn't get any result" ),],
-                'query': query,
-                'form': get_event_form( request.user ),
-            },
-            context_instance = RequestContext( request ) )
+        return main( request, messages = 
+                _( u"Your search didn't get any result" ) )
     else:
         return render_to_response( 'list_events_search.html',
             {
@@ -517,11 +497,11 @@ def filter_save( request ): # {{{1
     if 'q' in request.POST and request.POST['q']:
         query_lowercase = request.POST['q'].lower()
     else:
-        return _error( request,
-            _( u"You are trying to save a search without any search terms" ) )
+        return main( request, error_messages = 
+            _( u"You are trying to save a search without any query text" ) )
     if request.method == 'POST':
         try:
-            maximum = Filter.objects.aggregate( Max( 'id' ) )['id__max']
+            maximum = Filter.objects.aggregate( Max( 'id' ) )['id__max'] #FIXME
             efilter = Filter()
             efilter.user = request.user
             efilter.query = query_lowercase
@@ -530,12 +510,12 @@ def filter_save( request ): # {{{1
             return HttpResponseRedirect( reverse(
                 'filter_edit', kwargs = {'filter_id': efilter.id} ) )
         except Exception:
-            return _error( request,
-                    _( u"An error has ocurred, nothing was saved. Click the \
-                    back button in your browser and try again." ) )
-    else:
-        return _error( request, _( "You have submitted a GET request " +
-                        "which is not a valid method for saving a filter" ))
+            return main( request, error_messages = 
+                    _( 'An error has ocurred, nothing was saved' ) )
+    elif request.method == 'GET':
+        return main( request, error_messages =
+                _( ''.join(['You have submitted a GET request which is not ',
+                'a valid method for saving a filter']) ))
 
 @login_required
 def filter_edit( request, filter_id ): # {{{1
@@ -558,9 +538,9 @@ def filter_edit( request, filter_id ): # {{{1
     efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
-        return _error( 'error.html',
-                _( 'You are not allowed to edit the saved search with the \
-                        following number:' ) + " " + str( filter_id ) )
+        return main( request, error_messages =
+                _( ''.join(['You are not allowed to edit the filter with the ',
+                    'number %(filter_id)d']) ) % {'filter_id': filter_id,} )
     else:
         if request.method == 'POST':
             ssf = FilterForm( request.POST, instance = efilter )
@@ -606,9 +586,9 @@ def filter_drop( request, filter_id ): # {{{1
     efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
-        return _error( request,
-                _( 'You are not allowed to delete the saved search with the \
-                    following number:' ) + " " + str( filter_id ) )
+        return main( request, error_messages =
+                _(''.join(['You are not allowed to delete the filter with the ',
+                    'number %(filter_id)d']) ) % {'filter_id': filter_id,} )
     else:
         if request.method == 'POST':
             assert False
@@ -635,8 +615,8 @@ def list_filters_my( request ): # {{{1
     """
     list_of_filters = Filter.objects.filter( user = request.user )
     if list_of_filters is None or len( list_of_filters ) == 0:
-        return _error( request,
-            _( "You do not have any filters configured" ) )
+        return main( request, error_messages = 
+            _( "You do not have any filters" ) )
     else:
         return render_to_response( 'list_filters_my.html',
             {'title': _( u'list of my filters' ), 'filters': list_of_filters},
@@ -709,12 +689,9 @@ def list_events_my( request ): # {{{1
     >>> client.get(reverse('list_events_my')).status_code
     200
     """
-    events = Event.objects.filter( user = request.user )
-    if len( events ) == 0:
-        return _error( request, _( "Your search didn't get any result" ) )
-    else:
-        return render_to_response( 'list_events_my.html',
-            {'title': _( "list my events" ), 'events': events},
+    events = get_list_or_404( Event, user = request.user )
+    return render_to_response( 'list_events_my.html',
+            {'title': _( "my events" ), 'events': events},
             context_instance = RequestContext( request ) )
 
 def list_events_tag( request, tag ): # {{{1
@@ -743,7 +720,7 @@ def list_events_tag( request, tag ): # {{{1
             },
             context_instance = RequestContext( request ) )
 
-def main( request ): # {{{1
+def main( request, messages = None, error_messages = None ): # {{{1
     """ main view
     
     >>> from django.test import Client
@@ -752,6 +729,13 @@ def main( request ): # {{{1
     >>> r.status_code # /
     200
     """
+    # convert messages to a list if necessary
+    if messages and not hasattr(messages,'__iter__'):
+        messages = [messages,]
+    # convert error_messages to a list if necessary
+    if error_messages and not hasattr(error_messages,'__iter__'):
+        error_messages = [error_messages,]
+    # processes the event form
     if request.method == 'POST':
         if request.user.is_authenticated():
             event_form = SimplifiedEventForm( request.POST )
@@ -779,6 +763,7 @@ def main( request ): # {{{1
             event_form = SimplifiedEventForm()
         else:
             event_form = SimplifiedEventFormAnonymous()
+    # calculates events to show
     today = datetime.date.today()
     elist = Event.objects.filter (
                 Q(start__gte=today) |
@@ -797,10 +782,12 @@ def main( request ): # {{{1
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'base_main.html',
             {
-                'title': _( "GridCalendar - the community Calendar" ),
+                'title': settings.PROJECT_NAME,
                 'form': event_form,
                 'events': elist,
                 'about_text': about_text,
+                'messages': messages,
+                'error_messages': error_messages,
             },
             context_instance = RequestContext( request ) )
 
@@ -878,12 +865,8 @@ def list_groups_my(request): # {{{2
     user = User(request.user)
     groups = Group.objects.filter(membership__user=user)
     if len(groups) == 0:
-        return render_to_response('error.html',
-            {
-                'title': 'error',
-                'messages_col1': [_("You are not a member of any group"),]
-            },
-            context_instance=RequestContext(request))
+        return main( request, error_messages = 
+            _("You are not a member of any group") )
     else:
         return render_to_response('groups/list_my.html',
             {'title': 'list my groups', 'groups': groups},
@@ -1003,16 +986,8 @@ def group_add_event(request, event_id): # {{{2
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
-    if ((not request.user.is_authenticated()) or (request.user.id is None)):
-        return render_to_response('error.html',
-                {
-                    'title': 'GridCalendar - error',
-                    'messages_col1': [_(''.join_("You must be logged in to ",
-                        "add an event to a group")),]
-                },
-                context_instance=RequestContext(request))
     event = get_object_or_404( Event, id = event_id )
-    user = User(request.user)
+    user = request.user
     if len(Group.groups_for_add_event(user, event)) > 0:
         if request.POST:
             form = AddEventToGroupForm(
@@ -1036,17 +1011,12 @@ def group_add_event(request, event_id): # {{{2
         return render_to_response('groups/add_event_to_group.html',
                 context_instance=RequestContext(request, context))
     else:
-        return render_to_response('error.html',
-                    {
-                        'title': 'error',
-                        'messages_col1': [_(''.join( ["This event is already ",
-                            "in all groups that you are in, so you can't ",
-                            "add it to any more groups."] )),]
-                    },
-                    context_instance=RequestContext(request))
+        return main(request, messages = 
+                _(''.join( ['The event %(event_id)d is already in all the ',
+                    'groups that you are in'] )) % {'event_id': event_id,} )
 
 def group_name_view(request, group_name): # {{{2
-    """ lists everything about a group for members of the group, and the
+    """ lists everything about a group for members of the group, or the
     description and public events for everyone else. """
     group = get_object_or_404(Group, name__iexact = group_name)
     return group_view( request, group.id )
@@ -1143,8 +1113,8 @@ def group_invite(request, group_id): # {{{2
     group = get_object_or_404(Group, id = group_id )
     if not Membership.objects.filter(
             user = request.user, group = group).exists():
-        return _error( request, 
-            _( u''.join(["Your have tried to add a member to the group ",
+        return main( request, error_messages =
+            _( ''.join(["Your have tried to add a member to the group ",
         "'%(group_name)s', but you are yourself not a member of it"]) ) % \
         {'group_name': group.name,} )
     if request.POST:
@@ -1171,7 +1141,8 @@ def group_invite(request, group_id): # {{{2
 def group_invite_activate(request, activation_key): # {{{2
     """ A user clicks on activation link """
     # FIXME: create test (see source code for user-sign-up code
-    invitation = get_object_or_404( GroupInvitation, activation_key=activation_key )
+    invitation = get_object_or_404(
+            GroupInvitation, activation_key=activation_key )
     activation = GroupInvitation.objects.activate_invitation( activation_key )
     group = get_object_or_404(Group, id = invitation.group.id )
     if activation:
@@ -1235,19 +1206,13 @@ def ICalForEventHash (request, event_id, user_id, hashcode): # {{{2
     """
     user = get_object_or_404( ExtendedUser, id = user_id )
     if hashcode != user.get_hash():
-        return render_to_response('error.html',
-            {'title': 'error',
-            'messages_col1': [_(u"hash authentification failed"),]
-            },
-            context_instance=RequestContext(request))
+        return main( request, error_messages = 
+            _(u"hash authentification failed") )
     event = get_object_or_404(Event, id = event_id )
     if not event.is_viewable_by_user( user ):
-        return render_to_response('error.html',
-            {'title': 'error',
-            'messages_col1': [
-                _(u"user authentification for requested event failed"),]
-            },
-            context_instance=RequestContext(request))
+        return HttpResponseForbidden( 
+        _('You are not allowed to see the event with the number %(event_id)d'%\
+                {'event_id': event_id,} ), mimetype='text/plain' )
     return _ical_http_response_from_event_list(
             [event,], event.title)
             
@@ -1272,11 +1237,8 @@ def ICalForSearchHash( request, query, user_id, hashcode ): # {{{2
     """
     user = get_object_or_404( ExtendedUser, id = user_id )
     if hashcode != user.get_hash():
-        return render_to_response('error.html',
-            {'title': 'error',
-            'messages_col1': [_(u"hash authentification failed"),]
-            },
-            context_instance=RequestContext(request))
+        return HttpResponseBadRequest( _(u"hash authentification failed"),
+                mimetype='text/plain' )
     elist = Filter.matches( query, user_id )[0]
     return _ical_http_response_from_event_list( elist, query )
 
@@ -1338,18 +1300,13 @@ def ICalForGroupHash( request, group_id, user_id, hashcode ): # {{{2
     """
     user = get_object_or_404( ExtendedUser, id = user_id )
     if hashcode != user.get_hash():
-        return render_to_response('error.html',
-            {'title': 'error',
-            'messages_col1': [_(u"hash authentification failed"),]
-            },
-            context_instance=RequestContext(request))
+        return HttpResponseBadRequest( _(u"hash authentification failed"),
+                mimetype='text/plain' )
     group = get_object_or_404( Group, id = group_id )
     if not group.is_member(user_id):
-        return render_to_response('error.html',
-            {'title': 'error',
-            'messages_col1': [_(u"not a member of the tried group"),]
-            },
-            context_instance=RequestContext(request))
+        return HttpResponseBadRequest(
+                _('not a member of the requested group'),
+                mimetype='text/plain' )
     elist = Event.objects.filter(calendar__group = group)
     today = datetime.date.today()
     elist = elist.filter (
@@ -1360,6 +1317,8 @@ def ICalForGroupHash( request, group_id, user_id, hashcode ): # {{{2
     return _ical_http_response_from_event_list( elist, group.name )
 
 def _ical_http_response_from_event_list( elist, filename ): # {{{2
+    """ returns an ical file with the events in ``elist`` and the name
+    ``filename`` """
     if len(elist) == 1:
         icalstream = elist[0].icalendar().serialize()
     else:
@@ -1407,19 +1366,13 @@ def all_events_text ( request ): #{{{1
     return response
 
 def handler404(request): #{{{1
-    """ custom 404 handler to use the context-processors. """
-    return render_to_response( '404.html',
-            {
-                'title': _( " %(project_name)s - error - object not found" )%\
-                        {'project_name': PROJECT_NAME,},
-            },
-            context_instance = RequestContext( request ) )
+    """ custom 404 handler """
+    return main( request, error_messages = 
+            _("An object couldn't be retrieved. Check the URL") )
 
 def handler500(request): #{{{1
-    """ custom 500 handler to use the context-processors. """
-    return render_to_response( '500.html',
-            {
-                'title': _( " %(project_name)s - bug" ) % \
-                        {'project_name': PROJECT_NAME,},
-            },
-            context_instance = RequestContext( request ) )
+    """ custom 500 handler """
+    return main( request, error_messages = 
+            _(''.join(['We are very sorry but an error has ocurred. We have ',
+                'been automatically informed and will fix it in no time, ',
+                'because we care'])) )

@@ -2,48 +2,50 @@
 {% load event_tags %}
 
 <div class="event_medium">
-  <span class="event_medium_title">
-    <a href="{% url event_show event.id %}">{{ event.title }}</a>
-  </span>
-  <br />
-  <span class="event_medium_dates">
-      {% if event.next_coming_date_or_start != event.start %}
-          ( {{ event.next_coming_date_or_start }} )
+  <div class="content">
+    <span class="ical_logo">
+      {% if USER and not event.public %}
+        <a href="{% url event_show_ical_hash event.id USER.id USER.get_hash%}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+      {% else %}
+        <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
       {% endif %}
-      {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
-  </span>
-  {% if event.city %}
-    <span class="event_medium_city">
-      <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">
-        {{ event.city|capfirst }}</a>
     </span>
-  {% endif %}
-  {% if event.country %}
-    <span class="event_medium_country">
-      (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
+    &nbsp;&nbsp;
+    <span class="title">
+      <a href="{% url event_show event.id %}">{{ event.title }}</a>
     </span>
-  {% endif %}
-  {% if event.get_tags %}
     <br />
-    <span class="event_medium_tags">
-      {% for tag in event.get_tags %}
-        <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a> &nbsp; &nbsp; </span>
-      {% endfor %}
+    <span class="dates">
+        {% if event.next_coming_date_or_start != event.start %}
+            ( {{ event.next_coming_date_or_start }} )
+        {% endif %}
+        {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
     </span>
-  {% endif %}
-</div>
-<div class="options_css_class">
-  <span class="event_medium_ical_logo">
-    {% if USER and not event.public %}
-      <a href="{% url event_show_ical_hash event.id USER.id USER.get_hash%}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
-    {% else %}
-      <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+    {% if event.city %}
+      <span class="city">
+        <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">
+          {{ event.city|capfirst }}</a>
+      </span>
     {% endif %}
-  </span>
-  &nbsp;|&nbsp;
-  <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
-  &nbsp;|&nbsp;
-  <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
-  &nbsp;|&nbsp;
-  {% show_add_to_group %}
+    {% if event.country %}
+      <span class="country">
+        (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
+      </span>
+    {% endif %}
+    {% if event.get_tags %}
+      <br />
+      <span class="tags">
+        {% for tag in event.get_tags|slice:":10" %}
+          <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a> &nbsp; &nbsp; </span>
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
+  <div class="options">
+    <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+    &nbsp;|&nbsp;
+    <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
+    &nbsp;|&nbsp;
+    {% show_add_to_group %}
+  </div>
 </div>

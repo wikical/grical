@@ -50,20 +50,51 @@ class EventForm(ModelForm):
     """ ModelForm for all editable fields of Event except `public` """
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
-        self.fields['title'].widget.attrs["size"] = 60
-        self.fields['tags'].widget.attrs["size"] = 60
+        self.fields['title'].widget.attrs["size"] = 70
+        self.fields['start'].widget.attrs["size"] = 10
+        self.fields['end'].widget.attrs["size"] = 10
+        self.fields['tags'].widget.attrs["size"] = 70
+        self.fields['address'].widget.attrs["size"] = 70
+        self.fields['description'].widget.attrs["rows"] = 20
+        self.fields['description'].widget.attrs["cols"] = 70
+        self.fields['timezone'].widget.attrs["size"] = 4
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         exclude = ('public',) # public field cannot be edited after creation
     def clean_tags(self): # pylint: disable-msg=C0111
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
-            raise ValidationError("Punctuation marks are not allowed!")
+            raise ValidationError(_(u"Punctuation marks are not allowed"))
         # Always return the cleaned data, whether you have changed it or not.
         return data
 
+class SimplifiedEventForm(EventForm):
+    """ ModelForm for Events with only the fields `title`, `start`, `tags`,
+    `public` """
+    if DEBUG:
+        web = URLField(verify_exists=False)
+    else:
+        web = URLField(verify_exists=True)
+    def __init__(self, *args, **kwargs):
+        super(EventForm, self).__init__(*args, **kwargs)
+        self.fields['title'].widget.attrs["size"] = 42
+        self.fields['tags'].widget.attrs["size"] = 42
+        self.fields['web'].widget.attrs["size"] = 42
+    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
+        model = Event
+        fields = ('title', 'start', 'tags', 'public')
+
+class SimplifiedEventFormAnonymous(SimplifiedEventForm):
+    """ ModelForm for Events with only the fields `title`, `start`, `tags`
+    """
+    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
+        model = Event
+        fields = ('title', 'start', 'tags')
+
 class EventUrlForm(ModelForm):
     """ ModelForm for EventUrl """
+    def __init__(self, *args, **kwargs):
+        super(EventForm, self).__init__(*args, **kwargs)
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventUrl
 
@@ -86,34 +117,6 @@ class EventSessionForm(ModelForm):
         self.fields['session_endtime'].widget = TextInput(attrs = {'size':5})
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventSession
-
-class SimplifiedEventForm(EventForm):
-    """ ModelForm for Events with only the fields `title`, `start`, `tags`,
-    `public` """
-    if DEBUG:
-        web = URLField(verify_exists=False)
-    else:
-        web = URLField(verify_exists=True)
-    # Use CSS instead of this kind of code:
-    #def __init__(self, *args, **kwargs):
-    #    super(EventForm, self).__init__(*args, **kwargs)
-    #    self.fields['web'].widget.attrs["size"] = 60
-    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
-        model = Event
-        fields = ('title', 'start', 'tags', 'public')
-
-class SimplifiedEventFormAnonymous(EventForm):
-    """ ModelForm for Events with only the fields `title`, `start`, `tags`
-    """
-    if DEBUG:
-        web = URLField(verify_exists=False)
-    else:
-        web = URLField(verify_exists=True)
-    # TODO: try to subclass from SimplifiedEventForm to avoid repeating the
-    # code above
-    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
-        model = Event
-        fields = ('title', 'start', 'tags')
 
 class NewGroupForm(ModelForm):
     """ ModelForm for Group with only the fields `name` and `description` """

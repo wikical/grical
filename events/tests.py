@@ -513,6 +513,21 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                                       kwargs = {'query':'berlin',} ) )
         # TODO: text for a no match also
 
+    def test_valid_html( self ): # {{{2
+        """ validates html with validator.w3.org """
+        conn = httplib.HTTPConnection( "validator.w3.org" )
+        # test main page
+        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2F")
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue( 'Congratulations' in result )
+        # TODO create an event with everthing and validate the full event output
+        # TODO create a group with some events and validate the output
+        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2Fa%2Faccounts%2Flogin%2F")
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue( 'Congratulations' in result )
+
     # TODO {{{2
     #This test can't work with sqlite, because sqlite not support multiusers, 
     #is recomendet to use this in future

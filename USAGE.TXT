@@ -1,32 +1,35 @@
 .. This file is written in ReStructuredText, explains how GridCalendar works and is part of the generated web documentation
 
-=======================
-How to use GridCalendar
-=======================
+Help
+====
+
+This page summarizes how to use this site.
+
 
 Events
 ------
 
-An event can be public or private. Public events can be edited by anyone like
-pages of the Wikipedia_. You can *subscribe* to an event to get notified of any
-change, comment, etc. Private events can be seen and edited only by the
-submitter of the event and the groups the submitter chooses. When a private
-event is added to a group, the event is clone (i.e. a deep copy of the event is
-done) and is accessible and modifiable for all current and future members of
-the group.
+An event can be public or private. Public events can be edited by anyone like pages of the
+Wikipedia_. You can *subscribe* to an event to get notified of any change, comment, etc. Private
+events can be seen and edited only by the submitter of the event and the the group the event belongs
+to. When a private event is added to a group, the event is clone (i.e. a deep copy of the event is
+done) and is accessible and modifiable only by the members of the group. I.e. each private event
+belongs to a single group.
 
 The public/private flag of an event cannot be changed after creation, but an
-event can be cloned and the flag of the clone can be different.
+event can be cloned (copy) into any other group the user is also a member of.
 
 Events submitted by anonymous users are public.
 
-The main rational of private events belonging only to a single group is that
-events have comments, and members of a group commenting on an event might not
-want non-members to see their comments.
+The main reason of private events belonging only to a single group is that events have comments, and
+members of a group commenting on an event might not want non-members to see their comments. Another
+important reason is that you might trust the members of a group, but not the whole world in
+order to keep the information of an event accurate and interesting to you.
 
 When a private event is clone to another group, the comments are not copied.
 
 .. _Wikipedia: http://en.wikipedia.org/wiki/Help:About
+
 
 Groups
 ------
@@ -37,11 +40,19 @@ of the group. When a private event is added to a group, a clone (i.e. a deep
 copy) of the event is created an attached to the group. This means that a
 private event can have only one group.
 
+
 Events as text
 --------------
 
-Events can be submitted per email to event ät gridmind.org. The subject of the email is ignored.
+Events can be submitted per email to "``event ät gridmind.org``". The subject of the email is ignored.
 Example of the body of an email::
+
+    title: GridCalendar presentation
+    start: 2010-12-29
+    tags: calendar software open-source gridmind gridcalendar
+    web: http://example.com
+
+You can optionally include more data in the submission. Example::
 
     acronym: GriCal
     title: GridCalendar presentation
@@ -70,20 +81,29 @@ Example of the body of an email::
 
     GridCalendar will be presented
 
-The only required filters are title, start, tags and a url (which can be submitted in one
-line). Example::
+The field ``description`` must be the last one and its content can contain multiple lines. If the
+content is in valid ReStructuredText__ syntax, it will be rendered accordingly.
 
-    title: GridCalendar presentation
-    start: 2010-12-29
-    tags: calendar software open-source gridmind gridcalendar
-    web: http://example.com
+__ http://en.wikipedia.org/wiki/ReStructuredText
+
 
 Searches and filters
 --------------------
 
-- one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with dates from the the lowest to the highest, or to one day if there is only one date
+- one or more dates in isoformat (``yyyy-mm-dd``) restrict the query to events with dates from the the lowest to the highest, or to one day if there is only one date
 - If there is no date in the query only future events are showed
-- Single words are looked up in title, tags, city, country and acronym with or
-- Tags (#tag) restrict the query to events with these tags
-- Locations (@location) restrict the query to events having these location in city or country
-- Groups (!group) restrict the query to events of the groups
+- Single words are looked up in the fields ``title``, ``tags``, ``city``, ``country`` and ``acronym``
+- Tags (``#tag``) restricts the query to events with these tags
+- Locations (``@location``) restricts the query to events having these location in the fields ``city`` or ``country``
+- Groups (``!group``) restricts the query to events of the groups
+
+
+More help
+=========
+
+If you need more help, you can contact our mailing list at ``grical ät gridmind.org`` or try our IRC
+(`what is IRC?`_) channel `irc://irc.freenode.net/calendar`__
+
+__ irc://irc.freenode.net/calendar
+
+.. _what is IRC?: http://en.wikipedia.org/wiki/Internet_Relay_Chat

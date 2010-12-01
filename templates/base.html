@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 {% load i18n %}
+{% load tagging_tags %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
 <!-- This template is based on a template at http://matthewjamestaylor.com/ and is used with
 permission of the original author -->
@@ -12,7 +13,9 @@ permission of the original author -->
     <meta name="keywords" content="{% trans "events" %}, {% trans "calendar" %}, {% trans "community" %}, {% trans "open" %}, {% trans "social" %}" />
     <title>{{ title }}</title>
     <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
+    <!--
     <link href="{{ MEDIA_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
+    -->
     <link rel="shortcut icon" href="{{ MEDIA_URL }}favicon.ico" />
 
     <!-- see http://en.wikipedia.org/wiki/Favicon -->
@@ -24,76 +27,117 @@ permission of the original author -->
 </head>
 <body>
 <div id="header">
-  <a href="{{ PROTOCOL }}://{{ DOMAIN }}"><img src="{{ MEDIA_URL }}gridcalendar-logo-small.png" alt="{{ DOMAIN }} {% trans "logo" %}" /></a>
-    <h1>{% trans "GridCalendar - Community Calendar" %}</h1>
-    <h2>{% trans "An open community driven calendar" %}</h2>
-    <p style="color:gray">Running <a href="http://code.grical.org">the free software GridCalendar {{ VERSION }}</p>
-    <div class="options_css_class">{% trans "events:" %} {{ EVENTS_NR }} | {% trans "users:" %} {{ USERS_NR }} | {% trans "groups:" %}{{ GROUPS_NR }}</div>
-    <!-- menu if needed
-    <ul>
-        <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column.htm">3 Column <span>Holy Grail</span></a></li>
-        <li><a href="http://matthewjamestaylor.com/blog/perfect-3-column-blog-style.htm" class="active">3 Column <span>Blog Style</span></a></li>
-    </ul>
+    <!-- <a href="{{ PROTOCOL }}://{{ DOMAIN }}"><img src="{{ MEDIA_URL }}gridcalendar-logo-small.png" alt="{{ DOMAIN }} {% trans "logo" %}" /></a> -->
+    <a href="/"><img style="padding:5px;" src="{{ MEDIA_URL }}grical-letters-192x50.png" alt="{{ DOMAIN }} {% trans "logo" %}" /></a>
+    <div id="navigation-and-search">
+        {% if user.username %}
+            {% blocktrans with user.username as username %}
+                Logged in as {{ username }}
+            {% endblocktrans %}
+            | <a href="{% url settings %}">{% trans "settings" %}</a>
+            | <a href="{% url auth_logout %}">{% trans "logout" %}</a>
+        {% else %}
+            <a href="{% url registration_register %}">{% trans "Sign up" %}</a> | 
+            <a href="{% url auth_login %}">{% trans "log in" %}</a>
+        {% endif %}
+        | <a href="{% url help %}">{% trans "help" %}</a>
+        | <a href="{% url legal_notice %}">{% trans "legal notice" %}</a>
+        <div style="display:inline">
+            <form style="padding:15px" action="{% url search %}" method="post">{% csrf_token %}
+                <div style="display:inline"><input type="text" size="40" name="query" value="{{ query }}" /></div>
+                <div style="display:inline"><input type="submit" value="{% trans "Search" %}" /></div>
+            </form>
+        </div>
+        <div id="banners">
+            <a href="http://flattr.com/thing/85499/GridCalendar-Community-Calendar">
+                <img src="{{ MEDIA_URL }}flattr-badge-large.png" alt="Flattr this" title="Flattr this" /></a>
+        </div>
+    </div>
+    <div id="description" style="padding-left:10px">
+        {% trans "open, decentralised, libre events-platform" %}
+    </div>
+    <!-- TODO: create a selectable list or link for changing the language, see
+    http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/#the-set-language-redirect-view
     -->
-    <div id="navigation">
-        <div id="userlinks">
-            {% if user.username %}
-                {% blocktrans with user.username as username %}
-                    Logged in as {{ username }}
-                {% endblocktrans %}
-                | <a href="{% url settings %}">{% trans "settings" %}</a>
-                | <a href="{% url auth_logout %}">{% trans "logout" %}</a>
-            {% else %}
-                <a href="{% url registration_register %}">{% trans "Sign up" %}</a> | 
-                <a href="{% url auth_login %}">{% trans "log in" %}</a>
-            {% endif %}
-        </div>
-        <form action="{% url search %}" method="post">{% csrf_token %}
-            <input type="text" size="40" name="query" value="{{ query }}">
-            <input type="submit" value="{% trans "Search" %}">
-        </form>
-        <div id="sitelinks">
-            <a href="{% url help %}">{% trans "help" %}</a>
-            | <a href="{% url legal_notice %}">{% trans "legal notice" %}</a>
-            | <a href="http://code.grical.org/wiki/WikiStart#Community">{% trans "community" %}</a>
-        </div>
-        <!-- TODO: create a selectable list or link for changing the language, see
-        http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/#the-set-language-redirect-view
-        -->
-    </div>
 </div>
-
-<div class="colmask doublepage">
-    <div class="colleft">
-        <div class="col1">
-            <!-- Column 1 start -->
-            {% block message_col1 %}
-            {% if messages_col1 and messages_col1|length > 0 %}
-                <div id="message_col1">
-                    {% if messages_col1|length > 1 %}
-                        <ul>
-                            {% for message in messages_col1 %}
+<div class="container">
+    {% block error_messages %}
+        {% if error_messages and error_messages|length > 0 %}
+            <div id="error_messages">
+                {% if error_messages|length > 1 %}
+                    <ul>
+                        {% for message in error_messages %}
                             <li> {{ message }} </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        {{ messages_col1.0 }}
-                    {% endif %}
-                </div>
-            {% endif %}
-            {% endblock %}
-            {% block column1 %}
-            {% endblock %}
-        </div>
-        <div class="col2">
-            <!-- Column 2 start -->
-            {% block column2 %}
-            {% endblock %}
-        </div>
-    </div>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ error_messages.0 }}
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endblock %}
+    {% block messages %}
+        {% if messages and messages|length > 0 %}
+            <div id="messages">
+                {% if messages|length > 1 %}
+                    <ul>
+                        {% for message in messages %}
+                        <li> {{ message }} </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ messages.0 }}
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endblock %}
+
+    {% block container %}
+    {% endblock %}
 </div>
 
 <div id="footer">
+    <div class="title">{% trans "Community" %}</div>
+    <div class="info">
+        <ul>
+            <li> <a href="https://code.grical.org/browser">{% trans "source code" %}</a> </li>
+            <li> <a href="https://code.grical.org/wiki">{% trans "wiki" %}</a> </li>
+            <li> <a href="http://lists.gridmind.org/listinfo/grical">{% trans "mailing list" %}</a> </li>
+            <li> <a href="irc://irc.freenode.net/calendar">{% trans "IRC: Freenode #calendar" %}</a> </li>
+        </ul>
+    </div>
+    <div class="title">{% trans "Software" %}</div>
+    <div class="info">
+        <ul>
+            <li>
+                <a href="http://code.grical.org">
+                    {% blocktrans with VERSION as VERSION %}
+                        running the free software GridCalendar version {{ VERSION }}
+                    {% endblocktrans %}
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="title">{% trans "Statistics" %}</div>
+    <div class="info">
+        <ul>
+            <li> {% trans "events:" %} {{ EVENTS_NR }} </li>
+            <li> {% trans "users:" %} {{ USERS_NR }} </li>
+            <li> {% trans "groups:" %}{{ GROUPS_NR }} </li>
+        </ul>
+    </div>
+    <div class="title">{% trans "Tags cloud" %}</div>
+    <div class="info">
+        {% comment %}TODO: generate this is views.py {% endcomment %}
+        {% tag_cloud_for_model events.Event as tags with steps=10 min_count=2 distribution=log %}
+        {% if tags|length < 100 %}
+            {% for tag in tags %}
+                <span class="tag_{{ tag.font_size }}"><a href="{% url list_events_tag tag.name|slugify %}">
+                    {{ tag.name }}</a></span>
+            {% endfor %}
+        {% endif %}
+    </div>
 </div>
+
 </body>
 </html>
