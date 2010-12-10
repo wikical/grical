@@ -338,49 +338,6 @@ GridCalendar will be presented
 
 """
 
-# FIXME: check this class
-#class EventManager( models.Manager ):# {{{1 pylint: disable-msg=R0904
-#    """let event can show only public models for all
-#    and private model only for group members and owner"""
-#
-#    _user = False
-#
-#    @classmethod
-#    def set_auth_user( cls, sender, user, **kwargs ):# pylint: disable-msg=W0613
-#        "set _user value after auth"
-#        cls.set_user( user )
-#
-#    @classmethod
-#    def set_user( cls, user ):
-#        "set user for queries"
-#        if type( user ) != AnonymousUser:
-#            cls._user = user
-#        else:
-#            cls._user = False
-#
-#    @classmethod
-#    def get_user( cls ):
-#        "get user for queries"
-#        return cls._user
-#
-#    def get_query_set( self ):
-#        user = self.get_user()
-#
-#        if user:
-#            if user.is_staff():
-#                return super( EventManager, self ).get_query_set()
-#            groups = Group.objects.filter( membership__user = user )
-#            query_set = super( EventManager, self ).get_query_set().filter(
-#                    Q( public = True ) |
-#                    Q( user = user ) |
-#                    Q( calendar__group__in = groups ) )
-#        else:
-#            query_set = super( EventManager, self )\
-#            .get_query_set().filter( public = True )
-#        return query_set
-#
-#user_auth_signal.connect( EventManager.set_auth_user )
-
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model
     
@@ -433,9 +390,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     clone_of = models.ForeignKey( 'self',
             editable = False, blank = True, null = True )
-    """ Relation to orginal object, or null if this is orginal """
-
-#    objects = EventManager() # {{{2
+    """ Relation to orginal object, or null if this is orginal. Not used
+    at the moment. """
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -549,19 +505,36 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # rfc5545 ?
         return ical
 
-    def clone( self, public = False ): #{{{3
-        """ Make, save and return clone of object.  Also make copy of all
-        related objects, and relate then to clone.  Set in clone relation to
-        orginal.  """
-        # FIXME: check this code, see (also the comment)
-        # http://djangosnippets.org/snippets/1282/
-        # IMPORTANT: in the comment the identation is different
+    def clone( self, user ): #{{{3
+        """ Makes, saves and return a deep clone of the event as a private
+        event of the user ``user``.
+        
+        It makes a clone of all related objects, and relates them to the new
+        created clone.
+
+        The attribute ``clone_of`` of the new created clone is set to the
+        original event.
+
+        >>> from events.models import Event, Group, Membership
+        >>> from django.utils.encoding import smart_str
+        >>> now = datetime.datetime.now().isoformat()
+        >>> user = User.objects.create(username = "user " + now)
+        >>> event = Event.parse_text(EXAMPLE)
+        >>> clone = event.clone( user )
+        >>> assert event.public
+        >>> assert not clone.public
+        >>> clone_text = clone.as_text()
+        >>> assert 'public: False' in clone_text
+        >>> clone_text = clone_text.replace( 'public: False', 'public: True' )
+        >>> assert ( event.as_text() == clone_text )
+        """
+        # code inspired on http://djangosnippets.org/snippets/1282/
+        assert isinstance(user, User)
         orginal_pk = self.pk
         collected_objs = CollectedObjects()
         self._collect_sub_objects( collected_objs )
-        # collected_objs is now a list of tuples. Each tuple contains a model
-        # class and a dictionary with keys pks and values instances of the
-        # class. Example:
+        # collected_objs is a special structure containing classes, instances
+        # and its ids. Example of its string representation:
         # [(<class 'gridcalendar.events.models.EventUrl'>,
         #   {9: <EventUrl: http://www.oaod2010.de/>}),
         #  (<class 'gridcalendar.events.models.Calendar'>,
@@ -569,47 +542,69 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         #  (<class 'gridcalendar.events.models.Event'>,
         #   {8: <Event: 2010-12-13 : Expert Conference on OPENACCESS and OPENDATA>})]
         related_models = collected_objs.keys()
-        # related_models is now a list of model classes
-        new = None
-        # Traverse the related models in reverse order.    
-        for model in reversed( related_models ):
-            # Find all field keys on `model` that point to a `related_model`.
-            field_keys = []
-            for field in model._meta.fields: # pylint: disable-msg=W0212
-                if isinstance( field, models.ForeignKey ) and \
-                        field.rel.to in related_models:
-                    field_keys.append( field )
-            # Replace each `sub_obj` with a duplicate.
-            sub_obj = collected_objs[model]
-            for pk_val, obj in sub_obj.iteritems(): # pylint: disable-msg=W0612
-                for field_key in field_keys:
-                    field_key_value = getattr( obj, "%s_id" % field_key.name )
-                    # if this field_key has been duplicated then point to the
-                    # duplicate
-                    if field_key_value in collected_objs[field_key.rel.to]:
-                        dupe_obj = \
-                            collected_objs[field_key.rel.to][field_key_value]
-                        setattr( obj, field_key.name, dupe_obj )
-                # Duplicate the object and save it.
-                obj.id = None
-                if new is None:
-                    new = obj
-                    new.clone_of_id = orginal_pk
-                    new.public = public
-                    new.save()
-                else:
-                    obj.save()
-        return new
+        # related_models is now a list of model classes. We are going to use
+        # it to copy all data from all classes (calling a special method
+        # clone).
+        # A test in tests.py checks that all classes with references to
+        # Event implement a clone method with self, event and user as only
+        # parameters.
+
+        # we now clone the event and do some checks
+        original_event = collected_objs[ Event ]
+        assert len( original_event ) == 1
+        original_event = original_event[self.id] # notice that it cheks we got
+        # the right event. Ohter id will produce a KeyError
+        assert original_event == self
+        # del collected_objs[ Event ] # sadly not supported by collected_objs
+        clone = Event()
+        for field in self.get_simple_fields():
+            if field == 'groups':
+                continue
+            setattr( clone, field, getattr(self, field) )
+        clone.clone_of = self
+        clone.user = user
+        clone.public = False
+        clone.description = self.description
+        clone.save() # we need the id
+        try:    # we need to delete the clone if something goes wrong
+            new_objs = [] # list of new related objects
+            # we now traverse all related models and its objects
+            for model in reversed( related_models ):
+                if model == Event:
+                    continue
+                sub_objs = collected_objs[ model ]
+                for pk, obj in sub_objs.iteritems():
+                    new_obj =  obj.clone( clone, user ) 
+                    if new_obj: # some clone methods return None
+                        new_objs.append( new_obj )
+            if settings.DEBUG:
+                # we check that there are no references to the old objects in
+                # the new objects.
+                field_keys = []
+                for model in [mod.__class__ for mod in new_objs]:
+                    for field in model._meta.fields: # pylint: disable-msg=W0212
+                        if isinstance( field, models.ForeignKey ) and \
+                                field.rel.to in related_models:
+                            field_keys.append( field )
+                for obj in new_objs:
+                    for field_key in field_keys:
+                        if hasattr( ojb, "%s_id" % field_key.name ):
+                            field_key_value = getattr( obj, "%s_id" % field_key.name )
+                            if field_key_value in collected_objs[field_key.rel.to]:
+                                raise RuntimeError( str(field_key_value) + " " +
+                                        str(field_key) )
+        except:
+            # something went wrong, we delete the objects
+            for obj in new_objs:
+                obj.delete()
+            clone.delete()
+            raise
+        return clone
 
     def get_clones( self ): #{{{3
         "get all clones of event"
         clones = Event.objects.filter( clone_of = self )
         return clones
-
-    @classmethod
-    def set_user( cls, user ): # classmethod {{{3
-        "set user context for class"
-        cls.objects.set_user( user )
 
     def set_tags( self, tags ): #{{{3
         "set tags"
@@ -627,26 +622,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         "get URL of an event"
         return ( 'event_show', (), {'event_id': self.id,} )
 
-#    def pre_save( self ):
-#        old_event = None
-#        old = None
-#        if self.pk != None:
-#            try:
-#                old_event = Event.objects.get( pk = self.pk )
-#                old = old_event.as_text()
-#                user = Event.objects.get_user()
-#                history = EventHistory( \
-#                        event = old_event,
-#                        user = user if user else None, \
-#                        new = None, \
-#                        old = old )
-#                history.save()
-#            except Event.DoesNotExist:
-#                pass
-
     def save( self, *args, **kwargs ): #{{{3
         """ Call the real 'save' function after checking that a private event
-        has an owner, and that the public field is not changed ever after
+        has an owner and that the public field is not changed ever after
         creation """
         # It is not allowed to have a non-public event without owner:
         assert not ( ( self.public == False ) and ( 
@@ -657,44 +635,56 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             old_event = Event.objects.get( id = self.id )
             # It is not allowed to modify the 'public' field:
             assert ( self.public == old_event.public )
+            self.not_new = True # Event.post_save uses this
         except Event.DoesNotExist:
             pass
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
+    # @staticmethod def post_save( sender, **kwargs ): {{{3
     @staticmethod
-    def post_save( sender, **kwargs ): #{{{3
-        """ notify users if a filter of a user matches the event. """
+    def post_save( sender, **kwargs ):
+        """ notify users if a filter of a user matches an event but only for
+        new events.
+        """
+        event = kwargs['instance']
+        if event.clone_of:
+            return
+        # not_new is set by Event.save
+        if hasattr(event, "not_new") and event.not_new:
+            return
         # FIXME: implement a Queue, see comments on 
         # http://www.artfulcode.net/articles/threading-django/
         thread = threading.Thread(
-                target=Filter.notify_users_when_wanted( kwargs['instance'] ),
-                args=[ kwargs['instance'], ] )
+                target = Filter.notify_users_when_wanted( event ),
+                args = [ event, ] )
         thread.setDaemon(True)
         thread.start()
-#       #FIXME: save history
-#        try:
-#            new_event = Event.objects.get( pk = self.pk )
-#            new = new_event.as_text()
-##            date = EventHistory.objects.latest( 'date' )
-#            try:
-#                date = EventHistory.objects.filter( event = new_event )\
-#                .latest( 'date' )
-#                history = EventHistory.objects.get( event = new_event, \
-#                                                     date = date )
-#                history.new = new
-#
-#            except EventHistory.DoesNotExist:
-#                user = Event.objects.get_user()
-#                history = EventHistory( \
-#                                        event = new_event,
-#                                        user = Event.objects.get_user() \
-#                                        if Event.objects.get_user() \
-#                                        else None, \
-#                                        new = new, old = None )
-#            history.save()
-#        except Event.DoesNotExist:
-#            pass
+    #
+    #    # save history
+    #   #FIXME: save history
+    #    try:
+    #        new_event = Event.objects.get( pk = self.pk )
+    #        new = new_event.as_text()
+    #         date = EventHistory.objects.latest( 'date' )
+    #        try:
+    #            date = EventHistory.objects.filter( event = new_event )\
+    #            .latest( 'date' )
+    #            history = EventHistory.objects.get( event = new_event, \
+    #                                                 date = date )
+    #            history.new = new
+    #
+    #        except EventHistory.DoesNotExist:
+    #            user = Event.objects.get_user()
+    #            history = EventHistory( \
+    #                                    event = new_event,
+    #                                    user = Event.objects.get_user() \
+    #                                    if Event.objects.get_user() \
+    #                                    else None, \
+    #                                    new = new, old = None )
+    #        history.save()
+    #    except Event.DoesNotExist:
+    #        pass
 
     @staticmethod
     def example(): #{{{3
@@ -761,8 +751,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'public':
                 # FIXME: it makes no sense to show this field, think how to
                 # handle the public field
-                if self.public:
-                    to_return += keyword + u": " + unicode(self.public) + u"\n"
+                to_return += keyword + u": " + unicode(self.public) + u"\n"
             elif keyword == u'address':
                 if self.address:
                     to_return += keyword + u": " + self.address + u"\n"
@@ -973,7 +962,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             groups: group1 group2 ...
 
         """
-        # code {{{2
+        # code {{{4
         if not isinstance(input_text_in, unicode):
             input_text_in = smart_unicode(input_text_in)
         # test that the necessary fields are present
@@ -1269,6 +1258,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             user = User.objects.get(pk=user)
         elif isinstance(user, unicode) or isinstance(user, str):
             user = User.objects.get( pk = int(user) )
+        elif user.id is None:
+            return event.public
         else: raise TypeError(
                 "'user' must be a User or an integer but it was: " +
                 str(user.__class__))
@@ -1398,6 +1389,12 @@ class EventUrl( models.Model ): # {{{1
     def __unicode__( self ):
         return self.url
 
+    def clone( self, event, user ):
+        """ creates a copy of itself related to ``event`` """
+        new = EventUrl( event = event, url_name = self.url_name, url = self.url )
+        new.save()
+        return new
+
     @staticmethod
     def get_urls( text ):
         """ validates text lines containing EventUrl entries, raising
@@ -1516,6 +1513,13 @@ class EventDeadline( models.Model ): # {{{1
         unique_together = ( "event", "deadline_name" )
     def __unicode__( self ):
         return unicode( self.deadline ) + u'    ' + self.deadline_name
+
+    def clone( self, event, user ):
+        """ creates a copy of itself related to ``event`` """
+        new = EventDeadline( event = event, deadline_name = self.deadline_name,
+                deadline = self.deadline )
+        new.save()
+        return new
 
     @staticmethod
     def get_deadlines( text ):
@@ -1647,6 +1651,16 @@ class EventSession( models.Model ): # {{{1
             _( u'Session start time' ), blank = False, null = False )
     session_endtime = models.TimeField( 
             _( u'Session end time' ), blank = False, null = False )
+
+    def clone( self, event, user ):
+        """ creates a copy of itself related to ``event`` """
+        new = EventSession( event = event, session_name = self.session_name,
+                session_date = self.session_date,
+                session_starttime = self.session_starttime,
+                session_endtime = self.session_endtime )
+        new.save()
+        return new
+
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['session_date', 'session_starttime']
         unique_together = ( "event", "session_name" )
@@ -1820,19 +1834,35 @@ class EventSession( models.Model ): # {{{1
             if not found:
                 event_session.delete()
 
-class EventHistory( models.Model ): # {{{1
-    """ keeps history of changes (editions) on an event """
-    event = models.ForeignKey( Event )
-    user = models.ForeignKey( User, unique = False, \
-                            verbose_name = _( u'User' ), \
-                            blank = True, null = True )
-    date = models.DateTimeField( _( u'Creation time' ), editable = False,
-            auto_now_add = True )
-    """Time stamp when the change was done""" # pyling: disable-msg=W0105
-    old = models.TextField( _( u'Old data' ), blank = True, null = True )
-    """the event as text before the change""" # pyling: disable-msg=W0105
-    new = models.TextField( _( u'New data' ), blank = True, null = True )
-    """ the event as text after the change """ # pyling: disable-msg=W0105
+#class EventHistory( models.Model ): # {{{1
+#    """ keeps history of changes (editions) on an event """
+#    event = models.ForeignKey( Event )
+#    user = models.ForeignKey( User, unique = False,
+#                            verbose_name = _( u'User' ),
+#                            blank = True, null = True )
+#    ip = models.IPAddressField( _( u'IP' ), blank = True, null = True )
+#    date = models.DateTimeField( _( u'Creation time' ), editable = False,
+#            auto_now_add = True )
+#    """Time stamp when the change was done""" # pyling: disable-msg=W0105
+#    old = models.TextField( _( u'Old data' ), blank = True, null = True )
+#    """the event as text before the change""" # pyling: disable-msg=W0105
+#    new = models.TextField( _( u'New data' ), blank = True, null = True )
+#    """ the event as text after the change """ # pyling: disable-msg=W0105
+#    def clone( self, event, user ):
+#        """ history is not copied when an event is cloned """
+#        return None
+#    class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
+#        unique_together = ( "event", "user", "date" )
+#        verbose_name = _( u'History' )
+#        verbose_name_plural = _( u'Histories' )
+#    def __unicode__( self ): # {{{2
+#        if (not self.user) or not self.user.id:
+#            if self.ip:
+#                return date.strftime('%Y-%m-%d %T') + " (" + self.ip + ")"
+#            else:
+#                return date.strftime('%Y-%m-%d %T')
+#        else:
+#            return date.strftime('%Y-%m-%d %T') + " (" + self.user.username + ")"
 
 class Filter( models.Model ): # {{{1
     """ search queries of users """
@@ -1980,7 +2010,7 @@ class Filter( models.Model ): # {{{1
         regex = re.compile('([^!@#]\w+)', UNICODE)
         matches = False
         for word in regex.findall(query):
-            word = word.lower()
+            word = word.lower().strip()
             if ( event.title.lower().find(word) != -1 or
                     event.tags.lower().find(word) != -1 or
                     ( event.city and event.city.lower() == word ) or
@@ -1991,7 +2021,7 @@ class Filter( models.Model ): # {{{1
         return matches
 
     # FIXME: add a parameter include_related=False and change the call to this
-    # elsewhere
+    # elsewhere to avoid calculating related events when not needed
     @staticmethod
     def matches( query, user, limit = 100 ): # {{{2
         """ returns a sorted (`Event.next_coming_date_or_start`) list of `limit`
@@ -2059,8 +2089,7 @@ class Filter( models.Model ): # {{{1
     @staticmethod
     def matches_queryset( query, user ): # {{{2
         """ returns a queryset without touching the database, see `Filter.matches` """
-        # IMPORTANT: this code must be in accordance with
-        # `Filter.matches_event`
+        # IMPORTANT: this code must be consistent with `Filter.matches_event`
         if user is None or isinstance(user, User):
             pass
         elif isinstance(user, AnonymousUser):
@@ -2120,6 +2149,7 @@ class Filter( models.Model ): # {{{1
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)
         for word in regex.findall(query):
+            word = word.strip()
             queryset = queryset.filter(
                     Q(title__icontains = word) |
                     Q(tags__icontains = word) |
@@ -2133,9 +2163,9 @@ class Filter( models.Model ): # {{{1
         # filter events the user cannot see
         if user is not None and user.id is not None:
             queryset = queryset.filter( 
+                    Q( public = True ) |
                     Q( user = user ) | 
-                    Q( calendar__group__membership__user = user ) |
-                    Q( public = True ) )
+                    Q( calendar__group__membership__user = user ) )
         return queryset
 
     @staticmethod
@@ -2412,20 +2442,17 @@ class Group( models.Model ): # {{{1
 
     @classmethod
     def groups_for_add_event( cls, user, event ):
-        """ return groups for event to add. """
-        
-        # FIXME: what is this? check
+        """ returns a queryset (which can be used as a list) of groups to which
+        ``event`` can be added by ``user``.
+        """
         if isinstance(event, Event):
             pass
         elif isinstance(event, int):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
-        if event.clone_of:
-            event = event.clone_of
         groups = cls.objects.filter( members = user )
         groups = groups.exclude( events = event )
-        groups = groups.exclude( events__in = event.get_clones() )
         return groups
 
 class Membership( models.Model ): # {{{1
@@ -2467,6 +2494,11 @@ class Calendar( models.Model ): # {{{1
             Group, verbose_name = _( u'Group' ), related_name = 'calendar' )
     date_added = models.DateField( 
             _( u'Date added' ), editable = False, auto_now_add = True )
+
+    def clone( self, event, user ):
+        """ groups are not copied when an event is cloned """
+        return None
+
     # TODO: save who added it
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         unique_together = ( "event", "group" )
@@ -2714,398 +2746,5 @@ class Session: #{{{1
 #   - interesting tags
 #   - hidden: location and tags clicked before
 
-
 #TODO: events comment model. Check for already available django comment module
-
-
-# Was a Miernik idea but he doesn't remember what is the advantage of using a
-# custom field for countries in the Event model:
-# class CountryField(models.CharField):
-#     def __init__(self, *args, **kwargs):
-#         kwargs.setdefault('max_length', 2)
-#         kwargs.setdefault('choices', COUNTRIES)
-#         super(CountryField, self).__init__(*args, **kwargs)
-#     def get_internal_type(self):
-#         return "CharField"
-
-
-# old code for parsing events as text using forms
-#        event_data = {}
-#        synonyms = Event.get_synonyms()
-#        event_url_data_list = list()
-#        event_deadline_data_list = list()
-#        event_session_data_list = list()
-#        event_groups_req_names_list = list() # list of group names
-#        field_pattern = re.compile( 
-#                r"^[^\s:]+[ \t]*:.*(?:\n(?:[ \t])+.+)*", re.MULTILINE )
-#        parts_pattern = re.compile( 
-#                r"^([^\t:]+[ \t]*)[ \t]*:[ \t]*(.*)((?:\n(?:[ \t])+.+)*)",
-#                re.MULTILINE )
-        # group 0 is the text before the colon
-        # group 1 is the text after the colon
-        # group 2 are all indented lines
-#
-#        for field_data in fields_data:
-#            try:
-#                parts = ( field_data[0], field_data[2], field_data[3] )
-#                try:
-#                    field_name = synonyms[parts[0].replace( '\n', '' )]
-#                except KeyError:
-#                    raise ValidationError( _( 
-#                            "you used an invalid field name %s'" % \
-#                            field_data[0] ) )
-#                try:
-#                    if parts[1] and parts[2]:
-#                        # for mixed data after colon and in indented lines
-#                        new_parts = ( parts[0],
-#                                     '',
-#                                     "%s%s" % parts[1:] )
-#                        parts = new_parts
-#                    if field_name == 'urls':
-#                        #event_url_index = 0
-#                        if not parts[1] == '':
-#                            event_url_data = {}
-#                            event_url_line_parts = \
-#                                        filter( lambda x: x, \
-#                                        parts[1].strip().replace( '\t', ' ' )\
-#                                        .split( " " ) )
-#                            if len( event_url_line_parts ) == 1:
-#                                event_url_data['url_name'] = u'url'
-#                            else:
-#                                event_url_data['url_name'] = \
-#                                ' '.join( event_url_line_parts[:-1] )
-#                            event_url_data['url'] = \
-#                            event_url_line_parts[-1].strip()
-#                            event_url_data_list.append( event_url_data )
-#                            #event_url_index += 1
-#                        if not parts[2] == '':
-#                            for event_url_line in parts[2].splitlines():
-#                                if not event_url_line == '':
-#                                    event_url_line_parts = \
-#                                        filter( lambda x: x, \
-#                                        event_url_line.strip().\
-#                                        replace( '\t', ' ' )\
-#                                        .split( " " ) )
-#                                    event_url_data = {}
-#                                    if len( event_url_line_parts ) == 1:
-#                                        event_url_data['url_name'] = u'url'
-#                                    else:
-#                                        event_url_data['url_name'] = \
-#                                        ' '.join( event_url_line_parts[:-1] )
-#                                    event_url_data['url'] = \
-#                                            event_url_line_parts[-1].strip()
-#                                    event_url_data_list.\
-#                                    append( event_url_data )
-#                                    #event_url_index += 1
-#
-#                    # TODO: accept deadlines like:
-#                    #       2010-02-10 Submission of invited session proposals
-#                    elif field_name == 'deadlines':
-#                        #event_deadline_index = 0
-#                        if not parts[1] == '':
-#                            event_deadline_data = {}
-#                            event_deadline_line_parts = \
-#                                        filter( lambda x: x, \
-#                                        parts[1].strip().replace( '\t', ' ' )\
-#                                        .split( " " ) )
-#                            if len( event_deadline_line_parts ) == 1:
-#                                event_deadline_data['deadline_name'] = \
-#                                u'deadline'
-#                            else:
-#                                event_deadline_data['deadline_name'] = \
-#                                ' '.join( event_deadline_line_parts[1:] )
-#                            event_deadline_data['deadline'] = \
-#                                        event_deadline_line_parts[0].strip()
-#                            event_deadline_data_list.\
-#                            append( event_deadline_data )
-#                            #event_deadline_index += 1
-#                        if not parts[2] == '':
-#                            for event_deadline_line in parts[2].splitlines():
-#                                if not event_deadline_line == '':
-#                                    event_deadline_data = {}
-#                                    event_deadline_line_parts = \
-#                                            filter( lambda x: x, \
-#                                            event_deadline_line.\
-#                                            strip().replace( '\t', ' ' )\
-#                                            .split( " " ) )
-#                                    event_deadline_data['deadline_name'] = \
-#                                    ' '.join( event_deadline_line_parts[1:] )\
-#                                        .strip()
-#                                    event_deadline_data['deadline'] = \
-#                                        event_deadline_line_parts[0].strip()
-#                                    event_deadline_data_list\
-#                                    .append( event_deadline_data )
-#                                    #event_deadline_index += 1
-#
-#                    elif field_name == 'sessions':
-#                        #event_session_index = 0
-#                        if not parts[1] == '':
-#                            event_session_data = {}
-#
-#                            event_session_line_parts = \
-#                                            filter( lambda x: x, \
-#                                            parts[1].\
-#                                            strip().replace( '\t', ' ' )\
-#                                            .split( " " ) )
-#                            if len( event_session_line_parts ) < 3:
-#                                event_session_data['session_name'] = u'session'
-#                            else:
-#                                event_session_data['session_name'] = \
-#                                    ' '.join( event_session_line_parts[2:] ).\
-#                                    strip()
-#                            event_session_data['session_date'] = \
-#                                    event_session_line_parts[0].strip()
-#                            event_session_str_times_parts = \
-#                                    event_session_line_parts[1].split( "-", 1 )
-#                            event_session_data['session_starttime'] = \
-#                                    event_session_str_times_parts[0].strip()
-#                            event_session_data['session_endtime'] = \
-#                                    event_session_str_times_parts[1].strip()
-#                            event_session_data_list.\
-#                            append( event_session_data )
-#                            #event_session_index += 1
-#                        if not parts[2] == '':
-#                            for event_session_line in parts[2].splitlines():
-#                                if not event_session_line == '':
-#                                    event_session_data = {}
-#                                    event_session_line_parts = \
-#                                            filter( lambda x: x, \
-#                                            event_session_line.\
-#                                            strip().replace( '\t', ' ' )\
-#                                            .split( " " ) )
-#                                    event_session_data['session_name'] = \
-#                                    ' '.join( event_session_line_parts[2:] )\
-#                                        .strip()
-#                                    event_session_data['session_date'] = \
-#                                            event_session_line_parts[0].strip()
-#                                    event_session_str_times_parts = \
-#                                            event_session_line_parts[1]\
-#                                            .split( "-", 1 )
-#                                    event_session_data['session_starttime'] = \
-#                                    event_session_str_times_parts[0].strip()
-#                                    event_session_data['session_endtime'] = \
-#                                    event_session_str_times_parts[1].strip()
-#                                    event_session_data_list\
-#                                    .append( event_session_data )
-#                                    #event_session_index += 1
-#
-#                    elif field_name == 'groups':
-#                        event_groups_req_names_list = \
-#                            [p for p in re.split( "( |\\\".*?\\\"|'.*?')", \
-#                            parts[1] ) if p.strip()]
-#
-#                    elif field_name == 'description':
-#                        event_data['description'] = field_data[1]
-#                    elif field_name == 'country':
-#                        country = parts[1]
-#                        countries = [x[0] for x in COUNTRIES]
-#                        if not country in countries:
-#                            countries_dict = dict( [( x[1].lower(), x[0] ) \
-#                                                    for x in COUNTRIES] )
-#                            country = country.lower()
-#                            if country in countries_dict:
-#                                country = countries_dict[country]
-#                            else:
-#                                raise ValidationError( _( 
-#                                "no '%s' country in countres list" % \
-#                                parts[0] ) )
-#                        event_data['country'] = country
-#                    else:
-#                        if not parts[2] == '':
-#
-#                            raise ValidationError( _( 
-#                                "field '%s' doesn't accept subparts" % \
-#                                parts[0] ) )
-#                        if parts[0] == '':
-#                            raise \
-#                            ValidationError\
-#                            ( _( "a left part of a colon is empty" ) )
-#                        if not synonyms.has_key( parts[0] ):
-#                            raise \
-#                            ValidationError( _( "keyword %s unknown" % \
-#                                                parts[0] ) )
-#                        event_data[synonyms[parts[0]]] = parts[1]
-#                except IndexError:
-#                    raise \
-#                    ValidationError( _( "Validation error in %s" % \
-#                                        field_data[1] ) )
-#            except ValidationError, error:
-#                errors.append( error )
-#        # at this moment we have event_data, event_url_data_list,
-#        # event_deadline_data_list and event_session_data_list
-#
-#        if not errors:
-#
-#            from gridcalendar.events.forms import ( EventForm, EventUrlForm,
-#                EventDeadlineForm, EventSessionForm )
-#
-#            try:
-#
-#                if ( event_id == None ):
-#                    event_form = EventForm( event_data )
-#                else:
-#                    try:
-#                        event = Event.objects.get( id = event_id )
-#                    except Event.DoesNotExist:
-#                        raise ValidationError( \
-#                                    _( "event '%s' doesn't exist" % \
-#                                       event_id ) )
-#                    event_form = EventForm( event_data, instance = event )
-#
-#                if event_form.is_valid():
-#                    event = event_form.save()
-#                    final_event_id = event.id
-#                else:
-#                    raise \
-#                    ValidationError( _( \
-#                                "there is an error: %s" % \
-#                                        event_form.errors ) )
-#            except ValidationError, error:
-#                errors.append( error )
-#
-#        # now we will create forms out of the lists of URLs, deadlines and
-#        # sessions, and check if these forms are valid
-#        if not errors:
-#            event_url_data_list2 = list()
-#            for event_url_data in event_url_data_list:
-#                event_url_data['event'] = final_event_id
-#                event_url_data_list2.append( event_url_data )
-#            try:
-#
-#                for event_url_data in event_url_data_list2:
-#                    try:
-#                        event_url = EventUrl.objects.get( 
-#                            Q( event = event_url_data['event'] ),
-#                            Q( url_name__exact = event_url_data['url_name'] ) )
-#                        event_url_form = \
-#                                EventUrlForm( event_url_data, instance = \
-#                                              event_url )
-#                    except EventUrl.DoesNotExist:
-#                        event_url_form = EventUrlForm( event_url_data )
-#                    if not event_url_form.is_valid():
-#                        if ( event_id == None ):
-#                            Event.objects.get( id = final_event_id ).delete()
-#                        raise ValidationError( _( 
-#                        "There is an error in the input data for URLs: %s" %
-#                            event_url_form.errors ) )
-#            except ValidationError, error:
-#                errors.append( error )
-#
-#        if not errors:
-#            event_deadline_data_list2 = list()
-#            for event_deadline_data in event_deadline_data_list:
-#                event_deadline_data['event'] = final_event_id
-#                event_deadline_data_list2.append( event_deadline_data )
-#            try:
-#                for event_deadline_data in event_deadline_data_list2:
-#                    try:
-#                        event_deadline = EventDeadline.objects.get( 
-#                                Q( event = event_deadline_data['event'] ),
-#                                Q( deadline_name__exact = \
-#                                    event_deadline_data['deadline_name'] ) )
-#                        event_deadline_form = EventDeadlineForm( 
-#                                event_deadline_data, instance = \
-#                                event_deadline )
-#                    except EventDeadline.DoesNotExist:
-#                        event_deadline_form = \
-#                        EventDeadlineForm( event_deadline_data )
-#                    if not event_deadline_form.is_valid():
-#                        if ( event_id == None ):
-#                            Event.objects.get( id = final_event_id ).delete()
-#                        raise ValidationError( _( 
-#                    "There is an error in the input data in the deadlines: %s"
-#                            % event_deadline_form.errors ) )
-#
-#            except ValidationError, error:
-#                errors.append( error )
-#
-#        if not errors:
-#
-#            event_session_data_list2 = list()
-#            for event_session_data in event_session_data_list:
-#                event_session_data['event'] = final_event_id
-#                event_session_data_list2.append( event_session_data )
-#            try:
-#                for event_session_data in event_session_data_list2:
-#                    try:
-#                        event_session = EventSession.objects.get( 
-#                                Q( event = event_session_data['event'] ),
-#                                Q( session_name__exact = \
-#                                        event_session_data['session_name'] ) )
-#                        event_session_form = EventSessionForm( 
-#                                event_session_data, instance = event_session )
-#                    except EventSession.DoesNotExist:
-#                        event_session_form = \
-#                        EventSessionForm( event_session_data )
-#                    if not event_session_form.is_valid():
-#                        if ( event_id == None ):
-#                            Event.objects.get( id = final_event_id ).delete()
-#                        raise ValidationError( _( 
-#                    "There is an error in the input data in the sessions: %s" %
-#                            event_session_form.errors ) )
-#            except ValidationError, error:
-#                errors.append( error )
-#
-#
-#        if not errors:
-#
-#            if ( event_id == None ):
-#                pass
-#            else:
-#                EventUrl.objects.filter( event = event_id ).delete()
-#                EventDeadline.objects.filter( event = event_id ).delete()
-#                EventSession.objects.filter( event = event_id ).delete()
-#                event_form.save()
-#
-#            for event_url_data in event_url_data_list2:
-#                event_url_form = EventUrlForm( event_url_data )
-#                event_url_form.save()
-#
-#            for event_deadline_data in event_deadline_data_list2:
-#                event_deadline_form = EventDeadlineForm( event_deadline_data )
-#                event_deadline_form.save()
-#
-#            for event_session_data in event_session_data_list2:
-#                event_session_form = EventSessionForm( event_session_data )
-#                event_session_form.save()
-#
-#            if event_id:
-#                event_groups_cur_id_list = event.groups_id_list()
-#            else:
-#                event_groups_cur_id_list = list()
-#            event_groups_req_id_list = list()
-#            try:
-#                for group_name_quoted in event_groups_req_names_list:
-#                    group_name = group_name_quoted.strip( '"' )
-#                    try:
-#                        group = Group.objects.get( name = group_name )
-#                    except Group.DoesNotExist:
-#                        raise ValidationError( _( 
-#                        "Group: %(group_name)s does not exist, enter a valid \
-#                        group name." % {"group_name":group_name} ) )
-#                    event_groups_req_id_list.append( group.id )
-#                    if group.id not in event_groups_cur_id_list:
-#                        if user_id is None or not \
-#                        group.is_user_in_group( user_id, group.id ):
-#                            raise ValidationError( _( 
-#                            "You are not a member of group: %(group_name)s so \
-#                            you can not add any event to it." %
-#                            {"group_name":group.name} ) )
-#                        event.add_to_group( group.id )
-#                for group_id in event_groups_cur_id_list:
-#                    if group_id not in event_groups_req_id_list:
-#                        if user_id is None or \
-#                                not group.is_user_in_group( user_id, group_id ):
-#                            group = Group.objects.get( id = group_id )
-#                            raise ValidationError( _( "You are not a \
-#                            member of group: %(group_name)s so you can not \
-#                            remove an event from it." % \
-#                            {"group_name":group.name} ) )
-#                        event.remove_from_group( group_id )
-#            except Exception, error:
-#                errors.append( error )
-#        if errors:
-#            return errors
-#        else:
-#            return event
 

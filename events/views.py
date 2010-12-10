@@ -349,6 +349,8 @@ def event_show( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
+    if isinstance(event_id, str) or isinstance(event_id, unicode):
+        event_id = int(event_id)
     event = get_object_or_404( Event, pk = event_id )
     if not Event.is_event_viewable_by_user( event_id, request.user.id ):
         return main( request, error_messages =
