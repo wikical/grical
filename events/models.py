@@ -1431,6 +1431,29 @@ class EventUrl( models.Model ): # {{{1
                     raise ValidationError(
                             _(u"the following line is malformed: ") + line)
                 urls[ field_m.group(1) ] = field_m.group(2)
+        # we now check each url using django.core.validators for the fields of
+        # this class
+        errors = []
+        url_validators = EventUrl._meta.get_field_by_name('url')[0].validators
+        url_name_validators = \
+                EventUrl._meta.get_field_by_name('url_name')[0].validators
+        for url_name, url in urls.items():
+            for val in url_name_validators:
+                try:
+                    val(url_name)
+                except ValidationError, e:
+                    errors.append( _('Error in url name %(url_name)s') %
+                            {'url_name': url_name,} )
+                    errors.extend( e.messages )
+            for val in url_validators:
+                try:
+                    val(url)
+                except ValidationError, e:
+                    errors.append( _('Error in url %(url)s') %
+                            {'url': url,} )
+                    errors.extend( e.messages )
+        if errors:
+            raise ValidationError( errors )
         return urls
 
     @staticmethod
@@ -1526,6 +1549,7 @@ class EventDeadline( models.Model ): # {{{1
         """ validates text lines containing EventDeadline entries,
         raising ValidationErrors if there are errors, otherwise it returns a
         dictionary with names and dates. """
+        # TODO: this code can be simplified using only the django validators
         if not isinstance(text, unicode):
             text = smart_unicode(text)
         field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
@@ -1542,9 +1566,11 @@ class EventDeadline( models.Model ): # {{{1
         syns = Event.get_synonyms()
         if syns[field_m.group(1).lower()] != u'deadlines':
             raise ValidationError(
-                    _(u"first line for deadlines doesn't contain a \
-                    synonym of 'deadlines' before the colon: ") + lines[0])
+                    _( ''.join(["first line for deadlines doesn't contain a ",
+                    "synonym of 'deadlines' before the colon: %(line)s"]) ) %
+                    {'line': lines[0],} )
         deadlines = {} # keys are names, values are dates
+        errors = [] # we store here errors
         if field_m.group(2) != u'':
             date_p = re.compile(r"^(\d\d\d\d)-(\d\d)-(\d\d)$")
             date_m = date_p.match(field_m.group(2))
@@ -1553,9 +1579,15 @@ class EventDeadline( models.Model ): # {{{1
                         _(u"default deadline was not of the form " +
                         u"nnnn-nn-nn. It was: ") + field_m.group(2))
             # default deadline:
-            deadlines['deadline'] = datetime.date(
-                    int(date_m.group(1)), int(date_m.group(2)),
-                    int(date_m.group(3)))
+            try:
+                deadlines['deadline'] = datetime.date(
+                        int(date_m.group(1)), int(date_m.group(2)),
+                        int(date_m.group(3)))
+            except (TypeError, ValueError), e:
+                errors.append(
+                    _('The default deadline %(deadline)s is not correct') %
+                    {'deadline': date_m.group(1) + '-' + date_m.group(2) + '-'
+                        + date_m.group(3),} )
         if len(lines) > 1:
             field_p = re.compile(r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(.*?)\s*$")
             for line in lines[1:]:
@@ -1564,9 +1596,40 @@ class EventDeadline( models.Model ): # {{{1
                     raise ValidationError(
                         _(u"the following line for a deadline is malformed: ")
                         + line)
-                deadlines[ field_m.group(4) ] = datetime.date(
-                        int(field_m.group(1)), int(field_m.group(2)),
-                        int(field_m.group(3)))
+                try:
+                    deadlines[ field_m.group(4) ] = datetime.date(
+                            int(field_m.group(1)), int(field_m.group(2)),
+                            int(field_m.group(3)))
+                except (TypeError, ValueError), e:
+                    errors.append(
+                        _("The deadline '%(deadline_name)s' is not correct") %
+                            {'deadline_name': field_m.group(4),} )
+        if errors:
+            raise ValidationError( errors )
+        # we now check each deadline using django.core.validators for the
+        # fields of this class
+        deadline_validators = EventDeadline._meta.get_field_by_name(
+                'deadline')[0].validators
+        deadline_name_validators = EventDeadline._meta.get_field_by_name(
+                'deadline_name')[0].validators
+        for deadline_name, deadline in deadlines.items():
+            for val in deadline_name_validators:
+                try:
+                    val(deadline_name)
+                except ValidationError, e:
+                    errors.append(
+                            _('Error in deadline name %(deadline_name)s') %
+                            {'deadline_name': deadline_name,} )
+                    errors.extend( e.messages )
+            for val in deadline_validators:
+                try:
+                    val(deadline)
+                except ValidationError, e:
+                    errors.append( _('Error in deadline %(deadline)s') %
+                            {'deadline': deadline,} )
+                    errors.extend( e.messages )
+        if errors:
+            raise ValidationError( errors )
         return deadlines
 
     @staticmethod
@@ -1684,6 +1747,7 @@ class EventSession( models.Model ): # {{{1
 
         Notice in the example above that ``time`` is a synonym of ``sessions``
         """
+        # TODO: this code can be simplified using only the django validators
         if not isinstance(text, unicode):
             text = smart_unicode(text)
         field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
@@ -1699,27 +1763,29 @@ class EventSession( models.Model ): # {{{1
                     _(u"first line for sessions doesn't contain a " +
                     "synonym of 'sessions' before the colon"))
         sessions = list()
+        errors = list()
         if field_m.group(2) != u'': # default session
             times_p = re.compile(r"^(\d\d):(\d\d)-(\d\d):(\d\d)\s*$")
             times_m = times_p.match(field_m.group(2))
             if not times_m:
-                raise ValidationError(
-                        _(u'default session data is not of the ' +
-                        'form nn:nn-nn:nn It was: ') + field_m.group(2))
-            try:
-                sessions.append(Session(
-                    date = default_date,
-                    start = datetime.time(
-                        int(times_m.group(1)),
-                        int(times_m.group(2))),
-                    end =  datetime.time(
-                        int(times_m.group(3)),
-                        int(times_m.group(4))),
-                    name = 'time'))
-                # TODO: use local time of event if present
-            except ValueError:
-                raise ValidationError(
-                        _(u"a time entry was wrong for: ") + field_m.group(2))
+                errors.append(
+                    _('default session data is not of the form nn:nn-nn:nn'))
+            else:
+                try:
+                    sessions.append(Session(
+                        date = default_date,
+                        start = datetime.time(
+                            int(times_m.group(1)),
+                            int(times_m.group(2))),
+                        end =  datetime.time(
+                            int(times_m.group(3)),
+                            int(times_m.group(4))),
+                        name = 'time'))
+                    # TODO: use local time of event if present
+                except (TypeError, ValueError), e:
+                    errors.append(
+                            _(u"error in default session's times: %(times)s")
+                            % {'times': field_m.group(2),} )
         if len(lines) > 1:
             field_p = re.compile(
                     r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*?)\s*$")
@@ -1727,8 +1793,8 @@ class EventSession( models.Model ): # {{{1
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
-                    raise ValidationError(
-                            _(u"the following line is malformed: ") + line)
+                    errors.append(
+                            _(u"the following session line is malformed: ") + line)
                 try:
                     sessions.append(Session(
                         date = datetime.date(
@@ -1742,10 +1808,36 @@ class EventSession( models.Model ): # {{{1
                             int(field_m.group(6)),
                             int(field_m.group(7))),
                         name = field_m.group(8)))
-                except ValueError:
-                    raise ValidationError(
-                            _(u"a time/date entry was wrong for line: ") + line)
+                except (TypeError, ValueError), e:
+                    errors.append(
+                            _(u"time/date entry error in line: ") + line)
                 # TODO: use local time of event if present
+        if errors:
+            raise ValidationError( errors )
+        # we now check each session using django.core.validators for the fields
+        # of this class
+        fvals = {} # validators
+        fvals['name'] = EventSession._meta.get_field_by_name(
+                'session_name')[0].validators
+        fvals['date'] = EventSession._meta.get_field_by_name(
+                'session_date')[0].validators
+        fvals['start'] = EventSession._meta.get_field_by_name(
+                'session_starttime')[0].validators
+        fvals['end'] = EventSession._meta.get_field_by_name(
+                'session_endtime')[0].validators
+        for session in sessions:
+            for field_name, vals in fvals.items():
+                for val in vals:
+                    try:
+                        val( getattr(session, field_name) )
+                    except ValidationError, e:
+                        errors.append(
+                            _('Error in %(session_name)s, %(field_name)s') %
+                            {'session_name': session.session_name,
+                                'field_name': field_name} )
+                        errors.extend( e.messages )
+        if errors:
+            raise ValidationError( errors )
         return sessions
 
     @staticmethod
