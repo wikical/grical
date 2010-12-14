@@ -334,9 +334,7 @@ sessions:
     2010-12-30    15:00-16:00    third presentation
 description:
 
-GridCalendar will be presented
-
-"""
+GridCalendar will be presented"""
 
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model
@@ -503,6 +501,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 unicode(self.latitude) + u";" + unicode(self.longitude)
         # TODO: add deadlines. As VALARMs or there is something better in
         # rfc5545 ?
+        # TODO: think of options commented on
+        # http://linuxwiki.de/Zentralkalender
         return ical
 
     def clone( self, user ): #{{{3
@@ -840,11 +840,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> assert(s[u'postcode'] ==  u'10439')
         >>> assert(s[u'public'] ==  u'True')
         >>> assert(s[u'start'] ==  u'2010-12-29')
-        >>> assert(s[u'tags'] ==  u'calendar software open-source gridmind gridcalendar')
+        >>> assert(s[u'tags'] ==
+        ...         u'calendar software open-source gridmind gridcalendar')
         >>> assert(s[u'timezone'] ==  u'60')
         >>> assert(s[u'title'] ==  u'GridCalendar presentation')
-        >>> assert(c[u'deadlines'][1].replace(' ','') == u'2009-11-01visitortickets')
-        >>> assert(c[u'deadlines'][2].replace(' ','') == u'2010-10-01callforpapers')
+        >>> assert(c[u'description'][2] == u'GridCalendar will be presented')
+        >>> assert(c[u'deadlines'][1].replace(' ','')
+        ...         == u'2009-11-01visitortickets')
+        >>> assert(c[u'deadlines'][2].replace(' ','') ==
+        ...         u'2010-10-01callforpapers')
         >>> c['deadlines'][3]
         Traceback (most recent call last):
             ...
@@ -853,8 +857,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """
         if not isinstance(text, unicode):
             text = smart_unicode(text)
-        # MacOS uses \r, and Windows uses \r\n - convert it all to Unix \n
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
         simple_list = Event.get_simple_fields()
         complex_list = Event.get_complex_fields()
         simple_dic = {}  # to be returned, see docstring of this method
@@ -866,10 +868,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # group 1 is the name of the field, group 2 is the value
         empty_line_p = re.compile(r"^\s*$")
         line_counter = 0
-        for line in text.split('\n'):
+        for line in text.splitlines():
             line_counter += 1
             if current and current == "description":
-                lines.append(line)
+                if empty_line_p.match(line):
+                    lines.append('')
+                else:
+                    lines.append(line)
                 continue
             # empty lines, if not in 'description', are ignored
             if empty_line_p.match(line):
@@ -1000,6 +1005,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     raise RuntimeError(
                         _(u'the event is not viewable by the user'))
             event_form = EventForm( simple_fields, instance = event )
+        # processing description
+        if complex_fields.has_key(u'description'):
+            description = u"\n".join(complex_fields[u'description'])
+            # remove the word 'description'
+            event_form.data['description'] = description[13:]
+            del complex_fields[u'description']
+        # testing data
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
         # check syntax of complex fields before saving the form
@@ -1035,11 +1047,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             EventSession.parse_text(event,
                     u'\n'.join(complex_fields[u'sessions']), sessions)
             del complex_fields[u'sessions']
-        if complex_fields.has_key(u'description'):
-            description = u"\n".join(complex_fields[u'description'])
-            # remove the word 'description'
-            event.description = description[13:]
-            del complex_fields[u'description']
         assert(len(complex_fields) == 0)
         return event
 
