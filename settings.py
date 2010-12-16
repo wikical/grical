@@ -229,6 +229,10 @@ try:
 except NameError:
     ROOT_URLCONF = 'urls'
 
+try:
+    REPLY_TO
+except NameError:
+    REPLY_TO = None
 
 ################################
 # example of a settings_local.py

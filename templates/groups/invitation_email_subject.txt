@@ -1,1 +1,1 @@
-you are invited to a {{site.domain}} group
+{% load i18n %}{{ sitename }} - {% blocktrans %}group invitation for {{ guest }} from {{ host }} to {{ group }}{% endblocktrans %}
