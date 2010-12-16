@@ -21,7 +21,7 @@ Installation instructions for Debian based systems
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
-1. If using Apache use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
+1. If using Apache, use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
 
     <VirtualHost *:80>
         ServerName gridcalendar.net
@@ -73,6 +73,7 @@ Installation instructions for Debian based systems
         cd /usr/local/gridcalendar
         sqlite3 gridcalendar.sqlite
         update django_site set domain='gridcalendar.net' where id=1 ;
+        update django_site set name='Grid Calendar' where id=1 ;
 
 1. If you want to use postgresql (instead of sqlite) for storing your data:
    
@@ -107,3 +108,7 @@ Installation instructions for Debian based systems
         Would you like to create one now? (yes/no): yes
         ...
 
+    1. Configure the ``django_site`` table::
+
+        update django_site set domain='gridcalendar.net' where id=1 ;
+        update django_site set name='Grid Calendar' where id=1 ;

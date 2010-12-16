@@ -34,7 +34,7 @@ import datetime
 import vobject
 
 from django.contrib.sites.models import Site
-from django.core.mail import send_mail, BadHeaderError
+from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.utils.encoding import smart_str, smart_unicode
 from django.db import models
 # http://docs.djangoproject.com/en/1.2/topics/db/queries/#filters-can-reference-fields-on-the-model
@@ -2729,7 +2729,10 @@ class GroupInvitationManager( models.Manager ): # {{{1
         current_site = Site.objects.get_current()
 
         subject = render_to_string( 'groups/invitation_email_subject.txt',
-                                   { 'site': current_site } )
+                { 'sitename': current_site.name,
+                  'guest': guest.username,
+                  'host': host.username,
+                  'group': group.name, } )
         # Email subject *must not* contain newlines
         subject = ''.join( subject.splitlines() )
 
@@ -2737,13 +2740,28 @@ class GroupInvitationManager( models.Manager ): # {{{1
                 'groups/invitation_email.txt',
                 { 'activation_key': activation_key,
                   'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS,
-                  'site': current_site,
+                  'sitename': current_site.name,
+                  'sitedomain': current_site.domain,
                   'host': host.username,
+                  'guest': guest.username,
                   'group': group.name, } )
 
-        send_mail(
-                subject, message, settings.DEFAULT_FROM_EMAIL, [guest.email] )
-
+        # we change the user-part of the sender to:
+        # current_site group invitation <group-invitation@current_site>
+        dfrom = settings.DEFAULT_FROM_EMAIL
+        from_header = current_site.name + ' group invitation <' + \
+                'group-invitation' + dfrom[ dfrom.find('@'): ] + '>'
+        if settings.REPLY_TO:
+            email = EmailMessage( subject, message, from_header,
+                    [guest.email,],
+                    list(), # BCC, TODO: think of logging or sending to somewhere
+                    headers = {'Reply-To': settings.REPLY_TO,} )
+        else:
+            email = EmailMessage( subject, message, from_header,
+                    [guest.email,],
+                    list(), # BCC, TODO: think of logging or sending to somewhere
+                    )
+        email.send()
 
     def delete_expired_invitations( self ):
         """
