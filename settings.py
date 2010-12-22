@@ -75,8 +75,22 @@ LOGOUT_URL = '/a/accounts/logout/'
 # localization settings
 # =============================================================================
 
-SHORT_DATETIME_FORMAT = 'Y-m-d P'
-SHORT_DATE_FORMAT = 'Y-m-d'
+try:
+    SHORT_DATETIME_FORMAT
+except NameError:
+    SHORT_DATETIME_FORMAT = 'Y-m-d H:M'
+try:
+    SHORT_DATE_FORMAT
+except NameError:
+    SHORT_DATE_FORMAT = 'Y-m-d'
+try:
+    TIME_FORMAT
+except NameError:
+    TIME_FORMAT = 'H:M'
+try:
+    DATE_FORMAT
+except NameError:
+    DATE_FORMAT = 'Y-m-d'
 
 # =============================================================================
 # for the tagging application
@@ -188,14 +202,12 @@ try:
 except NameError:
     LANGUAGES = ( ( 'en', 'English' ), )
 
-try:
-    DATE_FORMAT
-except NameError:
-    DATE_FORMAT = 'Y-m-d'
-
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
+
+# TODO: use USE_L10N
+# see http://docs.djangoproject.com/en/dev/ref/settings/?from=olddocs#use-l10n
 
 # This is used by the django.contrib.sites, which is needed by for instance the
 # registration code we are using from a Debian package (upstream is:

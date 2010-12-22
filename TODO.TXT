@@ -15,6 +15,7 @@ high priority
     http://efreedom.com/Question/1-1212559/Spam-Proof-Hit-Counter-Django
 - repeating events
 - notifications with e.g. -10days for interesting events.
+- accept names in other languages, see http://www.geonames.org/
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
 - Check that all strings to be translated uses the Python's standard named-string interpolation
@@ -57,11 +58,15 @@ medium priority
 
 - have some graphics to add to events with some flags, i.e. a floss-graphic
 - marking events as "uninteresting", "interesting", "very interesting", "attending". Later:
+
     - uninteresting events can be left out in filters, notifications, etc.
     - other users can see which users are attending an event
     - other users can see the interesting events for a user
     - the system can tell you interesting users to you, i.e. users with similar interests to you
-- add hCalendar_ (which is provided by the vobjects library, see the example about hcalendar at http://svn.osafoundation.org/vobject/trunk/test_vobject.py
+
+- add hCalendar_ , which is provided by the vobjects library, see the example about hcalendar at
+  http://svn.osafoundation.org/vobject/trunk/test_vobject.py and
+  http://microformats.org/code/hcalendar/creator
 - css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
@@ -77,6 +82,10 @@ medium priority
 - add an option "I will be there"
   Users should have friends (mayby group members are considered as friends as a profile option)
   who can be notified (as option in profile)
+- timezones, see
+
+  - http://pytz.sourceforge.net/
+  - http://docs.python.org/library/datetime.html
 
 low priority
 ------------

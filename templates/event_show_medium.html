@@ -12,7 +12,7 @@
     </span>
     &nbsp;&nbsp;
     <span class="title">
-      <a href="{% url event_show event.id %}">{{ event.title }}</a>
+        <a href="{% url event_show event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
     </span>
     <br />
     <span class="dates">

@@ -53,6 +53,7 @@ from gridcalendar.events.models import (
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar)
 from gridcalendar.settings import PROJECT_NAME
+from gridcalendar.events.utils import search_address
 
 
 def help_page( request ): # {{{1
@@ -752,9 +753,37 @@ def main( request, messages = None, error_messages = None ): # {{{1
                 public = True
             event = Event( user_id = request.user.id,
                       title = cleaned_data['title'],
-                      start = cleaned_data['start'],
+                      start = cleaned_data['when']['start_date'],
                       tags = cleaned_data['tags'],
                       public = public )
+            # TODO simplified with for set_something(Event, ..., ...)
+            if cleaned_data['when'].has_key('end_date'):
+                event.end = cleaned_data['when']['end_date']
+            if cleaned_data['when'].has_key('start_time'):
+                event.starttime = cleaned_data['when']['start_time']
+            if cleaned_data['when'].has_key('end_time'):
+                event.endtime = cleaned_data['when']['end_time']
+            addresses = search_address( cleaned_data['where'] )
+            # TODO simplified with for set_something(Event, ..., ...)
+            if addresses and len( addresses ) == 1:
+                address = addresses.values()[0]
+                if address.has_key( 'longitude' ):
+                    event.longitude = address['longitude']
+                if address.has_key( 'latitude' ):
+                    event.latitude = address['latitude']
+                if address.has_key( 'address' ):
+                    event.address = address['address']
+                if address.has_key( 'house' ):
+                    event.house =  address['house']
+                if address.has_key( 'country' ):
+                    event.country = address['country']
+                if address.has_key( 'postcode' ):
+                    event.postcode = address['postcode']
+                if address.has_key( 'city' ):
+                    event.city = address['city']
+            else:
+                #FIXME: deal with more than one address or none
+                event.address = cleaned_data['where']
             event.save()
             # create the url data
             event.urls.create( url_name = "web", url = cleaned_data['web'] )

@@ -30,6 +30,7 @@ from re import UNICODE
 import hashlib
 import threading
 import datetime
+from smtplib import SMTPConnectError
 
 import vobject
 
@@ -312,7 +313,9 @@ COUNTRIES = (
 EXAMPLE = u"""acronym: GriCal
 title: GridCalendar presentation
 start: 2010-12-29
+starttime: 10:00
 end: 2010-12-30
+endtime: 18:00
 tags: calendar software open-source gridmind gridcalendar
 urls:
     code    http://example.com
@@ -327,7 +330,6 @@ longitude: 13.40364
 deadlines:
     2009-11-01    visitor tickets
     2010-10-01    call for papers
-timezone: 60
 sessions:
     2010-12-29    10:00-11:00    first presentation
     2010-12-29    15:00-16:00    second presentation
@@ -354,13 +356,18 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             null = True, help_text = _( u'Example: 26C3' ) )
     title = models.CharField( _( u'Title' ), max_length = 200, blank = False,
             help_text = _( u'Example: Demonstration against software patents' ) )
-    start = models.DateField( _( u'Start' ), blank = False,
+    start = models.DateField( _( u'Start date' ), blank = False,
             help_text = _( u"Example: 2006-10-25"))
-    end = models.DateField( _( u'End' ), null = True, blank = True )
+    end = models.DateField( _( u'End date' ), null = True, blank = True )
+    starttime = models.TimeField( 
+            _( u'Start time' ), blank = True, null = True )
+    endtime = models.TimeField( 
+            _( u'End time' ), blank = True, null = True )
     tags = TagField( _( u'Tags' ), blank = True, null = True,
-        help_text = _( u"Tags are case in-sensitive. Only letters (these can \
-        be international, like: αöł), digits and hyphens (-) are allowed. \
-        Tags are separated with spaces." ) )
+        help_text = _( u''.join( [u"Tags are case in-sensitive. Only letters ",
+            u"(these can be international, like: αöł), digits and hyphens (-)",
+            u"are allowed. Tags are separated with spaces. Example: ",
+            u"demonstration software-patents"] ) ) )
     public = models.BooleanField( _( u'Public' ), default = True,
         help_text = _( u"A public event can be seen and edited by anyone, \
         otherwise only by the members of selected groups" ) )
@@ -370,26 +377,23 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             _( u'City' ), blank = True, null = True, max_length = 50 )
     postcode = models.CharField( _( u'Postcode' ), blank = True, null = True,
             max_length = 16 )
-    address = models.CharField( _( u'Street address' ), blank = True,
-            null = True, max_length = 100 )
+    address = models.CharField( _( u'Address' ), blank = True,
+            null = True, max_length = 100, # TODO: increase to 200
+            help_text = _( u'Name of the street' ) )
     latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
-            help_text = _( u"In decimal degrees, not \
-            degrees/minutes/seconds. Prefix with \"-\" for South, no sign for \
-            North." ) )
+            help_text = _( u'In decimal degrees, not ' \
+            u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
+            u'for North' ) )
     longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
-            help_text = _( u"In decimal degrees, not \
-                degrees/minutes/seconds. Prefix with \"-\" for West, no sign \
-                for East." ) )
-    timezone = models.SmallIntegerField( 
-            _( u'Timezone' ), blank = True, null = True,
-            help_text = _( u"Minutes relative to UTC (e.g. -60 means UTC-1)" ) )
+            help_text = _( u'In decimal degrees, not ' \
+                u'degrees/minutes/seconds. Prefix with "-" for West, no ' \
+                u'sign for East' ) )
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
 
     clone_of = models.ForeignKey( 'self',
             editable = False, blank = True, null = True )
-    """ Relation to orginal object, or null if this is orginal. Not used
-    at the moment. """
+    """ Relation to orginal object, or null if this is original."""
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -400,8 +404,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def next_coming_date_or_start(self): #{{{3
         """ returns the next most proximate date of an event to today, which
-        can be the start date, the end date or one of the deadlines; or the
-        start date if all are in the past
+        can be the start date, the end date or one of the deadlines; otherwise
+        the start date if all are in the past
         
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -469,7 +473,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             ical.add('PRODID').value = settings.PRODID
         vevent = ical.add('vevent')
         vevent.add('SUMMARY').value = self.title
-        vevent.add('DTSTART').value = self.start
+        if self.starttime:
+            vevent.add('DTSTART').value = datetime.datetime.combine(
+                    self.start, self.starttime )
+            # TODO: get tzinfo from city and country
+        else:
+            vevent.add('DTSTART').value = self.start
         if self.tags:
             vevent.add('CATEGORIES').value = self.tags.split(u' ')
         location = ""
@@ -489,7 +498,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 + unicode(self.id) + u'@' + \
                 settings.HOST_IP
         if self.end:
-            vevent.add('DTEND').value = self.end
+            if self.endtime:
+                vevent.add('DTEND').value = datetime.datetime.combine(
+                        self.end, self.endtime )
+                # TODO: get tzinfo from city and country
+            else:
+                vevent.add('DTEND').value = self.end
         if self.description: vevent.add('DESCRIPTION').value = self.description
         # see rfc5545 3.8.7.2. Date-Time Stamp
         vevent.add('DTSTAMP').value = self.modification_time
@@ -723,19 +737,27 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 to_return += keyword + u": " + self.title + u"\n"
             elif keyword == u'start':
                 to_return += u''.join( [
+                    keyword, u": ",
+                    unicode(self.start.strftime( "%Y-%m-%d" )), u"\n"] )
+            elif keyword == u'starttime':
+                if self.starttime:
+                    to_return += u''.join( [
                         keyword, u": ",
-                        unicode(self.start.strftime( "%Y-%m-%d" )), u"\n"] )
+                        unicode(self.starttime.strftime( "%H:%M" )), u"\n"] )
             elif keyword == u'end':
                 if self.end:
                     to_return += u''.join( [
                         keyword, u": ",
-                        unicode(self.end.strftime( "%Y-%m-%d")), u"\n"] )
+                        unicode(self.end.strftime( "%Y-%m-%d")),
+                        u"\n"] )
+            elif keyword == u'endtime':
+                if self.endtime:
+                    to_return += u''.join( [
+                        keyword, u": ",
+                        unicode(self.endtime.strftime( "%H:%M" )), u"\n"] )
             elif keyword == u'country':
                 if self.country:
                     to_return += keyword + u": " + self.country + u"\n"
-            elif keyword == u'timezone':
-                if self.timezone:
-                    to_return += keyword + u": " + unicode(self.timezone)+u"\n"
             elif keyword == u'latitude':
                 if self.latitude:
                     to_return += keyword + u": " + unicode(self.latitude)+u"\n"
@@ -826,7 +848,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         its values as values.
 
         The second dictionary contains the names of complex fields as keys, and
-        lists as values. The list contains all lines including the first one.
+        lists as values. The list contains all lines including the first one
+        with the name of the field.
 
         >>> example = Event.example()
         >>> s,c = Event.get_fields(example)
@@ -835,14 +858,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> assert(s[u'city'] ==  u'Berlin')
         >>> assert(s[u'country'] ==  u'DE')
         >>> assert(s[u'end'] ==  u'2010-12-30')
+        >>> assert(s[u'endtime'] ==  u'18:00')
         >>> assert(s[u'latitude'] ==  u'52.55247')
         >>> assert(s[u'longitude'] ==  u'13.40364')
         >>> assert(s[u'postcode'] ==  u'10439')
         >>> assert(s[u'public'] ==  u'True')
         >>> assert(s[u'start'] ==  u'2010-12-29')
+        >>> assert(s[u'starttime'] ==  u'10:00')
         >>> assert(s[u'tags'] ==
         ...         u'calendar software open-source gridmind gridcalendar')
-        >>> assert(s[u'timezone'] ==  u'60')
         >>> assert(s[u'title'] ==  u'GridCalendar presentation')
         >>> assert(c[u'description'][2] == u'GridCalendar will be presented')
         >>> assert(c[u'deadlines'][1].replace(' ','')
@@ -927,7 +951,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
             title: a title
             tags: tag1 tag2 tag3
-            start: 2020-01-30
+            start: 2020-01-30 10:00
             ...
 
         There are synonyms for the names of the fields, like e.g. 't' for
@@ -1027,8 +1051,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             deadlines = None
         if complex_fields.has_key(u'sessions'):
             sessions = EventSession.get_sessions(
-                    u'\n'.join(complex_fields[u'sessions']),
-                    event_form.fields['start'] )
+                    u'\n'.join(complex_fields[u'sessions']) )
         else:
             sessions = None
         # save the form and get the event
@@ -1100,9 +1123,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> assert(gpl_len + 1 == len(synonyms_values_set))
  
         """
-        return (u"acronym", u"title", u"start", u"end", u"tags", u"urls",
-            u"public", u"address", u"postcode", u"city", u"country", u"latitude",
-            u"longitude", u"deadlines", u"timezone", u"sessions", u"description")
+        return (u"acronym", u"title", u"start", u"starttime", u"end",
+                u"endtime", u"tags", u"urls", u"public", u"address",
+                u"postcode", u"city", u"country", u"latitude", u"longitude",
+                u"deadlines", u"sessions", u"description")
  
     @staticmethod
     def get_synonyms(): #{{{3
@@ -1123,7 +1147,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> synonyms_values_set.remove('sessions')
         >>> field_names = [f.name for f in Event._meta.fields]
         >>> field_names = set(field_names)
-        >>> assert(len(synonyms_values_set) == 14)
         >>> assert (field_names >= synonyms_values_set)
         """
         if settings.DEBUG:
@@ -1141,9 +1164,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # and the online documentation under e.g. gridcalendar.net/h/
         # TODO: implement a system for using translations for tags (maybe
         # related to a preferred language user-based)
-        synonyms = {}
-        add( synonyms, u'ti', u'title' )
+        synonyms = {} # TODO: think of using translations instead of synonyms
         add( synonyms, u'title', u'title' )       # title
+        add( synonyms, u'ti', u'title' )
         add( synonyms, u'titl', u'title' )
         add( synonyms, u'start', u'start' )       # start
         add( synonyms, u'st', u'start' )
@@ -1154,6 +1177,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'start-date', u'start' )
         add( synonyms, u'start_date', u'start' )
         add( synonyms, u'sd', u'start' )
+        add( synonyms, u'starttime', u'starttime' ) # starttime
+        add( synonyms, u'time', u'starttime' )
+        add( synonyms, u'start_time', u'starttime' )
+        add( synonyms, u'start time', u'starttime' )
+        add( synonyms, u'startime', u'starttime' )
+        add( synonyms, u'endtime', u'endtime' ) # endtime
+        add( synonyms, u'end_time', u'endtime' )
+        add( synonyms, u'end time', u'endtime' )
         add( synonyms, u'tags', u'tags' )        # tags
         add( synonyms, u'ta', u'tags' )
         add( synonyms, u'tag', u'tags' )
@@ -1205,8 +1236,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'longitude', u'longitude' )   # longitude
         add( synonyms, u'lo', u'longitude' )
         add( synonyms, u'long', u'longitude' )
-        add( synonyms, u'timezone', u'timezone' )    # timezone
-        add( synonyms, u'tz', u'timezone' )
         add( synonyms, u'description', u'description' ) # description
         add( synonyms, u'de', u'description' )
         add( synonyms, u'desc', u'description' )
@@ -1229,8 +1258,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'sessions', u'sessions' )    # sessions (*)
         add( synonyms, u'se', u'sessions' )
         add( synonyms, u'session', u'sessions' )
-        add( synonyms, u'times', u'sessions' )
-        add( synonyms, u'time', u'sessions' )
         # (*) can have multi-lines and are not simple text fields
         return synonyms
 
@@ -1742,24 +1769,20 @@ class EventSession( models.Model ): # {{{1
                 unicode( self.session_endtime ) + u'    ' + self.session_name
 
     @staticmethod
-    def get_sessions( text , default_date ):
+    def get_sessions( text ):
         """ validates text lines containing EventSession entries,
         raising ValidationErrors if there are errors, otherwise it returns a
         dictionary with session names as keys and Session instances as values.
-
-        ``default_date`` is used for shorthand entries (which will have the
-        default name ``time``). Example::
-
-            time: 10:00-11:00
-
-        Notice in the example above that ``time`` is a synonym of ``sessions``
         """
-        # TODO: this code can be simplified using only the django validators
+        # TODO: simplify this code using the sessions form to validate data.
+        # The form  should include validation code that check for instance that
+        # the start time is before the end time, etc. See
+        # http://docs.djangoproject.com/en/1.2/ref/forms/api/#using-forms-to-validate-data
         if not isinstance(text, unicode):
             text = smart_unicode(text)
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
+        field_p = re.compile(r"(^[^\s:]+)\s*:\s*$", re.UNICODE)
         lines = text.splitlines()
-        # test for default deadline
+        # test for first line
         field_m = field_p.match(lines[0])
         if not field_m:
             raise ValidationError(
@@ -1769,56 +1792,36 @@ class EventSession( models.Model ): # {{{1
             raise ValidationError(
                     _(u"first line for sessions doesn't contain a " +
                     "synonym of 'sessions' before the colon"))
+        if len ( lines ) < 2:
+            raise ValidationError(
+                    _(u"there is no sessions data") )
         sessions = list()
         errors = list()
-        if field_m.group(2) != u'': # default session
-            times_p = re.compile(r"^(\d\d):(\d\d)-(\d\d):(\d\d)\s*$")
-            times_m = times_p.match(field_m.group(2))
-            if not times_m:
+        field_p = re.compile(
+                r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*?)\s*$")
+                #      1          2      3        4      5      6      7       8
+        for line in lines[1:]:
+            field_m = field_p.match(line)
+            if not field_m:
                 errors.append(
-                    _('default session data is not of the form nn:nn-nn:nn'))
-            else:
-                try:
-                    sessions.append(Session(
-                        date = default_date,
-                        start = datetime.time(
-                            int(times_m.group(1)),
-                            int(times_m.group(2))),
-                        end =  datetime.time(
-                            int(times_m.group(3)),
-                            int(times_m.group(4))),
-                        name = 'time'))
-                    # TODO: use local time of event if present
-                except (TypeError, ValueError), e:
-                    errors.append(
-                            _(u"error in default session's times: %(times)s")
-                            % {'times': field_m.group(2),} )
-        if len(lines) > 1:
-            field_p = re.compile(
-                    r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*?)\s*$")
-                    #      1          2      3        4      5      6      7       8
-            for line in lines[1:]:
-                field_m = field_p.match(line)
-                if not field_m:
-                    errors.append(
-                            _(u"the following session line is malformed: ") + line)
-                try:
-                    sessions.append(Session(
-                        date = datetime.date(
-                            int(field_m.group(1)),
-                            int(field_m.group(2)),
-                            int(field_m.group(3))),
-                        start = datetime.time(
-                            int(field_m.group(4)),
-                            int(field_m.group(5))),
-                        end = datetime.time(
-                            int(field_m.group(6)),
-                            int(field_m.group(7))),
-                        name = field_m.group(8)))
-                except (TypeError, ValueError), e:
-                    errors.append(
-                            _(u"time/date entry error in line: ") + line)
-                # TODO: use local time of event if present
+                        _(u"the following session line is malformed: ") + line)
+            try:
+                sessions.append(Session(
+                    date = datetime.date(
+                        int(field_m.group(1)),
+                        int(field_m.group(2)),
+                        int(field_m.group(3))),
+                    start = datetime.time(
+                        int(field_m.group(4)),
+                        int(field_m.group(5))),
+                    end = datetime.time(
+                        int(field_m.group(6)),
+                        int(field_m.group(7))),
+                    name = field_m.group(8)))
+            except (TypeError, ValueError), e:
+                errors.append(
+                        _(u"time/date entry error in line: ") + line)
+            # TODO: use local time of event if present
         if errors:
             raise ValidationError( errors )
         # we now check each session using django.core.validators for the fields
@@ -1895,7 +1898,7 @@ class EventSession( models.Model ): # {{{1
             event = Event.objects.get(pk = int(event))
         if not isinstance(text, unicode):
             text = smart_unicode(text)
-        sessions = EventSession.get_sessions( text, event.start )
+        sessions = EventSession.get_sessions( text )
         event_sessions = list() # stores EventSessions to be saved at the end
         for session in sessions:
             try:
@@ -2306,8 +2309,8 @@ class Filter( models.Model ): # {{{1
                         try:
                             send_mail(subject, message, from_email,
                                     [user.email,])
-                        except BadHeaderError:
-                            # TODO: do something meanfull
+                        except (BadHeaderError, SMTPConnectError):
+                            # TODO: do something meanfull, e.g. error log
                             pass
                     break
 
@@ -2747,7 +2750,8 @@ class GroupInvitationManager( models.Manager ): # {{{1
                   'group': group.name, } )
 
         # we change the user-part of the sender to:
-        # current_site group invitation <group-invitation@current_site>
+        # current_site.name group invitation
+        # <group-invitation@host_part_of_DEFAULT_FROM_EMAIL>
         dfrom = settings.DEFAULT_FROM_EMAIL
         from_header = current_site.name + ' group invitation <' + \
                 'group-invitation' + dfrom[ dfrom.find('@'): ] + '>'
