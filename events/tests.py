@@ -53,7 +53,7 @@ from registration.models import RegistrationProfile
 # source: http://bitbucket.org/kmike/django-webtest/src
 from django_webtest import WebTest
 
-from gridcalendar.events import models, views
+from gridcalendar.events import models, views, forms, utils
 from events.models import ( Event, Group, Filter, Membership,
         Calendar, GroupInvitation, ExtendedUser )
 
@@ -67,6 +67,8 @@ def suite(): #{{{1
     tests = unittest.TestSuite()
     tests.addTest(doctest.DocTestSuite(models))
     tests.addTest(doctest.DocTestSuite(views))
+    tests.addTest(doctest.DocTestSuite(forms))
+    tests.addTest(doctest.DocTestSuite(utils))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsTestCase ))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
@@ -87,14 +89,15 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
         """ test adding and editing and event anonymously. """
         self.client.logout()
         event_form = self.app.get( reverse('main') ).forms[1]
-        event_form['title'] = 'event submission'
-        event_form['start'] = datetime.date.today().isoformat()
+        title = 'event submission ' + str( datetime.datetime.now() )
+        event_form['title'] = title
+        event_form['when'] = datetime.date.today().isoformat()
         event_form['tags'] = 'submission'
         event_form['web'] = 'http://example.com'
         # submitt and get extended form
         response = event_form.submit().follow()
         self.assertEqual(
-                Event.objects.filter(title = 'event submission').count(),
+                Event.objects.filter(title = title).count(),
                 1 )
         event_form = response.forms[1]
         # TODO add one url
@@ -527,6 +530,13 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         response = conn.getresponse()
         result = response.read()
         self.assertTrue( 'Congratulations' in result )
+
+    def test_clone_of_event( self ):
+        """ checks that all classes with references to Event implement a clone
+        method with ``self`` and ``event`` as only parameters.
+        """
+        pass # FIXME
+        # TODO check also a clone of another clone
 
     # TODO {{{2
     #This test can't work with sqlite, because sqlite not support multiusers, 

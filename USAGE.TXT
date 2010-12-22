@@ -1,4 +1,4 @@
-.. This file is written in ReStructuredText, explains how GridCalendar works and is part of the generated web documentation
+.. This file is written in ReStructuredText, explains how GridCalendar works and is part of the generated web
 
 Help
 ====
@@ -57,7 +57,9 @@ You can optionally include more data in the submission. Example::
     acronym: GriCal
     title: GridCalendar presentation
     start: 2010-12-29
+    starttime: 10:00
     end: 2010-12-30
+    endtime: 18:00
     tags: calendar software open-source gridmind gridcalendar
     urls:
         code    http://example.com

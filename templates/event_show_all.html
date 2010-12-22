@@ -120,9 +120,6 @@
             
     {% if event.sessions.all %}
         <h2> {% trans "Sessions" %} </h2>
-        {% if event.timezone %}
-            <p>{% trans "Timezone:" %}&nbsp;{{ event.timezone }}</p>
-        {% endif %}
         <table>
             {% for session in event.sessions.all %}
                 <tr>

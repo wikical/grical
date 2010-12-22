@@ -23,10 +23,11 @@
 """ Forms """
 
 import re
+import datetime
 
-from django.forms import (CharField, IntegerField, HiddenInput,
+from django.forms import ( CharField, IntegerField, HiddenInput,
         ModelMultipleChoiceField, URLField, ModelForm, ValidationError,
-        TextInput, CheckboxSelectMultiple, Form)
+        TextInput, CheckboxSelectMultiple, Form, Field )
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -34,8 +35,104 @@ from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
         EventSession, Filter, Group, Membership)
 
+def _date(string):
+    """ parse a date in the format: yyyy-mm-dd """
+    return datetime.datetime.strptime(string, '%Y-%m-%d').date()
+
+def _time(string):
+    """ parse a time in the format: hh:mm """
+    return datetime.datetime.strptime(string, '%H:%M').time()
+
+class DatesTimesField(Field):
+    """ processes one or two dates and optionally one or two times.
+
+    Valid formats:
+
+    - 2010-01-25
+    - 2010-01-25 2010-01-26
+    - 2010-01-25 10:00
+    - 2010-01-25 10:00 2010-01-26 18:00
+    - 2010-01-25 10:00 11:00
+    - 2010-01-25 10:00-11:00
+
+    >>> dt = DatesTimesField()
+    >>> d = dt.to_python('2010-01-25')
+    >>> d = dt.to_python('2010-01-25 2010-01-26')
+    >>> d = dt.to_python('2010-01-25 10:00')
+    >>> d = dt.to_python('2010-01-25 10:00 2010-01-26 18:00')
+    >>> d = dt.to_python('2010-01-25 10:00 11:00')
+    >>> d = dt.to_python('2010-01-25 10:00-11:00')
+    """
+    def to_python(self, value):
+        """ returns a dictionary with four values: start_date, end_date,
+        start_time, end_time """
+        re_d = \
+            re.compile( r'^\s*(\d\d\d\d-\d\d-\d\d)\s*$', re.UNICODE )
+        re_d_d = \
+            re.compile(r'^\s*(\d\d\d\d-\d\d-\d\d)\s+(\d\d\d\d-\d\d-\d\d)\s*$',
+                    re.UNICODE)
+        re_d_t = \
+            re.compile(r'^\s*(\d\d\d\d-\d\d-\d\d)\s+(\d\d:\d\d)\s*$',
+                    re.UNICODE)
+        re_d_t_d_t = \
+            re.compile(r"""
+                ^\s*(\d\d\d\d-\d\d-\d\d)
+                \s+(\d\d:\d\d)
+                \s+(\d\d\d\d-\d\d-\d\d)
+                \s+(\d\d:\d\d)\s*$""", re.UNICODE | re.X )
+        re_d_t_t = \
+            re.compile(r"""
+                ^\s*(\d\d\d\d-\d\d-\d\d)
+                \s+(\d\d:\d\d)
+                \s+(\d\d:\d\d)\s*$""", re.UNICODE | re.X )
+        re_d_t_t =   re.compile( r"""
+            ^\s*(\d\d\d\d-\d\d-\d\d) # beginning, optional spaces, start date
+             \s+(\d\d:\d\d)          # start time after one ore more spaces
+             (?:(?:\s+)|(?:\s*-\s*)) # one or more spaces, alternatively -
+             (\d\d:\d\d)\s*$         # end time before optinal spaces""",
+            re.UNICODE | re.X )
+        try:
+            matcher = re_d.match(value)
+            if matcher:
+                return {'start_date': _date(matcher.group(1)),}
+            matcher = re_d_d.match(value)
+            if matcher:
+                return {'start_date': _date(matcher.group(1)),
+                        'end_date': _date(matcher.group(2))}
+            matcher = re_d_t.match(value)
+            if matcher:
+                return {'start_date': _date(matcher.group(1)),
+                        'start_time': _time(matcher.group(2))}
+            matcher = re_d_t_d_t.match(value)
+            if matcher:
+                return {'start_date': _date(matcher.group(1)),
+                        'start_time': _time(matcher.group(2)),
+                        'end_date': _date(matcher.group(3)),
+                        'end_time': _time(matcher.group(4))}
+            matcher = re_d_t_t.match(value)
+            if matcher:
+                return {'start_date': _date(matcher.group(1)),
+                        'start_time': _time(matcher.group(2)),
+                        'end_time': _time(matcher.group(3))}
+        except (TypeError, ValueError), e:
+            pass
+        raise ValidationError( _('not a valid syntax') )
+        #raise ValidationError( e.message )
+
+    def validate(self, value):
+        """ checks that dates and times are in order, i.e. start before end """
+        if value.has_key('end_date'):
+            if value['start_date'] > value['end_date']:
+                raise ValidationError( _('end date is before start date') )
+        if value.has_key('end_time'):
+            if value['start_time'] > value['end_time']:
+                raise ValidationError( _('end time is before start time') )
+
 def get_event_form(user):
     """returns a simplied event form with or without the public field"""
+    """ returns a dictionary with four values: start_date, end_date,
+    start_time, end_time """
+
     if user.is_authenticated():
         return SimplifiedEventForm()
     return SimplifiedEventFormAnonymous()
@@ -53,14 +150,17 @@ class EventForm(ModelForm):
         self.fields['title'].widget.attrs["size"] = 70
         self.fields['start'].widget.attrs["size"] = 10
         self.fields['end'].widget.attrs["size"] = 10
+        self.fields['starttime'].widget.attrs["size"] = 5
+        self.fields['endtime'].widget.attrs["size"] = 5
         self.fields['tags'].widget.attrs["size"] = 70
         self.fields['address'].widget.attrs["size"] = 70
         self.fields['description'].widget.attrs["rows"] = 20
         self.fields['description'].widget.attrs["cols"] = 70
-        self.fields['timezone'].widget.attrs["size"] = 4
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        exclude = ('public',) # public field cannot be edited after creation
+        # notes: public field cannot be edited after creation, startime and
+        # endtime are processed within start and end
+        exclude = ('public')
     def clean_tags(self): # pylint: disable-msg=C0111
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
@@ -71,25 +171,34 @@ class EventForm(ModelForm):
 class SimplifiedEventForm(EventForm):
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
     `public` """
+    where = CharField( max_length = 100, required = False )
+    when = DatesTimesField()
     if DEBUG:
         web = URLField(verify_exists=False)
     else:
         web = URLField(verify_exists=True)
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
-        self.fields['title'].widget.attrs["size"] = 42
-        self.fields['tags'].widget.attrs["size"] = 42
-        self.fields['web'].widget.attrs["size"] = 42
+        self.fields['title'].label = _(u'What')
+        self.fields['where'].label = _(u'Where')
+        self.fields['where'].help_text = \
+                _(u'Example: Malmöer Str. 6, Berlin, DE')
+        self.fields['when'].label = _(u'When')
+        self.fields['when'].help_text = \
+                _(u'Example: 2010-02-27 11:00-13:00')
+        #self.fields['title'].widget.attrs["size"] = 42
+        #self.fields['tags'].widget.attrs["size"] = 42
+        #self.fields['web'].widget.attrs["size"] = 42
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        fields = ('title', 'start', 'tags', 'public')
+        fields = ('title', 'tags', 'public')
 
 class SimplifiedEventFormAnonymous(SimplifiedEventForm):
     """ ModelForm for Events with only the fields `title`, `start`, `tags`
     """
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        fields = ('title', 'start', 'tags')
+        fields = ('title', 'tags')
 
 class EventUrlForm(ModelForm):
     """ ModelForm for EventUrl """
@@ -128,18 +237,22 @@ class AddEventToGroupForm(Form):
     """ Form with a overriden constructor that takes an user and an event and
     provides selectable group names in which the user is a member of and the
     event is not already in the group. """
-    grouplist = ModelMultipleChoiceField(
+    grouplist = ModelMultipleChoiceField( # FIXME change name and translatable
             queryset=Group.objects.none(), widget=CheckboxSelectMultiple())
     def __init__(self, user, event, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)
         self.fields["grouplist"].queryset = \
                 Group.groups_for_add_event(user, event)
+        self.fields['grouplist'].label = _(u'Groups:')
 
 class InviteToGroupForm(Form):
     """ Form for a user name to invite to a group """
     group_id = IntegerField(widget=HiddenInput)
     # TODO: use the constrains of the model User
     username = CharField(max_length=30)
+    def __init__(self, *args, **kwargs):
+        super(InviteToGroupForm, self).__init__(*args, **kwargs)
+        self.fields['username'].label = _(u'Username')
     def clean(self):
         """ Cheks that the user and group exist and the user is not in the
         group already """

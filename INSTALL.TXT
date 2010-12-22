@@ -77,13 +77,13 @@ Installation instructions for Debian based systems
 
 1. If you want to use postgresql (instead of sqlite) for storing your data:
    
-   1. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
+    1. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
 
-   1. as root edit your ``/etc/postgresql/*/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
+    1. as root edit your ``/etc/postgresql/*/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
 
-   1. reload the configuration: ``killall -HUP postgres``
+    1. reload the configuration: ``killall -HUP postgres``
 
-   1. create the GridCalendar ``postgres`` user with a password::
+    1. create the GridCalendar ``postgres`` user with a password::
 
         $ su
         # su postgres
@@ -94,12 +94,12 @@ Installation instructions for Debian based systems
         Shall the new role be allowed to create databases? (y/n) y
         Shall the new role be allowed to create more new roles? (y/n) n
 
-   1. create the gridcalendar database::
+    1. create the gridcalendar database::
 
         postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
         Password:
 
-   1. Install the Django tables::
+    1. Install the Django tables::
 
         $ cd /usr/local/gridcalendar/
         $ python manage.py syncdb
@@ -112,3 +112,10 @@ Installation instructions for Debian based systems
 
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
+
+1. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
+   of it.
+
+    1. Group invitations are sent with the sender (``from`` header) set to the user
+       ``group-invitation`` and the host provided by the setting ``DEFAULT_FROM_EMAIL``
+ 
