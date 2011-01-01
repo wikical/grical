@@ -137,6 +137,8 @@ def event_edit( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,}).status_code
     302
     """
+    if isinstance( event_id, int ):
+        event_id = unicode( event_id )
     event = get_object_or_404( Event, pk = event_id )
     # checks if the user is allowed to edit this event
     # public events can be edited by anyone, otherwise only by the submitter
@@ -146,15 +148,15 @@ def event_edit( request, event_id ): # {{{1
         assert ( event.user != None and type ( event.user ) != AnonymousUser )
         if ( not request.user.is_authenticated() ):
             return main( request, error_messages =
-                _( ''.join(['You need to be logged-in to be able to edit the ',
-                    'event with the number %(event_id)d.']) ) % \
+                _( u''.join([u'You need to be logged-in to be able to edit the ',
+                    u'event with the number %(event_id)s.']) ) % \
                             {'event_id': event_id,} )
         else:
             if ( not Event.is_event_viewable_by_user(
                     event_id, request.user.id ) ):
                 return main( request, error_messages =
-                    _( ''.join(['You are not allowed to edit the event with ',
-                        'the number %(event_id)d.']) ) % \
+                    _( u''.join([u'You are not allowed to edit the event with ',
+                        u'the number %(event_id)s.']) ) % \
                             {'event_id': event_id,} )
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4 )
@@ -178,8 +180,6 @@ def event_edit( request, event_id ): # {{{1
             formset_url.save()
             formset_session.save()
             formset_deadline.save()
-            # TODO: look in a thread for all users who wants to receive an
-            # email notification and send it
             return HttpResponseRedirect( 
                     reverse( 'event_show', kwargs = {'event_id': event_id} ) )
         else:
