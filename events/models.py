@@ -1818,7 +1818,7 @@ class EventSession( models.Model ): # {{{1
                         int(field_m.group(6)),
                         int(field_m.group(7))),
                     name = field_m.group(8)))
-            except (TypeError, ValueError), e:
+            except (TypeError, ValueError, AttributeError), e:
                 errors.append(
                         _(u"time/date entry error in line: ") + line)
             # TODO: use local time of event if present
