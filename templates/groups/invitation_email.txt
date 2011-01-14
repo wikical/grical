@@ -1,15 +1,15 @@
-{% load i18n %}{% blocktrans %}You have been invited to join a group on {{sitename}}.
+{% load i18n %}{% blocktrans %}You have been invited to join a group on {{site_name}}.
 
 Your username: {{ guest }}
 The invitation was sent by: {{ host }}
 The group to join is: {{ group }}
 
 To accept the invitation click:{% endblocktrans %}
-http://{{sitedomain}}{% url group_invite_activate activation_key %}
+http://{{site_domain}}{% url group_invite_activate activation_key %}
 
 {% blocktrans %}This need to be done in less than {{ expiration_days }} days.
 
 To deny the invitation simply do nothing{% endblocktrans %}
 
 -- 
-http://{{sitedomain}}
+http://{{site_domain}}

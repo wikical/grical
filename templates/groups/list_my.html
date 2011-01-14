@@ -10,7 +10,7 @@
         <ul>
             <li><a href="{% url group_view group.id %}">{% trans "show all events in this group" %}</a></li>
             <li><a href="{% url group_invite group.id %}">{% trans "invite a user to this group" %}</a></li>
-            <li><a href="{% url group_quit_ask group.id %}">{% trans "leave this group" %}</a></li>
+            <li><a href="{% url group_quit group.id %}">{% trans "leave this group" %}</a></li>
         </ul>
     {% endfor %}
 </ul>

@@ -101,37 +101,38 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 urlpatterns += patterns('', # pylint: disable-msg=C0103
 
     url(r'^g/(?P<group_id>\d+)/$',
-        views.group_view,           name='group_view'),
+        views.group_view,             name='group_view'),
 
-    url(r'^(?P<group_name>\w{2,})/$',
-        views.group_name_view,           name='group_name_view'),
+    url(r'^(?P<group_name>\w{2,})/$', # TODO: accept all possible characters for group names
+        views.group_name_view,        name='group_name_view'),
 
     url(r'^g/(?P<group_id>\d+)/ical/$',
-        views.ICalForGroup,         name='list_events_group_ical'),
+        views.ICalForGroup,           name='list_events_group_ical'),
 
     url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.ICalForGroupHash,     name='list_events_group_ical_hashed'),
+        views.ICalForGroupHash,       name='list_events_group_ical_hashed'),
 
     url(r'^g/(?P<group_id>\d+)/rss/$',
-        PublicGroupEventsFeed(),    name='list_events_group_rss'),
+        PublicGroupEventsFeed(),      name='list_events_group_rss'),
 
     url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        HashGroupEventsFeed(),      name='list_events_group_rss_hashed'),
+        HashGroupEventsFeed(),        name='list_events_group_rss_hashed'),
 
     url(r'^g/new/$',
-        views.group_new,            name='group_new'),
+        views.group_new,              name='group_new'),
 
     url(r'^g/invite/(?P<group_id>\d+)/$',
-        views.group_invite,         name='group_invite'),
+        views.group_invite,           name='group_invite'),
 
     url(r'^g/invite/confirm/(?P<activation_key>\w+)/$',
-        views.group_invite_activate, name='group_invite_activate'),
+        views.group_invite_activate,  name='group_invite_activate'),
 
     url(r'^g/quit/(?P<group_id>\d+)/$',
-        views.group_quit_ask,       name='group_quit_ask'),
+        views.group_quit,             name='group_quit'),
 
     url(r'^g/quit/(?P<group_id>\d+)/confirm/$',
-        views.group_quit_sure,      name='group_quit_sure'),
+        views.group_quit,
+        kwargs = {'sure': True,},     name='group_quit_sure'),
 
     )
     # TODO: this should be a view with everything about the group for members

@@ -21,21 +21,18 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-
 import os
 
 # See how settings_local.py should look like at the end of this file
 try:
     from settings_local import * # pylint: disable-msg=W0401,W0614
 except ImportError:
-    pass
+    pass # FIXME: check that the whole thing is runable without settings_local
 
-# needed to avoid an error when running 'manage.py validate' complaining that
-# DEBUG is used in this file but not defined
 try:
     DEBUG
 except NameError:
-    DEBUG = True
+    DEBUG = False
 
 # =============================================================================
 # specific GridCalendar settings
@@ -44,12 +41,19 @@ except NameError:
 # for RSS feeds
 FEED_SIZE = 50
 
+# TODO: use a user parameter and a button to show the next ones
 MAX_EVENTS_ON_ROOT_PAGE = 20
 
 # used to generate the PROID field of iCalendars, see
 # http://tools.ietf.org/html/rfc5545
-
 PRODID =  '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
+
+# =============================================================================
+# GeoIP settings, see
+# http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
+# =============================================================================
+
+GEOIP_PATH = '/usr/share/GeoIP'
 
 # =============================================================================
 # test settings
@@ -109,6 +113,7 @@ ACCOUNT_ACTIVATION_DAYS = 10
 # application and middleware settings
 # =============================================================================
 
+# at the end additional applications are conditionaly added
 INSTALLED_APPS = (
     'gridcalendar.events',
     'django.contrib.auth',
@@ -124,19 +129,52 @@ INSTALLED_APPS = (
     'registration',
     'django.contrib.markup', # used for rendering ReStructuredText
  )
-# at the end of this section additional applications are conditionaly
-# added
+if DEBUG:
+    INSTALLED_APPS += ( 'debug_toolbar', )
 
+# at the end additional middleware are conditionaly added
 MIDDLEWARE_CLASSES = (
     # see http://docs.djangoproject.com/en/1.2/ref/contrib/csrf/
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'gridcalendar.events.middleware.SendAuthMiddleware',
  )
-# at the end of this section additional middleware are conditionaly
-# added
+if DEBUG:
+    MIDDLEWARE_CLASSES += (
+        'debug_toolbar.middleware.DebugToolbarMiddleware', )
+    MIDDLEWARE_CLASSES += (
+        'gridcalendar.middlewares.ProfileMiddleware', )
+
+# used by python-django-debug-toolbar
+if DEBUG:
+    DEBUG_TOOLBAR_PANELS = (
+        'debug_toolbar.panels.version.VersionDebugPanel',
+        'debug_toolbar.panels.timer.TimerDebugPanel',
+        # 'debug_toolbar.panels.settings_vars.SettingsVarsDebugPanel', # shows passwords !!!
+        'debug_toolbar.panels.headers.HeaderDebugPanel',
+        'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
+        'debug_toolbar.panels.template.TemplateDebugPanel',
+        'debug_toolbar.panels.sql.SQLDebugPanel',
+        'debug_toolbar.panels.signals.SignalDebugPanel',
+        'debug_toolbar.panels.logger.LoggingPanel',
+    )
+
+    # don't show the toolbar if the profiler
+    #   gridcalendar.middlewares.ProfileMiddleware
+    # is used, which happens when adding ?profile=1 to the request
+    def custom_show_toolbar(request):
+        if request.REQUEST.get('profile', False):
+            return False
+        return True
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'INTERCEPT_REDIRECTS': False,
+        'SHOW_TOOLBAR_CALLBACK': custom_show_toolbar,
+        #'EXTRA_SIGNALS': ['myproject.signals.MySignal'],
+        'HIDE_DJANGO_SQL': True,
+        # 'TAG': 'div',
+    }
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.auth",
@@ -144,8 +182,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.media",
     "context_processors.global_template_vars",
  )
-if DEBUG:
-    TEMPLATE_CONTEXT_PROCESSORS += ( "django.core.context_processors.debug", )
+# http://docs.djangoproject.com/en/dev/ref/templates/api/#django-core-context-processors-debug
+#if DEBUG:
+#    TEMPLATE_CONTEXT_PROCESSORS += ( "django.core.context_processors.debug", )
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or
@@ -161,20 +200,6 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.load_template_source',
 #     'django.template.loaders.eggs.load_template_source',
  )
-
-# If possible install a utility for debugging, which is # called debug_toolbar
-# und is availabe in Debian like systems as the package
-# python-django-debug-toolbar
-try:
-    debug_toolbar.middleware.DebugToolbarMiddleware # pylint: disable-msg=E0602
-except NameError:
-    pass
-else:
-    if DEBUG:
-        MIDDLEWARE_CLASSES += \
-                ( 'debug_toolbar.middleware.DebugToolbarMiddleware', )
-        INSTALLED_APPS += ( 'debug_toolbar', )
-
 
 # =============================================================================
 # i18n and url settings
@@ -259,8 +284,6 @@ except NameError:
 #
 # # absolute path to this directory
 # PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
-# # the name of the directory
-# PROJECT_NAME = os.path.split(PROJECT_ROOT)[-1]
 #
 # # ===========================================================================
 # # imap settings for getting events as emails
@@ -325,8 +348,3 @@ except NameError:
 # DATABASE_PASSWORD = ''                     # Not used with sqlite3.
 # DATABASE_HOST     = ''                     # Not used with sqlite3.
 # DATABASE_PORT     = ''                     # Not used with sqlite3.
-#
-# # used for RECAPTCHA
-#
-# RECAPTCHA_PUB_KEY = "6Lf2WLwSAAAAAAs5ofIEr_0l3u34dYHK6LRghoiU"
-# RECAPTCHA_PRIVATE_KEY = "6Lf2WLwSAAAAAJ4rWk4tLcZAJueB_yhsXjjCVo7_"

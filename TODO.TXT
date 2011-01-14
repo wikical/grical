@@ -13,7 +13,12 @@ high priority
   http://docs.djangoproject.com/en/1.2/topics/auth/#storing-additional-information-about-users
 - prevent spamming the refresh button <-> catching ; see
     http://efreedom.com/Question/1-1212559/Spam-Proof-Hit-Counter-Django
-- repeating events
+- repeating events. When deleting, e.g. Google shows a window like this::
+
+    Delete recurring event
+    Would you like to delete only this event, all events in the series, or this and all future events in the series?
+    Only this instance | All events in the series | All following | Don't delete
+
 - notifications with e.g. -10days for interesting events.
 - accept names in other languages, see http://www.geonames.org/
 - Add the attribute `alters_data` to all methods which alters data, see
@@ -52,6 +57,11 @@ high priority
   ISO 4217 currency code list, the ISO 3166 territory code list, the ISO 3166-2 sub-territory list,
   and the ISO 15924 script code list as XML files. More importantly, it also provides their
   translations to be used by other programs. Homepage: http://pkg-isocodes.alioth.debian.org/
+- tags lists are limited, indicate it so that users know there are more tags, e.g. of the code at
+  the moment::
+
+    event.get_tags|slice:":10"
+
 
 medium priority
 ---------------
@@ -172,5 +182,7 @@ low priority
 - use audio (netzsprecher or own VoIP) to
     a) comment entries
     b) automatic call for rememberings
+
+- Money: companies can have links, e.g. 'map on Google' or 'map on Ding'
 
 .. hCalendar: http://en.wikipedia.org/wiki/HCalendar

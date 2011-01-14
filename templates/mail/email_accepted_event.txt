@@ -2,10 +2,11 @@
 
 you submitted by email an event which has been accepted.
 Title: {{ event_title }}{% endblocktrans %}
-http://{{ current_site }}{{ event.get_absolute_url }}
+http://{{ current_site.domain }}{{ event.get_absolute_url }}
 
 --{% blocktrans %}
-Your {{ project_name }} team{% endblocktrans %}
+Your {{ current_site.name }} team{% endblocktrans %}
+http://{{ current_site.domain }}
 
 ==== {% trans "original message" %} ====
 {{ original_message }}{% endautoescape %}
