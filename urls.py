@@ -30,7 +30,7 @@ from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:
 # http://code.djangoproject.com/ticket/5350
 
-from gridcalendar.events import views
+from events import views
 
 # registrations {{{1
 admin.autodiscover()
@@ -44,7 +44,7 @@ admin.autodiscover()
 handler404 = views.handler404
 handler500 = views.handler500
 
-# a patterns for administrations, db and accounts {{{1
+# patterns for administrations, db and accounts {{{1
 urlpatterns = patterns( '', # pylint: disable-msg=C0103
     ( r'^a/admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
     #(r'^a/admin/(.*)', admin.site.root),
@@ -78,10 +78,3 @@ if settings.DEBUG:
             {'document_root': settings.MEDIA_ROOT, 'show_indexes': True},
         ),
     )
-
-# comments {{{1
-#urlpatterns += patterns( '',
-#    ( r'^comments/postfree/$', 'recaptcha_views.free_comment_wrapper' ),
-#    ( r'^comments/', include( 'django.contrib.comments.urls.comments' ) ),
-# )
-

@@ -493,10 +493,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             location = location + self.country + " "
         vevent.add('LOCATION').value = location
         vevent.add('UID').value = \
-                settings.PROJECT_NAME + u'-' + \
+                Site.objects.get_current().name + u'-' + \
                 hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
                 + unicode(self.id) + u'@' + \
-                settings.HOST_IP
+                Site.objects.get_current().domain
         if self.end:
             if self.endtime:
                 vevent.add('DTEND').value = datetime.datetime.combine(
@@ -661,6 +661,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ notify users if a filter of a user matches an event but only for
         new events.
         """
+        # TODO: don't notify the user submitting the change
         event = kwargs['instance']
         if event.clone_of:
             return
@@ -669,6 +670,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return
         # FIXME: implement a Queue, see comments on 
         # http://www.artfulcode.net/articles/threading-django/
+        # Thing also that getting an Exception here shouldn't propagate to the
+        # view.
         thread = threading.Thread(
                 target = Filter.notify_users_when_wanted( event ),
                 args = [ event, ] )
@@ -2284,6 +2287,7 @@ class Filter( models.Model ): # {{{1
         # TODO: the next code iterate throw all users but this is not workable
         # for a big number of users: implement a special data structure which
         # saves filters and can look up fast filters matching an event
+        # TODO: show a diff of the changes
         users = User.objects.all()
         for user in users:
             if not event.is_viewable_by_user(user):
@@ -2296,8 +2300,8 @@ class Filter( models.Model ): # {{{1
                         'username': user.username,
                         'event': event,
                         'filter': fil,
-                        'project_name': settings.PROJECT_NAME,
-                        'current_site': Site.objects.get_current(), }
+                        'site_name': Site.objects.get_current().name,
+                        'site_domain': Site.objects.get_current().domain, }
                     # TODO: create the subject from a text template
                     subject = _(u'filter match: ') + event.title
                     # TODO: use a preferred language setting for users to send
@@ -2307,12 +2311,15 @@ class Filter( models.Model ): # {{{1
                     from_email = settings.DEFAULT_FROM_EMAIL
                     if subject and message and from_email and user.email:
                         try:
-                            send_mail(subject, message, from_email,
-                                    [user.email,])
+                            send_mail( subject, message, from_email,
+                                    [user.email,], fail_silently = False )
                         except (BadHeaderError, SMTPConnectError):
-                            # TODO: do something meanfull, e.g. error log
+                            # FIXME: do something meaningfull, e.g. error log
                             pass
-                    break
+                    else:
+                        # FIXME: do something meaningfull, e.g. error log
+                        pass
+
 
 class Group( models.Model ): # {{{1
     """ groups of users and events
@@ -2562,13 +2569,13 @@ class Membership( models.Model ): # {{{1
     user = models.ForeignKey( 
             User,
             verbose_name = _( u'User' ),
-            related_name = 'membership' )
+            related_name = 'membership' ) # name of the reverse relationship
     # the name 'groups' instead of mygroups is not possible because the default
     # User model in django already has a relation called 'groups'
     group = models.ForeignKey( 
             Group,
             verbose_name = _( u'Group' ),
-            related_name = 'membership' )
+            related_name = 'membership' ) # name of the reverse relationship
     is_administrator = models.BooleanField( 
             _( u'Is administrator' ), default = True )
     """Not used at the moment. All members of a group are administrators.
@@ -2732,7 +2739,7 @@ class GroupInvitationManager( models.Manager ): # {{{1
         current_site = Site.objects.get_current()
 
         subject = render_to_string( 'groups/invitation_email_subject.txt',
-                { 'sitename': current_site.name,
+                { 'site_name': current_site.name,
                   'guest': guest.username,
                   'host': host.username,
                   'group': group.name, } )
@@ -2743,8 +2750,8 @@ class GroupInvitationManager( models.Manager ): # {{{1
                 'groups/invitation_email.txt',
                 { 'activation_key': activation_key,
                   'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS,
-                  'sitename': current_site.name,
-                  'sitedomain': current_site.domain,
+                  'site_name': current_site.name,
+                  'site_domain': current_site.domain,
                   'host': host.username,
                   'guest': guest.username,
                   'group': group.name, } )

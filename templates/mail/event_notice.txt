@@ -1,13 +1,20 @@
-{% load i18n %}{% autoescape off %}{% blocktrans with filter.name as filter_name %}Hello {{ username }},
+{% load i18n %}{% autoescape off %}
+{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}
+{% if event.next_coming_date_or_start != event.start %}( {{ event.next_coming_date_or_start }} ) {% endif %}{{ event.start }}{% if event.end %} : {{ event.end }}{% endif %}
+{% if event.city %}{{ event.city|capfirst }}{% endif %}{% if event.country %} ({{ event.country }}){% endif %}
+{% if event.get_tags %}{% for tag in event.get_tags|slice:":10" %}{{ tag }} {% endfor %}{% endif %}
 
-your filter '{{ filter_name }}' matches the following event.
+http://{{ site_domain }}{{ event.get_absolute_url }}
 
-{% endblocktrans %}{% if event.next_coming_date_or_start != event.start %}
-( {{ event.next_coming_date_or_start }} ){% endif %} {{ event.start }}{% if event.end %}:{{ event.end }}{% endif %}  {{ event.title }}
-http://{{ current_site }}{{ event.get_absolute_url }}
+{% blocktrans with filter.name as filter_name %}Hello {{ username }},
 
-{% trans "You can edit your filter at:" %}
-http://{{ current_site }}{{ filter.get_absolute_url }}
+this is an automated email to inform you as wished that one of your
+filters at {{ site_domain }} matches the above event.
+Filter name: {{ filter_name }} 
+{% endblocktrans %}
+{% trans "You can edit your filter and turn off notifications at:" %}
+http://{{ site_domain }}{{ filter.get_absolute_url }}
 
---{% blocktrans %}
-Your {{ project_name }} team{% endblocktrans %}{% endautoescape %}
+-- {% blocktrans %}
+Your {{ site_name }} team{% endblocktrans %}
+http://{{ site_domain }}{% endautoescape %}

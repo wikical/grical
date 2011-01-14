@@ -39,12 +39,12 @@ from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
 from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
-from django.template import RequestContext
+from django.template import RequestContext, Context, loader
 from django.utils.translation import ugettext as _
+from django.contrib.auth.decorators import login_required
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.decorators import login_required
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
     EventSessionForm, NewGroupForm, InviteToGroupForm,
@@ -52,8 +52,8 @@ from gridcalendar.events.forms import (
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar)
-from gridcalendar.settings import PROJECT_NAME
 from gridcalendar.events.utils import search_address
+from django.contrib.sites.models import Site
 
 
 def help_page( request ): # {{{1
@@ -68,7 +68,7 @@ def help_page( request ): # {{{1
     usage_text = open( settings.PROJECT_ROOT + '/USAGE.TXT', 'r' ).read()
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     return render_to_response( 'help.html', {
-            'title': settings.PROJECT_NAME + " - " + _( 'help' ),
+            'title': Site.objects.get_current().name + " - " + _( 'help' ),
             'usage_text': usage_text,
             'about_text': about_text,
             }, context_instance = RequestContext( request ) )
@@ -82,7 +82,8 @@ def legal_notice( request ): # {{{1
     200
     """
     return render_to_response( 'legal_notice.html', {
-            'title': settings.PROJECT_NAME + ' - ' + _( 'legal notice' ),
+            'title': Site.objects.get_current().name + \
+                    ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
 def event_new( request ): # {{{1
@@ -118,7 +119,7 @@ def event_new( request ): # {{{1
             # email notification and send it
         else:
             return render_to_response( 'base_main.html',
-                    {'title': settings.PROJECT_NAME, 'form': sef},
+                    {'title': Site.objects.get_current().name, 'form': sef},
                     context_instance = RequestContext( request ) )
     else:
         return HttpResponseRedirect( reverse( 'main' ) )
@@ -364,7 +365,7 @@ def event_show( request, event_id ): # {{{1
             title += " " + event.city
         if event.country:
             title += " (" + event.country + ")"
-        title += " - " + event.title + " | " + settings.PROJECT_NAME
+        title += " - " + event.title + " | " + Site.objects.get_current().name
         templates = {
                 'title': title,
                 'event': event,
@@ -434,7 +435,7 @@ def list_events_search( request, query ): # {{{1
     return render_to_response( 'list_events_search.html',
         {
             'title': _( "%(project_name)s search results" ) % {'project_name':
-                settings.PROJECT_NAME,},
+                Site.objects.get_current().name,},
             'messages': [
                     _(u'search: %(query)s') % {'query':
                         query.decode("string_escape"),},
@@ -534,10 +535,12 @@ def filter_edit( request, filter_id ): # {{{1
     True
     >>> f, c = Filter.objects.get_or_create( name="test", user = u,
     ...         query="abcdef" )
-    >>> client.get(reverse('filter_edit'),
-    ...         kwargs={'filter_id': f.id,}).status_code
+    >>> client.get(reverse('filter_edit',
+    ...         kwargs={'filter_id': f.id,})).status_code
     200
     """
+    if isinstance( filter_id, str ) or isinstance ( filter_id, unicode ):
+        filter_id = int ( filter_id )
     efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
@@ -582,10 +585,12 @@ def filter_drop( request, filter_id ): # {{{1
     True
     >>> f, c = Filter.objects.get_or_create( name="test", user = u,
     ...         query="abcdef" )
-    >>> client.get(reverse('filter_drop'),
-    ...         kwargs={'filter_id': f.id,}).status_code
-    200
+    >>> client.get( reverse ( 'filter_drop',
+    ...         kwargs={'filter_id': f.id,} ) ).status_code
+    302
     """
+    if isinstance( filter_id, str ) or isinstance ( filter_id, unicode ):
+        filter_id = int (filter_id )
     efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
@@ -709,12 +714,12 @@ def list_events_tag( request, tag ): # {{{1
     ...         kwargs={'tag': 'berlin',})).status_code
     200
     >>> Client().get(reverse('list_events_tag',
-    ...         kwargs={'tag': 'abcdef',})).status_code
-    200
+    ...         kwargs={'tag': 'list-events-tag',})).status_code
+    404
     """
     query_tag = get_object_or_404( Tag, name = tag )
     events = TaggedItem.objects.get_by_model( Event, query_tag )
-    events = events.order_by( '-start' )
+    events = events.order_by( '-start' ) # FIXME: order by next_date
     return render_to_response( 'list_events_tag.html',
             {
                 'title': _( "list by tag" ),
@@ -723,7 +728,7 @@ def list_events_tag( request, tag ): # {{{1
             },
             context_instance = RequestContext( request ) )
 
-def main( request, messages = None, error_messages = None ): # {{{1
+def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
     """ main view
     
     >>> from django.test import Client
@@ -811,16 +816,34 @@ def main( request, messages = None, error_messages = None ): # {{{1
     elist = sorted(elist, key=Event.next_coming_date_or_start)
     elist = elist[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
-    return render_to_response( 'base_main.html',
+    # Generate the response with a custom status code. Rationale: our custom
+    # handler404 and 500 returns the main page with a custom error message and
+    # we want to return the proper html status code
+    template = loader.get_template('base_main.html')
+    context = RequestContext( request, dict =
             {
-                'title': settings.PROJECT_NAME,
+                'title': Site.objects.get_current().name,
                 'form': event_form,
                 'events': elist,
                 'about_text': about_text,
                 'messages': messages,
                 'error_messages': error_messages,
-            },
-            context_instance = RequestContext( request ) )
+            } )
+    return HttpResponse(
+            content = template.render( context ),
+            mimetype="application/xhtml+xml",
+            status = status_code )
+    # Before the custom status code it was:
+    # return render_to_response( 'base_main.html',
+    #        {
+    #            'title': Site.objects.get_current().name,
+    #            'form': event_form,
+    #            'events': elist,
+    #            'about_text': about_text,
+    #            'messages': messages,
+    #            'error_messages': error_messages,
+    #        },
+    #        context_instance = RequestContext( request ) )
 
 @login_required
 def settings_page( request ): # {{{1
@@ -846,8 +869,8 @@ def group_new(request): # {{{2
     >>> client = Client()
     >>> client.login(username = u.username, password = 'p')
     True
-    >>> Client().get(reverse('group_new'))
-    200
+    >>> Client().get(reverse('group_new')).status_code
+    302
     """
     if not request.user.is_authenticated():
         return render_to_response('groups/no_authenticated.html',
@@ -881,18 +904,10 @@ def list_groups_my(request): # {{{2
     >>> client = Client()
     >>> client.login(username = u.username, password = 'p')
     True
-    >>> Client().get(reverse('list_groups_my'))
-    200
+    >>> Client().get(reverse('list_groups_my')).status_code
+    302
     """
-    # Theoretically not needed because of the decorator:
-    #if ((not request.user.is_authenticated()) or (request.user.id is None)):
-    #    return render_to_response('error.html',
-    #            {
-    #                'title': 'error',
-    #                'messages_col1': [_("You must be logged in to list your groups"),]
-    #            },
-    #            context_instance=RequestContext(request))
-    #else:
+    # TODO: test also if the user has group(s)
     user = User(request.user)
     groups = Group.objects.filter(membership__user=user)
     if len(groups) == 0:
@@ -904,7 +919,7 @@ def list_groups_my(request): # {{{2
             context_instance=RequestContext(request))
 
 @login_required
-def group_quit(request, group_id, sure): # {{{2
+def group_quit(request, group_id, sure = False ): # {{{2
     """ remove the logged-in user from a group asking for confirmation if the
     user is the last member of the group
 
@@ -914,26 +929,34 @@ def group_quit(request, group_id, sure): # {{{2
     >>> from gridcalendar.events.models import Group, Membership
     >>> u1 = User.objects.create_user('group_quit_1', '0@example.com', 'p')
     >>> u2 = User.objects.create_user('group_quit_2', '0@example.com', 'p')
-    >>> g, c = Group.objects.get_or_create(name = 'test')
+    >>> g = Group.objects.create(name = 'group_quit')
     >>> m = Membership.objects.create(user = u1, group = g)
     >>> m = Membership.objects.create(user = u2, group = g)
+    >>> Membership.objects.filter(group = g).count()
+    2
     >>> client = Client()
     >>> client.login(username = u1.username, password = 'p')
     True
-    >>> Client().get(reverse('group_quit',
-    ...         kwargs={'group_id': g.id, 'sure': True})).status_code
-    200
+    >>> client.get(reverse('group_quit',
+    ...         kwargs={'group_id': g.id,})).status_code
+    302
+    >>> Membership.objects.filter(group = g).count()
+    1
     """
+    # TODO: add a test for the case when the user is the last one.
     user = User(request.user)
-    group = get_object_or_404( Group, id=group_id, membership__user=user )
-    testsize = len(
-            Membership.objects.filter(group=group).exclude(user=user))
-    if (testsize > 0):
-        membership = Membership.objects.get(user=request.user, group=group)
+    group = get_object_or_404( Group, id = group_id, membership__user = user )
+    other_members = Membership.objects.filter( group = group).exclude(
+            user = user ).count()
+    if ( other_members > 0 ):
+        membership = Membership.objects.get(user = request.user, group =group)
         membership.delete()
+        # TODO: show a message saying that the the user is no longer member of
+        # the group. Inform other members (or alternatively show a message in
+        # the groups page)
         return HttpResponseRedirect(reverse('list_groups_my'))
     elif (sure):
-        membership = Membership.objects.get(user=request.user, group=group)
+        membership = Membership.objects.get(user = request.user, group = group)
         membership.delete()
         group.delete()
         return HttpResponseRedirect(reverse('list_groups_my'))
@@ -946,54 +969,6 @@ def group_quit(request, group_id, sure): # {{{2
                     'group_name': group.name
                 },
                 context_instance=RequestContext(request))
-#        except:
-#            return render_to_response('error.html', {'title': 'error',
-#            'message_col1': _("Quitting group failed") + "."},
-#            context_instance=RequestContext(request))
-
-@login_required
-def group_quit_ask(request, group_id): # {{{2
-    """ view to confirm of quiting a group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from gridcalendar.events.models import Group, Membership
-    >>> u1 = User.objects.create_user('group_quit_a_1', '0@example.com', 'p')
-    >>> u2 = User.objects.create_user('group_quit_a_2', '0@example.com', 'p')
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m = Membership.objects.create(user = u1, group = g)
-    >>> m = Membership.objects.create(user = u2, group = g)
-    >>> client = Client()
-    >>> client.login(username = u1.username, password = 'p')
-    True
-    >>> Client().get(reverse('group_quit_ask',
-    ...         kwargs={'group_id': g.id,})).status_code
-    200
-    """
-    return group_quit(request, group_id, False)
-
-@login_required
-def group_quit_sure(request, group_id):
-    """ view to confirm of quiting a group being sure
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from gridcalendar.events.models import Group, Membership
-    >>> u1 = User.objects.create_user('group_quit_s_1', '0@example.com', 'p')
-    >>> u2 = User.objects.create_user('group_quit_s_2', '0@example.com', 'p')
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m = Membership.objects.create(user = u1, group = g)
-    >>> m = Membership.objects.create(user = u2, group = g)
-    >>> client = Client()
-    >>> client.login(username = u1.username, password = 'p')
-    True
-    >>> client.get(reverse('group_quit_ask',
-    ...         kwargs={'group_id': g.id,})).status_code
-    200
-    """
-    return group_quit(request, group_id, True)
 
 @login_required
 def group_add_event(request, event_id): # {{{2
@@ -1012,11 +987,13 @@ def group_add_event(request, event_id): # {{{2
     >>> e = Event.objects.create(
     ...         title = 'test', tags = 'berlin',
     ...         start = datetime.date.today(), user = u )
-    >>> m = Calendar.objects.create(user = u, event = e)
-    >>> client().get(reverse('group_add_event',
+    >>> m = Calendar.objects.create(group = g, event = e)
+    >>> client.get(reverse('group_add_event',
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
+    if isinstance(event_id, str) or isinstance(event_id, unicode):
+        event_id = int(event_id)
     event = get_object_or_404( Event, id = event_id )
     user = request.user
     if len(Group.groups_for_add_event(user, event)) > 0:
@@ -1114,7 +1091,7 @@ def group_view(request, group_id): # {{{2
                 'title': _( u'%(project_name)s - group %(group_name)s' ) % \
                         {
                             'group_name': group.name,
-                            'project_name': PROJECT_NAME,
+                            'project_name': Site.objects.get_current().name,
                         },
                 'group': group,
                 'user_is_in_group': \
@@ -1391,7 +1368,8 @@ def all_events_text ( request ): #{{{1
         elist = Event.objects.filter( public = True )
     text = Event.list_as_text( elist )
     response = HttpResponse( text, mimetype = 'text/text;charset=UTF-8' )
-    filename =  PROJECT_NAME + '_' + datetime.datetime.now().isoformat()+'.txt'
+    filename =  Site.objects.get_current().name + '_' + \
+            datetime.datetime.now().isoformat() + '.txt'
     response['Filename'] = filename
     response['Content-Disposition'] = 'attachment; filename=' + filename
     return response
@@ -1399,11 +1377,13 @@ def all_events_text ( request ): #{{{1
 def handler404(request): #{{{1
     """ custom 404 handler """
     return main( request, error_messages = 
-            _("An object couldn't be retrieved. Check the URL") )
+            _("An object couldn't be retrieved. Check the URL"),
+            status_code = 404)
 
 def handler500(request): #{{{1
     """ custom 500 handler """
     return main( request, error_messages = 
             _(''.join(['We are very sorry but an error has ocurred. We have ',
                 'been automatically informed and will fix it in no time, ',
-                'because we care'])) )
+                'because we care'])),
+            status_code = 500 )

@@ -255,7 +255,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
         params = urllib.urlencode( {'snip':content} )
-        conn = httplib.HTTPConnection( "severinghaus.org" )
+        conn = httplib.HTTPConnection( "severinghaus.org", timeout = 10 )
         conn.request( "POST", "/projects/icv/", params, headers )
         response = conn.getresponse()
         result = response.read()
@@ -270,7 +270,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
         params = urllib.urlencode( {'rawdata':content} )
-        conn = httplib.HTTPConnection("validator.w3.org")
+        conn = httplib.HTTPConnection("validator.w3.org", timeout = 10)
         conn.request( "POST", "/feed/check.cgi", params, headers )
         response = conn.getresponse()
         result = response.read()
@@ -518,7 +518,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
 
     def test_valid_html( self ): # {{{2
         """ validates html with validator.w3.org """
-        conn = httplib.HTTPConnection( "validator.w3.org" )
+        conn = httplib.HTTPConnection( "validator.w3.org", timeout = 10 )
         # test main page
         conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2F")
         response = conn.getresponse()
