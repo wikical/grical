@@ -4,101 +4,118 @@
 {% block container %}
 
 <h1>{% trans "Event form" %}:</h1>
+{% if form.errors or form.non_field_errors or formset_url.errors or formset_url.non_form_errors or formset_session.errors or formset_session.non_form_errors or formset_deadline.errors or formset_deadline.non_form_errors %}
+    <p class="errorlist">
+        {% trans "The operation could not be performed because one or more error(s) occurred. Please resubmit the form after making the necessary changes. See the red remarks." %}
+    </p>
+{% endif %}
 <div id="event_form">
-    {% if form.errors %}
-        <p class="errorlist">
-            {% blocktrans count form.errors|length as counter %}
-            Please correct the following error
-            {% plural %}Please correct the following errors
-            {% endblocktrans %}
-        </p>
-        {% if form.non_field_errors %}
-            {{ form.non_field_errors }}
-        {% endif %}
-    {% endif %}
+    {{ form.non_field_errors.as_ul }}
     <form action="" method="post">{% csrf_token %}
         <table>
             {{ form.as_table }}
         </table>
         <!-- urls -->
-        <div id="url_table">
-            {%for f in formset_url.management_form%}
-                {{f}}
-            {%endfor%}
-            <table>
+        {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
+        <div>{{ formset_url.management_form }}</div>
+        {{ formset_url.non_form_errors.as_ul }}
+        <table id="url_table">
+            {% for form in formset_url.forms %}
+                {% if forloop.first %}
+                    <thead><tr>
+                        {% for field in form.visible_fields %}
+                            <th>{{ field.label|capfirst }}</th>
+                        {% endfor %}
+                    </tr></thead>
+                {% endif %}
                 <tr>
-                    {% for field in formset_url.forms.0 %}
-                        {% if not field.is_hidden %}
-                            <th>{{field.label}}</th>
-                        {% endif %}
+                    {% for field in form.visible_fields %}
+                        <td>
+                            {# Include the hidden fields in the form #}
+                            {% if forloop.first %}
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            {% endif %}
+                            {{ field.errors.as_ul }}
+                            {{ field }}
+                        </td>
                     {% endfor %}
+                    {% if form.non_field_errors %}
+                        <td>
+                            {{ form.non_field_errors.as_ul }}
+                        </td>
+                    {% endif %}
                 </tr>
-                {%for f in formset_url.forms%}
-                <tr>
-                    {%for field in f%} 
-                        {% if not field.is_hidden %}
-                            <td valign="bottom">{{field}}</td>
-                        {%else%}
-                            {{field}}
-                        {% endif %}
-                    {%endfor%}
-                </tr>
-                {%endfor%}
-            </table>
-        </div>
+            {% endfor %}
+        </table>
         <!-- sessions -->
-        <div id="session_table">
-            {%for f in formset_session.management_form%}
-                {{f}}
-            {%endfor%}
-            <table>
+        <div>{{ formset_session.management_form }}</div>
+        {{ formset_session.non_form_errors.as_ul }}
+        <table id="session_table">
+            {% for form in formset_session.forms %}
+                {% if forloop.first %}
+                    <thead><tr>
+                        {% for field in form.visible_fields %}
+                            <th>{{ field.label|capfirst }}</th>
+                        {% endfor %}
+                    </tr></thead>
+                {% endif %}
                 <tr>
-                    {% for field in formset_session.forms.0 %}
-                        {% if not field.is_hidden %}
-                            <th>{{field.label}}</th>
-                        {% endif %}
+                    {% for field in form.visible_fields %}
+                        <td>
+                            {# Include the hidden fields in the form #}
+                            {% if forloop.first %}
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            {% endif %}
+                            {{ field.errors.as_ul }}
+                            {{ field }}
+                        </td>
                     {% endfor %}
+                    {% if form.non_field_errors %}
+                        <td>
+                            {{ form.non_field_errors.as_ul }}
+                        </td>
+                    {% endif %}
                 </tr>
-                {%for f in formset_session.forms%}
-                <tr>
-                    {%for field in f%} 
-                        {% if not field.is_hidden %}
-                            <td valign="bottom">{{field}}</td>
-                        {%else%}
-                            {{field}}
-                        {% endif %}
-                    {%endfor%}
-                </tr>
-                {%endfor%}
-            </table>
-        </div>
+            {% endfor %}
+        </table>
         <!-- deadlines -->
-        <div id="deadline_table">
-            {%for f in formset_deadline.management_form%}
-                {{f}}
-            {%endfor%}
-            <table>
+        <div>{{ formset_deadline.management_form }}</div>
+        {{ formset_deadline.non_form_errors.as_ul }}
+        <table id="deadline_table">
+            {% for form in formset_deadline.forms %}
+                {% if forloop.first %}
+                    <thead><tr>
+                        {% for field in form.visible_fields %}
+                            <th>{{ field.label|capfirst }}</th>
+                        {% endfor %}
+                    </tr></thead>
+                {% endif %}
                 <tr>
-                    {% for field in formset_deadline.forms.0 %}
-                        {% if not field.is_hidden %}
-                            <th>{{field.label}}</th>
-                        {% endif %}
+                    {% for field in form.visible_fields %}
+                        <td>
+                            {# Include the hidden fields in the form #}
+                            {% if forloop.first %}
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            {% endif %}
+                            {{ field.errors.as_ul }}
+                            {{ field }}
+                        </td>
                     {% endfor %}
+                    {% if form.non_field_errors %}
+                        <td>
+                            {{ form.non_field_errors.as_ul }}
+                        </td>
+                    {% endif %}
                 </tr>
-                {%for f in formset_deadline.forms%}
-                <tr>
-                    {%for field in f%} 
-                        {% if not field.is_hidden %}
-                            <td valign="bottom">{{field}}</td>
-                            {%else%}
-                            {{field}}
-                        {% endif %}
-                    {%endfor%}
-                </tr>
-                {%endfor%}
-            </table>
-        </div>
-        <input type="submit" value={% trans "Save" %}>
+            {% endfor %}
+        </table>
+        <div><input type="submit" value="{% trans "Save" %}" /></div>
     </form>
 </div>
 <div class="info">

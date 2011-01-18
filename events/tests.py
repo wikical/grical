@@ -520,16 +520,18 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         """ validates html with validator.w3.org """
         conn = httplib.HTTPConnection( "validator.w3.org", timeout = 10 )
         # test main page
-        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2F")
+        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2F") # FIXME: avoid the hard-coded URL
         response = conn.getresponse()
         result = response.read()
         self.assertTrue( 'Congratulations' in result )
+        # test log in
+        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2Fa%2Faccounts%2Flogin%2F")  # FIXME: avoid the hard-coded URL
+        response = conn.getresponse()
+        result = response.read()
+        self.assertTrue( 'Congratulations' in result )
+        # TODO: test event edit
         # TODO create an event with everthing and validate the full event output
         # TODO create a group with some events and validate the output
-        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2Fa%2Faccounts%2Flogin%2F")
-        response = conn.getresponse()
-        result = response.read()
-        self.assertTrue( 'Congratulations' in result )
 
     def test_clone_of_event( self ):
         """ checks that all classes with references to Event implement a clone
