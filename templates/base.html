@@ -43,8 +43,8 @@ permission of the original author -->
         | <a href="{% url help %}">{% trans "help" %}</a>
         | <a href="{% url legal_notice %}">{% trans "legal notice" %}</a>
         <div style="display:inline">
-            <form style="padding:15px" action="{% url search %}" method="post">{% csrf_token %}
-                <div style="display:inline"><input type="text" size="40" name="query" value="{{ query }}" /></div>
+            <form style="padding:15px" action="{% url search %}">
+                <div style="display:inline"><input maxlength="2048" size="40" name="query" value="{{ query }}" /></div>
                 <div style="display:inline"><input type="submit" value="{% trans "Search" %}" /></div>
             </form>
         </div>

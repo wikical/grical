@@ -46,6 +46,7 @@ def show_add_to_group(context):
             return {'show_add_to_group': True, 'event': event}
     return {'show_add_to_group': False,}
 
-# equivalent to the above decorator:
+# The decorator above is equivalent to:
 #register.inclusion_tag('groups/add_to_group_link.html', takes_context=True)(show_add_to_group )
+
 

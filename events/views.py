@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker ft=python
 # gpl {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
@@ -86,44 +86,6 @@ def legal_notice( request ): # {{{1
                     ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
-def event_new( request ): # {{{1
-    """ Expects a filled simplified event form and redirects to `event_edit`
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> Client().get(reverse('event_new')).status_code
-    302
-    """
-    if request.method == 'POST':
-        if request.user.is_authenticated():
-            sef = SimplifiedEventForm( request.POST )
-        else:
-            sef = SimplifiedEventFormAnonymous( request.POST )
-        if sef.is_valid():
-            cleaned_data = sef.cleaned_data
-            # create a new entry and saves the data
-            if request.user.is_authenticated():
-                public = cleaned_data['public']
-            else:
-                public = True
-            event = Event(
-                        user_id = request.user.id,
-                        title   = cleaned_data['title'],
-                        start   = cleaned_data['start'],
-                        tags    = cleaned_data['tags'],
-                        public  = public )
-            event.save()
-            return HttpResponseRedirect( reverse( 'event_edit',
-                    kwargs = {'event_id': str( event.id )} ) )
-            # TODO: look in a thread for all users who wants to receive an
-            # email notification and send it
-        else:
-            return render_to_response( 'base_main.html',
-                    {'title': Site.objects.get_current().name, 'form': sef},
-                    context_instance = RequestContext( request ) )
-    else:
-        return HttpResponseRedirect( reverse( 'main' ) )
-
 def event_edit( request, event_id ): # {{{1
     """ view to edit an event as a form
 
@@ -134,9 +96,9 @@ def event_edit( request, event_id ): # {{{1
     >>> e = Event.objects.create(
     ...         title = 'test', tags = 'berlin',
     ...         start = datetime.date.today() )
-    >>> Client().get(reverse('event_new'),
-    ...         kwargs={'event_id': e.id,}).status_code
-    302
+    >>> Client().get(reverse('event_edit',
+    ...         kwargs={'event_id': e.id,})).status_code
+    200
     """
     if isinstance( event_id, int ):
         event_id = unicode( event_id )
@@ -145,8 +107,6 @@ def event_edit( request, event_id ): # {{{1
     # public events can be edited by anyone, otherwise only by the submitter
     # and the group the event belongs to
     if not event.public :
-        # events submitted by anonymous users cannot be non-public:
-        assert ( event.user != None and type ( event.user ) != AnonymousUser )
         if ( not request.user.is_authenticated() ):
             return main( request, error_messages =
                 _( u''.join([u'You need to be logged-in to be able to edit the ',
@@ -183,30 +143,20 @@ def event_edit( request, event_id ): # {{{1
             formset_deadline.save()
             return HttpResponseRedirect( 
                     reverse( 'event_show', kwargs = {'event_id': event_id} ) )
-        else:
-            templates = {
-                    'title': 'edit event',
-                    'form': event_form,
-                    'formset_url': formset_url,
-                    'formset_session': formset_session,
-                    'formset_deadline': formset_deadline,
-                    'event_id': event_id }
-            return render_to_response( 'event_edit.html', templates,
-                    context_instance = RequestContext( request ) )
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
         formset_deadline = evetn_deadlines_factory( instance = event )
         formset_session = event_sessions_factory( instance = event )
-        templates = {
-                'title': 'edit event',
-                'form': event_form,
-                'formset_url': formset_url,
-                'formset_session': formset_session,
-                'formset_deadline': formset_deadline,
-                'event_id': event_id }
-        return render_to_response( 'event_edit.html', templates,
-                context_instance = RequestContext( request ) )
+    templates = {
+            'title': 'edit event',
+            'form': event_form,
+            'formset_url': formset_url,
+            'formset_session': formset_session,
+            'formset_deadline': formset_deadline,
+            'event_id': event_id }
+    return render_to_response( 'event_edit.html', templates,
+            context_instance = RequestContext( request ) )
 
 def event_new_raw( request ): # {{{1
     """ View to create an event as text.
@@ -269,6 +219,8 @@ def event_edit_raw( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
+    if isinstance( event_id, str ) or isinstance( event_id, unicode ):
+        event_id = int( event_id )
     # checks if the event exists
     event = get_object_or_404( Event, pk = event_id )
     # checks if the user is allowed to edit this event
@@ -410,16 +362,19 @@ def search( request ): # {{{1
     >>> Client().get(reverse('search')).status_code
     200
     """
-    # FIXME: replace everything using something like the first example at
-    # http://www.djangobook.com/en/1.0/chapter07/
-    if 'query' in request.POST and request.POST['query']:
-        return list_events_search ( request, request.POST['query'] )
-        # return HttpResponseRedirect( 
-        #         reverse( 'list_events_search',
-        #         kwargs = {'query': request.POST['query'], } ) )
+    if 'query' in request.GET and request.GET['query']:
+        query = request.GET['query']
+        if query.find('/') != -1:
+            return main( request, error_messages = 
+                _( u"A search with the character '/' was submitted, but it " \
+                        "is not allowed" ) )
+            # the character / cannot be allowed because Django won't be able to
+            # create a URL for the ical result of the search. For a discussion,
+            # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
+        return list_events_search ( request, request.GET['query'] )
     else:
         return main( request, error_messages = 
-            _( u"A search was submitted without a query text" ) )
+            _( u"A search was submitted without a query string" ) )
 
 def list_events_search( request, query ): # {{{1
     """ View to show the results of a search query on the left column and
@@ -437,8 +392,7 @@ def list_events_search( request, query ): # {{{1
             'title': _( "%(project_name)s search results" ) % {'project_name':
                 Site.objects.get_current().name,},
             'messages': [
-                    _(u'search: %(query)s') % {'query':
-                        query.decode("string_escape"),},
+                    _(u'search: %(query)s') % {'query': query,},
                     _(u'time: %(date_time)s') % {'date_time':
                         datetime.datetime.now().strftime(
                             '%Y-%m-%d %H:%M:%S'),},

@@ -82,7 +82,7 @@ LOGOUT_URL = '/a/accounts/logout/'
 try:
     SHORT_DATETIME_FORMAT
 except NameError:
-    SHORT_DATETIME_FORMAT = 'Y-m-d H:M'
+    SHORT_DATETIME_FORMAT = 'Y-m-d H:i'
 try:
     SHORT_DATE_FORMAT
 except NameError:
@@ -90,7 +90,7 @@ except NameError:
 try:
     TIME_FORMAT
 except NameError:
-    TIME_FORMAT = 'H:M'
+    TIME_FORMAT = 'H:i'
 try:
     DATE_FORMAT
 except NameError:
@@ -195,11 +195,20 @@ TEMPLATE_DIRS = (
  )
 
 # List of callables that know how to import templates from various sources.
+# for the cached loader all tags must be thread-safe, see
+# http://docs.djangoproject.com/en/dev/howto/custom-template-tags/#template-tag-thread-safety
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
- )
+    ('django.template.loaders.cached.Loader', (
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    )),
+)
+
+# without the cached loader:
+#TEMPLATE_LOADERS = (
+#    'django.template.loaders.filesystem.load_template_source',
+#    'django.template.loaders.app_directories.load_template_source',
+# )
 
 # =============================================================================
 # i18n and url settings

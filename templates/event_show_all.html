@@ -15,7 +15,7 @@
         &nbsp;|&nbsp;
         {% show_add_to_group %}
     </div>
-    <div class="dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}</div>
+    <div class="dates">{{ event.start }} {% if event.starttime %}<span class="times"> {{ event.starttime|time }}{% if event.endtime %}-{{ event.endtime|time }}{% endif %}</span> {% endif %}{% if event.end %} : {{ event.end }} {% endif %}</div>
     {% if event.address or event.postcode or event.city or event.country or event.latitude or event.longitude %}
         <p>
             {% if event.address %}

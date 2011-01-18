@@ -16,7 +16,7 @@
     </span>
     <br />
     <span class="dates">
-        {% if event.next_coming_date_or_start != event.start %}
+        {% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}
             ( {{ event.next_coming_date_or_start }} )
         {% endif %}
         {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
@@ -35,8 +35,8 @@
     {% if event.get_tags %}
       <br />
       <span class="tags">
-        {% for tag in event.get_tags|slice:":10" %}
-          <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a> &nbsp; &nbsp; </span>
+          {% for tag in event.get_tags|slice:":10" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
+          <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a>&nbsp;</span>
         {% endfor %}
       </span>
     {% endif %}

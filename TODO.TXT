@@ -6,6 +6,9 @@ show-stopping
 high priority
 -------------
 
+- Think about which characters are allowed for event titles, group names, etc.
+  and modify the code accordingly (not only for inputs, but also for searches,
+  etc.)
 - create a field for each event which stores the unix time (seconds from 1.1.1970) for the next
   coming date. With this efficient sorting and slicing is possible
 - use python-django-lint

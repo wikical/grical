@@ -155,7 +155,7 @@ h6 {
     font-size: 0.8em;
 }
 .event_medium .dates {
-    color: #fcb100;
+    color: #cc6100;
 }
 
 /*
@@ -165,6 +165,10 @@ h6 {
     text-decoration:none;
 }
 .event_full .dates {
+    color: #cc6100;
+    display: inline ;
+}
+.event_full .times {
     color: #fcb100;
     display: inline ;
 }

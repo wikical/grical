@@ -39,8 +39,8 @@ urlpatterns = patterns('',            # pylint: disable-msg=C0103
 
 # ^e single event {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
-    url(r'^e/new/$',
-        views.event_new,                name='event_new'),
+#    url(r'^e/new/$',
+#        views.event_new,                name='event_new'),
 
     url(r'^e/new/raw/$',
         views.event_new_raw,            name='event_new_raw'),
@@ -181,4 +181,10 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
      url(r'^o/all/text/$',
          views.all_events_text, name='all_events_text'),
+     )
+
+# ^z tests
+urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+     url(r'^z/$',
+         views.test, name='test'),
      )
