@@ -22,6 +22,7 @@ high priority
     Would you like to delete only this event, all events in the series, or this and all future events in the series?
     Only this instance | All events in the series | All following | Don't delete
 
+- mercurial hook for accepting changes which validate with ``./manage.py validate``
 - notifications with e.g. -10days for interesting events.
 - accept names in other languages, see http://www.geonames.org/
 - Add the attribute `alters_data` to all methods which alters data, see
@@ -103,6 +104,8 @@ medium priority
 low priority
 ------------
 
+- Include a widget to know how to go to the event with the public transport, see
+  http://code.google.com/p/public-transport-enabler
 - include a picture when the server is under heavy load. Example: http://wurstball.de/41101/
 - include import of sessions from Pentabarf
 - Add future events of past events listed on http://www.guckes.net/cal/

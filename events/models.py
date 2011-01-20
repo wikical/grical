@@ -43,7 +43,10 @@ from django.db.models import Q
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
+
 from django.forms import ValidationError
+
+from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db.models.query import CollectedObjects
@@ -53,6 +56,7 @@ from gridcalendar.events.signals import user_auth_signal
 
 from tagging.fields import TagField
 from tagging.models import Tag, TaggedItem
+from utils import validate_year
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -357,8 +361,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     title = models.CharField( _( u'Title' ), max_length = 200, blank = False,
             help_text = _( u'Example: Demonstration against software patents' ) )
     start = models.DateField( _( u'Start date' ), blank = False,
-            help_text = _( u"Example: 2006-10-25"))
-    end = models.DateField( _( u'End date' ), null = True, blank = True )
+            help_text = _( u"Example: 2010-08-25"),
+            validators = [validate_year] )
+    end = models.DateField( _( u'End date' ), null = True, blank = True,
+            help_text = _( u"Example: 2010-08-26"),
+            validators = [validate_year] )
     starttime = models.TimeField( 
             _( u'Start time' ), blank = True, null = True )
     endtime = models.TimeField( 
@@ -379,7 +386,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             max_length = 16 )
     address = models.CharField( _( u'Address' ), blank = True,
             null = True, max_length = 100, # TODO: increase to 200
-            help_text = _( u'Name of the street' ) )
+            help_text = _( u'Complete address including city and country' ) )
     latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
             help_text = _( u'In decimal degrees, not ' \
             u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
@@ -1567,7 +1574,8 @@ class EventDeadline( models.Model ): # {{{1
             _( u'Deadline name' ), blank = False, null = False,
             max_length = 80, help_text = _( 
             "Example: call for papers deadline" ) )
-    deadline = models.DateField( _( u'Deadline' ), blank = False, null = False )
+    deadline = models.DateField( _( u'Deadline' ), blank = False, null = False,
+            validators = [validate_year] )
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
@@ -1746,7 +1754,8 @@ class EventSession( models.Model ): # {{{1
             _( u'Session name' ), blank = False, null = False, max_length = 80,
             help_text = _( u"Example: day 2 of the conference" ) )
     session_date = models.DateField( 
-            _( u'Session day' ), blank = False, null = False )
+            _( u'Session day' ), blank = False, null = False,
+            validators = [validate_year] )
     session_starttime = models.TimeField( 
             _( u'Session start time' ), blank = False, null = False )
     session_endtime = models.TimeField( 

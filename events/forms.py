@@ -34,10 +34,14 @@ from django.utils.translation import ugettext as _
 from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
         EventSession, Filter, Group, Membership)
+from gridcalendar.events.utils import validate_year
 
 def _date(string):
-    """ parse a date in the format: yyyy-mm-dd """
-    return datetime.datetime.strptime(string, '%Y-%m-%d').date()
+    """ parse a date in the format ``yyyy-mm-dd`` using
+    ``gridcalendar.events.utils.valida """
+    parsed_date = datetime.datetime.strptime(string, '%Y-%m-%d').date()
+    validate_year( parsed_date )
+    return parsed_date
 
 def _time(string):
     """ parse a time in the format: hh:mm """
@@ -116,6 +120,10 @@ class DatesTimesField(Field):
                         'end_time': _time(matcher.group(3))}
         except (TypeError, ValueError), e:
             pass
+        except ValidationError, e:
+            # the validationError comes from utils.validate_year and the error
+            # message is translated
+            raise e
         raise ValidationError( _('not a valid syntax') )
         #raise ValidationError( e.message )
 
@@ -279,3 +287,6 @@ class InviteToGroupForm(Form):
                 self._errors['username'] = self.error_class([msg])
                 del cleaned_data['username']
         return cleaned_data
+    # TODO: accept also an email and create an account with the username as
+    # email and a random generated password sent by email to the user
+    # (encrypted if possible)

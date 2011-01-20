@@ -27,13 +27,15 @@
 # imports {{{1
 import sys
 import time
+import datetime
+from dateutil.relativedelta import relativedelta
 import urllib
 import httplib
 from xml.etree.ElementTree import fromstring
 
 from django.contrib.gis.utils import GeoIP
-
-from models import COUNTRIES
+from django.utils.translation import ugettext as _
+from django.core.exceptions import ValidationError
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
 # OpenStreetMap doesn't want more than one query per second
@@ -84,6 +86,7 @@ def search_address( data, ip = None ): # {{{1
         # we try adding the country (from the IP) if not already given
         last_item = data[data.rfind(',')+1:].strip().upper()
         # TODO: include translations, GeoNames.org
+        from models import COUNTRIES
         country_codes = [ val[0].upper() for val in COUNTRIES ]
         country_names = [ val[1].upper() for val in COUNTRIES ]
         country_code = None
@@ -130,7 +133,7 @@ def search_address( data, ip = None ): # {{{1
         return result_google
     return None
 
-def search_address_google( data, country_code = None ):
+def search_address_google( data, country_code = None ): # {{{1
     """ loop up using The Google Geocoding API
 
     Returns the same as ``search_address_osm``
@@ -278,7 +281,7 @@ def search_address_google( data, country_code = None ):
         return result
     return None
 
-def search_address_osm( data ):
+def search_address_osm( data ): # {{{1
     """ uses nominatim.openstreetmap.org to look up for ``data``.
 
     See ``search_address``
@@ -346,6 +349,28 @@ def search_address_osm( data ):
     if len( result ) > 0:
         return result
     return None
+
+def validate_year( value ):
+    """ it validates ``value.year`` newer than 1900 and less than 2 years from
+    now.
+    
+    ``date`` and ``datetime`` have this property.
+
+    Event dates which are more than two years in the future are very likely to
+    be a human mistake entering the data.
+
+    This validator is needed because some functions like datetime.strftime()
+    raise a ValueError when the year is older than 1900. See the discussion at
+    http://bugs.python.org/issue1777412
+    """
+    if value.year <= 1900:
+        raise ValidationError(
+            _( u'%(year)s is before 1900, which is not allowed' ) % \
+                    {'year': value.year,} )
+    if value > datetime.date.today() + relativedelta( years = 2 ):
+        raise ValidationError(
+            _( u'%(year)s is more than two years in the future, ' \
+                    'which is not allowed' ) % {'year': value.year,} )
 
 # only for testing:
 if __name__ == "__main__": # {{{1
