@@ -183,8 +183,3 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
          views.all_events_text, name='all_events_text'),
      )
 
-# ^z tests
-urlpatterns += patterns('',                     # pylint: disable-msg=C0103
-     url(r'^z/$',
-         views.test, name='test'),
-     )

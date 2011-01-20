@@ -33,7 +33,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Q
-from django.forms import ValidationError
+from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )

@@ -43,7 +43,7 @@ from django.core.mail.message import EmailMessage
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_str
 from django.core.management.base import NoArgsCommand
-from django.forms import ValidationError
+from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
 from gridcalendar.events.models import Event
