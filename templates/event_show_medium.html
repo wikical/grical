@@ -16,9 +16,6 @@
     </span>
     <br />
     <span class="dates">
-        {% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}
-            ( {{ event.next_coming_date_or_start }} )
-        {% endif %}
         {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
     </span>
     {% if event.city %}
@@ -30,6 +27,12 @@
     {% if event.country %}
       <span class="country">
         (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
+      </span>
+    {% endif %}
+    {% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}
+      <br />
+      <span class="deadline">
+          {{ event.next_coming_date_or_start }} {% trans "deadline for:" %} {{ event.next_deadline_name }}
       </span>
     {% endif %}
     {% if event.get_tags %}

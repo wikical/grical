@@ -465,6 +465,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else:
             return self.start
 
+    def next_deadline_name( self ): #{{{3
+        """ return the name of the next deadline or None """
+        deadlines = EventDeadline.objects.filter( event = self)
+        if deadlines is not None and len( deadlines ) > 0:
+            return deadlines[0].deadline_name
+        return None
+
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
 
