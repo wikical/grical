@@ -49,7 +49,6 @@ def global_template_vars(request):
     events_nr = Event.objects.count()
     groups_nr = Group.objects.count()
     return {
-            'PROJECT_NAME': current_site.name,
             'PROTOCOL': protocol,
             'DOMAIN': current_site.domain,
             'MEDIA_URL': settings.MEDIA_URL,

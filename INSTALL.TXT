@@ -84,7 +84,9 @@ Installation instructions for Debian based systems
         Would you like to create one now? (yes/no): yes
         ...
 
-    1. Configure the ``django_site`` table::
+    1. Configure the ``django_site`` table. **Important note**: the first entry in this table is
+       used when sending emails outside of the web, e.g. by ``events/management/commands/imap.py``
+       which can be used by a cronjob to read and reply emails. Configure the table with::
 
         cd /usr/local/gridcalendar
         sqlite3 gridcalendar.sqlite
@@ -124,7 +126,9 @@ Installation instructions for Debian based systems
         Would you like to create one now? (yes/no): yes
         ...
 
-    1. Configure the ``django_site`` table::
+    1. Configure the ``django_site`` table. **Important note**: the first entry in this table is
+       used when sending emails outside of the web, e.g. by ``events/management/commands/imap.py``
+       which can be used by a cronjob to read and reply emails. Configure the table with::
 
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
