@@ -131,7 +131,8 @@ class Command( NoArgsCommand ): # {{{1
                 self.stdout.write( smart_str(
                         u'Successfully added new event: ' + event.title ) )
                 message = render_to_string( 'mail/email_accepted_event.txt',
-                        {'current_site': Site.objects.get_current(),
+                        {'site_name': Site.objects.get_current().name,
+                        'site_domain': Site.objects.get_current().domain,
                         'event': event,
                         'original_message': text,} )
                 mail = EmailMessage( ''.join( subject.splitlines()),
@@ -154,7 +155,8 @@ class Command( NoArgsCommand ): # {{{1
                     # if hasattr(err, 'message_dict'), it looks like:
                     # {'url': [u'Enter a valid value.']}
                     message = render_to_string('mail/email_parsing_errors.txt',
-                            {'current_site': Site.objects.get_current(),
+                            {'site_name': Site.objects.get_current().name,
+                            'site_domain': Site.objects.get_current().domain,
                             'original_message': text,
                             'errors_dict': err.message_dict})
                     #TODO: write to an error log file instead of stderr
@@ -163,7 +165,8 @@ class Command( NoArgsCommand ): # {{{1
                         % ( mail['Subject'], unicode(err.message_dict))))
                 elif hasattr( err, 'messages' ):
                     message = render_to_string('mail/email_parsing_errors.txt',
-                            {'current_site': Site.objects.get_current(),
+                            {'site_name': Site.objects.get_current().name,
+                            'site_domain': Site.objects.get_current().domain,
                             'original_message': text,
                             'errors_list': err.messages})
                     self.stderr.write( smart_str(
@@ -171,7 +174,8 @@ class Command( NoArgsCommand ): # {{{1
                         % ( mail['Subject'], unicode(err.messages))))
                 elif hasattr( err, 'message' ):
                     message = render_to_string('mail/email_parsing_errors.txt',
-                            {'current_site': Site.objects.get_current(),
+                            {'site_name': Site.objects.get_current().name,
+                            'site_domain': Site.objects.get_current().domain,
                             'original_message': text,
                             'errors_list': [err.message]})
                     self.stderr.write( smart_str(
@@ -179,7 +183,8 @@ class Command( NoArgsCommand ): # {{{1
                         % ( mail['Subject'], unicode(err.message))))
                 else:
                     message = render_to_string('mail/email_parsing_errors.txt',
-                            {'current_site': Site.objects.get_current(),
+                            {'site_name': Site.objects.get_current().name,
+                            'site_domain': Site.objects.get_current().domain,
                             'original_message': text,
                             'errors_list': []})
                     self.stderr.write( smart_str(

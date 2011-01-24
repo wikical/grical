@@ -2,9 +2,9 @@
 {% autoescape off %}
 {% if errors_dict %}
 {% blocktrans count errors_dict|length as counter %}
-An email you submitted to {{ current_site.name }} contained one error:
+An email you submitted to {{ site_name }} contained one error:
 {% plural %}
-An email you submitted to {{ current_site.name }} contained {{ counter }} errors:
+An email you submitted to {{ site_name }} contained {{ counter }} errors:
 {% endblocktrans %}
 {% for field_errors_pairs in errors_dict.items %}
     {% blocktrans with field_errors_pairs.0 as field %}
@@ -19,9 +19,9 @@ An email you submitted to {{ current_site.name }} contained {{ counter }} errors
 
 {% else %}
 {% blocktrans count errors_list|length as counter %}
-An email you submitted to {{ current_site.name }} contained one error:
+An email you submitted to {{ site_name }} contained one error:
 {% plural %}
-An email you submitted to {{ current_site.name }} contained {{ counter }} errors:
+An email you submitted to {{ site_name }} contained {{ counter }} errors:
 {% endblocktrans %}
 {% for error in errors_list %}
 {{ error }}
@@ -29,8 +29,8 @@ An email you submitted to {{ current_site.name }} contained {{ counter }} errors
 {% endif %}
         
 --
-{% blocktrans %}Your {{ current_site.name }} team{% endblocktrans %}
-http://{{ current_site.domain }}
+{% blocktrans %}Your {{ site_name }} team{% endblocktrans %}
+http://{{ site_domain }}
 
 {% trans "========== original message sent by you: ==========" %}
 {{ original_message }}
