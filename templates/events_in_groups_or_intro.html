@@ -12,10 +12,11 @@
             <p>{% trans "No coming events in your groups." %}</p>
             {% endif %}
     {% else %}
-        {% trans "You are not a member of any group" %}
+        <p>{% trans "You are not a member of any group." %}</p>
+        <p align="right"><a href="{% url group_new %}">{% trans "Create a new group." %}</a></p>
     {% endif %}
 {% else %}
     <h1>{% trans "What is GridCalendar?" %}</h1>
     {{ about_text|restructuredtext }}
-    <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
+    <p><a href="{% url registration_register %}">{% trans "Create an account now." %}</a></p>
 {% endif %}

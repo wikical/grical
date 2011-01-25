@@ -245,7 +245,7 @@ class AddEventToGroupForm(Form):
     """ Form with a overriden constructor that takes an user and an event and
     provides selectable group names in which the user is a member of and the
     event is not already in the group. """
-    grouplist = ModelMultipleChoiceField( # FIXME change name and translatable
+    grouplist = ModelMultipleChoiceField(
             queryset=Group.objects.none(), widget=CheckboxSelectMultiple())
     def __init__(self, user, event, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)

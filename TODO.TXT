@@ -6,6 +6,14 @@ show-stopping
 high priority
 -------------
 
+- Don't use two columns (related events) in the result of a search with location
+- Add stats for screen size and media capabilities of visitors: http://awstats.sourceforge.net/docs/awstats_faq.html#SCREENSIZE
+- Use a descriptive title and h1 for the page showing a search result. Examples:
+
+    - Events in Berlin
+    - Events in Berlin belonging to the group(s) ...
+    - Events IN Berlin TAGGED AS aaa bbb 
+
 - Think about which characters are allowed for event titles, group names, etc.
   and modify the code accordingly (not only for inputs, but also for searches,
   etc.)

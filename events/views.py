@@ -970,6 +970,7 @@ def group_add_event(request, event_id): # {{{2
             form = AddEventToGroupForm(user=user, event=event)
         context = dict()
         context['form'] = form
+        context['event'] = event
         return render_to_response('groups/add_event_to_group.html',
                 context_instance=RequestContext(request, context))
     else:
