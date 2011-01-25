@@ -32,7 +32,7 @@
     {% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}
       <br />
       <span class="deadline">
-          {{ event.next_coming_date_or_start }} {% trans "deadline for:" %} {{ event.next_deadline_name }}
+          {{ event.next_coming_date_or_start }} {{ event.next_deadline_name }}
       </span>
     {% endif %}
     {% if event.get_tags %}

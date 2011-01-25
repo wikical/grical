@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block container %}
-<h3> {% trans "My groups" %}:</h3>
+<h2> {% trans "My groups" %}:</h2>
 
 {% if groups %}
+<p><a href="{% url group_new %}">{% trans "Create a new group." %}</a></p>
 <ul>
     {% for group in groups %}
         <li><a href="{% url group_view group.id %}">{{ group.name }}</a></li>
@@ -15,7 +16,8 @@
     {% endfor %}
 </ul>
 {% else %}
-        <p>{% trans "No groups found!" %}</p>
+    <p>{% trans "You are not a member of any group." %}</p>
+    <p><a href="{% url group_new %}">{% trans "Create a new group." %}</a>.</p>
 {% endif %}
 
 {% endblock %}

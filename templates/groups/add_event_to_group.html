@@ -3,19 +3,11 @@
 
 {% block container %}
 
-<p>{% trans "Add event to group" %}:</p>
-<div id="event_form">
-    {% if form.errors %}
-        <p style="color: red;">
-            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
-        </p>
-    {% endif %}
-    <form action="" method="post">{% csrf_token %}
-        <table>
-            {{ form.as_table }}
-        </table>
-        <input type="submit" value={% trans "Add" %}>
-    </form>
-</div>
+<p>{% blocktrans with event.title as title %}"Add <i>{{ title }}</i> to:"{% endblocktrans %}</p>
+
+<form action="" method="post">{% csrf_token %}
+    {{ form }}
+    <input type="submit" value={% trans "Add" %}>
+</form>
 
 {% endblock %}
