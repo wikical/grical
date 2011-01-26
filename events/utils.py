@@ -297,8 +297,6 @@ def search_address_osm( data ): # {{{1
     52.0
     >>> result['country']
     'DE'
-    >>> result['city']
-    'Berlin'
     """
     # FIXME check response code, etc and return None if no address are given or
     # an error occur
@@ -374,8 +372,8 @@ def validate_year( value ):
 
 # only for testing:
 if __name__ == "__main__": # {{{1
-    result = search_address_google(
-            sys.argv[1].decode( sys.getfilesystemencoding() ) )
-#    result = search_address( sys.argv[1].decode( sys.getfilesystemencoding() ) )
+#    result = search_address_google(
+#            sys.argv[1].decode( sys.getfilesystemencoding() ) )
+    result = search_address( sys.argv[1].decode( sys.getfilesystemencoding() ) )
     print result
 

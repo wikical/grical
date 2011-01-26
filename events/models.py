@@ -371,7 +371,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     endtime = models.TimeField( 
             _( u'End time' ), blank = True, null = True )
     tags = TagField( _( u'Tags' ), blank = True, null = True,
-        help_text = _( u''.join( [u"Tags are case in-sensitive. Only letters ",
+        help_text = _( u''.join( [u"Tags are case insensitive. Only letters ",
             u"(these can be international, like: αöł), digits and hyphens (-)",
             u"are allowed. Tags are separated with spaces. Example: ",
             u"demonstration software-patents"] ) ) )
