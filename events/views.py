@@ -726,14 +726,11 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
             # TODO simplified with for set_something(Event, ..., ...)
             if addresses and len( addresses ) == 1:
                 address = addresses.values()[0]
+                event.address = addresses.keys()[0]
                 if address.has_key( 'longitude' ):
                     event.longitude = address['longitude']
                 if address.has_key( 'latitude' ):
                     event.latitude = address['latitude']
-                if address.has_key( 'address' ):
-                    event.address = address['address']
-                if address.has_key( 'house' ):
-                    event.house =  address['house']
                 if address.has_key( 'country' ):
                     event.country = address['country']
                 if address.has_key( 'postcode' ):
