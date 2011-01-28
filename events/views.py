@@ -155,6 +155,10 @@ def event_edit( request, event_id ): # {{{1
             'formset_session': formset_session,
             'formset_deadline': formset_deadline,
             'event_id': event_id }
+    # add a warning message if the start date is in the past, which is probably
+    # a mistake
+    if event.start < datetime.date.today():
+        templates['messages'] = [ _('warning: the start date is in the past') ]
     return render_to_response( 'event_edit.html', templates,
             context_instance = RequestContext( request ) )
 
