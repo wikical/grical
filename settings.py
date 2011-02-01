@@ -194,25 +194,31 @@ TEMPLATE_DIRS = (
     os.path.join( PROJECT_ROOT, "templates" ),
  )
 
-# List of callables that know how to import templates from various sources.
-# for the cached loader all tags must be thread-safe, see
-# http://docs.djangoproject.com/en/dev/howto/custom-template-tags/#template-tag-thread-safety
-TEMPLATE_LOADERS = (
-    ('django.template.loaders.cached.Loader', (
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    )),
-)
-
-# without the cached loader:
-#TEMPLATE_LOADERS = (
-#    'django.template.loaders.filesystem.load_template_source',
-#    'django.template.loaders.app_directories.load_template_source',
-# )
+if DEBUG:
+    # List of callables that know how to import templates from various sources.
+    # without the cached loader:
+    TEMPLATE_LOADERS = (
+        'django.template.loaders.filesystem.load_template_source',
+        'django.template.loaders.app_directories.load_template_source',
+     )
+else:
+    # for the cached loader all tags must be thread-safe, see
+    # http://docs.djangoproject.com/en/dev/howto/custom-template-tags/#template-tag-thread-safety
+    TEMPLATE_LOADERS = (
+            (   'django.template.loaders.cached.Loader',
+                (
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                ),
+            )
+        )
 
 # =============================================================================
 # i18n and url settings
 # =============================================================================
+
+# see http://docs.djangoproject.com/en/1.2/ref/settings/#append-slash
+APPEND_SLASH = True
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -283,77 +289,108 @@ except NameError:
 ################################
 # example of a settings_local.py
 ################################
+
+##!/usr/bin/env python
+## -*- coding: utf-8 -*-
+#""" configuration file for local installations of the source tree """
+## vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #
-# import os
+#import os
+#import socket
+#from subprocess import Popen, PIPE
 #
-# VERSION = 'alpha'
+## absolute path to this directory
+#PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 #
-# # Make this unique, and don't share it with anybody.
-# SECRET_KEY = 'a$#ba$@(AJIOEAanb.;p;ki))(*&^4556breqnape#$3q23422'
+## generate version number from hg tip
+#proc = Popen(
+#        'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
+#        shell = True, stdin = PIPE, stdout = PIPE )
+#tip = proc.communicate()[0]
+#VERSION = '0.6' + tip
 #
-# # absolute path to this directory
-# PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
+## Make this unique, and don't share it with anybody.
+#SECRET_KEY = 'e82b5;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 #
-# # ===========================================================================
-# # imap settings for getting events as emails
-# # ===========================================================================
-# IMAP_SERVER = 'your_imap_server'
-# IMAP_LOGIN = 'your_imap_login'
-# IMAP_PASSWD = 'your_imap_password'
+## absolute path to this directory
+#PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 #
-# # ===========================================================================
-# # debug settings
-# # ===========================================================================
+## host IP
+#try:
+#    HOST_IP = socket.gethostbyname(socket.gethostname())
+#except:
+#    HOST_IP = "127.0.0.1"
 #
-# DEBUG = True
-# TEMPLATE_DEBUG = DEBUG
-# # http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
-# INTERNAL_IPS = ('127.0.0.1',)
-# if DEBUG:
-#     TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
+## ======================================================================
+## imap settings for getting events as emails
+## ======================================================================
+#IMAP_SERVER = '127.0.0.1'
+#IMAP_LOGIN = 'CHANGE THIS'
+#IMAP_PASSWD = 'CHANGE THIS'
+#IMAP_SSL = False
 #
-# # ===========================================================================
-# # cache settings
-# # ===========================================================================
-# # http://docs.djangoproject.com/en/dev/topics/cache/
+## ======================================================================
+## debug settings
+## ======================================================================
 #
-# # CACHE_BACKEND = 'locmem://'
-# # CACHE_MIDDLEWARE_KEY_PREFIX = '%s_' % PROJECT_NAME
-# # CACHE_MIDDLEWARE_SECONDS = 600
+#DEBUG = True
+#TEMPLATE_DEBUG = DEBUG
 #
+## http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
+## Also use by the toolbar middleware, see
+## /usr/share/doc/python-django-debug-toolbar/README.Debian and
+## /usr/share/doc/python-django-debug-toolbar/README.rst.gz
+#INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
 #
-# # ===========================================================================
-# # email and error-notify settings
-# # ===========================================================================
+#if DEBUG:
+#    TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
 #
-# ADMINS = (
-#     ('your_name', 'your_mail'),
-# )
+## ======================================================================
+## cache settings
+## ======================================================================
+## http://docs.djangoproject.com/en/dev/topics/cache/
 #
-# MANAGERS = ADMINS
-#
-# DEFAULT_FROM_EMAIL = 'noreply@example.com'
-# SERVER_EMAIL = 'noreply@example.com'
-#
-# EMAIL_HOST = 'your_smtp_email'
-# EMAIL_PORT = 25
-# EMAIL_HOST_USER = ''
-# EMAIL_HOST_PASSWORD = ''
-# EMAIL_USE_TLS = False
-#
-# # see http://docs.djangoproject.com/en/dev/howto/error-reporting/
-# SEND_BROKEN_LINK_EMAILS = True
+## CACHE_BACKEND = 'locmem://'
+## CACHE_MIDDLEWARE_KEY_PREFIX = '%s_' % PROJECT_NAME
+## CACHE_MIDDLEWARE_SECONDS = 600
 #
 #
-# # ===========================================================================
-# # database settings
-# # ===========================================================================
+## ======================================================================
+## email and error-notify settings
+## ======================================================================
 #
-# # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-# DATABASE_ENGINE   = 'sqlite3'
-# # DB Name (or path to database file if using sqlite3)
-# DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
-# DATABASE_USER     = ''                     # Not used with sqlite3.
-# DATABASE_PASSWORD = ''                     # Not used with sqlite3.
-# DATABASE_HOST     = ''                     # Not used with sqlite3.
-# DATABASE_PORT     = ''                     # Not used with sqlite3.
+#ADMINS = (
+#    ('SURNAME NAME', 'EMAIL'),
+#)
+#
+#MANAGERS = ADMINS
+#
+## used for messages sent. You can set it to None to avoid emails having the
+## header reply-to
+#REPLY_TO = 'EMAIL'
+#
+#DEFAULT_FROM_EMAIL = 'EMAIL'
+#SERVER_EMAIL = 'EMAIL'
+#
+#EMAIL_HOST = '127.0.0.1'
+#EMAIL_PORT = 25
+#EMAIL_HOST_USER = 'CHANGE THIS'
+#EMAIL_HOST_PASSWORD = 'CHANGE THIS'
+#EMAIL_USE_TLS = True
+#
+## see http://docs.djangoproject.com/en/dev/howto/error-reporting/
+#SEND_BROKEN_LINK_EMAILS = True
+#
+#
+## ======================================================================
+## database settings
+## ======================================================================
+#
+## 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+#DATABASE_ENGINE   = 'sqlite3'
+## DB Name (or path to database file if using sqlite3)
+#DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
+#DATABASE_USER     = ''                     # Not used with sqlite3.
+#DATABASE_PASSWORD = ''                     # Not used with sqlite3.
+#DATABASE_HOST     = ''                     # Not used with sqlite3.
+#DATABASE_PORT     = ''                     # Not used with sqlite3.
