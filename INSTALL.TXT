@@ -21,17 +21,23 @@ Installation instructions for Debian based systems
 
 1. If you want to develop GridCalendar:
    
-   1. Install ``python-django-debug-toolbar``, ``python-webtest`` and ``django-webtest``. As root::
+   1. Install ``python-django-debug-toolbar``, ``python-profiler``, ``python-webtest`` and ``django-webtest``. As root::
 
         aptitude install python-django-debug-toolbar python-webtest
         easy_install django-webtest
 
-   1. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the IP(s) you use when developing. Example::
+   1. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the
+      IP(s) you use when developing. Example::
 
         DEBUG = True
         INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
 
-1. Create and edit ``settings_local.py`` (see an example at the end of the file ``settings.py``)
+   1. You can run a web test server with ``python manage.py testserver``
+
+   1. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
+      could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
+
+1. Create and edit ``settings_local.py`` (see an example at ``settings_local.py.example``)
 
 1. To parse events submitted as emails to an imap server automatically, add to your cron file command::
 
