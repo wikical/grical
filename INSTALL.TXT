@@ -12,7 +12,7 @@ Installation instructions for Debian based systems
 
 1. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
-   Using this data base can influence search results and the introduction of addresses of events.
+   Using this data improves the front page, search results and the introduction of addresses of events.
    You can install it following the steps::
     
     cd /usr/share/GeoIP
@@ -43,36 +43,49 @@ Installation instructions for Debian based systems
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
-1. If using Apache, use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
+1. For Apache as the webserver
+   
+    1. Install Apache and the package ``libapache2-mod-wsgi``
+      
+    1. For an Apache Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
 
-    <VirtualHost *:80>
-        ServerName gridcalendar.net
-        ServerAlias www.gridcalendar.net
-        DocumentRoot /var/www/gridcalendar.net
-        ServerAdmin admin@example.com
-    
-        # Logfiles:
-        CustomLog /var/log/apache2/gridcalendar.net.log combined
-        ErrorLog /var/log/apache2/gridcalendar.net.error.log
-        LogLevel warn
-     
-        Alias /robots.txt /var/www/gridcalendar.net/robots.txt
-        Alias /m/ /var/www/gridcalendar.net/m/
-        Alias /favicon.ico /var/www/gridcalendar.net/m/favicon.ico
+        <VirtualHost *:80>
+            ServerName gridcalendar.net
+            ServerAlias www.gridcalendar.net
+            DocumentRoot /var/www/gridcalendar.net
+            ServerAdmin admin@example.com
+        
+            # Logfiles:
+            CustomLog /var/log/apache2/gridcalendar.net.log combined
+            ErrorLog /var/log/apache2/gridcalendar.net.error.log
+            LogLevel warn
+         
+            Alias /robots.txt /var/www/gridcalendar.net/robots.txt
+            Alias /m/ /var/www/gridcalendar.net/m/
+            Alias /favicon.ico /var/www/gridcalendar.net/m/favicon.ico
 
-        WSGIScriptAlias / /usr/local/gridcalendar/apache/django.wsgi
-    
-    </VirtualHost>
+            WSGIScriptAlias / /usr/local/gridcalendar/apache/django.wsgi
+        
+        </VirtualHost>
 
-1. Create the necessary files or symlinks under ``/var/www/gridcalendar`` which are mentioned in the above configuration.
+    1. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and make sure Apache can read it::
 
-1. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+        ln -s /usr/local/gridcalendar/media /var/www/gridcalendar.net/m/
+
+    1. The same for ``favicon.ico``::
+
+        ln -s /usr/local/gridcalendar/media/favicon.ico /var/www/gridcalendar.net/favicon.ico
+
+    1. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+
+    1. If you use SQLite as the database, Make sure Apache can also write to the parent
+       directory of the database. SQLite needs to be able to write to this directory.
 
 1. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
 
         MaxRequestsPerChild 1
    
-1. If you want to use a single ``sqlite`` file for storing your data:
+1. If you want to use a single SQLite file for storing your data:
 
    1. Install the packages ``python-pysqlite2`` and ``sqlite3``
    
@@ -99,7 +112,7 @@ Installation instructions for Debian based systems
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
 
-1. If you want to use postgresql (instead of sqlite) for storing your data:
+1. If you want to use postgresql (instead of SQLite) for storing your data:
    
     1. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
 
