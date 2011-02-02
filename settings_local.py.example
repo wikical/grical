@@ -1,0 +1,101 @@
+################################ ##############################
+# example of a settings_local.py YOU NEED TO MODIFY SOME VALUES
+################################ ##############################
+
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+""" configuration file for local installations of the source tree """
+# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+
+import os
+import socket
+from subprocess import Popen, PIPE
+
+# absolute path to this directory
+PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
+
+# generate version number from hg tip
+proc = Popen(
+        'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
+        shell = True, stdin = PIPE, stdout = PIPE )
+tip = proc.communicate()[0]
+VERSION = '0.6' + tip
+
+# Make this random and unique; and don't share it with anybody.
+SECRET_KEY = 'e82b5;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
+
+# host IP
+try:
+    HOST_IP = socket.gethostbyname(socket.gethostname())
+except:
+    HOST_IP = "127.0.0.1"
+
+# ======================================================================
+# imap settings for getting events as emails
+# ======================================================================
+IMAP_SERVER = '127.0.0.1'
+IMAP_LOGIN = 'CHANGE THIS'
+IMAP_PASSWD = 'CHANGE THIS'
+IMAP_SSL = False
+
+# ======================================================================
+# debug settings
+# ======================================================================
+
+DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
+# http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
+# Also use by the toolbar middleware, see
+# /usr/share/doc/python-django-debug-toolbar/README.Debian and
+# /usr/share/doc/python-django-debug-toolbar/README.rst.gz
+INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
+
+if DEBUG:
+    TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
+
+# ======================================================================
+# cache settings
+# ======================================================================
+# http://docs.djangoproject.com/en/dev/topics/cache/
+
+# CACHE_BACKEND = 'locmem://'
+# CACHE_MIDDLEWARE_KEY_PREFIX = '%s_' % PROJECT_NAME
+# CACHE_MIDDLEWARE_SECONDS = 600
+
+
+# ======================================================================
+# email and error-notify settings
+# ======================================================================
+
+ADMINS = (
+    ('SURNAME NAME', 'EMAIL'),
+)
+
+MANAGERS = ADMINS
+
+# used for messages sent. You can set it to None to avoid emails having the
+# header reply-to
+REPLY_TO = 'EMAIL'
+
+DEFAULT_FROM_EMAIL = 'EMAIL'
+SERVER_EMAIL = 'EMAIL'
+
+EMAIL_HOST = '127.0.0.1'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = 'CHANGE THIS'
+EMAIL_HOST_PASSWORD = 'CHANGE THIS'
+EMAIL_USE_TLS = True
+
+# ======================================================================
+# database settings
+# ======================================================================
+
+# 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_ENGINE   = 'sqlite3'
+# DB Name (or path to database file if using sqlite3)
+DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
+DATABASE_USER     = ''                     # Not used with sqlite3.
+DATABASE_PASSWORD = ''                     # Not used with sqlite3.
+DATABASE_HOST     = ''                     # Not used with sqlite3.
+DATABASE_PORT     = ''                     # Not used with sqlite3.
