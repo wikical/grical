@@ -93,8 +93,8 @@ class PublicSearchEventsFeed(EventsFeed): # {{{1
 
     def link(self, obj):
         """ return a link to a search with get http method """
-        # TODO: if the search query is '#tag' if won't work, fix it
-        return reverse( 'list_events_search', kwargs = {'query': obj,} )
+        # TODO: if the search query is '#tag', does it work?
+        return reverse( 'search_query', kwargs = {'query': obj,} )
 
     def description(self, obj):
         """ description """
@@ -103,7 +103,7 @@ class PublicSearchEventsFeed(EventsFeed): # {{{1
 
     def items(self, obj):
         """ items """
-        matches, related = Filter.matches( obj, None, FEED_SIZE )
+        matches = Filter.matches( obj, None, FEED_SIZE )
         return matches
 
 
@@ -120,8 +120,9 @@ class HashSearchEventsFeed(EventsFeed): # {{{1
         return _(u'%(domain)s search results') % {'domain': SITE_DOMAIN,}
 
     def link(self, obj):
-        """ link """
-        return reverse( 'list_events_search_hashed', kwargs = obj )
+        """ return a link to a public search with get http method """
+        # TODO: if the search query is '#tag', does it work?
+        return reverse( 'search_query', kwargs = {'query': obj,} )
 
     def description(self, obj):
         """ description """
@@ -130,7 +131,7 @@ class HashSearchEventsFeed(EventsFeed): # {{{1
 
     def items(self, obj):
         """ items """
-        matches, related = Filter.matches(
+        matches = Filter.matches(
                 obj['query'], obj['user_id'], FEED_SIZE )
         return matches
 

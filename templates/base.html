@@ -27,9 +27,14 @@ permission of the original author -->
 </head>
 <body>
 <div id="header">
-    <!-- <a href="{{ PROTOCOL }}://{{ DOMAIN }}"><img src="{{ MEDIA_URL }}gridcalendar-logo-small.png" alt="{{ DOMAIN }} {% trans "logo" %}" /></a> -->
-    <a href="/"><img style="padding:5px;" src="{{ MEDIA_URL }}grical-letters-192x50.png" alt="{{ DOMAIN }} {% trans "logo" %}" /></a>
-    <div id="navigation-and-search">
+    <div style="position:absolute;left:10px;top:10px">
+        <a href="/"><img src="{{ MEDIA_URL }}grical-letters-192x50.png" alt="{{ DOMAIN }} {% trans "logo" %}" /></a>
+    </div>
+    <div style="position:absolute;right:10px;top:10px">
+        <a href="http://flattr.com/thing/85499/GridCalendar-Community-Calendar">
+            <img src="{{ MEDIA_URL }}flattr-badge-large.png" alt="Flattr this" title="Flattr this" style="vertical-align: middle" /></a>
+    </div>
+    <div style="text-align:left; margin-left:220px">
         {% if user.username %}
             {% blocktrans with user.username as username %}
                 Logged in as {{ username }}
@@ -42,21 +47,20 @@ permission of the original author -->
         {% endif %}
         | <a href="{% url help %}">{% trans "help" %}</a>
         | <a href="{% url legal_notice %}">{% trans "legal notice" %}</a>
-        <div style="display:inline">
-            <form style="padding:15px" action="{% url search %}">
-                <div style="display:inline"><input maxlength="2048" size="40" name="query" value="{{ query }}" /></div>
-                <div style="display:inline"><input type="submit" value="{% trans "Search" %}" /></div>
-            </form>
-        </div>
-        <div id="banners">
-            <a href="http://flattr.com/thing/85499/GridCalendar-Community-Calendar">
-                <img src="{{ MEDIA_URL }}flattr-badge-large.png" alt="Flattr this" title="Flattr this" /></a>
-        </div>
     </div>
+    <div style="text-align:left; margin-top:0.5em; margin-left:220px">
+        <form action="{% url search %}">
+            <div style="display:inline"><input maxlength="2048" size="40" name="query" value="{{ query }}" /></div>
+            <div style="display:inline"><input type="submit" value="{% trans "Search" %}" /></div>
+        </form>
+        {% block search_info %}
+        {% endblock %}
+    </div>
+    <!--
     <div id="description" style="padding-left:10px">
-        {% trans "Open Events Calendar" %} <!-- MOTTO! -->
+        {% trans "Open Events Calendar" %}
     </div>
-    <!-- TODO: create a selectable list or link for changing the language, see
+    TODO: create a selectable list or link for changing the language, see
     http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/#the-set-language-redirect-view
     -->
 </div>

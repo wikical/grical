@@ -207,18 +207,16 @@ if DEBUG:
     TEMPLATE_LOADERS = (
         'django.template.loaders.filesystem.load_template_source',
         'django.template.loaders.app_directories.load_template_source',
-     )
+    )
 else:
     # for the cached loader all tags must be thread-safe, see
     # http://docs.djangoproject.com/en/dev/howto/custom-template-tags/#template-tag-thread-safety
     TEMPLATE_LOADERS = (
-            (   'django.template.loaders.cached.Loader',
-                (
-                    'django.template.loaders.filesystem.Loader',
-                    'django.template.loaders.app_directories.Loader',
-                ),
-            )
-        )
+        ('django.template.loaders.cached.Loader', (
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+        )),
+    )
 
 # =============================================================================
 # i18n and url settings

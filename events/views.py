@@ -31,7 +31,9 @@ import unicodedata
 
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
+from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.db.models import Max, Q
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory
@@ -42,6 +44,7 @@ from django.shortcuts import ( render_to_response, get_object_or_404,
 from django.template import RequestContext, Context, loader
 from django.utils.translation import ugettext as _
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, InvalidPage, EmptyPage
 
 from tagging.models import Tag, TaggedItem
 
@@ -53,8 +56,10 @@ from gridcalendar.events.models import (
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar)
 from gridcalendar.events.utils import search_address
-from django.contrib.sites.models import Site
+from gridcalendar.events.tables import EventTable
 
+# TODO: check if this works with i18n
+views = [_('table'), _('map'), _('boxes')]
 
 def help_page( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
@@ -358,12 +363,27 @@ def event_show_raw( request, event_id ): # {{{1
         return render_to_response( 'event_show_raw.html',
                 templates, context_instance = RequestContext( request ) )
 
-def search( request ): # {{{1
-    """ View to get the data of a search query calling `list_events_search`
+def search( request, query = None, view = 'boxes' ): # {{{1
+    """ View to get the data of a search query.
+
+    Notice that the query can be a GET value or a URL value.
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
-    >>> Client().get(reverse('search')).status_code
+    >>> e1 = Event.objects.create(
+    ...         title = 'test', tags = 'berlin',
+    ...         start = datetime.date.today())
+    >>> e2 = Event.objects.create(
+    ...         title = 'test', tags = 'berlin',
+    ...         start = datetime.date.today())
+    >>> Client().get(reverse('search_query',
+    ...         kwargs={'query': 'test',})).status_code
+    200
+    >>> Client().get(reverse('search_query_view',
+    ...         kwargs={'query': 'test', 'view': 'table'})).status_code
+    200
+    >>> Client().get(reverse('search_query_view',
+    ...         kwargs={'query': 'test', 'view': 'map'})).status_code
     200
     """
     if 'query' in request.GET and request.GET['query']:
@@ -375,42 +395,69 @@ def search( request ): # {{{1
             # the character / cannot be allowed because Django won't be able to
             # create a URL for the ical result of the search. For a discussion,
             # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
-        return list_events_search ( request, request.GET['query'] )
-    else:
+    if not query:
         return main( request, error_messages = 
             _( u"A search was submitted without a query string" ) )
+    context = dict()
+    context['views'] = views
+    context['current_view'] = view
+    context['title'] = \
+            _( "%(project_name)s - %(view)s search results for: %(query)s" ) \
+                % { 'project_name': Site.objects.get_current().name,
+                    'query': query,
+                    'view': view }
+    context['user_id'] = request.user.id
+    context['hash'] = ExtendedUser.calculate_hash(request.user.id)
+    context['query'] = query
+    related = bool(request.GET.get('related', True))
+    search_result = Filter.matches(query, request.user, related)
+    if len( search_result ) == 0:
+        context['no_results'] = True
+        context['heading'] = _( u"Search for: %(query)s" ) % \
+                {'query': query}
+    elif len( search_result ) == 1:
+        context['heading'] = _("One event found searching for: %(query)s") \
+                % { 'query': query, }
+    else:
+        context['heading'] = \
+                _("%(number)d events found searching for: %(query)s") \
+                    % { 'number': len ( search_result ), 'query': query }
+    if view == 'boxes' or view == 'map':
+        if view == 'map':
+            # map-view works only with maximum 10 events
+            paginator = Paginator( search_result, 10)
+        else:
+            paginator = Paginator( search_result, 100)
+        # Make sure page request is an int. If not, deliver first page.
+        try:
+            page = int(request.GET.get('page', '1'))
+        except ValueError:
+            page = 1
+        # If page request (9999) is out of range, deliver last page of results.
+        try:
+            context['events'] = paginator.page( page )
+        except ( EmptyPage, InvalidPage ):
+            context['events'] = paginator.page( paginator.num_pages )
+    elif view == 'table':
+        sort = request.GET.get( 'sort', 'next_coming_date_or_start' )
+        page = int( request.GET.get( 'page', '1' ) )
+        search_result = EventTable.convert( search_result )
+        search_result_table = EventTable( search_result, order_by = sort )
+        if settings.DEBUG:
+            search_result_table.paginate(
+                    Paginator, 10, page = page, orphans = 2 )
+        else:
+            search_result_table.paginate(
+                    Paginator, 50, page = page, orphans = 2 )
+        context['events_table'] = search_result_table
+        context['sort'] = sort
+    else:
+        raise Http404
+    return render_to_response( 'search.html',
+            context,
+            context_instance = RequestContext( request ) )
 
-def list_events_search( request, query ): # {{{1
-    """ View to show the results of a search query on the left column and
-    related events on the right column.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> Client().get(reverse('list_events_search',
-    ...         kwargs={'query': 'abc',})).status_code
-    200
-    """
-    search_result, related_events = Filter.matches(query, request.user)
-    return render_to_response( 'list_events_search.html',
-        {
-            'title': _( "%(project_name)s search results" ) % {'project_name':
-                Site.objects.get_current().name,},
-            'messages': [
-                    _(u'search: %(query)s') % {'query': query,},
-                    _(u'time: %(date_time)s') % {'date_time':
-                        datetime.datetime.now().strftime(
-                            '%Y-%m-%d %H:%M:%S'),},
-                    _(u"results: %(number)d") % {'number':
-                        len( search_result ),},],
-            'events': search_result,
-            'related_events': related_events,
-            'query': query,
-            'user_id': request.user.id,
-            'hash': ExtendedUser.calculate_hash(request.user.id),
-        },
-        context_instance = RequestContext( request ) )
-
-def list_events_search_hashed( request, query, user_id, hashcode ): # {{{1
+def search_hashed( request, query, user_id, hashcode ): # {{{1
     """ View to show the results of a search query with hashed authentification
 
     >>> from django.test import Client
@@ -419,19 +466,19 @@ def list_events_search_hashed( request, query, user_id, hashcode ): # {{{1
     >>> from gridcalendar.events.models import ExtendedUser
     >>> u = User.objects.create_user('l_e_s_h', '0@example.com', 'p')
     >>> u = ExtendedUser.objects.get( pk = u.pk )
-    >>> Client().get(reverse('list_events_search_hashed',
+    >>> Client().get(reverse('search_hashed',
     ...         kwargs={'query': 'abcdef', 'user_id': u.id,
     ...         'hashcode': u.get_hash()})).status_code
     200
     """
     if ExtendedUser.calculate_hash(user_id) != hashcode:
         raise Http404
-    search_result = Filter.matches(query, user_id)[0]
+    search_result = Filter.matches(query, user_id)
     if len( search_result ) == 0:
         return main( request, messages = 
                 _( u"Your search didn't get any result" ) )
     else:
-        return render_to_response( 'list_events_search.html',
+        return render_to_response( 'search.html',
             {
                 'title': _( "search results" ),
                 'events': search_result,
@@ -500,34 +547,33 @@ def filter_edit( request, filter_id ): # {{{1
     if isinstance( filter_id, str ) or isinstance ( filter_id, unicode ):
         filter_id = int ( filter_id )
     efilter = get_object_or_404( Filter, pk = filter_id )
-    if ( ( not request.user.is_authenticated() ) or \
-            ( efilter.user.id != request.user.id ) ):
+    if efilter.user.id != request.user.id:
         return main( request, error_messages =
                 _( ''.join(['You are not allowed to edit the filter with the ',
                     'number %(filter_id)d']) ) % {'filter_id': filter_id,} )
-    else:
-        if request.method == 'POST':
-            ssf = FilterForm( request.POST, instance = efilter )
-            if ssf.is_valid() :
-                ssf.save()
-                return HttpResponseRedirect( reverse( 'list_filters_my' ) )
-            else:
-                templates = {
-                        'title': 'edit event',
-                        'form': ssf,
-                        'filter_id': filter_id }
-                return render_to_response(
-                        'filter_edit.html',
-                        templates,
-                        context_instance = RequestContext( request ) )
+    if request.method == 'POST':
+        ssf = FilterForm( request.POST, instance = efilter )
+        if ssf.is_valid():
+            assert request.user.id == ssf.cleaned_data['user']
+            ssf.save()
+            return HttpResponseRedirect( reverse( 'list_filters_my' ) )
         else:
-            ssf = FilterForm( instance = efilter )
             templates = {
                     'title': 'edit event',
                     'form': ssf,
                     'filter_id': filter_id }
-            return render_to_response( 'filter_edit.html',
-                    templates, context_instance = RequestContext( request ) )
+            return render_to_response(
+                    'filter_edit.html',
+                    templates,
+                    context_instance = RequestContext( request ) )
+    else:
+        ssf = FilterForm( instance = efilter )
+        templates = {
+                'title': 'edit filter',
+                'form': ssf,
+                'filter_id': filter_id }
+        return render_to_response( 'filter_edit.html',
+                templates, context_instance = RequestContext( request ) )
 
 @login_required
 def filter_drop( request, filter_id ): # {{{1
@@ -968,7 +1014,7 @@ def group_add_event(request, event_id): # {{{2
                 request.user.message_set.create(
                         message='Please check your data.')
         else:
-            form = AddEventToGroupForm(user=user, event=event)
+            form = AddEventToGroupForm(uSER=USER, event=event)
         context = dict()
         context['form'] = form
         context['event'] = event
@@ -1083,6 +1129,7 @@ def group_invite(request, group_id): # {{{2
         {'group_name': group.name,} )
     if request.POST:
         username_dirty = request.POST['username']
+        # TODO think of malicious manipulations of these fields:
         formdata = {'username': username_dirty,
                     'group_id': group_id}
         form = InviteToGroupForm(data=formdata)
@@ -1127,11 +1174,11 @@ def ICalForSearch( request, query ): # {{{2
     >>> e = Event.objects.create(
     ...         title = 'test', tags = 'berlin',
     ...         start = datetime.date.today() )
-    >>> Client().get(reverse('list_events_search_ical',
+    >>> Client().get(reverse('search_ical',
     ...         kwargs={'query': 'berlin',})).status_code
     200
     """
-    elist = Filter.matches( query, request.user )[0]
+    elist = Filter.matches( query, request.user )
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForEvent( request, event_id ): # {{{2
@@ -1194,7 +1241,7 @@ def ICalForSearchHash( request, query, user_id, hashcode ): # {{{2
     ...         start = datetime.date.today() )
     >>> u = User.objects.create_user('ICalForSearchHash', '0@example.com', 'p')
     >>> u = ExtendedUser.objects.get( pk = u.pk )
-    >>> Client().get(reverse('list_events_search_ical_hashed',
+    >>> Client().get(reverse('search_ical_hashed',
     ...         kwargs={'query': 'berlin', 'user_id': u.id,
     ...         'hashcode': u.get_hash()})).status_code
     200
@@ -1203,7 +1250,7 @@ def ICalForSearchHash( request, query, user_id, hashcode ): # {{{2
     if hashcode != user.get_hash():
         return HttpResponseBadRequest( _(u"hash authentification failed"),
                 mimetype='text/plain' )
-    elist = Filter.matches( query, user_id )[0]
+    elist = Filter.matches( query, user_id )
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForGroup( request, group_id ): # {{{2

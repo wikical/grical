@@ -1,0 +1,9 @@
+{% load i18n %}
+
+{% include "pagination.html" %}
+
+<div>
+    {% for event in events.object_list %}
+        {% include "event_show_medium.html" %}
+    {% endfor %}
+</div>

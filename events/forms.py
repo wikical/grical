@@ -149,7 +149,28 @@ class FilterForm(ModelForm):
     """ ModelForm using Filter excluding `user` """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Filter
-        exclude = ('user',)
+        widgets = { 'user' : HiddenInput(), }
+    # TODO: change the error displayed when the name already exists:
+    # "Filter with this User and Name already exists."
+    # It should be: you already has a filter with this name
+    # One option:
+    #def clean_name( self ):
+    #    """ checks that the user doesn't have a filter with the same name """
+    #    data = self.cleaned_data
+    #    if self.instance and self.instance.user:
+    #        # we ignore user_id from the form if an instance is there with a
+    #        # user (not the case for new filters but for old ones)
+    #        user_id = self.instance.user.id
+    #    else:
+    #        user_id = data.get('user_id')
+    #    if Filter.objects.filter(
+    #            user = user_id, name = data.get('name') ).exists():
+    #        raise ValidationError(
+    #                 _(u"You already have a filter with the name " \
+    #                 "'%(filter_name)s'. Choose another name") % \
+    #                         {'filter_name': data.get('name')} )
+    #    return data
+
 
 class EventForm(ModelForm):
     """ ModelForm for all editable fields of Event except `public` """
@@ -262,7 +283,7 @@ class InviteToGroupForm(Form):
         super(InviteToGroupForm, self).__init__(*args, **kwargs)
         self.fields['username'].label = _(u'Username')
     def clean(self):
-        """ Cheks that the user and group exist and the user is not in the
+        """ Checks that the user and group exist and the user is not in the
         group already """
         # see http://docs.djangoproject.com/en/1.2/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
         cleaned_data = self.cleaned_data
