@@ -10,6 +10,10 @@ Installation instructions for Debian based systems
 
 1. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``
 
+1. Install ``django-tables``::
+
+    easy_install django-tables
+
 1. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
    Using this data improves the front page, search results and the introduction of addresses of events.

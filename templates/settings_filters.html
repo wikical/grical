@@ -3,7 +3,7 @@
 <ul>
     {% for fil in USER.get_filters %}
         <li>
-            <a href="{% url list_events_search fil.query|urlencode %}">{{ fil.name }}</a>
+            <a href="{% url search_query fil.query|urlencode|iriencode %}">{{ fil.name }}</a>
             &nbsp;
             ({{ fil.matches_count }})
             &nbsp;

@@ -31,6 +31,7 @@ import hashlib
 import threading
 import datetime
 from smtplib import SMTPConnectError
+from itertools import chain
 
 import vobject
 
@@ -408,6 +409,47 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         verbose_name_plural = _( u'Events' )
 
     # methods {{{2
+
+    def color_nr(self, #{{{3
+            days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
+        """ Returns a number according with `Event.next_coming_date_or_start`.
+
+        For default parameter `days_colors`:
+
+        +------------------------------+---+
+        | today                        | 0 |
+        +------------------------------+---+
+        | tomorrow                     | 1 |
+        +------------------------------+---+
+        | after tomorrow               | 2 |
+        +------------------------------+---+
+        | after after tomorrow         | 3 |
+        +------------------------------+---+
+        | more than 3 days             | 4 |
+        +------------------------------+---+
+        | more than 7 days             | 5 |
+        +------------------------------+---+
+        | more than 14 days            | 6 |
+        +------------------------------+---+
+        | more than 1 month  (28 days) | 7 |
+        +------------------------------+---+
+        | more than 3 month  (56 days) | 8 |
+        +------------------------------+---+
+        | more than 4 months (84 days) | 9 |
+        +------------------------------+---+
+
+        """
+        today = datetime.date.today()
+        upcoming = self.next_coming_date_or_start()
+        keys = days_colors.keys()
+        keys.sort()
+        keys.reverse()
+        for days in keys:
+            days_from_today = (upcoming - today).days
+            if days_from_today >= days:
+                return days_colors[days]
+        # FIXME: include a different color-palette for past events:
+        return 0
 
     def next_coming_date_or_start(self): #{{{3
         """ returns the next most proximate date of an event to today, which
@@ -1434,9 +1476,11 @@ class EventUrl( models.Model ): # {{{1
             max_length = 80, help_text = _( 
             u"Example: information about accomodation" ) )
     url = models.URLField( _( u'URL' ), blank = False, null = False )
+
     class Meta: # pylint: disable-msg=C0111
         ordering = ['url_name']
         unique_together = ( "event", "url_name" )
+
     def __unicode__( self ):
         return self.url
 
@@ -1583,9 +1627,11 @@ class EventDeadline( models.Model ): # {{{1
             "Example: call for papers deadline" ) )
     deadline = models.DateField( _( u'Deadline' ), blank = False, null = False,
             validators = [validate_year] )
+
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
+
     def __unicode__( self ):
         return unicode( self.deadline ) + u'    ' + self.deadline_name
 
@@ -1768,6 +1814,17 @@ class EventSession( models.Model ): # {{{1
     session_endtime = models.TimeField( 
             _( u'Session end time' ), blank = False, null = False )
 
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
+        ordering = ['session_date', 'session_starttime']
+        unique_together = ( "event", "session_name" )
+        verbose_name = _( u'Session' )
+        verbose_name_plural = _( u'Sessions' )
+
+    def __unicode__( self ):
+        return unicode( self.session_date ) + u'    ' + \
+                unicode( self.session_starttime ) + u'-' + \
+                unicode( self.session_endtime ) + u'    ' + self.session_name
+
     def clone( self, event, user ):
         """ creates a copy of itself related to ``event`` """
         new = EventSession( event = event, session_name = self.session_name,
@@ -1776,16 +1833,6 @@ class EventSession( models.Model ): # {{{1
                 session_endtime = self.session_endtime )
         new.save()
         return new
-
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['session_date', 'session_starttime']
-        unique_together = ( "event", "session_name" )
-        verbose_name = _( u'Session' )
-        verbose_name_plural = _( u'Sessions' )
-    def __unicode__( self ):
-        return unicode( self.session_date ) + u'    ' + \
-                unicode( self.session_starttime ) + u'-' + \
-                unicode( self.session_endtime ) + u'    ' + self.session_name
 
     @staticmethod
     def get_sessions( text ):
@@ -1988,8 +2035,8 @@ class EventSession( models.Model ): # {{{1
 class Filter( models.Model ): # {{{1
     """ search queries of users """
     # {{{2 attributes
-    user = models.ForeignKey(
-            User, unique = False, verbose_name = _( u'User' ) )
+    user = models.ForeignKey( User,
+            unique = False, verbose_name = _( u'User' ) )
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
     query = models.CharField( _( u'Query' ), max_length = 500, blank = False,
@@ -2014,10 +2061,16 @@ class Filter( models.Model ): # {{{1
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next `limit` events matching `self.query` """
-        return Filter.matches( self.query, self.user, limit )[0]
+        return Filter.matches( self.query, self.user, limit, False )
 
     def matches_event( self, event ):
-        """ return True if the query matches the event, False otherwise 
+        """ return True if self.query matches the event, False otherwise.
+        """
+        return Filter.query_matches_event( self.query, event )
+
+    @staticmethod
+    def query_matches_event( query, event ):
+        """ return True if the query matches the event, False otherwise.
         
         >>> from events.models import *
         >>> from datetime import timedelta
@@ -2053,8 +2106,8 @@ class Filter( models.Model ): # {{{1
         # `Filter.matches_queryset`
         # FIXME: create a text with some queries that check the concordance of
         # the output of both methods
-        query = self.query
         # dates
+        # TODO: put the regex as global variables for performance
         date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
         # FIXME: e.g. a2010-01-01 shouldn't work
         dates = date_regex.findall( query )
@@ -2141,13 +2194,11 @@ class Filter( models.Model ): # {{{1
                 break
         return matches
 
-    # FIXME: add a parameter include_related=False and change the call to this
-    # elsewhere to avoid calculating related events when not needed
     @staticmethod
-    def matches( query, user, limit = 100 ): # {{{2
-        """ returns a sorted (`Event.next_coming_date_or_start`) list of `limit`
-        events matching `query` viewable by `user` and a list of related events
-        viewable by `user` (i.e. it returns a tuple with two lists)
+    def matches( query, user, related = True ): # {{{2
+        """ returns a sorted (`Event.next_coming_date_or_start`) list of
+        events matching `query` viewable by `user` adding related events if
+        `related` is True.
         
         - one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
           dates from the the lowest to the highest, or to one day if there is
@@ -2160,47 +2211,64 @@ class Filter( models.Model ): # {{{1
           location in `city` or `country`
         - Groups (!group) restrict the query to events of the group
 
-          """
+        If `related` is True it adds to the result events with related tags,
+        but no more that the number of results. I.e. if the result contains two
+        events, only a miximum of two more related events will be added. If the
+        query contains a location term (marked with `@`), only related events
+        with the same location are added.
+        """
+        # TODO: return a queryset, not a list (the next coming date of each
+        # event can be saved in the db at 00:01 each day)
+        # See some ideas described in:
+        # http://stackoverflow.com/questions/431628/how-to-combine-2-or-more-querysets-in-a-django-view
         queryset = Filter.matches_queryset(query, user)
-        # sort the list touching the database. FIXME: use a field for each
-        # event storing the unix time of the next coming event
-        # if there are millions of events
-        search_result = sorted(queryset, key=Event.next_coming_date_or_start)
-        search_result = search_result[0:limit]
-        # creates a list of maximal `limit` related events
-        used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
-        # note that according to the django-tagging documentation, counts refer
-        # to all instances of the model Event, not only to the queryset
-        # instances
-        used_tags = sorted( used_tags, key = lambda t: t.count )
-        used_tags.reverse()
-        related_events = set()
-        # takes the 5 more used tags and find related tags to them and its
-        # events, then with 4, and so on until 100 events are found
-        today = datetime.date.today()
-        for nr_of_tags in [5,4,3,2,1]:
-            if len( related_events ) >= limit:
-                break
-            related_tags = Tag.objects.related_for_model(
-                    used_tags[ 0 : nr_of_tags ], Event, counts = True )
-            related_tags = sorted( related_tags, key = lambda t: t.count )
-            related_tags.reverse()
-            for tag in related_tags:
+        # creates a list of
+        # related events with no more than the length of queryset and combines
+        # both
+        if ( len( queryset ) > 0 ) and related:
+            limit = len( queryset )
+            used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
+            # note that according to the django-tagging documentation, counts
+            # refer to all instances of the model Event, not only to the
+            # queryset instances. TODO: change it
+            used_tags = sorted( used_tags, key = lambda t: t.count )
+            used_tags.reverse()
+            related_events = set()
+            # takes the 5 more used tags and find related tags to them and its
+            # events, then with 4, and so on until `limit events are found
+            today = datetime.date.today()
+            # TODO: calculate at which number to start, 5 is just a guess
+            for nr_of_tags in [5,4,3,2,1]:
                 if len( related_events ) >= limit:
                     break
-                events = TaggedItem.objects.get_by_model(Event, tag)
-                for event in events:
-                    if ( event.next_coming_date_or_start() >= today and
-                            event.is_viewable_by_user( user ) and
-                            event not in search_result ):
-                        related_events.add(event)
-                        # TODO: if the query has no tag restriction, what to
-                        # do? include events with the same tags?
-        # sort the related_events
-        related_events = sorted( related_events,
-                key=Event.next_coming_date_or_start )
-        # take the first `limit` 
-        return search_result, related_events[0:limit]
+                related_tags = Tag.objects.related_for_model(
+                        used_tags[ 0 : nr_of_tags ], Event, counts = True )
+                related_tags = sorted( related_tags, key = lambda t: t.count )
+                related_tags.reverse()
+                for tag in related_tags:
+                    if len( related_events ) >= limit:
+                        break
+                    events = TaggedItem.objects.get_by_model(Event, tag)
+                    for event in events:
+                        if ( event.next_coming_date_or_start() >= today and
+                                event.is_viewable_by_user( user ) and
+                                event not in queryset ):
+                            # if the query has a location restriction, we save
+                            # only related events in the same location
+                            if ( query.find('@') != -1 ):
+                                regex = re.compile('@(\w+)', UNICODE)
+                                loc_query = ' '.join( regex.findall( query ) )
+                                if Filter.query_matches_event(
+                                        loc_query, event ):
+                                    related_events.add(event)
+                            else:
+                                related_events.add(event)
+            # sort the list
+            return sorted(
+                    chain( queryset, related_events ),
+                    key = Event.next_coming_date_or_start )
+        return sorted( queryset, 
+                    key = Event.next_coming_date_or_start )
 
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
@@ -2290,7 +2358,7 @@ class Filter( models.Model ): # {{{1
         return queryset
 
     @staticmethod
-    def notify_users_when_wanted(event): # {{{2
+    def notify_users_when_wanted( event ): # {{{2
         """ notifies users if `event` matches a filter of a user and the
         user wants to be notified for the matching filter and the user can see
         the event """

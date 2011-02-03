@@ -69,26 +69,31 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 
 # ^s searches urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
-    url(r'^s/$',
-        views.search,              name='search'),
-
-    url(r'^s/(?P<query>[^/]*)/$',
-        views.list_events_search, name='list_events_search'),
 
     url(r'^s/(?P<query>[^/]*)/ical/$',
-        views.ICalForSearch,      name='list_events_search_ical'),
+        views.ICalForSearch,      name='search_ical'),
 
     url(r'^s/(?P<query>[^/]*)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.ICalForSearchHash,  name='list_events_search_ical_hashed'),
+        views.ICalForSearchHash,  name='search_ical_hashed'),
 
     url(r'^s/(?P<query>[^/]*)/rss/$',
-        PublicSearchEventsFeed(), name='list_events_search_rss'),
+        PublicSearchEventsFeed(), name='search_rss'),
 
     url(r'^s/(?P<query>[^/]*)/rss/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        HashSearchEventsFeed(),  name='list_events_search_rss_hashed'),
+        HashSearchEventsFeed(),   name='search_rss_hashed'),
+
+    url(r'^s/(?P<query>[^/]+)/(?P<view>[^/]+)/$',
+        views.search,             name='search_query_view'),
+
+    url(r'^s/(?P<query>[^/]+)/$',
+        views.search,             name='search_query'),
+
+    url(r'^s/$',
+        views.search,             name='search'),
 
     url(r'^s/(?P<query>[^/]*)/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.list_events_search_hashed, name='list_events_search_hashed'),
+        views.search_hashed,   name='search_hashed'),
+
     )
 
 # ^t tags urls {{{1

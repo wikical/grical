@@ -299,10 +299,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                 tags = "test", start=datetime.date.today() )
         self._login ( user2 )
         response = self.client.get( reverse( 
-                'list_events_search',
+                'search_query',
                 kwargs = {'query': '1234',} ) )
-        self.assertTrue(event_public in response.context['events'])
-        self.assertFalse(event_private in response.context['events'])
+        self.assertTrue(event_public in response.context['events'].object_list)
+        self.assertFalse(event_private in
+                response.context['events'].object_list)
 
     def test_public_private_change_error(self): # {{{2
         """ tests that an event cannot be changed from private to public """
@@ -489,9 +490,9 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         cal.save()
         self._login( user2 )
         content = self.client.get( reverse( 
-                'list_events_search',
+                'search_query',
                 kwargs = {'query': 'test',} ) )
-        self.assertTrue( event in content.context['events'] )
+        self.assertTrue( event in content.context['events'].object_list )
 
     def test_event_ical( self ): # {{{2
         "test for one ical file for each event"
@@ -504,7 +505,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         "test for ical search"
         Event.objects.create( title = 'berlin'+str(time()), tags = 'berlin',
                 start = datetime.date.today() )
-        self._validate_ical( reverse( 'list_events_search_ical',
+        self._validate_ical( reverse( 'search_ical',
                                       kwargs = {'query':'berlin'} ) )
         # TODO: text for a no match also
 
@@ -512,7 +513,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         "test for rss search"
         Event.objects.create( title = 'berlin', tags = 'berlin',
                 start = datetime.date.today() )
-        self._validate_rss( reverse( 'list_events_search_rss',
+        self._validate_rss( reverse( 'search_rss',
                                       kwargs = {'query':'berlin',} ) )
         # TODO: text for a no match also
 

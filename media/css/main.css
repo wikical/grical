@@ -74,18 +74,20 @@ h6 {
 #header {
     padding:5px;
     border-bottom: 1px solid #003A6B;
+    background-color: #3176b9;
+    color: black;
+    min-height: 60px;
+    position: relative;
+    width: 100%;
 }
-#header #navigation-and-search {
-    padding:10px;
-    float:right;
-    text-align:center;
-    font-weight:bold;
-}
-#header #description {
-    padding-left:5px;
+#header a {
+    color: black;
 }
 #header form { display:inline }
-#header #banners { text-align: right; padding-top: 10px; }
+#header #logo {
+    text-align: right;
+    float: left;
+    padding: 5px; }
 
 .container {
     margin: 0px 10px 10px 10px;
@@ -134,7 +136,7 @@ h6 {
 }
 
 /*
- * event medium format (shown in main page, search results, related events, etc.
+ * event medium format (shown in main page, search results, etc.
  */
 .event_medium {
     float:left;
@@ -317,6 +319,79 @@ input[type="text"], textarea, input[type="checkbox"] {
 #session_table th {
     padding: 0 1em ;
 }
+
+/**
+ * Event table
+ */
+.event_table {
+    font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+    width:100%;
+    border-collapse:collapse;
+}
+.event_table td, .event_table th {
+    font-size:1em;
+    /*border:1px solid #55aacc;*/
+    border:0px;
+    padding:3px 7px 2px 7px;
+}
+.event_table th {
+    font-size:1.1em;
+    text-align:left;
+    padding-top:5px;
+    padding-bottom:4px;
+    background-color:#4291c9;
+    color:#ffffff;
+}
+.event_table th a {
+    color:#fff;
+}
+.event_table tr.even td {
+    color:#000;
+    background-color:#d3e8f2;
+}
+.event_table .col_start {
+    width: 10em ;
+}
+.event_table .col_next_coming_date_or_start {
+    width: 10em ;
+}
+.event_table .col_city {
+    width: 10em ;
+}
+.event_table .col_country {
+    width: 2em ;
+}
+
+/**
+ * search results
+ */
+#views {
+   text-align: center;
+   margin: 1em;
+}
+#views img {
+    vertical-align:middle;
+    margin: 0.2em;
+}
+#views a {
+    text-decoration:none;
+    color: #333;
+}
+#views span[id$="_view"] {
+    padding: 0.5em;
+    margin: 0 1em 0 1em;
+    border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    border: 1px black solid;
+}
+#views #table_view { background: #aaa; }
+#views #map_view { background: #e8cfe6; }
+#views #boxes_view { background: #99c2e8; }
+#views #calendar_view { background: #b6b9ea; }
+#views #ical_view { background: #9dd49d; }
+#views #rss_view { background: #ff9e63; }
+
 
 /**
  * Map Specific

@@ -6,7 +6,12 @@ show-stopping
 high priority
 -------------
 
+- contact form, terminate with: 'Thanks for contacting us. We'll try our best to reply in a timely
+  fashion.'
 - Don't use two columns (related events) in the result of a search with location
+- run the tests of django_tables
+- accept urls with no http:// and spaces 
+- SEO optimization: tags, titles, for each view, event, etc.
 - Add stats for screen size and media capabilities of visitors: http://awstats.sourceforge.net/docs/awstats_faq.html#SCREENSIZE
 - Use a descriptive title and h1 for the page showing a search result. Examples:
 
@@ -78,6 +83,19 @@ high priority
 medium priority
 ---------------
 
+- add ordering capabilities for EventUrl and Filter using respectively ``order_with_respect_to =
+  'event'`` and ``order_with_respect_to = 'user'`` in _meta of that classes. See
+  http://docs.djangoproject.com/en/1.2/ref/models/options/#order-with-respect-to
+  New data base are needed to be created. An alter command won't probably work because they cannot
+  be NULL.  Probably not working example::
+
+    alter table "events_eventurl" add column "_order" integer NOT NULL;
+
+- performance: at midnight calculate the next comming date of all events and
+  save it in the data base. Use querysets everywhere, including ModelTable
+  instead of Memory table for django_tables
+- report problem button
+- show form to enter an event if a search produces no result
 - have some graphics to add to events with some flags, i.e. a floss-graphic
 - marking events as "uninteresting", "interesting", "very interesting", "attending". Later:
 
@@ -86,9 +104,12 @@ medium priority
     - other users can see the interesting events for a user
     - the system can tell you interesting users to you, i.e. users with similar interests to you
 
-- add hCalendar_ , which is provided by the vobjects library, see the example about hcalendar at
-  http://svn.osafoundation.org/vobject/trunk/test_vobject.py and
-  http://microformats.org/code/hcalendar/creator
+- add hCalendar_ , which is provided by the vobjects library, see the example about hcalendar at:
+
+    - http://svn.osafoundation.org/vobject/trunk/test_vobject.py and
+    - http://microformats.org/code/hcalendar/creator
+    - See also http://microformats.org/wiki/datetime-design-pattern
+
 - css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
@@ -112,6 +133,8 @@ medium priority
 low priority
 ------------
 
+- Database access for people who e.g. want to write something with libnotify. Can be restricted
+  unless paying (money)
 - Include a widget to know how to go to the event with the public transport, see
   http://code.google.com/p/public-transport-enabler
 - include a picture when the server is under heavy load. Example: http://wurstball.de/41101/
@@ -198,5 +221,8 @@ low priority
     b) automatic call for rememberings
 
 - Money: companies can have links, e.g. 'map on Google' or 'map on Ding'
+
+- Money: credit system: adding an event gives you credits, getting a notification substracts you
+  credits. You can buy credits.
 
 .. hCalendar: http://en.wikipedia.org/wiki/HCalendar
