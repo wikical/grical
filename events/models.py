@@ -1908,9 +1908,10 @@ class EventSession( models.Model ): # {{{1
                         val( getattr(session, field_name) )
                     except ValidationError, e:
                         errors.append(
-                            _('Error in %(session_name)s, %(field_name)s') %
-                            {'session_name': session.session_name,
+                            _(u'Error in %(session_name)s, %(field_name)s') %
+                            {'session_name': session.name,
                                 'field_name': field_name} )
+                        # TODO: add the exact error message from e
                         errors.extend( e.messages )
         if errors:
             raise ValidationError( errors )
