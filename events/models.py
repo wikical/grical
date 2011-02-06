@@ -1908,10 +1908,10 @@ class EventSession( models.Model ): # {{{1
                         val( getattr(session, field_name) )
                     except ValidationError, e:
                         errors.append(
-                            _(u'Error in %(session_name)s, %(field_name)s') %
-                            {'session_name': session.name,
-                                'field_name': field_name} )
-                        # TODO: add the exact error message from e
+                            _(u"Error in the field '%(field_name)s' for the " \
+                                    u"entry: %(session_entry)s") %
+                            {'field_name': field_name,
+                                'session_entry': unicode(session)} )
                         errors.extend( e.messages )
         if errors:
             raise ValidationError( errors )
@@ -2951,6 +2951,11 @@ class Session: #{{{1
         self.start = start
         self.end = end
         self.name = name
+    def __unicode__(self):
+        return unicode(self.date.strftime( "%Y-%m-%d" )) + \
+                " " + unicode(self.start.strftime( "%H:%M" )) + \
+                " " + unicode(self.end.strftime( "%H:%M" )) + \
+                " " + unicode(self.name)
 
 # old code and comments {{{1
 # TODO: add setting info to users. See the auth documentation because there is
