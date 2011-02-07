@@ -2227,49 +2227,55 @@ class Filter( models.Model ): # {{{1
         # related events with no more than the length of queryset and combines
         # both
         if ( len( queryset ) > 0 ) and related:
-            limit = len( queryset )
-            used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
-            # note that according to the django-tagging documentation, counts
-            # refer to all instances of the model Event, not only to the
-            # queryset instances. TODO: change it
-            used_tags = sorted( used_tags, key = lambda t: t.count )
-            used_tags.reverse()
-            related_events = set()
-            # takes the 5 more used tags and find related tags to them and its
-            # events, then with 4, and so on until `limit events are found
-            today = datetime.date.today()
-            # TODO: calculate at which number to start, 5 is just a guess
-            for nr_of_tags in [5,4,3,2,1]:
-                if len( related_events ) >= limit:
-                    break
-                related_tags = Tag.objects.related_for_model(
-                        used_tags[ 0 : nr_of_tags ], Event, counts = True )
-                related_tags = sorted( related_tags, key = lambda t: t.count )
-                related_tags.reverse()
-                for tag in related_tags:
-                    if len( related_events ) >= limit:
-                        break
-                    events = TaggedItem.objects.get_by_model(Event, tag)
-                    for event in events:
-                        if ( event.next_coming_date_or_start() >= today and
-                                event.is_viewable_by_user( user ) and
-                                event not in queryset ):
-                            # if the query has a location restriction, we save
-                            # only related events in the same location
-                            if ( query.find('@') != -1 ):
-                                regex = re.compile('@(\w+)', UNICODE)
-                                loc_query = ' '.join( regex.findall( query ) )
-                                if Filter.query_matches_event(
-                                        loc_query, event ):
-                                    related_events.add(event)
-                            else:
-                                related_events.add(event)
+            related_events = Filter.related_events(
+                    queryset, user, query )
             # sort the list
             return sorted(
                     chain( queryset, related_events ),
                     key = Event.next_coming_date_or_start )
         return sorted( queryset, 
                     key = Event.next_coming_date_or_start )
+
+    @staticmethod
+    def related_events( queryset, user, query ):    
+        """ returns a list of related events to `queryset` as a result of
+        `query` and viewable by `user`
+        """
+        limit = len ( queryset )
+        used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
+        # note that according to the django-tagging documentation, counts refer
+        # to all instances of the model Event, not only to the queryset
+        # instances. TODO: change it
+        used_tags = sorted( used_tags, key = lambda t: t.count )
+        used_tags.reverse()
+        related_events = set()
+        # takes the 5 more used tags and find related tags to them and its
+        # events, then with 4, and so on until `limit events are found
+        today = datetime.date.today()
+        # TODO: calculate at which number to start, 5 is just a guess
+        for nr_of_tags in [5,4,3,2,1]:
+            related_tags = Tag.objects.related_for_model(
+                    used_tags[ 0 : nr_of_tags ], Event, counts = True )
+            related_tags = sorted( related_tags, key = lambda t: t.count )
+            related_tags.reverse()
+            for tag in related_tags:
+                events = TaggedItem.objects.get_by_model(Event, tag)
+                for event in events:
+                    if ( event.next_coming_date_or_start() >= today and
+                            event.is_viewable_by_user( user ) and
+                            event not in queryset ):
+                        # if the query has a location restriction, we save
+                        # only related events in the same location
+                        if ( query.find('@') != -1 ):
+                            regex = re.compile('@(\w+)', UNICODE)
+                            loc_query = ' '.join( regex.findall( query ) )
+                            if Filter.query_matches_event( loc_query, event ):
+                                related_events.add( event )
+                        else:
+                            related_events.add(event)
+                        if len ( related_events ) >= limit:
+                            return related_events
+        return related_events
 
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
