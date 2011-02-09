@@ -1014,7 +1014,7 @@ def group_add_event(request, event_id): # {{{2
                 request.user.message_set.create(
                         message='Please check your data.')
         else:
-            form = AddEventToGroupForm(uSER=USER, event=event)
+            form = AddEventToGroupForm(user=user, event=event)
         context = dict()
         context['form'] = form
         context['event'] = event
