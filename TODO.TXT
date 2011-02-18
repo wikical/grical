@@ -40,9 +40,14 @@ high priority
 - accept names in other languages, see http://www.geonames.org/
 - Add the attribute `alters_data` to all methods which alters data, see
   http://www.djangobook.com/en/2.0/chapter04/
-- Check that all strings to be translated uses the Python's standard named-string interpolation
-  syntax, and not positional interpolation (e.g., %s or %d). See
-  http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/
+- translations
+
+    - Check that all strings to be translated uses the Python's standard named-string interpolation
+      syntax, and not positional interpolation (e.g., %s or %d). See
+      http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/
+    - http://code.google.com/p/django-rosetta/
+    - http://docs.djangoproject.com/en/1.2/topics/i18n/localization/
+
 - Implement optimistic looking and transactions when e.g. saving/changing an event as a text. See
     http://stackoverflow.com/questions/320096/django-how-can-i-protect-against-concurrent-modification-of-data-base-entries
 - urls with hashes should be different for each group, filter, etc.

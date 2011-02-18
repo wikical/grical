@@ -3,18 +3,18 @@
 Installation instructions for Debian based systems
 ==================================================
 
-1. To get the development files::
+#. To get the development files::
 
    cd /usr/local/
    hg clone http://gridcalendar.net:8001 gridcalendar
 
-1. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``
+#. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``
 
-1. Install ``django-tables``::
+#. Install ``django-tables``::
 
     easy_install django-tables
 
-1. If you want to be able to locate cities by the user's IPs, you need to install the data base of
+#. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
    Using this data improves the front page, search results and the introduction of addresses of events.
    You can install it following the steps::
@@ -23,35 +23,35 @@ Installation instructions for Debian based systems
     wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
     gzip -d GeoLiteCity.dat.gz
 
-1. If you want to develop GridCalendar:
+#. If you want to develop GridCalendar:
    
-   1. Install ``python-django-debug-toolbar``, ``python-profiler``, ``python-webtest`` and ``django-webtest``. As root::
+   #. Install ``python-django-debug-toolbar``, ``python-profiler``, ``python-webtest`` and ``django-webtest``. As root::
 
         aptitude install python-django-debug-toolbar python-webtest
         easy_install django-webtest
 
-   1. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the
+   #. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the
       IP(s) you use when developing. Example::
 
         DEBUG = True
         INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
 
-   1. You can run a web test server with ``python manage.py testserver``
+   #. You can run a web test server with ``python manage.py testserver``
 
-   1. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
+   #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
       could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
 
-1. Create and edit ``settings_local.py`` (see an example at ``settings_local.py.example``)
+#. Create and edit ``settings_local.py`` (see an example at ``settings_local.py.example``)
 
-1. To parse events submitted as emails to an imap server automatically, add to your cron file command::
+#. To parse events submitted as emails to an imap server automatically, add to your cron file command::
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
-1. For Apache as the webserver
+#. For Apache as the webserver
    
-    1. Install Apache and the package ``libapache2-mod-wsgi``
+    #. Install Apache and the package ``libapache2-mod-wsgi``
       
-    1. For an Apache Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
+    #. For an Apache Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
 
         <VirtualHost *:80>
             ServerName gridcalendar.net
@@ -72,33 +72,33 @@ Installation instructions for Debian based systems
         
         </VirtualHost>
 
-    1. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and make sure Apache can read it::
+    #. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and make sure Apache can read it::
 
         ln -s /usr/local/gridcalendar/media /var/www/gridcalendar.net/m/
 
-    1. The same for ``favicon.ico``::
+    #. The same for ``favicon.ico``::
 
         ln -s /usr/local/gridcalendar/media/favicon.ico /var/www/gridcalendar.net/favicon.ico
 
-    1. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+    #. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
-    1. If you use SQLite as the database, Make sure Apache can also write to the parent
+    #. If you use SQLite as the database, Make sure Apache can also write to the parent
        directory of the database. SQLite needs to be able to write to this directory.
 
-1. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
+#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
 
         MaxRequestsPerChild 1
    
-1. If you want to use a single SQLite file for storing your data:
+#. If you want to use a single SQLite file for storing your data:
 
-   1. Install the packages ``python-pysqlite2`` and ``sqlite3``
+   #. Install the packages ``python-pysqlite2`` and ``sqlite3``
    
-   1. configure ``settings_local.py`` accordingly and make sure that the file is writable by the web server username (``www-data`` in Debian). In the ``settings_local.py`` you can put::
+   #. configure ``settings_local.py`` accordingly and make sure that the file is writable by the web server username (``www-data`` in Debian). In the ``settings_local.py`` you can put::
 
         DATABASE_ENGINE   = 'sqlite3'
         DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
 
-    1. Install the Django tables::
+    #. Install the Django tables::
 
         $ cd /usr/local/gridcalendar/
         $ python manage.py syncdb
@@ -107,7 +107,7 @@ Installation instructions for Debian based systems
         Would you like to create one now? (yes/no): yes
         ...
 
-    1. Configure the ``django_site`` table. **Important note**: the first entry in this table is
+    #. Configure the ``django_site`` table. **Important note**: the first entry in this table is
        used when sending emails outside of the web, e.g. by ``events/management/commands/imap.py``
        which can be used by a cronjob to read and reply emails. Configure the table with::
 
@@ -116,15 +116,15 @@ Installation instructions for Debian based systems
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
 
-1. If you want to use postgresql (instead of SQLite) for storing your data:
+#. If you want to use postgresql (instead of SQLite) for storing your data:
    
-    1. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
+    #. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
 
-    1. as root edit your ``/etc/postgresql/*/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
+    #. as root edit your ``/etc/postgresql/*/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
 
-    1. reload the configuration: ``killall -HUP postgres``
+    #. reload the configuration: ``killall -HUP postgres``
 
-    1. create the GridCalendar ``postgres`` user with a password::
+    #. create the GridCalendar ``postgres`` user with a password::
 
         $ su
         # su postgres
@@ -135,12 +135,12 @@ Installation instructions for Debian based systems
         Shall the new role be allowed to create databases? (y/n) y
         Shall the new role be allowed to create more new roles? (y/n) n
 
-    1. create the gridcalendar database::
+    #. create the gridcalendar database::
 
         postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
         Password:
 
-    1. Install the Django tables::
+    #. Install the Django tables::
 
         $ cd /usr/local/gridcalendar/
         $ python manage.py syncdb
@@ -149,16 +149,16 @@ Installation instructions for Debian based systems
         Would you like to create one now? (yes/no): yes
         ...
 
-    1. Configure the ``django_site`` table. **Important note**: the first entry in this table is
+    #. Configure the ``django_site`` table. **Important note**: the first entry in this table is
        used when sending emails outside of the web, e.g. by ``events/management/commands/imap.py``
        which can be used by a cronjob to read and reply emails. Configure the table with::
 
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
 
-1. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
+#. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
    of it.
 
-    1. Group invitations are sent with the sender (``from`` header) set to the user
+    #. Group invitations are sent with the sender (``from`` header) set to the user
        ``group-invitation`` and the host provided by the setting ``DEFAULT_FROM_EMAIL``
  

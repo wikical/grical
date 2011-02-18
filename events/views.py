@@ -832,7 +832,7 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
             } )
     return HttpResponse(
             content = template.render( context ),
-            mimetype="application/xhtml+xml",
+            mimetype="text/html",
             status = status_code )
     # Before the custom status code it was:
     # return render_to_response( 'base_main.html',

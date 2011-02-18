@@ -6,11 +6,16 @@
 <!-- This template is based on a template at http://matthewjamestaylor.com/ and is used with
 permission of the original author -->
 <head>
-    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta http-equiv="Content-Language" content="{{ LANGUAGE_CODE }}" />
     <meta name="language" content="{{ LANGUAGE_CODE }}" />
-    <meta name="description" content="{% trans "an open community driven calendar, tagged and localized events" %}" />
-    <meta name="keywords" content="{% trans "events" %}, {% trans "calendar" %}, {% trans "community" %}, {% trans "open" %}, {% trans "social" %}" />
+    {% if not event %}
+        <meta name="description" content="{% trans "an open community driven calendar, tagged and localized events" %}" />
+        <meta name="keywords" content="{% trans 'events' %}, {% trans 'calendar' %}, {% trans 'community' %}, {% trans 'open' %}, {% trans 'social' %} {% trans 'free' %}" />
+    {% else %}
+        <meta name="description" content="{{ event.title }}" />
+        <meta name="keywords" content="{{ event.tags_separated_by_comma }}" />
+    {% endif %}
     <title>{{ title }}</title>
     <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
     <!--

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
+# vim: expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
@@ -343,6 +343,9 @@ description:
 
 GridCalendar will be presented"""
 
+# regexes
+DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
+
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model
     
@@ -410,11 +413,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     # methods {{{2
 
+    def tags_separated_by_comma(self): #{{{3
+        """ returns the list of tags separated by commas as unicode string """
+        return self.tags.replace(' ',',')
+    
     def color_nr(self, #{{{3
             days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
-        """ Returns a number according with `Event.next_coming_date_or_start`.
+        """ Returns a number according to
+        :meth:`Event.next_coming_date_or_start`.
 
-        For default parameter `days_colors`:
+        For default parameter ``days_colors``:
 
         +------------------------------+---+
         | today                        | 0 |
@@ -582,8 +590,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         It makes a clone of all related objects, and relates them to the new
         created clone.
 
-        The attribute ``clone_of`` of the new created clone is set to the
-        original event.
+        The attribute :attr:`Event.clone_of` of the new created clone is set to
+        the original event.
 
         >>> from events.models import Event, Group, Membership
         >>> from django.utils.encoding import smart_str
@@ -711,8 +719,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
-    # @staticmethod def post_save( sender, **kwargs ): {{{3
-    @staticmethod
+    @staticmethod # def post_save( sender, **kwargs ): {{{3
     def post_save( sender, **kwargs ):
         """ notify users if a filter of a user matches an event but only for
         new events.
@@ -759,8 +766,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     #    except Event.DoesNotExist:
     #        pass
 
-    @staticmethod
-    def example(): #{{{3
+    @staticmethod # def example(): {{{3
+    def example():
         """ returns an example of an event as unicode
         
         >>> from django.utils.encoding import smart_str
@@ -776,9 +783,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """
         return EXAMPLE
 
-    @staticmethod
-    def list_as_text( iterable ): #{{{3
-        """ returns an utf-8 string of all events in `iterable` """
+    @staticmethod # def list_as_text( iterable ): {{{3
+    def list_as_text( iterable ):
+        """ returns an utf-8 string of all events in ``iterable`` """
         text = ''
         for event in iterable:
             text += '\nEVENT: BEGIN --------------------\n'
@@ -898,8 +905,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 raise RuntimeError('unexpected keyword: ' + keyword)
         return smart_str(to_return)
 
-    @staticmethod
-    def get_fields( text ): #{{{3
+    @staticmethod # def get_fields( text ): {{{3
+    def get_fields( text ):
         """ parse an event as unicode text and returns a tuple with two
         dictionaries, or raises a ValidationError.
 
@@ -1000,11 +1007,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """It parses a text and saves it as a single event in the data base and
         return the event object, or doesn't save the event and raises a
         ValidationError or a Event.DoesNotExist when there is no event with
-        `event_id`)
+        ``event_id``)
 
         It raises a ValidationError when the data is wrong, e.g. when a date is
         not valid. It raises and Event.DoesNotExist error when there is no
-        event with `event_id`
+        event with ``event_id``
 
         A text to be parsed as an event is of the form::
 
@@ -1132,15 +1139,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         assert(len(complex_fields) == 0)
         return event
 
-    @staticmethod
-    def get_complex_fields(): #{{{3
+    @staticmethod # def get_complex_fields(): {{{3
+    def get_complex_fields():
         """ returns a tuple of names of user-editable fields (of events) which
         can contain many lines in the input text representation of an Event.
         """
         return ("urls", "deadlines", "sessions", "description",)
 
-    @staticmethod
-    def get_simple_fields(): #{{{3
+    @staticmethod # def get_simple_fields(): {{{3
+    def get_simple_fields():
         """ returns a tuple of names of user-editable fields (of events) which
         have only one line in the input text representation of an Event.
         
@@ -1158,14 +1165,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names.remove(u"description")
         return tuple(field_names)
  
-    @staticmethod
-    def get_necessary_fields(): #{{{3
+    @staticmethod # def get_necessary_fields(): {{{3
+    def get_necessary_fields():
         """ returns a tuple of names of the necessary filed fields of an event.
         """
         return (u"title", u"start", u"tags", u"urls")
 
-    @staticmethod
-    def get_priority_list(): #{{{3
+    @staticmethod # def get_priority_list(): #{{{3
+    def get_priority_list():
         """ returns a tuple of names of fields in the order they
         should appear when showing an event as a text, i.e. in the output text
         representation of an Event.
@@ -1187,8 +1194,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 u"postcode", u"city", u"country", u"latitude", u"longitude",
                 u"deadlines", u"sessions", u"description")
  
-    @staticmethod
-    def get_synonyms(): #{{{3
+    @staticmethod # def get_synonyms(): {{{3
+    def get_synonyms():
         """Returns a dictionay with names (strings) and the fields (strings)
         they refer.
 
@@ -1321,13 +1328,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return synonyms
 
     def is_viewable_by_user(self, user): #{{{3
-        """ returns true if `user` can see `event` """
+        """ returns true if ``user`` can see ``event`` """
         return Event.is_event_viewable_by_user(self, user)
 
-    @staticmethod
-    def is_event_viewable_by_user( event, user ): #{{{3
-        """ returns true if `user` can see `event` """
-        # checking `event` parameter
+    @staticmethod # def is_event_viewable_by_user( event, user ): {{{3
+    def is_event_viewable_by_user( event, user ):
+        """ returns true if ``user`` can see ``event`` """
+        # checking event parameter
         if event is None:
             raise  TypeError("`event` parameter was None")
         if isinstance(event, Event):
@@ -1342,7 +1349,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 str(event.__class__))
         if event.public:
             return True
-        # checking `user` parameter
+        # checking user parameter
         if user is None:
             return event.public
         if isinstance(user, User):
@@ -1397,8 +1404,8 @@ class ExtendedUser(User): # {{{1
     It uses the django proxy-models approach, see
     http://docs.djangoproject.com/en/1.2/topics/db/models/#proxy-models
 
-    The variable USER (a ExtendedUser instance) is available in the `context`
-    for all views and templates
+    The variable ``USER`` (a ``ExtendedUser`` instance) is available in the
+    ``context`` for all views and templates
 
     >>> from events.models import Event, Group, Membership
     >>> now = datetime.datetime.now().isoformat()
@@ -1420,14 +1427,14 @@ class ExtendedUser(User): # {{{1
     >>> calendar = Calendar.objects.create(event = event, group = group2)
     >>> assert euser.has_groups_with_coming_events()
     """
-    class Meta:
+    class Meta: # {{{2
         proxy = True
 
-    def get_hash(self):
+    def get_hash(self): # {{{2
         """ return the hash code to authenticate by url """
         return ExtendedUser.calculate_hash(self.id)
 
-    @staticmethod
+    @staticmethod # def calculate_hash(user_id): {{{2
     def calculate_hash(user_id):
         """ returns the identification hash of the user or None """
         if user_id is None:
@@ -1435,25 +1442,25 @@ class ExtendedUser(User): # {{{1
         return hashlib.sha256(
                 "%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()
 
-    def has_groups(self):
+    def has_groups(self): # {{{2
         """ returns True if the user is at least member of a group, False
         otherwise """
         return Group.objects.filter( membership__user = self ).count() > 0
 
-    def get_groups(self):
+    def get_groups(self): # {{{2
         """ returns a queryset of the user's groups """
         return Group.objects.filter( membership__user = self )
 
-    def has_filters(self):
+    def has_filters(self): # {{{2
         """ returns True if the user has at least one filter, False
         otherwise """
         return Filter.objects.filter( user = self ).count() > 0
 
-    def get_filters(self):
+    def get_filters(self): # {{{2
         """ returns a queryset of the user's filters """
         return Filter.objects.filter( user = self )
 
-    def has_groups_with_coming_events( self ):
+    def has_groups_with_coming_events( self ): # {{{2
         """ returns True if at least one group of the user has a coming event
         (start, end or a deadline in the future)
         """
@@ -1481,16 +1488,16 @@ class EventUrl( models.Model ): # {{{1
         ordering = ['url_name']
         unique_together = ( "event", "url_name" )
 
-    def __unicode__( self ):
+    def __unicode__( self ): # {{{2
         return self.url
 
-    def clone( self, event, user ):
+    def clone( self, event, user ): # {{{2
         """ creates a copy of itself related to ``event`` """
         new = EventUrl( event = event, url_name = self.url_name, url = self.url )
         new.save()
         return new
 
-    @staticmethod
+    @staticmethod # def get_urls( text ): {{{2
     def get_urls( text ):
         """ validates text lines containing EventUrl entries, raising
         ValidationErrors if there are errors, otherwise it returns a dictionary
@@ -1551,12 +1558,12 @@ class EventUrl( models.Model ): # {{{1
             raise ValidationError( errors )
         return urls
 
-    @staticmethod
+    @staticmethod # def parse_text(event, text, urls = None): {{{2
     def parse_text(event, text, urls = None):
         """ validates and saves text lines containing EventUrl entries, raising
         ValidationErrors if there are errors
 
-        It also removes all previous EventUrls for `event` if no errors occur.
+        It also removes all previous EventUrls for ``event`` if no errors occur.
 
         >>> now = datetime.datetime.now().isoformat()
         >>> event = Event(title="test for parse_text in EventUrl" + now,
@@ -1611,7 +1618,7 @@ class EventUrl( models.Model ): # {{{1
         # save all
         for event_url in event_urls:
             event_url.save()
-        # delete old urls of the event which are not in `text` parameter
+        # delete old urls of the event which are not in ``text`` parameter
         # TODO: save history
         event_urls = EventUrl.objects.filter(event=event)
         for event_url in event_urls:
@@ -1632,17 +1639,17 @@ class EventDeadline( models.Model ): # {{{1
         ordering = ['deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
 
-    def __unicode__( self ):
+    def __unicode__( self ): # {{{2
         return unicode( self.deadline ) + u'    ' + self.deadline_name
 
-    def clone( self, event, user ):
+    def clone( self, event, user ): # {{{2
         """ creates a copy of itself related to ``event`` """
         new = EventDeadline( event = event, deadline_name = self.deadline_name,
                 deadline = self.deadline )
         new.save()
         return new
 
-    @staticmethod
+    @staticmethod # def get_deadlines( text ): {{{2
     def get_deadlines( text ):
         """ validates text lines containing EventDeadline entries,
         raising ValidationErrors if there are errors, otherwise it returns a
@@ -1730,7 +1737,7 @@ class EventDeadline( models.Model ): # {{{1
             raise ValidationError( errors )
         return deadlines
 
-    @staticmethod
+    @staticmethod # def parse_text(event, text, deadlines = None ): {{{2
     def parse_text(event, text, deadlines = None ):
         """ validates and saves text lines containing EventDeadline entries,
         raising ValidationErrors if there are errors.
@@ -1738,8 +1745,8 @@ class EventDeadline( models.Model ): # {{{1
         ``deadlines`` can be a dictionary of deadline names and dates. If it is
         None, ``text`` is parsed to build ``deadlines``
 
-        It also removes all previous EventDeadline instances for `event` if no
-        errors occur.
+        It also removes all previous EventDeadline instances for ``event`` if
+        no errors occur.
 
         >>> now = datetime.datetime.now().isoformat()
         >>> event = Event(title="test for parse_text in EventDeadline " + now,
@@ -1792,7 +1799,7 @@ class EventDeadline( models.Model ): # {{{1
         # save all
         for event_deadline in event_deadlines:
             event_deadline.save()
-        # delete old deadlines of the event which are not in `text` parameter
+        # delete old deadlines of the event which are not in ``text`` parameter
         event_deadlines = EventDeadline.objects.filter(event=event)
         for event_deadline in event_deadlines:
             if not deadlines.has_key(event_deadline.deadline_name):
@@ -1814,18 +1821,18 @@ class EventSession( models.Model ): # {{{1
     session_endtime = models.TimeField( 
             _( u'Session end time' ), blank = False, null = False )
 
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
+    class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         ordering = ['session_date', 'session_starttime']
         unique_together = ( "event", "session_name" )
         verbose_name = _( u'Session' )
         verbose_name_plural = _( u'Sessions' )
 
-    def __unicode__( self ):
+    def __unicode__( self ): # {{{2
         return unicode( self.session_date ) + u'    ' + \
                 unicode( self.session_starttime ) + u'-' + \
                 unicode( self.session_endtime ) + u'    ' + self.session_name
 
-    def clone( self, event, user ):
+    def clone( self, event, user ): # {{{2
         """ creates a copy of itself related to ``event`` """
         new = EventSession( event = event, session_name = self.session_name,
                 session_date = self.session_date,
@@ -1834,7 +1841,7 @@ class EventSession( models.Model ): # {{{1
         new.save()
         return new
 
-    @staticmethod
+    @staticmethod # def get_sessions( text ): {{{2
     def get_sessions( text ):
         """ validates text lines containing EventSession entries,
         raising ValidationErrors if there are errors, otherwise it returns a
@@ -1917,7 +1924,7 @@ class EventSession( models.Model ): # {{{1
             raise ValidationError( errors )
         return sessions
 
-    @staticmethod
+    @staticmethod # def parse_text( event, text, sessions = None ): {{{2
     def parse_text( event, text, sessions = None ):
         """ validates and saves text lines containing EventSession entries,
         raising ValidationErrors if there are errors.
@@ -1926,7 +1933,7 @@ class EventSession( models.Model ): # {{{1
         class ``Session``. If it is None ``text`` is parsed to build the
         dictionary.
 
-        It also removes all previous EventSessions for `event` if no errors
+        It also removes all previous EventSessions for ``event`` if no errors
         occur.
 
         Example::
@@ -1991,7 +1998,7 @@ class EventSession( models.Model ): # {{{1
         # save all
         for event_session in event_sessions:
             event_session.save()
-        # delete old sessions of the event which are not in `text` parameter
+        # delete old sessions of the event which are not in ``text`` parameter
         # TODO: save history
         event_sessions = EventSession.objects.filter(event=event)
         for event_session in event_sessions:
@@ -2061,17 +2068,20 @@ class Filter( models.Model ): # {{{1
         return ( 'filter_edit', (), {'filter_id': self.id,} )
 
     def upcoming_events( self, limit = 5 ): # {{{2
-        """ return the next `limit` events matching `self.query` """
+        """ return the next ``limit`` events matching ``self.query`` """
         return Filter.matches( self.query, self.user, limit, False )
 
-    def matches_event( self, event ):
+    def matches_event( self, event ): # {{{2
         """ return True if self.query matches the event, False otherwise.
         """
         return Filter.query_matches_event( self.query, event )
 
-    @staticmethod
+    @staticmethod # def query_matches_event( query, event ): # {{{2
     def query_matches_event( query, event ):
         """ return True if the query matches the event, False otherwise.
+
+        **IMPORTANT**: this code must be consistent with
+        :meth:`Filter.matches_queryset`
         
         >>> from events.models import *
         >>> from datetime import timedelta
@@ -2104,14 +2114,10 @@ class Filter( models.Model ): # {{{1
         >>> assert not fil.matches_event(event)
         """
         # IMPORTANT: this code must be in accordance with
-        # `Filter.matches_queryset`
-        # FIXME: create a text with some queries that check the concordance of
-        # the output of both methods
+        # ``Filter.matches_queryset`` FIXME: create a text with some queries that
+        # check the concordance of the output of both methods
         # dates
-        # TODO: put the regex as global variables for performance
-        date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
-        # FIXME: e.g. a2010-01-01 shouldn't work
-        dates = date_regex.findall( query )
+        dates = DATE_REGEX.findall( query )
         if dates:
             dates = [ datetime.date( int(year), int(month), int(day) ) for \
                     year, month, day in dates ]
@@ -2129,7 +2135,7 @@ class Filter( models.Model ): # {{{1
                     if not matches:
                         return False
             # remove all dates (yyyy-mm-dd) from the query
-            query = date_regex.sub("", query)
+            query = DATE_REGEX.sub("", query)
             # if there is nothing more in the query, returns True because the
             # dates matched
             if query == "":
@@ -2195,28 +2201,31 @@ class Filter( models.Model ): # {{{1
                 break
         return matches
 
-    @staticmethod
-    def matches( query, user, related = True ): # {{{2
-        """ returns a sorted (`Event.next_coming_date_or_start`) list of
-        events matching `query` viewable by `user` adding related events if
-        `related` is True.
+    @staticmethod # def matches( query, user, related = True ): {{{2
+    def matches( query, user, related = True ):
+        """ returns a sorted (by :meth:`Event.next_coming_date_or_start`) list of
+        events matching *query* viewable by *user* adding related events if
+        *related* is True.
         
         - one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
           dates from the the lowest to the highest, or to one day if there is
           only one date
         - If there is no date in the query only future events are showed
-        - Single words are looked in `title`, `tags`, `city`, `country` and
-          `acronym` with or
+        - Single words are looked in *title*, *tags*, *city*, *country* and
+          *acronym* with or
         - Tags (#tag) restrict the query to events with these tags
         - Locations (@location) restrict the query to events having these
-          location in `city` or `country`
+          location in *city* or *country*
         - Groups (!group) restrict the query to events of the group
 
-        If `related` is True it adds to the result events with related tags,
+        If *related* is True it adds to the result events with related tags,
         but no more that the number of results. I.e. if the result contains two
         events, only a miximum of two more related events will be added. If the
-        query contains a location term (marked with `@`), only related events
-        with the same location are added.
+        query contains a location term (marked with *@*), only related events
+        with the same location are added. If the query contains a time term
+        (*yyyy-mm-dd* or *yyyy-mm-dd yyyy-mm-dd*), only related events with the
+        same time are added.
+
         """
         # TODO: return a queryset, not a list (the next coming date of each
         # event can be saved in the db at 00:01 each day)
@@ -2236,12 +2245,27 @@ class Filter( models.Model ): # {{{1
         return sorted( queryset, 
                     key = Event.next_coming_date_or_start )
 
-    @staticmethod
+    @staticmethod # def related_events( queryset, user, query ): {{{2
     def related_events( queryset, user, query ):    
-        """ returns a list of related events to `queryset` as a result of
-        `query` and viewable by `user`
+        """ returns a list of related events to *queryset* as a result of
+        *query* and viewable by *user*
         """
         limit = len ( queryset )
+        # if the query has a location restriction, we save only related events
+        # in the same location. Same applies for a time restriction
+        constraint_query = ''
+        if ( query.find('@') != -1 ):
+            regex = re.compile('@\w+', UNICODE)
+            constraint_query = ' '.join( regex.findall( query ) )
+        regex = re.compile(r'\b\d\d\d\d-\d\d-\d\d\b', UNICODE)
+        if regex.search( query ):
+            dates = regex.findall( query )
+            constraint_query += ' ' + ' '.join( dates )
+            has_date_constraint = True
+        else:
+            has_date_constraint = False
+        with open('/tmp/log', 'w') as f:
+            f.write(constraint_query + '\n')
         used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
         # note that according to the django-tagging documentation, counts refer
         # to all instances of the model Event, not only to the queryset
@@ -2250,7 +2274,7 @@ class Filter( models.Model ): # {{{1
         used_tags.reverse()
         related_events = set()
         # takes the 5 more used tags and find related tags to them and its
-        # events, then with 4, and so on until `limit events are found
+        # events, then with 4, and so on until limit events are found
         today = datetime.date.today()
         # TODO: calculate at which number to start, 5 is just a guess
         for nr_of_tags in [5,4,3,2,1]:
@@ -2261,31 +2285,31 @@ class Filter( models.Model ): # {{{1
             for tag in related_tags:
                 events = TaggedItem.objects.get_by_model(Event, tag)
                 for event in events:
-                    if ( event.next_coming_date_or_start() >= today and
-                            event.is_viewable_by_user( user ) and
-                            event not in queryset ):
-                        # if the query has a location restriction, we save
-                        # only related events in the same location
-                        if ( query.find('@') != -1 ):
-                            regex = re.compile('@(\w+)', UNICODE)
-                            loc_query = ' '.join( regex.findall( query ) )
-                            if Filter.query_matches_event( loc_query, event ):
-                                related_events.add( event )
-                        else:
+                    if ( event.is_viewable_by_user( user ) and
+                            ( event not in queryset ) ):
+                        if not has_date_constraint:
+                            if event.next_coming_date_or_start() < today:
+                                continue
+                        if (not constraint_query) or \
+                                Filter.query_matches_event(
+                                    constraint_query, event ):
                             related_events.add(event)
-                        if len ( related_events ) >= limit:
-                            return related_events
+                            if len ( related_events ) >= limit:
+                                return related_events
         return related_events
 
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
-        `count` by `Filter.matches` """
+        *count* by :meth:`Filter.matches` """
         return Filter.matches_queryset( self.query, self.user ).count()
 
-    @staticmethod
-    def matches_queryset( query, user ): # {{{2
-        """ returns a queryset without touching the database, see `Filter.matches` """
-        # IMPORTANT: this code must be consistent with `Filter.matches_event`
+    @staticmethod # def matches_queryset( query, user ): {{{2
+    def matches_queryset( query, user ):
+        """ returns a queryset without touching the database, see
+        :meth:`Filter.matches` 
+
+        **IMPORTANT**: this code must be consistent with :meth:`Filter.matches`
+        """
         if user is None or isinstance(user, User):
             pass
         elif isinstance(user, AnonymousUser):
@@ -2322,9 +2346,7 @@ class Filter( models.Model ): # {{{1
                     queryset, tags )
         query = regex.sub("", query)
         # dates
-        date_regex = re.compile('\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*', UNICODE)
-        # FIXME: e.g. a2010-01-01 shouldn't work
-        dates = date_regex.findall( query )
+        dates = DATE_REGEX.findall( query )
         if dates:
             dates = [ datetime.date( int(year), int(month), int(day) ) for \
                     year, month, day in dates ]
@@ -2336,7 +2358,7 @@ class Filter( models.Model ): # {{{1
                     Q( end__range = (date1, date2) ) |
                     Q(deadlines__deadline__range = (date1, date2) ) )
             # remove all dates (yyyy-mm-dd) from the query
-            query = date_regex.sub("", query)
+            query = DATE_REGEX.sub("", query)
         else:
             date = datetime.date.today()
             queryset = queryset.filter(
@@ -2364,9 +2386,9 @@ class Filter( models.Model ): # {{{1
                     Q( calendar__group__membership__user = user ) )
         return queryset
 
-    @staticmethod
-    def notify_users_when_wanted( event ): # {{{2
-        """ notifies users if `event` matches a filter of a user and the
+    @staticmethod # def notify_users_when_wanted( event ): {{{2
+    def notify_users_when_wanted( event ):
+        """ notifies users if *event* matches a filter of a user and the
         user wants to be notified for the matching filter and the user can see
         the event """
         if isinstance(event, Event):
@@ -2450,21 +2472,21 @@ class Group( models.Model ): # {{{1
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
 
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
+    class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         ordering = ['name']
         verbose_name = _( u'Group' )
         verbose_name_plural = _( u'Groups' )
 
-    def __unicode__( self ):
+    def __unicode__( self ): # {{{2
         return self.name
 
-    @models.permalink
+    @models.permalink # def get_absolute_url( self ): {{{2
     def get_absolute_url( self ):
         "get internal URL of an event"
         return ( 'group_view', (), {'group_id': self.id,} )
 
-    def is_member( self, user ):
-        """ returns True if `user` is a member of the group, False otherwise
+    def is_member( self, user ): # {{{2
+        """ returns True if *user* is a member of the group, False otherwise
         """
         if isinstance(user, int):
             try:
@@ -2477,16 +2499,16 @@ class Group( models.Model ): # {{{1
             user = User.objects.get( id = int(user) )
         return Membership.objects.filter( group = self, user = user ).exists()
 
-    def get_users( self ):
+    def get_users( self ): # {{{2
         """ returns a queryset (which can be used as a list) of ExtendedUsers
         members of the group """
         return ExtendedUser.objects.filter( membership__group = self )
 
-    @staticmethod
+    @staticmethod # def is_user_in_group( user, group ): {{{2
     def is_user_in_group( user, group ):
-        """ Returns True if `user` is in `group`, otherwise False.
+        """ Returns True if *user* is in *group*, otherwise False.
 
-        The parameters `user` and `group` can be an instance the classes User
+        The parameters *user* and *group* can be an instance the classes User
         and Group or the id number.
 
         >>> from django.contrib.auth.models import User
@@ -2529,11 +2551,11 @@ class Group( models.Model ): # {{{1
     # FIXME: implemnt __hash__ and __eq__ and probably __cmp__ to be able to
     # efficiently use a group as a key of a dictionary
 
-    @staticmethod
+    @staticmethod # def groups_of_user(user): {{{2
     def groups_of_user(user):
-        """ Returns a list of groups the `user` is a member of.
+        """ Returns a list of groups the *user* is a member of.
 
-        The parameter `user` can be an instance of User or the id number of a
+        The parameter *user* can be an instance of User or the id number of a
         user.
         
         >>> from django.contrib.auth.models import User
@@ -2568,9 +2590,9 @@ class Group( models.Model ): # {{{1
                 str(user.__class__))
         return list(Group.objects.filter(membership__user=user))
 
-    def get_coming_events(self, limit=5):
-        """ Returns a list of maximal `limit` events with at least one date
-        in the future (start, end or deadline). If `limit` is -1 it
+    def get_coming_events(self, limit=5): # {{{2
+        """ Returns a list of maximal *limit* events with at least one date
+        in the future (start, end or deadline). If *limit* is -1 it
         returns all
 
         """
@@ -2585,9 +2607,9 @@ class Group( models.Model ): # {{{1
         else:
             return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
 
-    def get_coming_public_events(self, limit=5):
-        """ Returns a list of maximal `limit` public events with at least one
-        date in the future (start, end or deadline). If `limit` is -1 it
+    def get_coming_public_events(self, limit=5): # {{{2
+        """ Returns a list of maximal *limit* public events with at least one
+        date in the future (start, end or deadline). If *limit* is -1 it
         returns all
         """
         today = datetime.date.today()
@@ -2602,18 +2624,18 @@ class Group( models.Model ): # {{{1
         else:
             return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
 
-    def has_coming_events(self):
-        """ returns True if the group has coming events (with `start`, `end` or
-        a `deadline` of an event of the group in the future)
+    def has_coming_events(self): # {{{2
+        """ returns True if the group has coming events (with *start*, *end* or
+        a *deadline* of an event of the group in the future)
         """
         today = datetime.date.today()
         return Event.objects.filter( Q(calendar__group = self) & (
                     Q(start__gte=today) | Q(end__gte=today) |
                     Q(deadlines__deadline__gte=today) )).count() > 0
 
-    def has_coming_public_events(self):
-        """ returns True if the group has coming public events (with `start`,
-        `end` or a `deadline` of an event of the group in the future)
+    def has_coming_public_events(self): # {{{2
+        """ returns True if the group has coming public events (with *start*,
+        *end* or a *deadline* of an event of the group in the future)
         """
         today = datetime.date.today()
         return Event.objects.filter(
@@ -2621,10 +2643,10 @@ class Group( models.Model ): # {{{1
                     Q(start__gte=today) | Q(end__gte=today) |
                     Q(deadlines__deadline__gte=today) )).count() > 0
 
-    @staticmethod
+    @staticmethod # def events_in_groups(groups, limit=5): {{{2
     def events_in_groups(groups, limit=5):
         """ Returns a dictionary whose keys are groups and its values are non
-        empty lists of maximal `limit` events of the group with at least one
+        empty lists of maximal *limit* events of the group with at least one
         date in the future
         
         FIXME: add test.
@@ -2640,10 +2662,10 @@ class Group( models.Model ): # {{{1
                 to_return[group] = events
         return to_return
 
-    @classmethod
+    @classmethod # def groups_for_add_event( cls, user, event ): {{{2
     def groups_for_add_event( cls, user, event ):
         """ returns a queryset (which can be used as a list) of groups to which
-        ``event`` can be added by ``user``.
+        *event* can be added by *user*.
         """
         if isinstance(event, Event):
             pass
@@ -2710,7 +2732,7 @@ class Calendar( models.Model ): # {{{1
 SHA1_RE = re.compile( '^[a-f0-9]{40}$' )
 class GroupInvitationManager( models.Manager ): # {{{1
     """
-    Custom manager for the ``GroupInvitation`` model.
+    Custom manager for the :class:`GroupInvitation` model.
 
     The methods defined here provide shortcuts for account creation
     and activation (including generation and emailing of activation
@@ -2720,24 +2742,24 @@ class GroupInvitationManager( models.Manager ): # {{{1
     def activate_invitation( self, activation_key ):
         """
         Validate an activation key and adds the corresponding
-        ``User`` to the corresponding ``Group`` if valid.
+        *User* to the corresponding *Group* if valid.
 
         If the key is valid and has not expired, returns a dictionary
-        with values ``host``, ``guest``, ``group`` after adding the
+        with values *host*, *guest*, *group* after adding the
         user to the group.
 
         If the key is not valid or has expired, return ``False``.
 
-        If the key is valid but the ``User`` is already in the group,
+        If the key is valid but the *User* is already in the group,
         return ``False``, but set it as administrator if the invitation
         set it but the user wasn't an administrator
 
-        If the key is valid but the ``host`` is not an administrator of
+        If the key is valid but the *host* is not an administrator of
         the group, return False.
 
         To prevent membership of a user who has been removed by a group
         administrator after his activation, the activation key is reset to the string
-        ``ALREADY_ACTIVATED`` after successful activation.
+        *ALREADY_ACTIVATED*after successful activation.
 
         """
         # TODO: inform the user after all possible cases explained above
@@ -2867,10 +2889,10 @@ class GroupInvitationManager( models.Manager ): # {{{1
 
     def delete_expired_invitations( self ):
         """
-        Remove expired instances of ``GroupInvitation``.
+        Remove expired instances of :class:`GroupInvitation`.
 
         Accounts to be deleted are identified by searching for
-        instances of ``GroupInvitation`` with expired activation
+        instances of :class:`GroupInvitation` with expired activation
         keys.
 
         It is recommended that this method be executed regularly as
@@ -2924,7 +2946,7 @@ class GroupInvitation( models.Model ): # {{{1
 
     def activation_key_expired( self ):
         """
-        Determine whether this ``GroupInvitation``'s activation
+        Determine whether this :class:`GroupInvitation`'s activation
         key has expired, returning a boolean -- ``True`` if the key
         has expired.
 
