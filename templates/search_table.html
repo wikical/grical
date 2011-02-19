@@ -19,7 +19,7 @@
     </tr>
     {% for event in events_table.rows.page %}
         <tr class="{% cycle 'odd' 'even' %}">
-            <td>{{ event.next_coming_date_or_start }}</td>
+            <td>{{ event.upcoming }}</td>
             <td>{{ event.start }}</td>
             <td>{% if event.city %}{{ event.city }}{% endif %}</td>
             <td>{% if event.country %}{{ event.country }}{% endif %}</td>

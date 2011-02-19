@@ -321,7 +321,7 @@ def event_show( request, event_id ): # {{{1
                 'number %(event_id)d']) ) % {'event_id': event_id,} )
     else:
         about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
-        title = unicode(event.next_coming_date_or_start())
+        title = unicode(event.upcoming)
         if event.city:
             title += " " + event.city
         if event.country:
@@ -439,7 +439,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         except ( EmptyPage, InvalidPage ):
             context['events'] = paginator.page( paginator.num_pages )
     elif view == 'table':
-        sort = request.GET.get( 'sort', 'next_coming_date_or_start' )
+        sort = request.GET.get( 'sort', 'upcoming' )
         page = int( request.GET.get( 'page', '1' ) )
         search_result = EventTable.convert( search_result )
         search_result_table = EventTable( search_result, order_by = sort )
@@ -813,8 +813,7 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
                 Q( user = request.user ) |
                 Q( calendar__group__membership__user = request.user ) |
                 Q( public = True ) )
-    elist = elist.distinct()
-    elist = sorted(elist, key=Event.next_coming_date_or_start)
+    elist = elist.distinct().order_by('upcoming')
     elist = elist[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     # Generate the response with a custom status code. Rationale: our custom
@@ -1282,8 +1281,8 @@ def ICalForGroup( request, group_id ): # {{{2
     elist = elist.filter (
                 Q(start__gte=today) |
                 Q(end__gte=today) |
-                Q(deadlines__deadline__gte=today) ).distinct()
-    elist = sorted(elist, key=Event.next_coming_date_or_start)
+                Q(deadlines__deadline__gte=today) )
+    elist = elist.distinct().order_by('upcoming')
     return _ical_http_response_from_event_list( elist, group.name )
 
 def ICalForGroupHash( request, group_id, user_id, hashcode ): # {{{2
@@ -1323,8 +1322,8 @@ def ICalForGroupHash( request, group_id, user_id, hashcode ): # {{{2
     elist = elist.filter (
                 Q(start__gte=today) |
                 Q(end__gte=today) |
-                Q(deadlines__deadline__gte=today) ).distinct()
-    elist = sorted(elist, key=Event.next_coming_date_or_start)
+                Q(deadlines__deadline__gte=today) )
+    elist = elist.distinct().order_by('upcoming')
     return _ical_http_response_from_event_list( elist, group.name )
 
 def _ical_http_response_from_event_list( elist, filename ): # {{{2

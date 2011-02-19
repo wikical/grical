@@ -1,8 +1,8 @@
 {% load i18n %}
 
 <span class="field_dates">
-  {% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}
-      ( {{ event.next_coming_date_or_start }} )
+  {% if event.upcoming != event.start and event.upcoming != event.end %}
+      ( {{ event.upcoming }} )
   {% endif %}
   {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
 </span>
