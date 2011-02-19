@@ -42,7 +42,7 @@ import vobject
 from time import time
 
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import transaction, connection
 from django.test import TestCase # WebTest is a subclass of TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
@@ -54,9 +54,9 @@ from registration.models import RegistrationProfile
 from django_webtest import WebTest
 
 from gridcalendar.events import models, views, forms, utils
-from events.models import ( Event, Group, Filter, Membership,
-        Calendar, GroupInvitation, ExtendedUser )
-
+from gridcalendar.events.models import ( Event, Group, Filter, Membership,
+        Calendar, GroupInvitation, ExtendedUser, EventDeadline )
+from gridcalendar.events.management.commands.updateupcoming import Command
 
 def suite(): #{{{1
     """ returns a TestSuite naming the tests explicitly 
@@ -493,6 +493,85 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                 'search_query',
                 kwargs = {'query': 'test',} ) )
         self.assertTrue( event in content.context['events'].object_list )
+
+    def test_updateupcoming( self ):
+        now = datetime.datetime.now().isoformat()
+        today = datetime.date.today()
+        yesterday = timedelta( days = -1 ) + today
+        tomorrow = timedelta( days = +1 ) + today
+        days2 = timedelta( days = +2 ) + today
+        days3 = timedelta( days = +3 ) + today
+        dayspast2 = timedelta( days = -2 ) + today
+        dayspast3 = timedelta( days = -3 ) + today
+        event = Event(title="test updateupcoming " + now,
+            start = days2, tags="test")
+        event.save()
+        # start = days2
+        assert( event.upcoming == event.start )
+        event_deadline = EventDeadline(
+            event = event, deadline_name = "test",
+            deadline = tomorrow )
+        event_deadline.save()
+        event = Event.objects.get( pk = event.pk )
+        # deadline = tomorrow
+        assert( event.upcoming == tomorrow )
+        # save methods work for Event and EventDeadline
+        # Now we try the command updateupcoming. To avoid to call the save
+        # methods, we write directly to the database.
+        cursor = connection.cursor()
+        cursor.execute(
+            "UPDATE events_eventdeadline SET deadline = %s WHERE id = %s",
+            [yesterday.isoformat(), event_deadline.id] )
+        transaction.commit_unless_managed()
+        event_deadline = EventDeadline.objects.get( pk = event_deadline.id )
+        assert( event_deadline.deadline == yesterday )
+        cursor.execute(
+            "UPDATE events_event SET upcoming = %s WHERE id = %s",
+            [yesterday.isoformat(), event.id] )
+        transaction.commit_unless_managed()
+        event = Event.objects.get( pk = event.pk )
+        assert( event.upcoming == yesterday )
+        # start = days2 , upcoming = yesterday , deadline = yesterday
+        updateupcoming = Command()
+        updateupcoming.handle_noargs()
+        event = Event.objects.get( pk = event.pk )
+        assert( event.upcoming == event.start )
+        # we now put everything in the past but upcoming is not start
+        cursor.execute(
+            "UPDATE events_eventdeadline SET deadline = %s WHERE id = %s",
+            [dayspast3.isoformat(), event_deadline.id] )
+        transaction.commit_unless_managed()
+        cursor.execute(
+            "UPDATE events_event SET upcoming = %s WHERE id = %s",
+            [dayspast3.isoformat(), event.id] )
+        transaction.commit_unless_managed()
+        cursor.execute(
+            "UPDATE events_event SET start = %s WHERE id = %s",
+            [dayspast2.isoformat(), event.id] )
+        transaction.commit_unless_managed()
+        # start = dayspast2 , upcoming = dayspast3 , deadline = dayspast3
+        event = Event.objects.get( pk = event.id )
+        event_deadline = EventDeadline.objects.get( pk = event_deadline.id )
+        assert( event.start == dayspast2 )
+        assert( event.upcoming == dayspast3 )
+        assert( event_deadline.deadline == dayspast3 )
+        assert( event.upcoming != event.start )
+        assert( event.next_coming_date_or_start() == event.start )
+        updateupcoming.handle_noargs()
+        event = Event.objects.get( pk = event.id )
+        assert( event.upcoming == event.start )
+        # now we test with an event without deadlines
+        event_deadline.delete()
+        cursor.execute(
+            "UPDATE events_event SET upcoming = %s WHERE id = %s",
+            [dayspast3.isoformat(), event.id] )
+        transaction.commit_unless_managed()
+        event = Event.objects.get( pk = event.id )
+        assert( event.upcoming == dayspast3 )
+        assert( event.start == dayspast2 )
+        updateupcoming.handle_noargs()
+        event = Event.objects.get( pk = event.id )
+        assert( event.start == event.upcoming )
 
     def test_event_ical( self ): # {{{2
         "test for one ical file for each event"

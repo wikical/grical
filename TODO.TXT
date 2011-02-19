@@ -2,6 +2,7 @@ show-stopping
 -------------
 
 - bug: in text mode introduce one or more urls which are not called web
+- bug: event 557 search_engines
 
 high priority
 -------------
@@ -84,6 +85,11 @@ high priority
 
     event.get_tags|slice:":10"
 
+- Geo for searching with distance ranges like within 50 km
+
+    - http://docs.djangoproject.com/en/1.2/ref/contrib/gis/geoquerysets/
+    - heck out http://code.djangoproject.com/wiki/GeoDjango
+    - Postgresql extension 
 
 medium priority
 ---------------
@@ -118,7 +124,6 @@ medium priority
 - css/templates for handheld, see http://www.mediaevent.de/2009/10/css-iphones-handhelds/
 - write documentation about e.g. installing the development server
 - Check for bug http://code.djangoproject.com/ticket/11077
-- Check out http://code.djangoproject.com/wiki/GeoDjango
 - add message to user invited to a group
 - check hard wired urls like '/accounts/logout'
 - for each event add a possibility of adding it to a group the user is member of (as public or

@@ -29,10 +29,10 @@
         (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
       </span>
     {% endif %}
-    {% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}
+    {% if event.upcoming != event.start and event.upcoming != event.end %}
       <br />
       <span class="deadline">
-          {{ event.next_coming_date_or_start }} {{ event.next_deadline_name }}
+          {{ event.upcoming }} {{ event.next_deadline_name }}
       </span>
     {% endif %}
     {% if event.get_tags %}

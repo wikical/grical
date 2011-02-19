@@ -30,13 +30,9 @@ from django.utils.translation import ugettext as _
 
 from django_tables import MemoryTable, Column
 
-# TODO: MemoryTable is not scalable. The problem for using a queryset is the
-# next_coming_date_or_start column, that need to be a sorting criteria but it
-# is a function and not a field. The solution is make a new field in Events and
-# store the value each night with a cron job.
+# TODO: MemoryTable is not scalable, change it to a queryset table
 class EventTable(MemoryTable): # {{{1
-    next_coming_date_or_start = Column(
-        verbose_name = _( u"upcoming") )
+    upcoming = Column( verbose_name = _( u"upcoming") )
     start = Column( verbose_name = _( u"start date" ) )
     city = Column( verbose_name = _( u"city" ), default = '' )
     country = Column( verbose_name = _( "country" ), default = '' )
@@ -54,8 +50,8 @@ class EventTable(MemoryTable): # {{{1
         lis = list()
         for event in event_list:
             dic = dict()
-            dic['next_coming_date_or_start'] = \
-                    event.next_coming_date_or_start()
+            dic['upcoming'] = \
+                    event.upcoming
             dic['start'] = event.start
             if event.city:
                 dic['city'] = event.city

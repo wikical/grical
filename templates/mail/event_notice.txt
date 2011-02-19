@@ -1,6 +1,6 @@
 {% load i18n %}{% autoescape off %}
 {% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}
-{% if event.next_coming_date_or_start != event.start and event.next_coming_date_or_start != event.end %}( {{ event.next_coming_date_or_start }} ) {% endif %}{{ event.start }}{% if event.end %} : {{ event.end }}{% endif %}
+{% if event.upcoming != event.start and event.upcoming != event.end %}( {{ event.upcoming }} ) {% endif %}{{ event.start }}{% if event.end %} : {{ event.end }}{% endif %}
 {% if event.city %}{{ event.city|capfirst }}{% endif %}{% if event.country %} ({{ event.country }}){% endif %}
 {% if event.get_tags %}{% for tag in event.get_tags|slice:":10" %}{{ tag }} {% endfor %}{% endif %}
 

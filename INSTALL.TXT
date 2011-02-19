@@ -43,7 +43,13 @@ Installation instructions for Debian based systems
 
 #. Create and edit ``settings_local.py`` (see an example at ``settings_local.py.example``)
 
-#. To parse events submitted as emails to an imap server automatically, add to your cron file command::
+#. It is needed to run a command each day at 00:01 (just after midnight), which will update a field
+in the database (Event.upcoming) which is needed for sorting the events and finding events in the
+future. This is necessary for performance and scalability reasons. Add to you cron file::
+
+   cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py updateupcoming
+
+#. To parse events submitted as emails to an imap server automatically, add to your cron file::
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 

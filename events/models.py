@@ -370,6 +370,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     end = models.DateField( _( u'End date' ), null = True, blank = True,
             help_text = _( u"Example: 2010-08-26"),
             validators = [validate_year] )
+    upcoming = models.DateField( _( u'Upcoming deadline or start' ),
+            editable = False )
     starttime = models.TimeField( 
             _( u'Start time' ), blank = True, null = True )
     endtime = models.TimeField( 
@@ -420,7 +422,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def color_nr(self, #{{{3
             days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
         """ Returns a number according to
-        :meth:`Event.next_coming_date_or_start`.
+        :attr:`Event.upcoming`.
 
         For default parameter ``days_colors``:
 
@@ -448,7 +450,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
         """
         today = datetime.date.today()
-        upcoming = self.next_coming_date_or_start()
+        upcoming = self.upcoming
         keys = days_colors.keys()
         keys.sort()
         keys.reverse()
@@ -703,7 +705,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def save( self, *args, **kwargs ): #{{{3
         """ Call the real 'save' function after checking that a private event
         has an owner and that the public field is not changed ever after
-        creation """
+        creation, and also update :attr:`Event.upcoming` """
         # It is not allowed to have a non-public event without owner:
         assert not ( ( self.public == False ) and ( 
             self.user == None  or self.user.id == None ) )
@@ -716,6 +718,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             self.not_new = True # Event.post_save uses this
         except Event.DoesNotExist:
             pass
+        self.upcoming = self.next_coming_date_or_start()
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
@@ -1163,6 +1166,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names.remove(u"modification_time")
         field_names.remove(u"clone_of")
         field_names.remove(u"description")
+        field_names.remove(u"upcoming")
         return tuple(field_names)
  
     @staticmethod # def get_necessary_fields(): {{{3
@@ -1648,6 +1652,13 @@ class EventDeadline( models.Model ): # {{{1
                 deadline = self.deadline )
         new.save()
         return new
+
+    def save( self, *args, **kwargs ): #{{{3
+        """ Call the real 'save' function after updating :attr:`Event.upcoming`
+        """
+        # Call the "real" save() method:
+        super( EventDeadline, self ).save( *args, **kwargs )
+        self.event.save() # needed to update :attr:`Event.upcoming`
 
     @staticmethod # def get_deadlines( text ): {{{2
     def get_deadlines( text ):
@@ -2203,7 +2214,7 @@ class Filter( models.Model ): # {{{1
 
     @staticmethod # def matches( query, user, related = True ): {{{2
     def matches( query, user, related = True ):
-        """ returns a sorted (by :meth:`Event.next_coming_date_or_start`) list of
+        """ returns a sorted (by :attr:`Event.upcoming`) list of
         events matching *query* viewable by *user* adding related events if
         *related* is True.
         
@@ -2236,14 +2247,12 @@ class Filter( models.Model ): # {{{1
         # related events with no more than the length of queryset and combines
         # both
         if ( len( queryset ) > 0 ) and related:
-            related_events = Filter.related_events(
-                    queryset, user, query )
-            # sort the list
+            related_events = Filter.related_events( queryset, user, query )
+            # chains both and sorts the result
             return sorted(
                     chain( queryset, related_events ),
-                    key = Event.next_coming_date_or_start )
-        return sorted( queryset, 
-                    key = Event.next_coming_date_or_start )
+                    key = lambda event: event.upcoming )
+        return queryset.order_by('upcoming')
 
     @staticmethod # def related_events( queryset, user, query ): {{{2
     def related_events( queryset, user, query ):    
@@ -2288,7 +2297,7 @@ class Filter( models.Model ): # {{{1
                     if ( event.is_viewable_by_user( user ) and
                             ( event not in queryset ) ):
                         if not has_date_constraint:
-                            if event.next_coming_date_or_start() < today:
+                            if event.upcoming < today:
                                 continue
                         if (not constraint_query) or \
                                 Filter.query_matches_event(
@@ -2599,13 +2608,12 @@ class Group( models.Model ): # {{{1
         today = datetime.date.today()
         events = Event.objects.filter( Q(calendar__group = self) & (
                     Q(start__gte=today) | Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today) )).distinct()
-        # next line touches the date base, but notice that the number of future
-        # events of a group shouldn't be big
+                    Q(deadlines__deadline__gte=today) ))
+        events = events.distinct().order_by('upcoming')
         if limit == -1:
-            return sorted(events, key=Event.next_coming_date_or_start)
+            return events
         else:
-            return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
+            return events[0:limit]
 
     def get_coming_public_events(self, limit=5): # {{{2
         """ Returns a list of maximal *limit* public events with at least one
@@ -2616,13 +2624,12 @@ class Group( models.Model ): # {{{1
         events = Event.objects.filter(
                 Q(public = True) & Q(calendar__group = self) & (
                     Q(start__gte=today) | Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today) )).distinct()
-        # next line touches the date base, but notice that the number of future
-        # events of a group shouldn't be big
+                    Q(deadlines__deadline__gte=today) ))
+        events = events.distinct().order_by('upcoming')
         if limit == -1:
-            return sorted(events, key=Event.next_coming_date_or_start)
+            return events
         else:
-            return sorted(events, key=Event.next_coming_date_or_start)[0:limit]
+            return events[0:limit]
 
     def has_coming_events(self): # {{{2
         """ returns True if the group has coming events (with *start*, *end* or
