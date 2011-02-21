@@ -2232,10 +2232,13 @@ class Filter( models.Model ): # {{{1
         If *related* is True it adds to the result events with related tags,
         but no more that the number of results. I.e. if the result contains two
         events, only a miximum of two more related events will be added. If the
-        query contains a location term (marked with *@*), only related events
+        query contains a location term (marked with ``@``), only related events
         with the same location are added. If the query contains a time term
-        (*yyyy-mm-dd* or *yyyy-mm-dd yyyy-mm-dd*), only related events with the
+        (``yyyy-mm-dd`` or ``yyyy-mm-dd yyyy-mm-dd``), only related events with the
         same time are added.
+
+        If the query contains a group term (marked with ``!``), no related
+        events are added.
 
         """
         # TODO: return a queryset, not a list (the next coming date of each
@@ -2246,7 +2249,7 @@ class Filter( models.Model ): # {{{1
         # creates a list of
         # related events with no more than the length of queryset and combines
         # both
-        if ( len( queryset ) > 0 ) and related:
+        if ( len( queryset ) > 0 ) and related and query.find('!') == -1:
             related_events = Filter.related_events( queryset, user, query )
             # chains both and sorts the result
             return sorted(
