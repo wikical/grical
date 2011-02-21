@@ -32,6 +32,7 @@ import unicodedata
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
+from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.db.models import Max, Q
@@ -366,7 +367,17 @@ def event_show_raw( request, event_id ): # {{{1
 def search( request, query = None, view = 'boxes' ): # {{{1
     """ View to get the data of a search query.
 
-    Notice that the query can be a GET value or a URL value.
+    Notice that ``query`` and ``view`` can be a GET value in ``request``, or a
+    parameter value, which can be passed in the URL. GET value has preference.
+
+    ``request`` can also have a ``limit`` value, which if present limits the
+    number of events returned. If ``limit`` is not present, or it is not a
+    valid positive integer, some defaults are used for each kind of view.
+
+    ``request`` can also have a ``related`` value, which activates or
+    deactivates the inclusion of related events. Notice that some search
+    options like '@' (for places) produces no related events. If the value
+    cannot be converted to Boolean, or it is not present, we fall back to True.
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -386,6 +397,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     ...         kwargs={'query': 'test', 'view': 'map'})).status_code
     200
     """
+    # query
     if 'query' in request.GET and request.GET['query']:
         query = request.GET['query']
         if query.find('/') != -1:
@@ -398,6 +410,25 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if not query:
         return main( request, error_messages = 
             _( u"A search was submitted without a query string" ) )
+    # view
+    if 'view' in request.GET and request.GET['view']:
+        view = request.GET['view']
+    # limit
+    if 'limit' in request.GET and request.GET['limit']:
+        try:
+            limit = int( request.GET['limit'] )
+            if limit <= 0:
+                limit = None
+        except ValueError:
+            limit = None
+    else:
+        limit = None
+    # related
+    try:
+        related = bool(request.GET.get('related', True))
+    except ValueError:
+        related = True
+    # variables to be passed to the template
     context = dict()
     context['views'] = views
     context['current_view'] = view
@@ -409,8 +440,13 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     context['user_id'] = request.user.id
     context['hash'] = ExtendedUser.calculate_hash(request.user.id)
     context['query'] = query
-    related = bool(request.GET.get('related', True))
+    # search
+    # TODO: limit the number of search results. Think of malicious users
+    # getting millions of events from the past
     search_result = Filter.matches(query, request.user, related)
+    if limit:
+        search_result = search_result[0:limit]
+    # more variables 
     if len( search_result ) == 0:
         context['no_results'] = True
         context['heading'] = _( u"Search for: %(query)s" ) % \
@@ -422,6 +458,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         context['heading'] = \
                 _("%(number)d events found searching for: %(query)s") \
                     % { 'number': len ( search_result ), 'query': query }
+    # templates
     if view == 'boxes' or view == 'map':
         if view == 'map':
             # map-view works only with maximum 10 events
@@ -451,12 +488,25 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                     Paginator, 50, page = page, orphans = 2 )
         context['events_table'] = search_result_table
         context['sort'] = sort
+    elif view == 'json':
+        if 'jsonp' in request.GET and request.GET['jsonp']:
+            jsonp = request.GET['jsonp']
+        else:
+            jsonp = None
+        data = serializers.serialize( 'json', search_result,
+                fields=('title', 'upcoming', 'start', 'tags', 'latitude',
+                    'longitude'),
+                ensure_ascii=False )
+        if jsonp:
+            data = jsonp + '(' + data + ')'
+        return HttpResponse( mimetype="application/json", content = data )
     else:
         raise Http404
     return render_to_response( 'search.html',
             context,
             context_instance = RequestContext( request ) )
 
+# FIXME: adapt this fuction to the new search function
 def search_hashed( request, query, user_id, hashcode ): # {{{1
     """ View to show the results of a search query with hashed authentification
 
