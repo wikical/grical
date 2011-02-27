@@ -407,12 +407,14 @@ def search( request, query = None, view = 'boxes' ): # {{{1
             # the character / cannot be allowed because Django won't be able to
             # create a URL for the ical result of the search. For a discussion,
             # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
-    if not query:
-        return main( request, error_messages = 
-            _( u"A search was submitted without a query string" ) )
     # view
     if 'view' in request.GET and request.GET['view']:
         view = request.GET['view']
+    # shows the homepage with a message if no query, except when view=json
+    # because client expect json
+    if (not query) and (view != 'json'):
+        return main( request, error_messages = 
+            _( u"A search was submitted without a query string" ) )
     # limit
     if 'limit' in request.GET and request.GET['limit']:
         try:
@@ -428,37 +430,38 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         related = bool(request.GET.get('related', True))
     except ValueError:
         related = True
-    # variables to be passed to the template
-    context = dict()
-    context['views'] = views
-    context['current_view'] = view
-    context['title'] = \
-            _( "%(project_name)s - %(view)s search results for: %(query)s" ) \
-                % { 'project_name': Site.objects.get_current().name,
-                    'query': query,
-                    'view': view }
-    context['user_id'] = request.user.id
-    context['hash'] = ExtendedUser.calculate_hash(request.user.id)
-    context['query'] = query
     # search
     # TODO: limit the number of search results. Think of malicious users
     # getting millions of events from the past
     search_result = Filter.matches(query, request.user, related)
     if limit:
         search_result = search_result[0:limit]
-    # more variables 
-    if len( search_result ) == 0:
-        context['no_results'] = True
-        context['heading'] = _( u"Search for: %(query)s" ) % \
-                {'query': query}
-    elif len( search_result ) == 1:
-        context['heading'] = _("One event found searching for: %(query)s") \
-                % { 'query': query, }
-    else:
-        context['heading'] = \
-                _("%(number)d events found searching for: %(query)s") \
-                    % { 'number': len ( search_result ), 'query': query }
-    # templates
+    # views
+    if view != 'json':
+        # variables to be passed to the templates
+        context = dict()
+        context['views'] = views
+        context['current_view'] = view
+        context['title'] = \
+            _( "%(project_name)s - %(view)s search results for: %(query)s" ) \
+                % { 'project_name': Site.objects.get_current().name,
+                    'query': query,
+                    'view': view }
+        context['user_id'] = request.user.id
+        context['hash'] = ExtendedUser.calculate_hash(request.user.id)
+        context['query'] = query
+        if len( search_result ) == 0:
+            context['no_results'] = True
+            context['heading'] = _( u"Search for: %(query)s" ) % \
+                    {'query': query}
+        elif len( search_result ) == 1:
+            context['heading'] = \
+                    _("One event found searching for: %(query)s") \
+                    % { 'query': query, }
+        else:
+            context['heading'] = \
+                    _("%(number)d events found searching for: %(query)s") \
+                        % { 'number': len ( search_result ), 'query': query }
     if view == 'boxes' or view == 'map':
         if view == 'map':
             # map-view works only with maximum 10 events
@@ -493,13 +496,18 @@ def search( request, query = None, view = 'boxes' ): # {{{1
             jsonp = request.GET['jsonp']
         else:
             jsonp = None
-        data = serializers.serialize( 'json', search_result,
+        data = serializers.serialize(
+                'json',
+                search_result,
                 fields=('title', 'upcoming', 'start', 'tags', 'latitude',
                     'longitude'),
                 ensure_ascii=False )
         if jsonp:
             data = jsonp + '(' + data + ')'
-        return HttpResponse( mimetype="application/json", content = data )
+            mimetype = "application/javascript"
+        else:
+            mimetype = "application/json"
+        return HttpResponse( mimetype = mimetype, content = data )
     else:
         raise Http404
     return render_to_response( 'search.html',

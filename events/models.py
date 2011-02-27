@@ -581,7 +581,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 unicode(self.latitude) + u";" + unicode(self.longitude)
         # TODO: add deadlines. As VALARMs or there is something better in
         # rfc5545 ?
-        # TODO: think of options commented on
+        # TODO: think of options for decentralization commented on
         # http://linuxwiki.de/Zentralkalender
         return ical
 
@@ -840,8 +840,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 if self.tags:
                     to_return += keyword + u": " + self.tags + u"\n"
             elif keyword == u'public':
-                # FIXME: it makes no sense to show this field, think how to
-                # handle the public field
                 to_return += keyword + u": " + unicode(self.public) + u"\n"
             elif keyword == u'address':
                 if self.address:
@@ -1009,12 +1007,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # doc {{{4
         """It parses a text and saves it as a single event in the data base and
         return the event object, or doesn't save the event and raises a
-        ValidationError or a Event.DoesNotExist when there is no event with
-        ``event_id``)
+        ValidationError or a Event.DoesNotExist or a User.DoesNotExist or a
+        RuntimeError.
 
         It raises a ValidationError when the data is wrong, e.g. when a date is
         not valid. It raises and Event.DoesNotExist error when there is no
-        event with ``event_id``
+        event with ``event_id``. It raises a User.DoesNotExist when there is no
+        user with ``user_id``. It raises a RuntimeError if the event is not
+        viewable by the user.
 
         A text to be parsed as an event is of the form::
 
@@ -1074,6 +1074,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if user_id is not None:
             # the following line can raise a User.DoesNotExist
             user = User.objects.get(id = user_id)
+        else:
+            user = None
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
         # languages but taking care of colisions
@@ -1086,15 +1088,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     simple_fields['country'] = names[0]
                     break
         # creates an event with a form
-        # FIXME: process field 'public' now because it is not in EventForm
         from gridcalendar.events.forms import EventForm
         if event_id == None :
             event_form = EventForm( simple_fields )
         else:
             # the following line can raise an Event.DoesNotExist
             event = Event.objects.get( id = event_id )
-            if user_id is not None:
-                if not event.is_viewable_by_user(user_id):
+            if user is not None:
+                if not event.is_viewable_by_user(user):
                     raise RuntimeError(
                         _(u'the event is not viewable by the user'))
             event_form = EventForm( simple_fields, instance = event )
@@ -1107,6 +1108,23 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # testing data
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
+        # test field 'public'
+        if simple_fields.has_key('public'):
+            #  event_form.data['public'] is unicode
+            # event_form.clenaed_data['public'] is boolean
+
+            # TODO: indicate which values are accepted ('True', 'False',
+            # something else?). If not of the accepted values are displayed, it
+            # says which one are accepted. Translations of e.g. 'True' possible?
+
+            public = event_form.cleaned_data['public']
+            if (not public) and (not user):
+                # raises an error if ``public`` is False and the user is not
+                # logged-in
+                raise ValidationError(
+                        _(u"You have tried to create a non-public (private)" \
+                        " event, however only logged-in users can create" \
+                        " private events") )
         # check syntax of complex fields before saving the form
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls(
@@ -1124,7 +1142,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else:
             sessions = None
         # save the form and get the event
-        event = event_form.save()
+        event = event_form.save(commit=False)
+        event.user = user
+        event.save() # TODO: can we process the complex fields without saving the event first?
+        event_form.save_m2m()
         event_id = event.id
         # adding complex fields data
         if complex_fields.has_key(u'urls'):
@@ -1536,7 +1557,12 @@ class EventUrl( models.Model ): # {{{1
                             _(u"an unexpected empty line was found."))
                     raise ValidationError(
                             _(u"the following line is malformed: ") + line)
-                urls[ field_m.group(1) ] = field_m.group(2)
+                name = field_m.group(1)
+                if urls.has_key( name ):
+                    raise ValidationError(
+                            _('found more than one url with the same name: ' \
+                                    '%(name)s') % {'name': name} )
+                urls[name] = field_m.group(2)
         # we now check each url using django.core.validators for the fields of
         # this class
         errors = []
@@ -1712,14 +1738,20 @@ class EventDeadline( models.Model ): # {{{1
                     raise ValidationError(
                         _(u"the following line for a deadline is malformed: ")
                         + line)
-                try:
-                    deadlines[ field_m.group(4) ] = datetime.date(
-                            int(field_m.group(1)), int(field_m.group(2)),
-                            int(field_m.group(3)))
-                except (TypeError, ValueError), e:
-                    errors.append(
-                        _("The deadline '%(deadline_name)s' is not correct") %
-                            {'deadline_name': field_m.group(4),} )
+                name = field_m.group(4)
+                if deadlines.has_key( name ):
+                    errors.append( _(u'the following deadline name appers ' \
+                            'more than one: %(name)s') % {'name': name} )
+                else:
+                    try:
+                        deadlines[ field_m.group(4) ] = datetime.date(
+                                int(field_m.group(1)), int(field_m.group(2)),
+                                int(field_m.group(3)))
+                    except (TypeError, ValueError), e:
+                        errors.append(
+                            _("The deadline '%(deadline_name)s' is not " \
+                                    "correct") % {'deadline_name':
+                                        field_m.group(4),} )
         if errors:
             raise ValidationError( errors )
         # we now check each deadline using django.core.validators for the
@@ -1879,33 +1911,40 @@ class EventSession( models.Model ): # {{{1
         if len ( lines ) < 2:
             raise ValidationError(
                     _(u"there is no sessions data") )
-        sessions = list()
+        # session's names as keys, Session instances as values
+        sessions = dict()
         errors = list()
         field_p = re.compile(
                 r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*?)\s*$")
-                #      1          2      3        4      5      6      7       8
+                #      1          2      3        4      5      6      7        8
         for line in lines[1:]:
             field_m = field_p.match(line)
             if not field_m:
                 errors.append(
                         _(u"the following session line is malformed: ") + line)
-            try:
-                sessions.append(Session(
-                    date = datetime.date(
-                        int(field_m.group(1)),
-                        int(field_m.group(2)),
-                        int(field_m.group(3))),
-                    start = datetime.time(
-                        int(field_m.group(4)),
-                        int(field_m.group(5))),
-                    end = datetime.time(
-                        int(field_m.group(6)),
-                        int(field_m.group(7))),
-                    name = field_m.group(8)))
-            except (TypeError, ValueError, AttributeError), e:
-                errors.append(
-                        _(u"time/date entry error in line: ") + line)
-            # TODO: use local time of event if present
+            name = field_m.group(8)
+            if sessions.has_key(name):
+                errors.append( 
+                        _(u'the following session name appers more than one:' \
+                                ' %(name)s') % {'name': name} )
+            else:
+                try:
+                    sessions[name] = Session(
+                        date = datetime.date(
+                            int(field_m.group(1)),
+                            int(field_m.group(2)),
+                            int(field_m.group(3))),
+                        start = datetime.time(
+                            int(field_m.group(4)),
+                            int(field_m.group(5))),
+                        end = datetime.time(
+                            int(field_m.group(6)),
+                            int(field_m.group(7))),
+                        name = name )
+                except (TypeError, ValueError, AttributeError), e:
+                    errors.append(
+                            _(u"time/date entry error in line: ") + line)
+                # TODO: use local time of event if present
         if errors:
             raise ValidationError( errors )
         # we now check each session using django.core.validators for the fields
@@ -1919,7 +1958,7 @@ class EventSession( models.Model ): # {{{1
                 'session_starttime')[0].validators
         fvals['end'] = EventSession._meta.get_field_by_name(
                 'session_endtime')[0].validators
-        for session in sessions:
+        for session in sessions.values():
             for field_name, vals in fvals.items():
                 for val in vals:
                     try:
@@ -1933,7 +1972,7 @@ class EventSession( models.Model ): # {{{1
                         errors.extend( e.messages )
         if errors:
             raise ValidationError( errors )
-        return sessions
+        return sessions.values()
 
     @staticmethod # def parse_text( event, text, sessions = None ): {{{2
     def parse_text( event, text, sessions = None ):
@@ -2321,7 +2360,12 @@ class Filter( models.Model ): # {{{1
         :meth:`Filter.matches` 
 
         **IMPORTANT**: this code must be consistent with :meth:`Filter.matches`
+
+        If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
+        ``query`` is None or an empty string.
         """
+        if not query:
+            return Event.objects.none()
         if user is None or isinstance(user, User):
             pass
         elif isinstance(user, AnonymousUser):

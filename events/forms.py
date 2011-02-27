@@ -176,6 +176,10 @@ class EventForm(ModelForm):
     """ ModelForm for all editable fields of Event except `public` """
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
+        if kwargs.has_key('instance'):
+            # not a new event and ``public`` cannot be changed after creation
+            self.fields['public'].widget = HiddenInput()
+        #TODO: use css instead
         self.fields['title'].widget.attrs["size"] = 70
         self.fields['start'].widget.attrs["size"] = 10
         self.fields['end'].widget.attrs["size"] = 10
@@ -187,9 +191,6 @@ class EventForm(ModelForm):
         self.fields['description'].widget.attrs["cols"] = 70
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        # notes: public field cannot be edited after creation, startime and
-        # endtime are processed within start and end
-        exclude = ('public')
     def clean_tags(self): # pylint: disable-msg=C0111
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
