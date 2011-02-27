@@ -253,6 +253,8 @@ USE_I18N = True
 
 # TODO: use USE_L10N
 # see http://docs.djangoproject.com/en/dev/ref/settings/?from=olddocs#use-l10n
+# Notice also that when set to True, settings like TIME_FORMAT are not used
+USE_L10N = False
 
 # This is used by the django.contrib.sites, which is needed by for instance the
 # registration code we are using from a Debian package (upstream is:

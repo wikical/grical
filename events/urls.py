@@ -102,6 +102,12 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.list_events_tag,    name='list_events_tag'),
     )
 
+# ^l locations urls {{{1
+urlpatterns += patterns('',                 # pylint: disable-msg=C0103
+    url(r'^l/(?P<location>[ ,\w]*)/$' ,
+        views.list_events_location,    name='list_events_location'),
+    )
+
 # ^g groups urls {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103
 
