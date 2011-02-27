@@ -184,7 +184,9 @@ class EventForm(ModelForm):
         self.fields['start'].widget.attrs["size"] = 10
         self.fields['end'].widget.attrs["size"] = 10
         self.fields['starttime'].widget.attrs["size"] = 5
+        self.fields['starttime'].widget.format = '%H:%M'
         self.fields['endtime'].widget.attrs["size"] = 5
+        self.fields['endtime'].widget.format = '%H:%M'
         self.fields['tags'].widget.attrs["size"] = 70
         self.fields['address'].widget.attrs["size"] = 70
         self.fields['description'].widget.attrs["rows"] = 20
@@ -251,9 +253,11 @@ class EventSessionForm(ModelForm):
         assert(self.fields.has_key('session_date'))
         self.fields['session_date'].widget = TextInput(attrs = {'size':10})
         assert(self.fields.has_key('session_starttime'))
-        self.fields['session_starttime'].widget = TextInput(attrs = {'size':5})
+        self.fields['session_starttime'].widget = TextInput(
+                attrs = { 'size': 5, 'format': '%H:%M' } )
         assert(self.fields.has_key('session_endtime'))
-        self.fields['session_endtime'].widget = TextInput(attrs = {'size':5})
+        self.fields['session_endtime'].widget = TextInput(
+                attrs = { 'size': 5, 'format': '%H:%M' } )
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventSession
 

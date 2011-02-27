@@ -790,6 +790,26 @@ def list_events_tag( request, tag ): # {{{1
             },
             context_instance = RequestContext( request ) )
 
+def list_events_location( request, location ): # {{{1
+    """ returns a view with events having a location
+ 
+    >>> from django.test import Client
+    >>> from django.core.urlresolvers import reverse
+    >>> e = Event.objects.create(
+    ...         title = 'test', tags = 'test',
+    ...         city = 'Berlin',
+    ...         start = datetime.date.today() )
+    >>> Client().get(reverse('list_events_location',
+    ...         kwargs={'location': 'berlin',})).status_code
+    200
+    >>> Client().get(reverse('list_events_location',
+    ...         kwargs={'location': 'list-events-location',})).status_code
+    404
+    """
+    # FIXME: create a function in the manager of events to return events by
+    # location and change the code everywhere using Event.objects.location()
+    return search( request, query = '@'+location, view = 'table' )
+
 def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
     """ main view
     

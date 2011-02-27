@@ -5,7 +5,6 @@
 {% block container %}
 <div class="event_full">
 
-    <h1>{% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
     <div class="options">
         <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
         &nbsp;|&nbsp;
@@ -15,17 +14,15 @@
         &nbsp;|&nbsp;
         {% show_add_to_group %}
     </div>
+    <h1>{% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
     <div class="dates">
         {{ event.start }}
         {% if event.starttime %}
             <span class="times">
-                {{ event.starttime|time }}
-                {% if event.endtime and not event.end %}
-                    -{{ event.endtime|time }}
-                {% endif %}
+                {{ event.starttime|time }}{% if event.endtime %}{% if not event.end or event.start == event.end %}-{{ event.endtime|time }}{% endif %}{% endif %}
             </span>
         {% endif %}
-        {% if event.end %}
+        {% if event.end and not event.start == event.end %}
             {{ event.end }}
             {% if event.endtime %}
                 <span class="times">
@@ -34,42 +31,40 @@
             {% endif %}
         {% endif %}
     </div>
-    {% if event.address or event.postcode or event.city or event.country or event.latitude or event.longitude %}
+    {% if event.address or event.postcode or event.city or event.country %}
         <p>
             {% if event.address %}
-                {{ event.address|escape }}
-            {% endif %}
-            {% if event.address %}
-                {% if event.postcode or event.city or event.country %},{% endif %}
+                {{ event.address }}
+                {% if event.postcode or event.city or event.country %}
+                    <br />
+                {% else %}
+                    {% if event.latitude and event.longitude %}
+                        <br />
+                    {% endif %}
+                {% endif %}
             {% endif %}
             {% if event.postcode %}
-                    {{ event.postcode }}
-            {% endif %}
-            {% if event.address or event.postcode %}
-                {% if event.city or event.country %},{% endif %}
+                {{ event.postcode }}{% if event.city or event.country %}, {% endif %}
             {% endif %}
             {% if event.city %}
-                &nbsp;<span class="field_city">
-                    <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst|escape }}</a>
-                </span>
-            {% endif %}
-            {% if event.address or event.postcode or event.city %}
-                {% if event.country %},{% endif %}
+                {# <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst }}</a> #}
+                {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
+                <span class="field_city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>{% if event.country %}, {% endif %}
             {% endif %}
             {% if event.country %}
                 <span class="field_country">
-                    <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country|urlencode }}">{{ event.country|escape }}</a>
+                    {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
+                    <a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>
                 </span>
             {% endif %}
         </p>
-        {% if event.latitude and event.longitude %}
-            {% comment %}FIXME: if the window of the browser is too small, the map breaks
-            everything. Solution: check with JavaScript the size of the window and reduce the map
-            accordingly. Note: the size is given in main.css currently {% endcomment %}
-            <p>
-                Coordinates: <a href="http://www.openstreetmap.org/?mlat={{ event.latitude }}&amp;mlon={{ event.longitude }}&amp;zoom=15&amp;layers=B000FTF">{{ event.latitude }}, {{ event.longitude }}</a>
-            </p>
-        {% endif %}
+    {% endif %}
+    {% if event.latitude and event.longitude %}
+        <p>
+            {{ event.latitude }},{{ event.longitude }}
+            ( <a href="http://www.openstreetmap.org/?mlat={{ event.latitude }}&amp;mlon={{ event.longitude }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
+            <a href="http://maps.google.com?q={{ event.latitude }},{{ event.longitude }}">Google</a> )
+        </p>
     {% endif %}
 
     {% if event.get_tags %}
@@ -126,9 +121,6 @@
         {% comment %}FIXME: if the window of the browser is too small, the map breaks
         everything. Solution: check with JavaScript the size of the window and reduce the map
         accordingly. Note: the size is given in main.css currently {% endcomment %}
-        <p>
-            Coordinates: <a href="http://www.openstreetmap.org/?mlat={{ event.latitude }}&amp;mlon={{ event.longitude }}&amp;zoom=15&amp;layers=B000FTF">{{ event.latitude }}, {{ event.longitude }}</a>
-        </p>
         <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
         <div id="map" class="smallmap"></div>
         <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>

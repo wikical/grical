@@ -96,6 +96,22 @@ high priority
 medium priority
 ---------------
 
+- pictures for events and groups::
+
+    "2011-02-27 14:01" < netAction> ogai: md5(Uhrzeit in Minuten + PK + geheimwort)
+    "2011-02-27 14:01" < netAction> Der Bilderserver bekommt eine Anfrage nach einer URL mit diesem MD5.
+    "2011-02-27 14:02" < ogai> netAction: sehr gut
+    "2011-02-27 14:02" < netAction> Er probiert die letzten 30 Minuten durch. Das geheimwort hat er auch. Wenn er dann keine PK hat, ist die MD5 falsch oder abgelaufen.
+    "2011-02-27 14:02" < netAction> Dafür gibts nen Apache-Modul, die URL lässt sich in einer Zeile Python erzeugen. 
+    "2011-02-27 14:02" < ogai> netAction: moment wieso uhrzeit in minuten? uhrzeit der hochladung auf grical?
+    "2011-02-27 14:03" < netAction> Nein Uhrzeit, zu der die URL erstellt wurde.
+    "2011-02-27 14:03" < netAction> Damit die URL abläuft.
+    "2011-02-27 14:04" < ogai> wer soll wissen, wenn eine url ablaeuft? apache?
+    "2011-02-27 14:05" < netAction> Ja.
+    "2011-02-27 14:05" < netAction> Ich suche dir das Modul raus.
+
+- 3 layers for 'Custom Fields': grical installation on settings, sessions for an event (e.g. room
+  number), groups (e.g. who is responsible)
 - add an agreement field to accept publication under CC for non-logged-in users. For logged in, add
   an agreement field when creating a new account, see http://djangosnippets.org/snippets/785/
 - better usability for normal people. Some comments from IRC:
