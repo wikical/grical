@@ -3,10 +3,12 @@ show-stopping
 
 - bug: in text mode introduce one or more urls which are not called web
 - bug: event 557 search_engines
+- bug: search 2011-04-01 2011-04-31
 
 high priority
 -------------
 
+- accept search 2011-04
 - contact form, terminate with: 'Thanks for contacting us. We'll try our best to reply in a timely
   fashion.'
 - Don't use two columns (related events) in the result of a search with location
@@ -93,6 +95,15 @@ high priority
 
 medium priority
 ---------------
+
+- add an agreement field to accept publication under CC for non-logged-in users. For logged in, add
+  an agreement field when creating a new account, see http://djangosnippets.org/snippets/785/
+- better usability for normal people. Some comments from IRC:
+
+    - "2011-02-21 15:51" < netAction> Dieses @ und # und die bescheuerte Angabe von Daten finde ich jetzt schon nervig.
+    - "2011-02-21 18:38" < netAction> SvenG: Im ersten Anlauf durch einzelne Felder in der Suche.  Ich weiß, das ist veraltet. Dann eben durch eine wirklich mitdenkende Suche. Setz 10 Leute vor Grical und sag ihnen, sie sollen die Events suchen, die sie interessieren. Ich bin gespannt, was dann passiert.
+    - "2011-02-21 18:59" < netAction> SvenG: Die Logik für die Suche ist extrem schwierig. Das Lesen von Beispielen halte ich für unakzeptabel.
+    - "2011-02-21 19:00" < netAction> Ich möchte vielleicht Dinge eingeben wie "Berlin April 2011"
 
 - add ordering capabilities for EventUrl and Filter using respectively ``order_with_respect_to =
   'event'`` and ``order_with_respect_to = 'user'`` in _meta of that classes. See
