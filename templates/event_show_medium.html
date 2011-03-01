@@ -19,14 +19,11 @@
         {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
     </span>
     {% if event.city %}
-      <span class="city">
-        <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">
-          {{ event.city|capfirst }}</a>
-      </span>
+        <span class="city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>
     {% endif %}
     {% if event.country %}
       <span class="country">
-        (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country }}</a>)
+        (<a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>)
       </span>
     {% endif %}
     {% if event.upcoming != event.start and event.upcoming != event.end %}

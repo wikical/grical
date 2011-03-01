@@ -10,7 +10,7 @@
 {% if event.acro %} <span class="field_acro">( {{ event.acro }} )</span> {% endif %}
 {% if event.city or country %}@{% endif %}
 {% if event.city %}
-    <span class="field_city">
+    <span class="city">
         <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">
             {{ event.city|lower|capfirst }}</a>
     </span>

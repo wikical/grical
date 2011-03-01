@@ -141,6 +141,7 @@ if DEBUG:
 
 # at the end additional middleware are conditionaly added
 MIDDLEWARE_CLASSES = (
+    'django.middleware.gzip.GZipMiddleware',
     # see http://docs.djangoproject.com/en/1.2/ref/contrib/csrf/
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
