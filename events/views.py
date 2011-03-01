@@ -92,8 +92,8 @@ def legal_notice( request ): # {{{1
                     ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
-def event_edit( request, event_id ): # {{{1
-    """ view to edit an event as a form
+def event_edit( request, event_id = False ): # {{{1
+    """ view to edit or create an event as a form
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -105,50 +105,63 @@ def event_edit( request, event_id ): # {{{1
     >>> Client().get(reverse('event_edit',
     ...         kwargs={'event_id': e.id,})).status_code
     200
+    >>> Client().get(reverse('event_new')).status_code
+    200
     """
-    if isinstance( event_id, int ):
+    # FIXME: create more tests above for e.g. trying to save a new event
+    # without a URL
+    if event_id and isinstance( event_id, int ):
         event_id = unicode( event_id )
-    event = get_object_or_404( Event, pk = event_id )
-    # checks if the user is allowed to edit this event
-    # public events can be edited by anyone, otherwise only by the submitter
-    # and the group the event belongs to
-    if not event.public :
-        if ( not request.user.is_authenticated() ):
-            return main( request, error_messages =
-                _( u''.join([u'You need to be logged-in to be able to edit the ',
-                    u'event with the number %(event_id)s.']) ) % \
-                            {'event_id': event_id,} )
-        else:
-            if ( not Event.is_event_viewable_by_user(
-                    event_id, request.user.id ) ):
+    if event_id:
+        event = get_object_or_404( Event, pk = event_id )
+        # checks if the user is allowed to edit this event public events can be
+        # edited by anyone, otherwise only by the submitter and the group the
+        # event belongs to
+        if not event.public :
+            if not request.user.is_authenticated():
                 return main( request, error_messages =
-                    _( u''.join([u'You are not allowed to edit the event with ',
-                        u'the number %(event_id)s.']) ) % \
+                    _( u'You need to be logged-in to be able to edit the ' \
+                        u'event with the number %(event_id)s.' ) % \
                             {'event_id': event_id,} )
+            else:
+                if not Event.is_event_viewable_by_user(
+                        event_id, request.user.id ):
+                    return main( request, error_messages =
+                        _( u'You are not allowed to edit the event with ' \
+                            u'the number %(event_id)s.' ) % \
+                                {'event_id': event_id,} )
+        can_delete = True
+    else:
+        event = Event()
+        can_delete = False
     event_urls_factory = inlineformset_factory( 
-            Event, EventUrl, extra = 4 )
+            Event, EventUrl, extra = 4, can_delete = can_delete )
     evetn_deadlines_factory = inlineformset_factory( 
-            Event, EventDeadline, extra = 4 )
+            Event, EventDeadline, extra = 4, can_delete = can_delete )
     event_sessions_factory = inlineformset_factory( 
-            Event, EventSession, extra = 4, form = EventSessionForm )
+            Event, EventSession, extra = 4, form = EventSessionForm,
+            can_delete = can_delete )
     if request.method == 'POST':
-        formset_url = \
-                event_urls_factory( request.POST, instance = event )
-        formset_deadline = \
-                evetn_deadlines_factory( request.POST, instance = event )
-        formset_session = \
-                event_sessions_factory( request.POST, instance = event )
-        event_form = \
-                EventForm( request.POST, instance = event )
-        if event_form.is_valid() & formset_url.is_valid() & \
-                formset_session.is_valid() & formset_deadline.is_valid() :
-            # TODO: use the session middleware to commit as an atom
-            event_form.save()
-            formset_url.save()
-            formset_session.save()
-            formset_deadline.save()
-            return HttpResponseRedirect( 
-                    reverse( 'event_show', kwargs = {'event_id': event_id} ) )
+        event_form = EventForm( request.POST, instance = event )
+        formset_url = event_urls_factory(
+                request.POST, instance = event )
+        formset_deadline = evetn_deadlines_factory(
+                request.POST, instance = event )
+        formset_session = event_sessions_factory(
+                request.POST, instance = event )
+        if event_form.is_valid():
+            event = event_form.save(commit = False) # ! not saved in DB yet
+            if formset_url.is_valid() & \
+                    formset_session.is_valid() & formset_deadline.is_valid() :
+                # FIXME: don't allow to save an event with missing basic data
+                # like a URL
+                # TODO: use the session middleware to commit as an atom
+                event.save()
+                formset_url.save()
+                formset_session.save()
+                formset_deadline.save()
+                return HttpResponseRedirect( 
+                        reverse( 'event_show', kwargs = {'event_id': event.id} ) )
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
@@ -163,7 +176,7 @@ def event_edit( request, event_id ): # {{{1
             'event_id': event_id }
     # add a warning message if the start date is in the past, which is probably
     # a mistake
-    if event.start < datetime.date.today():
+    if event_id and event.start < datetime.date.today():
         templates['messages'] = [ _('warning: the start date is in the past') ]
     return render_to_response( 'event_edit.html', templates,
             context_instance = RequestContext( request ) )
@@ -804,7 +817,7 @@ def list_events_location( request, location ): # {{{1
     200
     >>> Client().get(reverse('list_events_location',
     ...         kwargs={'location': 'list-events-location',})).status_code
-    404
+    200
     """
     # FIXME: create a function in the manager of events to return events by
     # location and change the code everywhere using Event.objects.location()

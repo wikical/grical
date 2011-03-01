@@ -168,3 +168,11 @@ future. This is necessary for performance and scalability reasons. Add to you cr
     #. Group invitations are sent with the sender (``from`` header) set to the user
        ``group-invitation`` and the host provided by the setting ``DEFAULT_FROM_EMAIL``
  
+#. **Graph of the data base**: To generate a graph of the data base::
+
+    cd /usr/local/gridcalendar/
+    aptitude install graphviz ttf-liberation
+    wget http://djangosnippets.org/snippets/1168/download/
+    export PYTHONPATH="/home/hg/gridcalendar:/home/hg/"
+    export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+    python graph_db.py events | dot -Tpng -o media/graph_db.png

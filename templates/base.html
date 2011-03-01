@@ -138,7 +138,7 @@ permission of the original author -->
     <div class="title">{% trans "Tags cloud" %}</div>
     <div class="info">
         {% comment %}TODO: generate this is views.py {% endcomment %}
-        {% tag_cloud_for_model events.Event as tags with steps=10 min_count=4 distribution=log %}
+        {% tag_cloud_for_model events.Event as tags with steps=10 min_count=5 distribution=log %}
         {% if tags|length < 100 %}
             {% for tag in tags %}
                 <span class="tag_{{ tag.font_size }}"><a href="{% url list_events_tag tag.name|slugify %}">
