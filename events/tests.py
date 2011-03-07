@@ -53,7 +53,7 @@ from registration.models import RegistrationProfile
 # source: http://bitbucket.org/kmike/django-webtest/src
 from django_webtest import WebTest
 
-from gridcalendar.events import models, views, forms, utils
+from gridcalendar.events import models, views, forms, utils, recurring
 from gridcalendar.events.models import ( Event, Group, Filter, Membership,
         Calendar, GroupInvitation, ExtendedUser, EventDeadline )
 from gridcalendar.events.management.commands.updateupcoming import Command
@@ -65,12 +65,20 @@ def suite(): #{{{1
     by default.
     """
     tests = unittest.TestSuite()
-    tests.addTest(doctest.DocTestSuite(models))
-    tests.addTest(doctest.DocTestSuite(views))
-    tests.addTest(doctest.DocTestSuite(forms))
-    tests.addTest(doctest.DocTestSuite(utils))
+    #               doctest in   events/models.py
+    tests.addTest(doctest.DocTestSuite( models ))
+    #               doctest in   events/views.py
+    tests.addTest(doctest.DocTestSuite( views ))
+    #               doctest in   events/forms.py
+    tests.addTest(doctest.DocTestSuite( forms ))
+    #               doctest in   events/utils.py
+    tests.addTest(doctest.DocTestSuite( utils ))
+    #               doctest in   events/recurring.py
+    tests.addTest(doctest.DocTestSuite( recurring ))
+    # tests in the class of this file EventsTestCase
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsTestCase ))
+    # tests in the class of this file EventsWebTestCase
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsWebTestCase ))
     return tests

@@ -193,4 +193,3 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
      url(r'^o/all/text/$',
          views.all_events_text, name='all_events_text'),
      )
-
