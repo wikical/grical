@@ -8,6 +8,11 @@ Installation instructions for Debian based systems
    cd /usr/local/
    hg clone http://gridcalendar.net:8001 gridcalendar
 
+  You can then update your local copy with the newest changes anytime with the commands::
+
+   hg pull
+   hg update
+
 #. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``
 
 #. Install ``django-tables``::

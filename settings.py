@@ -41,6 +41,15 @@ except NameError:
 # for RSS feeds
 FEED_SIZE = 50
 
+# dates thereafter from now are not allowed
+MAX_DAYS_IN_FUTURE = 1095 # 3 years: 365 * 3
+
+# for introducing recurring events (see events/recurring.py
+DEFAULT_RECURRING_DURATION_IN_DAYS = 365
+assert ( DEFAULT_RECURRING_DURATION_IN_DAYS <= MAX_DAYS_IN_FUTURE )
+# TODO: inform the user who introduced the event that recurring events are
+# going to expire before it happens
+
 # TODO: use a user parameter and a button to show the next ones
 MAX_EVENTS_ON_ROOT_PAGE = 20
 
