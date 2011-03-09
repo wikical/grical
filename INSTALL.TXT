@@ -13,7 +13,7 @@ Installation instructions for Debian based systems
    hg pull
    hg update
 
-#. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``
+#. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``. Django must be at least Version 1.2.3
 
 #. Install ``django-tables``::
 
