@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
 #
@@ -22,12 +23,15 @@
 
 """ Forms """
 
+# imports {{{1
 import re
 import datetime
+import urlparse
 
+from django.core import validators
 from django.forms import ( CharField, IntegerField, HiddenInput,
-        ModelMultipleChoiceField, URLField, ModelForm, ValidationError,
-        TextInput, CheckboxSelectMultiple, Form, Field )
+        ModelMultipleChoiceField, ModelForm, ValidationError,
+        TextInput, CheckboxSelectMultiple, Form, Field, DateField )
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -36,19 +40,61 @@ from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
         EventSession, Filter, Group, Membership)
 from gridcalendar.events.utils import validate_year
 
-def _date(string):
+def _date(string): # {{{1
     """ parse a date in the format ``yyyy-mm-dd`` using
-    ``gridcalendar.events.utils.valida """
+    ``gridcalendar.events.utils.validate_year """
     parsed_date = datetime.datetime.strptime(string, '%Y-%m-%d').date()
     validate_year( parsed_date )
     return parsed_date
 
-def _time(string):
+def _time(string): # {{{1
     """ parse a time in the format: hh:mm """
     return datetime.datetime.strptime(string, '%H:%M').time()
 
-class DatesTimesField(Field):
-    """ processes one or two dates and optionally one or two times.
+# Tue Mar  8 10:08:46 CET 2011:
+# From Django repository in order to append 'http' when missing.
+# Additionally, added support for in-URL basic AUTH ( code found at
+# http://code.djangoproject.com/ticket/9791 )
+class URLFieldExtended(CharField):
+    default_error_messages = {
+        'invalid': _(u'Enter a valid URL.'),
+        'invalid_link': _(u'This URL appears to be a broken link.'),
+    }
+
+    def __init__(self, max_length=None, min_length=None, verify_exists=False,
+            validator_user_agent=validators.URL_VALIDATOR_USER_AGENT,
+            *args, **kwargs):
+        super(URLFieldExtended, self).__init__(
+                max_length, min_length, *args, **kwargs )
+        self.validators.append( validators.URLValidator(
+            verify_exists=verify_exists,
+            validator_user_agent=validator_user_agent ) )
+
+    def to_python(self, value):
+        if value:
+            split_result = urlparse.urlsplit(value) # returns a SplitResult
+            url_fields = list( split_result )
+            if not url_fields[0]:
+                # If no URL scheme given, assume http://
+                url_fields[0] = 'http'
+            if not url_fields[1]:
+                # Assume that if no domain is provided, that the path segment
+                # contains the domain.
+                url_fields[1] = url_fields[2]
+                url_fields[2] = ''
+                # Rebuild the url_fields list, since the domain segment may now
+                # contain the path too.
+                value = urlparse.urlunsplit(url_fields)
+                url_fields = list(urlparse.urlsplit(value))
+            if not url_fields[2]:
+                # the path portion may need to be added before query params
+                url_fields[2] = '/'
+            value = urlparse.urlunsplit( url_fields )
+        return super( URLFieldExtended, self ).to_python( value )
+
+class DatesTimesField(Field): # {{{1
+    """ processes one or two dates and optionally one or two times, returning a
+    dictionary with possible keys: start_date, end_date, start_time, end_time
 
     Valid formats:
 
@@ -58,6 +104,19 @@ class DatesTimesField(Field):
     - 2010-01-25 10:00 2010-01-26 18:00
     - 2010-01-25 10:00 11:00
     - 2010-01-25 10:00-11:00
+    - Django DateField formats taking into account L10N. For English:
+
+        - 2006-10-25
+        - 10/25/2006
+        - 10/25/06
+        - Oct 25 2006
+        - Oct 25, 2006
+        - 25 Oct 2006
+        - 25 Oct, 2006
+        - October 25 2006
+        - October 25, 2006
+        - 25 October 2006
+        - 25 October, 2006
 
     >>> dt = DatesTimesField()
     >>> d = dt.to_python('2010-01-25')
@@ -66,6 +125,7 @@ class DatesTimesField(Field):
     >>> d = dt.to_python('2010-01-25 10:00 2010-01-26 18:00')
     >>> d = dt.to_python('2010-01-25 10:00 11:00')
     >>> d = dt.to_python('2010-01-25 10:00-11:00')
+    >>> d = dt.to_python('25 October, 2006')
     """
     def to_python(self, value):
         """ returns a dictionary with four values: start_date, end_date,
@@ -93,13 +153,13 @@ class DatesTimesField(Field):
             ^\s*(\d\d\d\d-\d\d-\d\d) # beginning, optional spaces, start date
              \s+(\d\d:\d\d)          # start time after one ore more spaces
              (?:(?:\s+)|(?:\s*-\s*)) # one or more spaces, alternatively -
-             (\d\d:\d\d)\s*$         # end time before optinal spaces""",
+             (\d\d:\d\d)\s*$         # end time before optional spaces""",
             re.UNICODE | re.X )
         try:
-            matcher = re_d.match(value)
+            matcher = re_d.match( value )
             if matcher:
                 return {'start_date': _date(matcher.group(1)),}
-            matcher = re_d_d.match(value)
+            matcher = re_d_d.match( value )
             if matcher:
                 return {'start_date': _date(matcher.group(1)),
                         'end_date': _date(matcher.group(2))}
@@ -124,8 +184,8 @@ class DatesTimesField(Field):
             # the validationError comes from utils.validate_year and the error
             # message is translated
             raise e
-        raise ValidationError( _('not a valid syntax') )
-        #raise ValidationError( e.message )
+        # No matches. We try now DateField
+        return { 'start_date': DateField().clean( value ) }
 
     def validate(self, value):
         """ checks that dates and times are in order, i.e. start before end """
@@ -136,7 +196,7 @@ class DatesTimesField(Field):
             if value['start_time'] > value['end_time']:
                 raise ValidationError( _('end time is before start time') )
 
-def get_event_form(user):
+def get_event_form(user): # {{{1
     """returns a simplied event form with or without the public field"""
     """ returns a dictionary with four values: start_date, end_date,
     start_time, end_time """
@@ -145,7 +205,7 @@ def get_event_form(user):
         return SimplifiedEventForm()
     return SimplifiedEventFormAnonymous()
 
-class FilterForm(ModelForm):
+class FilterForm(ModelForm): # {{{1
     """ ModelForm using Filter excluding `user` """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Filter
@@ -172,7 +232,7 @@ class FilterForm(ModelForm):
     #    return data
 
 
-class EventForm(ModelForm):
+class EventForm(ModelForm): # {{{1
     """ ModelForm for all editable fields of Event except `public` """
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
@@ -200,15 +260,12 @@ class EventForm(ModelForm):
         # Always return the cleaned data, whether you have changed it or not.
         return data
 
-class SimplifiedEventForm(EventForm):
+class SimplifiedEventForm(EventForm): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
     `public` """
     where = CharField( max_length = 100, required = False )
     when = DatesTimesField()
-    if DEBUG:
-        web = URLField(verify_exists=False)
-    else:
-        web = URLField(verify_exists=True)
+    web = URLFieldExtended(verify_exists=True)
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'What')
@@ -217,7 +274,8 @@ class SimplifiedEventForm(EventForm):
                 _(u'Example: Malmöer Str. 6, Berlin, DE')
         self.fields['when'].label = _(u'When')
         self.fields['when'].help_text = \
-                _(u'Example: 2010-02-27 11:00-13:00')
+                _(u"Examples: '25 Oct 2006', '2010-02-27', " \
+                "'2010-02-27 11:00', '2010-02-27 11:00-13:00'")
         #self.fields['title'].widget.attrs["size"] = 42
         #self.fields['tags'].widget.attrs["size"] = 42
         #self.fields['web'].widget.attrs["size"] = 42
@@ -225,14 +283,14 @@ class SimplifiedEventForm(EventForm):
         model = Event
         fields = ('title', 'tags', 'public')
 
-class SimplifiedEventFormAnonymous(SimplifiedEventForm):
+class SimplifiedEventFormAnonymous(SimplifiedEventForm): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`
     """
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags')
 
-class EventUrlForm(ModelForm):
+class EventUrlForm(ModelForm): # {{{1
     """ ModelForm for EventUrl """
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)

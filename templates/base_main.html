@@ -42,9 +42,10 @@
     </div>
 
     <p>
-        <a href="{% url event_new_raw %}">{% trans "submit with a single textarea" %}</a>
+        {% trans "Alternatively:" %}
+        <a href="{% url event_new %}">{% trans "extended form" %}</a>, 
+        <a href="{% url event_new_raw %}">{% trans "textarea" %}</a>
         <br />
-        <a href="{% url event_new %}">{% trans "submit with an extended form" %}</a>
     </p>
 
     {% comment %}

@@ -96,6 +96,10 @@ high priority
 medium priority
 ---------------
 
+- For event and session (in order to use GriCal as a personal calendar avoiding the need of using
+  more than one software as calendar):
+  gebauede/raumnr/vortragender/"deadline"(hausarbeiten)/anmerkungen (gruppennummer,persoenliche
+  notizen)
 - pictures for events and groups::
 
     "2011-02-27 14:01" < netAction> ogai: md5(Uhrzeit in Minuten + PK + geheimwort)
@@ -110,6 +114,8 @@ medium priority
     "2011-02-27 14:05" < netAction> Ja.
     "2011-02-27 14:05" < netAction> Ich suche dir das Modul raus.
 
+- implement sitemaps: http://docs.djangoproject.com/en/1.2/ref/contrib/sitemaps/
+  IMPORTANT: http://www.mischievous.org/2010/11/generate-sitemap-django.html
 - 3 layers for 'Custom Fields': grical installation on settings, sessions for an event (e.g. room
   number), groups (e.g. who is responsible)
 - add an agreement field to accept publication under CC for non-logged-in users. For logged in, add
