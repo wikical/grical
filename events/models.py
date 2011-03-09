@@ -2166,6 +2166,15 @@ class Filter( models.Model ): # {{{1
         # IMPORTANT: this code must be in accordance with
         # ``Filter.matches_queryset`` FIXME: create a text with some queries that
         # check the concordance of the output of both methods
+
+        # broad search check
+        broad_regex = re.compile('^\* +', UNICODE) # beginninig with * followed
+                                                   # by 1 ore more spaces
+        if broad_regex.match( query ):
+            broad = True
+            query = broad_regex.sub("", query)
+        else:
+            broad = False
         # dates
         dates = DATE_REGEX.findall( query )
         if dates:
@@ -2190,7 +2199,7 @@ class Filter( models.Model ): # {{{1
             # dates matched
             if query == "":
                 return True
-        else:
+        elif not broad:
             today = datetime.date.today()
             if not ( event.start >= today or
                     ( event.end and event.end <= today ) or
@@ -2242,13 +2251,38 @@ class Filter( models.Model ): # {{{1
         matches = False
         for word in regex.findall(query):
             word = word.lower().strip()
-            if ( event.title.lower().find(word) != -1 or
-                    event.tags.lower().find(word) != -1 or
-                    ( event.city and event.city.lower() == word ) or
-                    ( event.country and event.country.lower() == word ) or
-                    ( event.acronym and event.acronym.lower() == word ) ):
-                matches = True
-                break
+            if not broad:
+                if ( event.title.lower().find(word) != -1 or
+                        event.tags.lower().find(word) != -1 or
+                        ( event.city and event.city.lower() == word ) or
+                        ( event.country and event.country.lower() == word ) or
+                        ( event.acronym and event.acronym.lower() == word ) ):
+                    matches = True
+                    break
+            else: # broad search, adding description, urls, sessions and
+                  # deadlines
+                if ( event.title.lower().find(word) != -1 or
+                        event.tags.lower().find(word) != -1 or
+                        ( event.city and event.city.lower() == word ) or
+                        ( event.country and event.country.lower() == word ) or
+                        ( event.acronym and event.acronym.lower() == word ) or
+                        ( event.description and
+                            event.description.lower().find( word ) is not -1)):
+                    matches = True
+                    break
+                for url in event.urls.all():
+                    if ( url.url_name.lower().find( word ) != -1  or
+                            url.url.lower().find( word ) != -1 ):
+                        matches = True
+                        break
+                for session in event.sessions.all():
+                    if session.session_name.lower().find( word ) != -1:
+                        matches = True
+                        break
+                for deadline in event.deadlines.all():
+                    if deadline.deadline_name.lower().find( word ) != -1:
+                        matches = True
+                        break
         return matches
 
     @staticmethod # def matches( query, user, related = True ): {{{2
@@ -2401,6 +2435,14 @@ class Filter( models.Model ): # {{{1
             queryset = TaggedItem.objects.get_intersection_by_model(
                     queryset, tags )
         query = regex.sub("", query)
+        # broad search check
+        broad_regex = re.compile('^\* +', UNICODE) # beginninig with * followed
+                                                   # by 1 ore more spaces
+        if broad_regex.match( query ):
+            broad = True
+            query = broad_regex.sub("", query)
+        else:
+            broad = False
         # dates
         dates = DATE_REGEX.findall( query )
         if dates:
@@ -2415,7 +2457,7 @@ class Filter( models.Model ): # {{{1
                     Q(deadlines__deadline__range = (date1, date2) ) )
             # remove all dates (yyyy-mm-dd) from the query
             query = DATE_REGEX.sub("", query)
-        else:
+        elif not broad:
             date = datetime.date.today()
             queryset = queryset.filter(
                     Q(start__gte = date) | Q(end__gte = date) |
@@ -2424,12 +2466,25 @@ class Filter( models.Model ): # {{{1
         regex = re.compile('([^!@#]\w+)', UNICODE)
         for word in regex.findall(query):
             word = word.strip()
-            queryset = queryset.filter(
-                    Q(title__icontains = word) |
-                    Q(tags__icontains = word) |
-                    Q(city__iexact = word) |
-                    Q(country__iexact = word) |
-                    Q(acronym__iexact = word) )
+            if not broad:
+                queryset = queryset.filter(
+                        Q(title__icontains = word) |
+                        Q(tags__icontains = word) |
+                        Q(city__iexact = word) |
+                        Q(country__iexact = word) |
+                        Q(acronym__iexact = word) )
+            else: # broad search
+                queryset = queryset.filter(
+                        Q( title__icontains = word ) |
+                        Q( tags__icontains = word ) |
+                        Q( city__iexact = word ) |
+                        Q( country__iexact = word ) |
+                        Q( acronym__iexact = word ) |
+                        Q( description__icontains = word ) |
+                        Q( urls__url_name__icontains = word ) |
+                        Q( urls__url__icontains = word ) |
+                        Q( deadlines__deadline_name__icontains = word ) |
+                        Q( sessions__session_name__icontains = word ) )
         # TODO: add full indexing text on Event.description and comments. See
         # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
         # remove duplicates

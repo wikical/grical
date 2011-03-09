@@ -98,6 +98,8 @@ Searches and filters
 - Tags (``#tag``) restricts the query to events with these tags
 - Locations (``@location``) restricts the query to events having these location in the fields ``city`` or ``country``
 - Groups (``!group``) restricts the query to events of the groups
+- Searches starting with an asterisk and one space makes the search broader, including past events
+  (if no dates are specified), text in the description, urls (name and url), sessions (name) and deadlines (name)
 
 
 More help
