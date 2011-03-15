@@ -29,7 +29,7 @@
     {% if event.upcoming != event.start and event.upcoming != event.end %}
       <br />
       <span class="deadline">
-          {{ event.upcoming }} {{ event.next_deadline_name }}
+          {{ event.upcoming }} {{ event.next_deadline_names }}
       </span>
     {% endif %}
     {% if event.get_tags %}

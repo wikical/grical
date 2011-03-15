@@ -3,7 +3,9 @@
 
 {% block container %}
 
-<p>{% blocktrans with event.title as title %}"Add <i>{{ title }}</i> to:"{% endblocktrans %}</p>
+<p>{% blocktrans with event.title as title %}
+<i>{{ title }}</i><br />
+can be added to:{% endblocktrans %}</p>
 
 <form action="" method="post">{% csrf_token %}
     {{ form }}

@@ -65,20 +65,13 @@ def suite(): #{{{1
     by default.
     """
     tests = unittest.TestSuite()
-    #               doctest in   events/models.py
     tests.addTest(doctest.DocTestSuite( models ))
-    #               doctest in   events/views.py
     tests.addTest(doctest.DocTestSuite( views ))
-    #               doctest in   events/forms.py
     tests.addTest(doctest.DocTestSuite( forms ))
-    #               doctest in   events/utils.py
     tests.addTest(doctest.DocTestSuite( utils ))
-    #               doctest in   events/recurring.py
     tests.addTest(doctest.DocTestSuite( recurring ))
-    # tests in the class of this file EventsTestCase
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsTestCase ))
-    # tests in the class of this file EventsWebTestCase
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsWebTestCase ))
     return tests

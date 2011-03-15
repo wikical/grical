@@ -343,13 +343,14 @@ description:
 
 GridCalendar will be presented"""
 
+# TODO: add alters_data=True to all functions that do that.
+# see http://docs.djangoproject.com/en/1.2/ref/templates/api/
+
 # regexes
 DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
 
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
-    """ Event model
-    
-    """
+    """ Event model """ # doc {{{2
     # fields {{{2
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
@@ -517,12 +518,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else:
             return self.start
 
-    def next_deadline_name( self ): #{{{3
+    def next_deadline_names( self ): #{{{3
         """ return the name of the next deadline or None """
-        deadlines = EventDeadline.objects.filter( event = self)
-        if deadlines is not None and len( deadlines ) > 0:
-            return deadlines[0].deadline_name
-        return None
+        date = self.next_coming_date_or_start()
+        if date == self.start:
+            return None
+        deadlines = EventDeadline.objects.filter(
+                event = self, deadline = date )
+        if not deadlines:
+            return None
+        return ", ".join( [ d.deadline_name for d in deadlines ] )
 
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
@@ -585,12 +590,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # http://linuxwiki.de/Zentralkalender
         return ical
 
-    def clone( self, user ): #{{{3
-        """ Makes, saves and return a deep clone of the event as a private
+    def clone( self, user, except_models = [], **kwargs ): #{{{3
+        """ Makes, saves and return a deep clone of the event as an 
         event of the user ``user``.
         
         It makes a clone of all related objects, and relates them to the new
-        created clone.
+        created clone, except for the models in ``except_models``
+
+        ``kwargs`` can contain field names and values to replace the original
+        values in the ``clone``, e.g. ``"description" = "some text"``
 
         The attribute :attr:`Event.clone_of` of the new created clone is set to
         the original event.
@@ -602,14 +610,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event = Event.parse_text(EXAMPLE)
         >>> clone = event.clone( user )
         >>> assert event.public
-        >>> assert not clone.public
         >>> clone_text = clone.as_text()
-        >>> assert 'public: False' in clone_text
-        >>> clone_text = clone_text.replace( 'public: False', 'public: True' )
         >>> assert ( event.as_text() == clone_text )
         """
         # code inspired on http://djangosnippets.org/snippets/1282/
-        assert isinstance(user, User)
         orginal_pk = self.pk
         collected_objs = CollectedObjects()
         self._collect_sub_objects( collected_objs )
@@ -630,33 +634,46 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # parameters.
 
         # we now clone the event and do some checks
-        original_event = collected_objs[ Event ]
-        assert len( original_event ) == 1
-        original_event = original_event[self.id] # notice that it cheks we got
-        # the right event. Ohter id will produce a KeyError
+
+        events = collected_objs[ Event ]
+        # events is a dictionary containing as keys self.id and all events-ids
+        # of events which are clone of self
+        original_event = events[self.id] # notice that it cheks we got
+        # the right event. Other id will produce a KeyError
         assert original_event == self
         # del collected_objs[ Event ] # sadly not supported by collected_objs
         clone = Event()
         for field in self.get_simple_fields():
-            if field == 'groups':
-                continue
             setattr( clone, field, getattr(self, field) )
+        clone.description = self.description # not a simple field
         clone.clone_of = self
         clone.user = user
-        clone.public = False
-        clone.description = self.description
-        clone.save() # we need the id
-        try:    # we need to delete the clone if something goes wrong
+        for key, value in kwargs.items():
+            if key == 'user':
+                continue
+            setattr( clone, key, value )
+        clone.save() # we need the id # TODO: ask in the ML if there is other option
+        try: # because we need to delete the clone if something goes wrong
             new_objs = [] # list of new related objects
             # we now traverse all related models and its objects
             for model in reversed( related_models ):
-                if model == Event:
+                if model == Event or model in except_models:
                     continue
-                sub_objs = collected_objs[ model ]
-                for pk, obj in sub_objs.iteritems():
+                # next line is not the proper thing to do hear because for
+                # instance urls from clones of clone are also returned
+                # for pk, obj in collected_objs[ model ].sub_objs.iteritems():
+                assert hasattr( model, 'event' )
+                for obj in model.objects.filter( event = self ):
+                    # Notice that in order for the next line to work, we expect
+                    # all models with a reference to Event have a method called
+                    # ``clone`` with two parameters: an event (to reference to)
+                    # and a user
                     new_obj =  obj.clone( clone, user ) 
-                    if new_obj: # some clone methods return None
+                    if new_obj: # some clone methods return None,thus the check
                         new_objs.append( new_obj )
+            # TODO: if DEBUG is False when running the tests, this code is not
+            # executed. Make that this code is always executed when running the
+            # tests
             if settings.DEBUG:
                 # we check that there are no references to the old objects in
                 # the new objects.
@@ -693,6 +710,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def get_tags( self ): #{{{3
         "get tags"
         return Tag.objects.get_for_object( self )
+
+    def get_all_events_in_serie( self ): #{{{3
+        """ return a queryset ordered by 'start' with all events in the serie
+        of recurring events, or None if the event doesn't belong to a serie """
+        if not self.clone_of:
+            return None
+        queryset = Event.objects.filter(
+                Q( clone_of = self.clone_of ) | Q( pk = self.clone_of.pk ) )
+        return queryset.order_by('start')
 
     def __unicode__( self ): #{{{3
         return self.start.isoformat() + u" : " + self.title
@@ -731,6 +757,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         event = kwargs['instance']
         if event.clone_of:
             return
+        # TODO: users might also want to be informed of changes
         # not_new is set by Event.save
         if hasattr(event, "not_new") and event.not_new:
             return
@@ -888,17 +915,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                             u"    ",
                             session.session_name,
                             u'\n'] )
-            # the groups an event belong to are not shown for privacy of the
-            # groups and because the list can be too long
-            # elif keyword == 'groups' and self.event_in_groups:
-            #     calendars = Calendar.objects.filter( event = self.id )
-            #     if len( calendars ) > 0:
-            #         to_return += keyword + ":"
-            #         for calendar in calendars:
-            #             to_return += ' "' + str( calendar.group.name ) + '"'
-            #         to_return += '\n'
-            elif keyword == u'groups':
-                pass
             elif keyword == u'description':
                 if self.description:
                     to_return += u'description:\n' + self.description
@@ -1055,10 +1071,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         The idented lines are optional. If session_date is present, it will be
         saved with the session_name 'session'
 
-        The text for the field 'groups' is of the form::
-
-            groups: group1 group2 ...
-
         """
         # code {{{4
         if not isinstance(input_text_in, unicode):
@@ -1125,6 +1137,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         _(u"You have tried to create a non-public (private)" \
                         " event, however only logged-in users can create" \
                         " private events") )
+        else:
+            public = True
         # check syntax of complex fields before saving the form
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls(
@@ -1141,8 +1155,23 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     u'\n'.join(complex_fields[u'sessions']) )
         else:
             sessions = None
+        if complex_fields.has_key(u'recurring'):
+            date_regex = re.compile(r"^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$")
+            dates = list()
+            for date in complex_fields[u'recurring'][1:]:
+                matcher = date_regex.match(date)
+                try:
+                    if not matcher:
+                        raise ValueError()
+                    dates.append( datetime.date( int(matcher.group(1)),
+                        int(matcher.group(2)), int(matcher.group(3)) ) )
+                except ValueError: # raised by date() or by int()
+                    raise ValidationError( _(
+                        u'date not in iso format (yyyy-mm-dd): %(date)s') % \
+                                {'date': date} )
         # save the form and get the event
         event = event_form.save(commit=False)
+        event.public = public
         event.user = user
         event.save() # TODO: can we process the complex fields without saving the event first?
         event_form.save_m2m()
@@ -1160,6 +1189,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             EventSession.parse_text(event,
                     u'\n'.join(complex_fields[u'sessions']), sessions)
             del complex_fields[u'sessions']
+        if complex_fields.has_key(u'recurring'):
+            for date in dates:
+                # we do not clone deadlines nor sessions, as they probably
+                # refer to the main event and not to the recurring events.
+                event.clone( user = user,
+                        except_models = [EventDeadline, EventSession],
+                        public = event.public, start = date, end = None )
+            del complex_fields[u'recurring']
         assert(len(complex_fields) == 0)
         return event
 
@@ -1168,19 +1205,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns a tuple of names of user-editable fields (of events) which
         can contain many lines in the input text representation of an Event.
         """
-        return ("urls", "deadlines", "sessions", "description",)
+        return ("urls", "deadlines", "sessions", "recurring", "description",)
 
     @staticmethod # def get_simple_fields(): {{{3
     def get_simple_fields():
         """ returns a tuple of names of user-editable fields (of events) which
         have only one line in the input text representation of an Event.
-        
-        Notice that 'groups' can be present in the input text representation,
-        but it is not present (for privacy reasons) in the output text
-        representation.
         """ 
         field_names = [unicode(f.name) for f in Event._meta.fields]
-        field_names.append(u"groups")
         field_names.remove(u"id")
         field_names.remove(u"user")
         field_names.remove(u"creation_time")
@@ -1202,17 +1234,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         should appear when showing an event as a text, i.e. in the output text
         representation of an Event.
         
-        Notice that 'groups' can be present in the input text representation,
-        but it is not present (for privacy reasons) in the output text
+        Notice that 'recurring' can be present in the input text
+        representation, but it is not present in the output text
         representation.
  
-        >>> gpl_len = len(Event.get_priority_list())
-        >>> gsf_len = len(Event.get_simple_fields())
-        >>> gcf_len = len(Event.get_complex_fields())
+        >>> gpl_len = len(Event.get_priority_list())  # 18
+        >>> gsf_len = len(Event.get_simple_fields())  # 14
+        >>> gcf_len = len(Event.get_complex_fields()) #  5 recurring not in gpl
         >>> assert(gpl_len + 1 == gsf_len + gcf_len)
         >>> synonyms_values_set = set(Event.get_synonyms().values())
-        >>> assert(gpl_len + 1 == len(synonyms_values_set))
- 
+        >>> assert(gpl_len + 1  == len(synonyms_values_set))
         """
         return (u"acronym", u"title", u"start", u"starttime", u"end",
                 u"endtime", u"tags", u"urls", u"public", u"address",
@@ -1224,18 +1255,18 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """Returns a dictionay with names (strings) and the fields (strings)
         they refer.
 
-        All values of the returned dictionary (except groups, urls and
-        sessions) are names of fields of the Event class.
+        All values of the returned dictionary (except recurring, urls,
+        sessions and deadlines) are names of fields of the Event class.
 
         >>> synonyms_values_set = set(Event.get_synonyms().values())
-        >>> assert ('groups' in synonyms_values_set)
-        >>> synonyms_values_set.remove('groups')
         >>> assert ('urls' in synonyms_values_set)
         >>> synonyms_values_set.remove('urls')
         >>> assert ('deadlines' in synonyms_values_set)
         >>> synonyms_values_set.remove('deadlines')
         >>> assert ('sessions' in synonyms_values_set)
         >>> synonyms_values_set.remove('sessions')
+        >>> assert ('recurring' in synonyms_values_set)
+        >>> synonyms_values_set.remove('recurring')
         >>> field_names = [f.name for f in Event._meta.fields]
         >>> field_names = set(field_names)
         >>> assert (field_names >= synonyms_values_set)
@@ -1256,10 +1287,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # TODO: implement a system for using translations for tags (maybe
         # related to a preferred language user-based)
         synonyms = {} # TODO: think of using translations instead of synonyms
-        add( synonyms, u'title', u'title' )       # title
+        add( synonyms, u'title', u'title' )             # title
         add( synonyms, u'ti', u'title' )
         add( synonyms, u'titl', u'title' )
-        add( synonyms, u'start', u'start' )       # start
+        add( synonyms, u'start', u'start' )             # start
         add( synonyms, u'st', u'start' )
         add( synonyms, u'starts', u'start' )
         add( synonyms, u'date', u'start' )
@@ -1268,22 +1299,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'start-date', u'start' )
         add( synonyms, u'start_date', u'start' )
         add( synonyms, u'sd', u'start' )
-        add( synonyms, u'starttime', u'starttime' ) # starttime
+        add( synonyms, u'starttime', u'starttime' )     # starttime
         add( synonyms, u'time', u'starttime' )
         add( synonyms, u'start_time', u'starttime' )
         add( synonyms, u'start time', u'starttime' )
         add( synonyms, u'startime', u'starttime' )
-        add( synonyms, u'endtime', u'endtime' ) # endtime
+        add( synonyms, u'endtime', u'endtime' )         # endtime
         add( synonyms, u'end_time', u'endtime' )
         add( synonyms, u'end time', u'endtime' )
-        add( synonyms, u'tags', u'tags' )        # tags
+        add( synonyms, u'tags', u'tags' )               # tags
         add( synonyms, u'ta', u'tags' )
         add( synonyms, u'tag', u'tags' )
         add( synonyms, u'subjects', u'tags' )
         add( synonyms, u'subject', u'tags' )
         add( synonyms, u'su', u'tags' )
         add( synonyms, u'subj', u'tags' )
-        add( synonyms, u'end', u'end' )         # end
+        add( synonyms, u'end', u'end' )                 # end
         add( synonyms, u'en', u'end' )
         add( synonyms, u'ends', u'end' )
         add( synonyms, u'finish', u'end' )
@@ -1295,36 +1326,36 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'end_date', u'end' )
         add( synonyms, u'ed', u'end' )
         add( synonyms, u'endd', u'end' )
-        add( synonyms, u'acronym', u'acronym' )     # acronym
+        add( synonyms, u'acronym', u'acronym' )         # acronym
         add( synonyms, u'ac', u'acronym' )
         add( synonyms, u'acro', u'acronym' )
-        add( synonyms, u'public', u'public' )      # public
+        add( synonyms, u'public', u'public' )           # public
         add( synonyms, u'pu', u'public' )
         add( synonyms, u'open', u'public' )
         add( synonyms, u'op', u'public' )
-        add( synonyms, u'country', u'country' )     # country
+        add( synonyms, u'country', u'country' )         # country
         add( synonyms, u'co', u'country' )
         add( synonyms, u'coun', u'country' )
         add( synonyms, u'nation', u'country' )
         add( synonyms, u'nati', u'country' )
         add( synonyms, u'na', u'country' )
-        add( synonyms, u'city', u'city' )        # city
+        add( synonyms, u'city', u'city' )               # city
         add( synonyms, u'ci', u'city' )
         add( synonyms, u'town', u'city' )
         add( synonyms, u'to', u'city' )
-        add( synonyms, u'postcode', u'postcode' )    # postcode
+        add( synonyms, u'postcode', u'postcode' )       # postcode
         add( synonyms, u'po', u'postcode' )
         add( synonyms, u'zip', u'postcode' )
         add( synonyms, u'zi', u'postcode' )
         add( synonyms, u'code', u'postcode' )
-        add( synonyms, u'address', u'address' )     # address
+        add( synonyms, u'address', u'address' )         # address
         add( synonyms, u'ad', u'address' )
         add( synonyms, u'addr', u'address' )
         add( synonyms, u'street', u'address' )
-        add( synonyms, u'latitude', u'latitude' )    # latitude
+        add( synonyms, u'latitude', u'latitude' )       # latitude
         add( synonyms, u'lati', u'latitude' )
         add( synonyms, u'la', u'latitude' )
-        add( synonyms, u'longitude', u'longitude' )   # longitude
+        add( synonyms, u'longitude', u'longitude' )     # longitude
         add( synonyms, u'lo', u'longitude' )
         add( synonyms, u'long', u'longitude' )
         add( synonyms, u'description', u'description' ) # description
@@ -1334,21 +1365,25 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'info', u'description' )
         add( synonyms, u'infos', u'description' )
         add( synonyms, u'in', u'description' )
-        add( synonyms, u'groups', u'groups' )      # groups (*)
-        add( synonyms, u'gr', u'groups' )
-        add( synonyms, u'group', u'groups' )
-        add( synonyms, u'urls', u'urls' )        # urls (*)
+        add( synonyms, u'urls', u'urls' )               # urls (*)
         add( synonyms, u'ur', u'urls' )
         add( synonyms, u'url', u'urls' )
         add( synonyms, u'web', u'urls' )
         add( synonyms, u'webs', u'urls' )
         add( synonyms, u'we', u'urls' )
-        add( synonyms, u'deadlines', u'deadlines' )  # deadlines (*)
+        add( synonyms, u'deadlines', u'deadlines' )     # deadlines (*)
         add( synonyms, u'deadline', u'deadlines' )
         add( synonyms, u'dl', u'deadlines' )
-        add( synonyms, u'sessions', u'sessions' )    # sessions (*)
+        add( synonyms, u'sessions', u'sessions' )       # sessions (*)
         add( synonyms, u'se', u'sessions' )
         add( synonyms, u'session', u'sessions' )
+        add( synonyms, u'recurring', u'recurring' )     # recurring (*)
+        add( synonyms, u'clone', u'recurring' )
+        add( synonyms, u'clones', u'recurring' )
+        add( synonyms, u'dates', u'recurring' )
+        add( synonyms, u'recurrings', u'recurring' )
+        add( synonyms, u'repetition', u'recurring' )
+        add( synonyms, u'repetitions', u'recurring' )
         # (*) can have multi-lines and are not simple text fields
         return synonyms
 
