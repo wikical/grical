@@ -76,6 +76,16 @@
         </ul>
     {% endif %}
 
+    {% if event.get_all_events_in_serie %}
+        <h2>{% trans "All events in the serie" %}</h2>
+        {% for event in event.get_all_events_in_serie %}
+            {# FIXME: show private events that the user can see #}
+            {% if event.public %}
+                <p>{% include "event_show_small.html" %}</p>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
     {% if event.urls.all %}
         <h2>{% trans "URLs" %}</h2>
         <ul>
