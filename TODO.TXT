@@ -138,6 +138,12 @@ medium priority
 - performance: at midnight calculate the next comming date of all events and
   save it in the data base. Use querysets everywhere, including ModelTable
   instead of Memory table for django_tables
+- Webserver optimization:
+
+  - see http://code.google.com/p/django-compress/wiki/Introduction
+  - put all static media on a different subdomain, e.g. static.grical.org. This avoids getting
+    cookies among other things
+
 - report problem button
 - show form to enter an event if a search produces no result
 - have some graphics to add to events with some flags, i.e. a floss-graphic
