@@ -54,14 +54,18 @@ class EventsFeed(Feed): # {{{1
         return item.modification_time
 
     def item_description(self, item):
-        return _('next coming date: %(date)s') % {'date':
-                item.upcoming.isoformat()}
+        description = _( u'start: %(date)s' ) % \
+                {'date': item.start.isoformat()}
+        if item.upcoming != item.start:
+            description += "    " +  _('upcoming: %(date)s') % \
+                {'date': item.upcoming.isoformat()}
+        return description
         # one could return the event as text with something like:
         # return '<!CDATA[' + item.as_text().replace('\n', '<br />') + ' ]]'
 
 class PublicUpcomingEventsFeed(EventsFeed): # {{{1
     """ Feed with the next `settings.FEED_SIZE` number of public events,
-    ordered by next coming date. """
+    ordered by upcoming. """
 
     title = _(u"%(domain)s upcoming public events feed") % \
             {'domain': SITE_DOMAIN,}
@@ -72,13 +76,9 @@ class PublicUpcomingEventsFeed(EventsFeed): # {{{1
     def items( self ):
         """ items """
         today = datetime.date.today()
-        elist = Event.objects.filter (public = True).filter(
-                    Q(start__gte=today) |
-                    Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today)
-                ).distinct()
-        return sorted( elist, key=Event.upcoming )[:FEED_SIZE]
-
+        elist = Event.objects.filter( public = True,
+                upcoming__gte = today ).order_by( 'upcoming' )
+        return elist[:FEED_SIZE]
 
 class PublicSearchEventsFeed(EventsFeed): # {{{1
     """ feed for the result of a search for AnonymousUser """
