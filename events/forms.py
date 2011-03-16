@@ -120,40 +120,47 @@ class DatesTimesField(Field): # {{{1
 
     >>> dt = DatesTimesField()
     >>> d = dt.to_python('2010-01-25')
+    >>> d = dt.to_python('2010-1-25')
     >>> d = dt.to_python('2010-01-25 2010-01-26')
+    >>> d = dt.to_python('2010-1-25 2010-1-26')
     >>> d = dt.to_python('2010-01-25 10:00')
+    >>> d = dt.to_python('2010-1-25 1:00')
     >>> d = dt.to_python('2010-01-25 10:00 2010-01-26 18:00')
+    >>> d = dt.to_python('2010-1-25 1:00 2010-1-26 2:00')
     >>> d = dt.to_python('2010-01-25 10:00 11:00')
+    >>> d = dt.to_python('2010-1-25 8:00 9:00')
     >>> d = dt.to_python('2010-01-25 10:00-11:00')
+    >>> d = dt.to_python('2010-1-25 8:00-9:00')
     >>> d = dt.to_python('25 October, 2006')
     """
     def to_python(self, value):
         """ returns a dictionary with four values: start_date, end_date,
         start_time, end_time """
         re_d = \
-            re.compile( r'^\s*(\d\d\d\d-\d\d-\d\d)\s*$', re.UNICODE )
+            re.compile( r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s*$', re.UNICODE )
         re_d_d = \
-            re.compile(r'^\s*(\d\d\d\d-\d\d-\d\d)\s+(\d\d\d\d-\d\d-\d\d)\s*$',
+            re.compile(
+                r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s+(\d\d\d\d-\d?\d-\d?\d)\s*$',
                     re.UNICODE)
         re_d_t = \
-            re.compile(r'^\s*(\d\d\d\d-\d\d-\d\d)\s+(\d\d:\d\d)\s*$',
+            re.compile(r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s+(\d?\d:\d\d)\s*$',
                     re.UNICODE)
         re_d_t_d_t = \
             re.compile(r"""
-                ^\s*(\d\d\d\d-\d\d-\d\d)
-                \s+(\d\d:\d\d)
-                \s+(\d\d\d\d-\d\d-\d\d)
-                \s+(\d\d:\d\d)\s*$""", re.UNICODE | re.X )
+                ^\s*(\d\d\d\d-\d?\d-\d?\d)
+                \s+(\d?\d:\d\d)
+                \s+(\d\d\d\d-\d?\d-\d?\d)
+                \s+(\d?\d:\d\d)\s*$""", re.UNICODE | re.X )
         re_d_t_t = \
             re.compile(r"""
-                ^\s*(\d\d\d\d-\d\d-\d\d)
-                \s+(\d\d:\d\d)
-                \s+(\d\d:\d\d)\s*$""", re.UNICODE | re.X )
+                ^\s*(\d\d\d\d-\d?\d-\d?\d)
+                \s+(\d?\d:\d\d)
+                \s+(\d?\d:\d\d)\s*$""", re.UNICODE | re.X )
         re_d_t_t =   re.compile( r"""
-            ^\s*(\d\d\d\d-\d\d-\d\d) # beginning, optional spaces, start date
-             \s+(\d\d:\d\d)          # start time after one ore more spaces
+            ^\s*(\d\d\d\d-\d?\d-\d?\d) # beginning, optional spaces, start date
+             \s+(\d?\d:\d\d)          # start time after one ore more spaces
              (?:(?:\s+)|(?:\s*-\s*)) # one or more spaces, alternatively -
-             (\d\d:\d\d)\s*$         # end time before optional spaces""",
+             (\d?\d:\d\d)\s*$         # end time before optional spaces""",
             re.UNICODE | re.X )
         try:
             matcher = re_d.match( value )
