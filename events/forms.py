@@ -232,13 +232,66 @@ class FilterForm(ModelForm): # {{{1
     #    return data
 
 
+class CoordinatesField( CharField ):
+    default_error_messages = {
+            'invalid': _(u'Enter a valid pair of coordinates'),
+        }
+
+    def __init__(self, max_length=None, min_length=None, *args, **kwargs):
+        super( CoordinatesField, self).__init__(
+                max_length, min_length, *args, **kwargs )
+        self.validators.append( CoordinatesField.validate_latitude )
+        self.validators.append( CoordinatesField.validate_longitude )
+
+    def to_python( self, value ):
+        """Normalize coordinates to a dictionary with two keys: latitude and
+        longitude. """
+        if not value:
+            return {}
+        value = value.strip()
+        regex = re.compile(r'(-?\s*\d+\.\d+)\s*[,;:+| ]\s*(-?\s*\d+\.\d+)')
+        matcher = regex.match( value )
+        if not matcher:
+            raise ValidationError(_(u'No two separate numbers with decimals'))
+        return {
+            'latitude':  float ( matcher.group(1) ),
+            'longitude': float ( matcher.group(2) )}
+
+    @staticmethod
+    def validate_latitude( value ):
+        if value['latitude'] < -90 or value['latitude'] > 90:
+            raise ValidationError( _( u'Latitude is not within (-90,90)' ) )
+
+    @staticmethod
+    def validate_longitude( value ):
+        if value['longitude'] < -180 or value['longitude'] > 180:
+            raise ValidationError( _(u'Longitude is not within (-180,180)') )
+
+
 class EventForm(ModelForm): # {{{1
     """ ModelForm for all editable fields of Event except `public` """
+    coordinates = CoordinatesField( max_length = 26, required = False )
+    # TODO: put this in the right position within the form, see
+    # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         if kwargs.has_key('instance'):
             # not a new event and ``public`` cannot be changed after creation
             self.fields['public'].widget = HiddenInput()
+            self.fields['latitude'].widget = HiddenInput()
+            self.fields['longitude'].widget = HiddenInput()
+            # We use a single field called 'coordinates' for
+            # showing/editing/entering latitude and longitude, we populate now
+            # 'coordinates' with the values of event.latitude and
+            # event.longitude
+            instance = kwargs['instance']
+            coordinates_value = u''
+            if instance.latitude:
+                coordinates_value += str( instance.latitude )
+            if instance.longitude:
+                coordinates_value += ", " + str( instance.longitude )
+            if coordinates_value:
+                self.fields['coordinates'].initial = coordinates_value
         #TODO: use css instead
         self.fields['title'].widget.attrs["size"] = 70
         self.fields['start'].widget.attrs["size"] = 10
@@ -259,6 +312,11 @@ class EventForm(ModelForm): # {{{1
             raise ValidationError(_(u"Punctuation marks are not allowed"))
         # Always return the cleaned data, whether you have changed it or not.
         return data
+    def clean_coordinates( self ):
+        coordinates = self.cleaned_data['coordinates']
+        if coordinates:
+            self.cleaned_data['latitude'] = coordinates['latitude']
+            self.cleaned_data['longitude'] = coordinates['longitude']
 
 class SimplifiedEventForm(EventForm): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
@@ -268,6 +326,7 @@ class SimplifiedEventForm(EventForm): # {{{1
     web = URLFieldExtended(verify_exists=True)
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
+        del self.fields['coordinates']
         self.fields['title'].label = _(u'What')
         self.fields['where'].label = _(u'Where')
         self.fields['where'].help_text = \

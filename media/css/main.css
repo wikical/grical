@@ -159,6 +159,9 @@ h6 {
 .event_medium .dates {
     color: #cc6100;
 }
+.event_medium .times {
+    color: #fcb100;
+}
 
 /*
  * event full format 

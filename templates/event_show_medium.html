@@ -15,9 +15,25 @@
         <a href="{% url event_show event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
     </span>
     <br />
+
     <span class="dates">
-        {{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
-    </span>
+    {{ event.start }}
+    {% if event.end and event.end != event.start %}
+        : {{ event.end }}
+        </span>
+    {% else %}
+        {% if event.starttime %}
+            </span>
+            {% if event.endtime and event.endtime != event.starttime %}
+                <span class="times">{{ event.starttime|time:"H:i" }}-{{ event.endtime|time:"H:i" }}</span>
+            {% else %}
+                <span class="times">{{ event.starttime|time:"H:i" }}</span>
+            {% endif %}
+        {% else %}
+            </span>
+        {% endif %}
+    {% endif %}
+
     {% if event.city %}
         <span class="city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>
     {% endif %}

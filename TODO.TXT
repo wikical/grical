@@ -96,6 +96,9 @@ high priority
 medium priority
 ---------------
 
+- Privacy issues:
+    - Don't save IPs (see e.g. AnonymizeIP for Piwik) or, if doing so, inform the users
+    - Others? Check German law
 - For event and session (in order to use GriCal as a personal calendar avoiding the need of using
   more than one software as calendar):
   gebauede/raumnr/vortragender/"deadline"(hausarbeiten)/anmerkungen (gruppennummer,persoenliche
@@ -188,7 +191,8 @@ low priority
 - Include a widget to know how to go to the event with the public transport, see
   http://code.google.com/p/public-transport-enabler
 - include a picture when the server is under heavy load. Example: http://wurstball.de/41101/
-- include import of sessions from Pentabarf
+- import from ical. Include imports of sessions from Pentabarf
+- export to Google Calendar
 - Add future events of past events listed on http://www.guckes.net/cal/
 - Add RSS support. See
   http://docs.djangoproject.com/en/1.0//ref/contrib/syndication/#ref-contrib-syndication
