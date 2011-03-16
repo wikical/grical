@@ -593,6 +593,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def clone( self, user, except_models = [], **kwargs ): #{{{3
         """ Makes, saves and return a deep clone of the event as an 
         event of the user ``user``.
+
+        If ``self`` is a clone of other parent event, the returned clone will
+        have ``clone_of`` pointing to the parent.
         
         It makes a clone of all related objects, and relates them to the new
         created clone, except for the models in ``except_models``
@@ -646,7 +649,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         for field in self.get_simple_fields():
             setattr( clone, field, getattr(self, field) )
         clone.description = self.description # not a simple field
-        clone.clone_of = self
+        if self.clone_of:
+            clone.clone_of = self.clone_of
+        else:
+            clone.clone_of = self
         clone.user = user
         for key, value in kwargs.items():
             if key == 'user':
@@ -715,9 +721,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ return a queryset ordered by 'start' with all events in the serie
         of recurring events, or None if the event doesn't belong to a serie """
         if not self.clone_of:
-            return None
-        queryset = Event.objects.filter(
-                Q( clone_of = self.clone_of ) | Q( pk = self.clone_of.pk ) )
+            queryset = Event.objects.filter( clone_of = self )
+            if queryset:
+                # we add self to the serie ( querysets can be added with | ):
+                queryset |= Event.objects.filter ( pk = self.pk )
+        else:
+            queryset = Event.objects.filter(
+                    Q( clone_of = self.clone_of ) | Q( pk = self.clone_of.pk ))
         return queryset.order_by('start')
 
     def __unicode__( self ): #{{{3

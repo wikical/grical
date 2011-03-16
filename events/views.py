@@ -193,9 +193,10 @@ def event_new_raw( request ): # {{{1
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
             try:
-                Event.parse_text( event_textarea, None, request.user.id )
+                event = Event.parse_text(event_textarea, None, request.user.id)
                 # TODO: inform that the event was saved
-                return HttpResponseRedirect( reverse( 'main' ) )
+                return HttpResponseRedirect( 
+                        reverse( 'event_show', kwargs={'event_id': event.id} ))
             except ValidationError as err:
                 error_messages = []
                 if hasattr( err, 'message_dict' ):
@@ -268,7 +269,7 @@ def event_edit_raw( request, event_id ): # {{{1
             event_textarea = request.POST['event_astext']
             try:
                 event = event.parse_text(
-                        event_textarea, event_id, request.user.id )
+                            event_textarea, event_id, request.user.id )
             except ValidationError as err:
                 # found a validation error with one or more errors
                 error_messages = []
