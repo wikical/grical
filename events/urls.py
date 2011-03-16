@@ -104,7 +104,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 
 # ^l locations urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
-    url(r'^l/(?P<location>[ ,\-\w]*)/$' ,
+    url(r'^l/(?P<location>[ .,\-\w]*)/$' ,
         views.list_events_location,    name='list_events_location'),
     )
 
