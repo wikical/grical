@@ -2383,19 +2383,17 @@ class Filter( models.Model ): # {{{1
         limit = len ( queryset )
         # if the query has a location restriction, we save only related events
         # in the same location. Same applies for a time restriction
-        constraint_query = ''
+        constraint_query = u''
         if ( query.find('@') != -1 ):
             regex = re.compile('@\w+', UNICODE)
-            constraint_query = ' '.join( regex.findall( query ) )
+            constraint_query = u' '.join( regex.findall( query ) )
         regex = re.compile(r'\b\d\d\d\d-\d\d-\d\d\b', UNICODE)
         if regex.search( query ):
             dates = regex.findall( query )
-            constraint_query += ' ' + ' '.join( dates )
+            constraint_query += u' ' + u' '.join( dates )
             has_date_constraint = True
         else:
             has_date_constraint = False
-        with open('/tmp/log', 'w') as f:
-            f.write(constraint_query + '\n')
         used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
         # note that according to the django-tagging documentation, counts refer
         # to all instances of the model Event, not only to the queryset
