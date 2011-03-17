@@ -2266,11 +2266,12 @@ class Filter( models.Model ): # {{{1
         loc_regex = re.compile('\s*@([\w-]+)\s*', UNICODE)
         for loc_name in loc_regex.findall(query):
             matches = False
-            if event.city and event.city.lower() == loc_name.lower():
+            if event.city and event.city.lower().find(loc_name.lower()) != -1:
                 matches = True
             # FIXME: search for two-letters country and for name country
             # TODO: use also translations of locations
-            if event.country and event.country.lower() == loc_name.lower():
+            if event.country and \
+                    event.country.lower().find(loc_name.lower()) != -1:
                 matches = True
             if not matches:
                 return False
@@ -2462,13 +2463,15 @@ class Filter( models.Model ): # {{{1
         # groups
         regex = re.compile('!(\w+)', UNICODE)
         for group_name in regex.findall(query):
-            queryset = queryset.filter(calendar__group__name__iexact = group_name)
+            queryset = queryset.filter(
+                    calendar__group__name__iexact = group_name)
         query = regex.sub("", query)
         # locations
         regex = re.compile('@(\w+)', UNICODE)
         for loc_name in regex.findall(query):
             queryset = queryset.filter(
-                    Q( city__iexact = loc_name ) | Q( country__iexact = loc_name ) )
+                    Q( city__icontains = loc_name ) | Q(
+                        country__icontains = loc_name ) )
                     # TODO: use also translations of locations
         query = regex.sub("", query)
         # tags
