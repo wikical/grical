@@ -1714,6 +1714,17 @@ class EventDeadline( models.Model ): # {{{1
         ordering = ['deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
 
+    def save( self, *args, **kwargs ): #{{{2
+        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
+        # Call the "real" save() method:
+        super( EventDeadline, self ).save( *args, **kwargs )
+        self.event.save() # needed to update Event.upcoming in the DB
+
+    def delete( self, *args, **kwargs ): #{{{2
+        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
+        super( EventDeadline, self ).delete( *args, **kwargs )
+        self.event.save() # needed to update Event.upcoming in the DB
+
     def __unicode__( self ): # {{{2
         return unicode( self.deadline ) + u'    ' + self.deadline_name
 
