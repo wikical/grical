@@ -626,7 +626,7 @@ def filter_edit( request, filter_id ): # {{{1
     if request.method == 'POST':
         ssf = FilterForm( request.POST, instance = efilter )
         if ssf.is_valid():
-            assert request.user.id == ssf.cleaned_data['user']
+            assert request.user.id == ssf.cleaned_data['user'].id
             ssf.save()
             return HttpResponseRedirect( reverse( 'list_filters_my' ) )
         else:
