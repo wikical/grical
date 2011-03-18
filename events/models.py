@@ -2175,7 +2175,7 @@ class Filter( models.Model ): # {{{1
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next ``limit`` events matching ``self.query`` """
-        return Filter.matches( self.query, self.user, limit, False )
+        return Filter.matches( self.query, self.user, related = False )
 
     def matches_event( self, event ): # {{{2
         """ return True if self.query matches the event, False otherwise.
