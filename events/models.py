@@ -2184,11 +2184,9 @@ class Filter( models.Model ): # {{{1
 
     @staticmethod # def query_matches_event( query, event ): # {{{2
     def query_matches_event( query, event ):
+        # doc & doctests {{{3
         """ return True if the query matches the event, False otherwise.
 
-        **IMPORTANT**: this code must be consistent with
-        :meth:`Filter.matches_queryset`
-        
         >>> from events.models import *
         >>> from datetime import timedelta
         >>> from time import time
@@ -2219,128 +2217,17 @@ class Filter( models.Model ): # {{{1
         >>> fil.query = 'abcdef'
         >>> assert not fil.matches_event(event)
         """
-        # IMPORTANT: this code must be in accordance with
-        # ``Filter.matches_queryset`` FIXME: create a text with some queries that
-        # check the concordance of the output of both methods
-
-        # broad search check
-        broad_regex = re.compile('^\* +', UNICODE) # beginninig with * followed
-                                                   # by 1 ore more spaces
-        if broad_regex.match( query ):
-            broad = True
-            query = broad_regex.sub("", query)
-        else:
-            broad = False
-        # dates
-        dates = DATE_REGEX.findall( query )
-        if dates:
-            dates = [ datetime.date( int(year), int(month), int(day) ) for \
-                    year, month, day in dates ]
-            sorted_dates = sorted( dates )
-            date1 = sorted_dates[0] # first date
-            date2 = sorted_dates[-1] # last date
-            if not (event.start >= date1 and event.start <= date2):
-                if not ( event.end and
-                        event.end >= date1 and event.end <= date2):
-                    matches = False
-                    for dea in EventDeadline.objects.filter(event = event):
-                        if (dea.deadline >= date1 and dea.deadline <= date2):
-                            matches = True
-                            break
-                    if not matches:
-                        return False
-            # remove all dates (yyyy-mm-dd) from the query
-            query = DATE_REGEX.sub("", query)
-            # if there is nothing more in the query, returns True because the
-            # dates matched
-            if query == "":
-                return True
-        elif not broad:
-            today = datetime.date.today()
-            if not ( event.start >= today or
-                    ( event.end and event.end <= today ) or
-                    Event.objects.filter(deadlines__deadline__gte = today) ):
-                return False
-        # groups
-        group_regex = re.compile('\s*!([\w-]+)\s*', UNICODE)
-        for name in group_regex.findall(query):
-            if not Group.objects.filter( Q( name__iexact = name ) &
-                    Q( calendar__event = event ) ).exists():
-                return False
-        # remove all groups (!group_name) from the query
-        query = group_regex.sub("", query)
-        # if there is nothing more in the query, returns True because the
-        # groups matched
-        if query == "":
+        # body {{{3
+        qset = Filter.matches_queryset(query, event.user).filter(pk = event.id)
+        if len( qset ) > 0:
             return True
-        # locations
-        loc_regex = re.compile('\s*@([\w-]+)\s*', UNICODE)
-        for loc_name in loc_regex.findall(query):
-            matches = False
-            if event.city and event.city.lower().find(loc_name.lower()) != -1:
-                matches = True
-            # FIXME: search for two-letters country and for name country
-            # TODO: use also translations of locations
-            if event.country and \
-                    event.country.lower().find(loc_name.lower()) != -1:
-                matches = True
-            if not matches:
-                return False
-        # remove all locations (@location) from the query
-        query = loc_regex.sub("", query)
-        # if there is nothing more in the query, returns True because the
-        # query matched
-        if query == "":
-            return True
-        # tags
-        tag_regex = re.compile('\s*#([\w-]+)\s*', UNICODE)
-        for tag in tag_regex.findall(query):
-            if not tag in event.tags:
-                return False
-        # remove all tags (#tag_name) from the query
-        query = tag_regex.sub("", query)
-        # if there is nothing more in the query, returns True because the
-        # tags matched
-        if query == "":
-            return True
-        # look for words
-        regex = re.compile('([^!@#]\w+)', UNICODE)
-        matches = False
-        for word in regex.findall(query):
-            word = word.lower().strip()
-            if not broad:
-                if ( event.title.lower().find(word) != -1 or
-                        event.tags.lower().find(word) != -1 or
-                        ( event.city and event.city.lower() == word ) or
-                        ( event.country and event.country.lower() == word ) or
-                        ( event.acronym and event.acronym.lower() == word ) ):
-                    matches = True
-                    break
-            else: # broad search, adding description, urls, sessions and
-                  # deadlines
-                if ( event.title.lower().find(word) != -1 or
-                        event.tags.lower().find(word) != -1 or
-                        ( event.city and event.city.lower() == word ) or
-                        ( event.country and event.country.lower() == word ) or
-                        ( event.acronym and event.acronym.lower() == word ) or
-                        ( event.description and
-                            event.description.lower().find( word ) is not -1)):
-                    matches = True
-                    break
-                for url in event.urls.all():
-                    if ( url.url_name.lower().find( word ) != -1  or
-                            url.url.lower().find( word ) != -1 ):
-                        matches = True
-                        break
-                for session in event.sessions.all():
-                    if session.session_name.lower().find( word ) != -1:
-                        matches = True
-                        break
-                for deadline in event.deadlines.all():
-                    if deadline.deadline_name.lower().find( word ) != -1:
-                        matches = True
-                        break
-        return matches
+        return False
+        # EFFICIENCY: a much more efficient way would be to check manually
+        # everything here, but then every change in
+        # :meth:`Filter.matches_queryset` would cause changes here and
+        # comparing and adapting both methods would be very time consuming and
+        # error-pround. We had such a long code here until charset
+        # 336:e725aaa6a108
 
     @staticmethod # def matches( query, user, related = True ): {{{2
     def matches( query, user, related = True ):
@@ -2348,17 +2235,6 @@ class Filter( models.Model ): # {{{1
         events matching *query* viewable by *user* adding related events if
         *related* is True.
         
-        - one or more dates in isoformat (yyyy-mm-dd) restrict the query to events with
-          dates from the the lowest to the highest, or to one day if there is
-          only one date
-        - If there is no date in the query only future events are showed
-        - Single words are looked in *title*, *tags*, *city*, *country* and
-          *acronym* with or
-        - Tags (#tag) restrict the query to events with these tags
-        - Locations (@location) restrict the query to events having these
-          location in *city* or *country*
-        - Groups (!group) restrict the query to events of the group
-
         If *related* is True it adds to the result events with related tags,
         but no more that the number of results. I.e. if the result contains two
         events, only a miximum of two more related events will be added. If the
@@ -2367,19 +2243,18 @@ class Filter( models.Model ): # {{{1
         (``yyyy-mm-dd`` or ``yyyy-mm-dd yyyy-mm-dd``), only related events with the
         same time are added.
 
-        If the query contains a group term (marked with ``!``), no related
-        events are added.
+        If the query contains a group term (marked with ``!``) or a tag term
+        (marked with ``#``), no related events are added.
 
         """
-        # TODO: return a queryset, not a list (the next coming date of each
-        # event can be saved in the db at 00:01 each day)
-        # See some ideas described in:
+        # TODO: return a queryset, not a list. See some ideas described in:
         # http://stackoverflow.com/questions/431628/how-to-combine-2-or-more-querysets-in-a-django-view
         queryset = Filter.matches_queryset(query, user)
         # creates a list of
         # related events with no more than the length of queryset and combines
         # both
-        if ( len( queryset ) > 0 ) and related and query.find('!') == -1:
+        if related and ( query.find('!') == -1 ) and ( query.find('#') == -1 ) \
+                and ( len( queryset ) > 0 ) :
             related_events = Filter.related_events( queryset, user, query )
             # chains both and sorts the result
             return sorted(
@@ -2465,8 +2340,6 @@ class Filter( models.Model ): # {{{1
             except User.DoesNotExist:
                 user = None
         # TODO: use the catche system for queries
-        # TODO: implement it less restrictive, i.e. also showing later events
-        # with only some of the specified tags
         queryset = Event.objects.all()
         # if no user get only public events
         if user is None or user.id is None:
@@ -2482,7 +2355,7 @@ class Filter( models.Model ): # {{{1
         for loc_name in regex.findall(query):
             queryset = queryset.filter(
                     Q( city__icontains = loc_name ) | Q(
-                        country__icontains = loc_name ) )
+                        country__iexact = loc_name ) )
                     # TODO: use also translations of locations
         query = regex.sub("", query)
         # tags
@@ -2515,10 +2388,12 @@ class Filter( models.Model ): # {{{1
             # remove all dates (yyyy-mm-dd) from the query
             query = DATE_REGEX.sub("", query)
         elif not broad:
-            date = datetime.date.today()
-            queryset = queryset.filter(
-                    Q(start__gte = date) | Q(end__gte = date) |
-                    Q(deadlines__deadline__gte = date) )
+            today = datetime.date.today()
+            queryset = queryset.filter( upcoming__gte = today )
+            # without using upcoming:
+            # queryset = queryset.filter(
+            #         Q(start__gte = date) | Q(end__gte = date) |
+            #         Q(deadlines__deadline__gte = date) )
         # look for words
         regex = re.compile('([^!@#]\w+)', UNICODE)
         for word in regex.findall(query):
@@ -2527,16 +2402,17 @@ class Filter( models.Model ): # {{{1
                 queryset = queryset.filter(
                         Q(title__icontains = word) |
                         Q(tags__icontains = word) |
-                        Q(city__iexact = word) |
-                        Q(country__iexact = word) |
-                        Q(acronym__iexact = word) )
+                        # e.g. 'washington' in 'Washington D.C.'
+                        Q(city__icontains = word) | # TODO in other languages
+                        Q(country__iexact = word) | # TODO in other languages
+                        Q(acronym__icontains = word) )
             else: # broad search
                 queryset = queryset.filter(
                         Q( title__icontains = word ) |
                         Q( tags__icontains = word ) |
-                        Q( city__iexact = word ) |
+                        Q( city__icontains = word ) |
                         Q( country__iexact = word ) |
-                        Q( acronym__iexact = word ) |
+                        Q( acronym__icontains = word ) |
                         Q( description__icontains = word ) |
                         Q( urls__url_name__icontains = word ) |
                         Q( urls__url__icontains = word ) |
@@ -2545,7 +2421,7 @@ class Filter( models.Model ): # {{{1
         # TODO: add full indexing text on Event.description and comments. See
         # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
         # remove duplicates
-        queryset = queryset.distinct()
+        queryset = queryset.distinct() # TODO: needed? we start with .all()
         # filter events the user cannot see
         if user is not None and user.id is not None:
             queryset = queryset.filter( 

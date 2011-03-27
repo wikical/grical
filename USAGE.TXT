@@ -92,13 +92,16 @@ __ http://en.wikipedia.org/wiki/ReStructuredText
 Searches and filters
 --------------------
 
+- searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and ``country``
+- all given words must appear in at least one of the fields
+- search results contain also related events (with similar tags), unless one or more of the special search options are used (see bellow)
 - one or more dates in isoformat (``yyyy-mm-dd``) restrict the query to events with dates from the the lowest to the highest, or to one day if there is only one date
 - If there is no date in the query only future events are showed
 - Single words are looked up in the fields ``title``, ``tags``, ``city``, ``country`` and ``acronym``
-- Tags (``#tag``) restricts the query to events with these tags
-- Locations (``@location``) restricts the query to events having these location in the fields ``city`` or ``country``
-- Groups (``!group``) restricts the query to events of the groups
-- Searches starting with an asterisk and one space makes the search broader, including past events
+- Tags (``#tag_name``) restricts the query to events with these tags
+- Locations (``@location_name``) restricts the query to events having these location in the fields ``city`` or ``country``
+- Groups (``!group_name``) restricts the query to events of the groups
+- Searches starting with an asterisk and one space (``* ``) makes the search broader, including past events
   (if no dates are specified), text in the description, urls (name and url), sessions (name) and deadlines (name)
 
 

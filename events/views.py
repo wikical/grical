@@ -213,8 +213,7 @@ def event_new_raw( request ): # {{{1
                 templates = {
                         'title': _( "edit event as text" ),
                         'error_messages': error_messages,
-                        'event_textarea': event_textarea,
-                        'example': Event.example() }
+                        'event_textarea': event_textarea, }
                 return render_to_response(
                         'event_new_raw.html',
                         templates,
@@ -224,8 +223,7 @@ def event_new_raw( request ): # {{{1
                 _( ''.join( ["You submitted an empty form, nothing was saved. ",
                 "Click the back button in your browser and try again."])) )
     else:
-        templates = { 'title': _( "edit event as text" ), \
-                'example': Event.example() }
+        templates = { 'title': _( "edit event as text" ), }
         return render_to_response( 'event_new_raw.html', templates,
                 context_instance = RequestContext( request ) )
 
