@@ -1,1 +1,1 @@
-[{{site.domain}}] Activation email
+{% load i18n %}[{{site.domain}}] {% trans "Account activation email" %}

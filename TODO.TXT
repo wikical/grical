@@ -185,6 +185,7 @@ medium priority
 low priority
 ------------
 
+- timeline http://www.simile-widgets.org/timeline/
 - Kickstarter
 - Integrate http://www.ohloh.net/
 - Database access for people who e.g. want to write something with libnotify. Can be restricted
