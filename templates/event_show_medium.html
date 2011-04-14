@@ -4,11 +4,7 @@
 <div class="event_medium">
   <div class="content">
     <span class="ical_logo">
-      {% if USER and not event.public %}
-        <a href="{% url event_show_ical_hash event.id USER.id USER.get_hash%}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
-      {% else %}
-        <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
-      {% endif %}
+      <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
     </span>
     &nbsp;&nbsp;
     <span class="title">

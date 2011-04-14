@@ -63,11 +63,11 @@ class EventsFeed(Feed): # {{{1
         # one could return the event as text with something like:
         # return '<!CDATA[' + item.as_text().replace('\n', '<br />') + ' ]]'
 
-class PublicUpcomingEventsFeed(EventsFeed): # {{{1
-    """ Feed with the next `settings.FEED_SIZE` number of public events,
+class UpcomingEventsFeed(EventsFeed): # {{{1
+    """ Feed with the next `settings.FEED_SIZE` number of events,
     ordered by upcoming. """
 
-    title = _(u"%(domain)s upcoming public events feed") % \
+    title = _(u"%(domain)s upcoming events feed") % \
             {'domain': SITE_DOMAIN,}
     link = "/r/upcoming"
     description = _("Next %(count)s upcoming events." \
@@ -76,12 +76,11 @@ class PublicUpcomingEventsFeed(EventsFeed): # {{{1
     def items( self ):
         """ items """
         today = datetime.date.today()
-        elist = Event.objects.filter( public = True,
-                upcoming__gte = today ).order_by( 'upcoming' )
+        elist = Event.objects.filter(upcoming__gte=today ).order_by('upcoming')
         return elist[:FEED_SIZE]
 
-class PublicSearchEventsFeed(EventsFeed): # {{{1
-    """ feed for the result of a search for AnonymousUser """
+class SearchEventsFeed(EventsFeed): # {{{1
+    """ feed for the result of a search """
     
     def get_object(self, request, query):
         return query
@@ -107,37 +106,8 @@ class PublicSearchEventsFeed(EventsFeed): # {{{1
         return matches
 
 
-class HashSearchEventsFeed(EventsFeed): # {{{1
-    """ feed for the result of a search with hash authentification """
-    
-    def get_object(self, request, query, user_id, hashcode):
-        if hashcode != ExtendedUser.calculate_hash(user_id):
-            raise Http404
-        return {'query': query, 'user_id': user_id, 'hash': hashcode}
-
-    def title(self, obj):
-        """ title """
-        return _(u'%(domain)s search results') % {'domain': SITE_DOMAIN,}
-
-    def link(self, obj):
-        """ return a link to a public search with get http method """
-        # TODO: if the search query is '#tag', does it work?
-        return reverse( 'search_query', kwargs = {'query': obj,} )
-
-    def description(self, obj):
-        """ description """
-        return _(u'%(domain)s search results for %(query)s') % \
-                {'domain': SITE_DOMAIN, 'query': obj,}
-
-    def items(self, obj):
-        """ items """
-        matches = Filter.matches(
-                obj['query'], obj['user_id'], FEED_SIZE )
-        return matches
-
-
-class PublicGroupEventsFeed(EventsFeed): # {{{1
-    """ feed with the public events of a group """
+class GroupEventsFeed(EventsFeed): # {{{1
+    """ feed with the events of a group """
 
     def get_object(self, request, group_id):
         group_name = Group.objects.get(id = group_id)
@@ -156,47 +126,10 @@ class PublicGroupEventsFeed(EventsFeed): # {{{1
 
     def description(self, obj):
         """ description """
-        return _(u'public events on %(domain)s for the group %(group_name)s')% \
+        return _(u'events on %(domain)s for the group %(group_name)s')% \
                 {'domain': SITE_DOMAIN, 'group_name': obj['group_name'],}
 
     def items(self, obj):
         """ items """
-        return Event.objects.filter(public = True).filter(
-                calendar__group__id = obj['group_id'] )
-
-class HashGroupEventsFeed(EventsFeed): # {{{1
-    """ feed with the events of a group with hash authentification """
-    # FIXME write a text for it
-
-    def get_object(self, request, group_id, user_id, hashcode):
-        group_name = Group.objects.get(id = group_id)
-        if not group_name:
-            raise Http404
-        if hashcode != ExtendedUser.calculate_hash(user_id):
-            raise Http404
-        return { 'group_id': group_id,
-                'group_name': group_name,
-                'user_id': user_id }
-
-    def title(self, obj):
-        """ title """
-        return _(u'%(domain)s group %(group_name)s') % \
-                {'domain': SITE_DOMAIN, 'group_name': obj['group_name']}
-
-    def link(self, obj):
-        """ link """
-        return reverse( 'group_view', kwargs = {'group_id': obj['group_id'],} )
-
-    def description(self, obj):
-        """ description """
-        return _(u'events on %(domain)s for the group %(group_name)s') % \
-                {'domain': SITE_DOMAIN, 'group_name': obj['group_name'],}
-
-    def items(self, obj):
-        """ items """
-        group = Group.objects.get( id = obj['group_id'] )
-        if Group.is_user_in_group( obj['user_id'], obj['group_id'] ):
-            return group.get_coming_events( limit = FEED_SIZE )
-        else:
-            return group.get_coming_public_events( limit = FEED_SIZE )
+        return Event.objects.filter( calendar__group__id = obj['group_id'] )
 

@@ -3,7 +3,7 @@
 # gpl {{{1
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 #############################################################################
-# Copyright 2010 Adam Beret Manczuk <beret@hipisi.org.pl>,
+# Copyright 2010,2011 Adam Beret Manczuk <beret@hipisi.org.pl>,
 # Ivan Villanueva <iv@gridmind.org>
 #
 # This file is part of GridCalendar.
@@ -104,65 +104,6 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
         # TODO add one url
         # TODO delete one url
 
-    def test_group_member_edit( self ): # {{{2
-        """ tests editing private and public events in a group by a member """
-        chars = string.letters # you can append: + string.digits
-        # user1
-        name = ''.join( [ choice(chars) for i in xrange(8) ] )
-        user1 = User.objects.create_user(username = name,
-                    email = name + '@example.com', password = 'p')
-        user1.save()
-        # user2
-        name = ''.join( [ choice(chars) for i in xrange(8) ] )
-        user2 = User.objects.create_user(username = name,
-                    email = name + '@example.com', password = 'p')
-        user2.save()
-        # group
-        name = ''.join( [ choice(chars) for i in xrange(8) ] )
-        group = Group.objects.create(name = name)
-        Membership.objects.create(user = user1, group = group)
-        epublic = Event.objects.create( title = 'public',
-                tags = 'test', start = datetime.date.today(), user = user1 )
-        eprivate = Event.objects.create( title = 'private',
-                tags = 'test', start = datetime.date.today(), user = user1,
-                public = False )
-        Calendar.objects.create( group = group, event = epublic )
-        Calendar.objects.create( group = group, event = eprivate )
-        Membership.objects.create( user = user2, group = group )
-
-        # next two lines fail. Seems a bug in WebTest with Python 2.6. The bug
-        # has been corrected in Django but not in WebTest, see
-        # http://code.djangoproject.com/changeset/12343
-        # login = self.client.login( username = user2.username, password = 'p' )
-        # self.assertTrue( login )
-
-        # editing epublic
-        content = self.app.get(
-                reverse('event_edit', kwargs={'event_id': epublic.id}),
-                user = user2)
-        event_form = content.forms[1]
-        self.failUnlessEqual( event_form['title']._value, 'public' )
-        event_form['tags'] = 'test test2'
-        response = event_form.submit().follow()
-        self.failUnlessEqual( response.status_int, 200 )
-        # print response._body
-        # the next line doesn't work (we need to get the event again)
-        # self.failUnlessEqual( epublic.tags, 'test test2' )
-        epublic = Event.objects.get( id = epublic.id )
-        self.failUnlessEqual( epublic.tags, 'test test2' )
-
-        # editing eprivate
-        content = self.app.get(
-                reverse('event_edit', kwargs={'event_id': eprivate.id}),
-                user = user2 )
-        event_form = content.forms[1]
-        self.failUnlessEqual( event_form['title']._value, 'private' )
-        event_form['tags'] = 'test test3'
-        response = event_form.submit().follow()
-        self.failUnlessEqual( response.status_int, 200 )
-        eprivate = Event.objects.get( id = eprivate.id )
-        self.failUnlessEqual( eprivate.tags, 'test test3' )
-
 
 class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     """TestCase for the 'events' application"""
@@ -192,7 +133,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                     'http://testserver%s' % reverse( 'registration_complete' ) )
             self.assertEqual(len(mail.outbox), 1)
             self.assertEqual(mail.outbox[0].subject,
-                    u'[example.com] Activation email')
+                    u'[example.com] Account activation email')
             body = mail.outbox[0].body
             profile = RegistrationProfile.objects.get(
                     user__username=name)
@@ -276,63 +217,24 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         response = conn.getresponse()
         result = response.read()
         self.assertTrue( 'Congratulations!' in result, result )
-    def test_anonymous_private_error(self): # {{{2
-        """ tests that an Event of the anonymous user cannot be private """
-        eve = Event(user=None, public=False, title="test",
-                start=datetime.date.today(), tags="test test1 test2")
-        self.assertRaises(AssertionError, eve.save)
 
     def test_valid_user_activation(self): # {{{2
         """ tests account creation throw web """
         user = self._create_user( throw_web = True)
         user = self._create_user( throw_web = False)
 
-    def test_public_private_event_visibility(self): # {{{2
-        """ public/private visibility of events """
-        user1 = self._create_user('tpev1')
-        user2 = self._create_user('tpev2')
-        event_public = Event.objects.create(
-                user = user1, title = "public 1234",
+    def test_event_visibility_in_search(self): # {{{2
+        """ visibility of events """
+        user = self._create_user('tpev1')
+        event = Event.objects.create(
+                user = user, title = "1234",
                 tags = "test", start=datetime.date.today() )
-        event_private = Event.objects.create(
-                user = user1, title = "private 1234",
-                public = False,
-                tags = "test", start=datetime.date.today() )
-        self._login ( user2 )
+        self._login ( user )
         response = self.client.get( reverse( 
                 'search_query',
                 kwargs = {'query': '1234',} ) )
-        self.assertTrue(event_public in response.context['events'].object_list)
-        self.assertFalse(event_private in
-                response.context['events'].object_list)
-
-    def test_public_private_change_error(self): # {{{2
-        """ tests that an event cannot be changed from private to public """
-        user = self._create_user('tppce', False)
-        event = Event(user = user, public = True, title="test",
-                start=datetime.date.today(), tags="test")
-        event.save()
-        event.public = False
-        self.assertRaises(AssertionError, event.save)
-
-    def test_none_user_private_event_error( self ):
-        """ tests that an event cannot be created without an owner and being
-        private """
-        event = Event(user = None, public = False, title="test",
-                start=datetime.date.today(), tags="test")
-        self.assertRaises(AssertionError, event.save)
-
-    def test_private_public_change_error(self): # {{{2
-        """ tests that an event cannot be changed from public to private """
-        user = self._create_user('tppce', False)
-        event = Event(user = user, public = False, title="test",
-                start=datetime.date.today(), tags="test")
-        event.save()
-        assert (event.public == False)
-        transaction.commit()
-        assert ( Event.objects.get( id = event.id ) )
-        event.public = True
-        self.assertRaises(AssertionError, event.save)
+        self.assertTrue(event in response.context['events'].object_list)
+        event.delete()
 
     def test_group_invitation(self): # {{{2
         """ test group invitation """
@@ -386,82 +288,47 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         mail.outbox = []
 
     def test_group_ical( self ): # {{{2
-        """ tests for public and private icals of groups """
-        user1 = self._create_user()
-        event1 = Event.objects.create( title = 'public',
-                tags = 'test', start = datetime.date.today(), user = user1 )
-        event2 = Event.objects.create( title = 'private',
-                tags = 'test', start = datetime.date.today(), user = user1,
-                public = False )
+        """ tests for icals of groups """
+        user = self._create_user()
+        event1 = Event.objects.create( title = 'title1',
+                tags = 'test', start = datetime.date.today(), user = user )
+        event2 = Event.objects.create( title = 'title2',
+                tags = 'test', start = datetime.date.today(), user = user )
         # self.client.login( username = user1.username, password = 'p' )
-        group = self._create_group( user1 )
+        group = self._create_group( user )
         Calendar.objects.create( group = group, event = event1 )
         Calendar.objects.create( group = group, event = event2 )
-        # user1
-        url_user1_hashed = reverse( 'list_events_group_ical_hashed',
-            kwargs = {'group_id': group.id, 'user_id': user1.id,
-                'hashcode': ExtendedUser.calculate_hash( user1.id )} )
-        self._validate_ical( url_user1_hashed )
-        content = self.client.get( url_user1_hashed ).content
+        url = reverse( 'list_events_group_ical',
+            kwargs = {'group_id': group.id,} )
+        self._validate_ical( url )
+        content = self.client.get( url ).content
         vevents = vobject.readComponents(
                 content, validate = True ).next().vevent_list
         self.assertEqual( len(vevents), 2 )
-        self.assertEqual( vevents[0].summary.value, "public" )
-        self.assertEqual( vevents[1].summary.value, "private" )
-        # user2
-        user2 = self._create_user()
-        url_user2_hashed = reverse( 'list_events_group_ical_hashed',
-            kwargs = {'group_id': group.id, 'user_id': user2.id,
-                'hashcode': ExtendedUser.calculate_hash( user2.id )} )
-        content = self.client.get( url_user2_hashed ).content
-        self.assertTrue( 'not a member' in content )
-        # anonymous
-        url_non_hashed = reverse( 'list_events_group_ical',
-                kwargs = {'group_id': group.id,} )
-        self._validate_ical( url_non_hashed )
-        content = self.client.get( url_non_hashed ).content
-        vevents = vobject.readComponents(
-                content, validate = True ).next().vevent_list
-        self.assertEqual( len(vevents), 1 )
-        self.assertEqual( vevents[0].summary.value, "public" )
+        self.assertEqual( vevents[0].summary.value, "title1" )
+        self.assertEqual( vevents[1].summary.value, "title2" )
+        event1.delete()
+        event2.delete()
 
     def test_group_rss( self ): # {{{2
-        """ tests for public and private rss feeds of groups """
-        user1 = self._create_user()
-        event1 = Event.objects.create( title = 'publicevent',
-                tags = 'test', start = datetime.date.today(), user = user1 )
-        event2 = Event.objects.create( title = 'privateevent',
-                tags = 'test', start = datetime.date.today(), user = user1,
-                public = False )
+        """ tests for rss feeds of groups """
+        user = self._create_user()
+        event1 = Event.objects.create( title = 'title1',
+                tags = 'test', start = datetime.date.today(), user = user )
+        event2 = Event.objects.create( title = 'title2',
+                tags = 'test', start = datetime.date.today(), user = user )
         # self.client.login( username = user1.username, password = 'p' )
-        group = self._create_group( user1 )
+        group = self._create_group( user )
         Calendar.objects.create( group = group, event = event1 )
         Calendar.objects.create( group = group, event = event2 )
-        # user1
-        url_user1_hashed = reverse( 'list_events_group_rss_hashed',
-            kwargs = {'group_id': group.id, 'user_id': user1.id,
-                'hashcode': ExtendedUser.calculate_hash( user1.id )} )
-        self._validate_rss( url_user1_hashed )
-        content = self.client.get( url_user1_hashed ).content
-        self.assertTrue( 'publicevent' in content )
-        self.assertTrue( 'privateevent' in content )
-        # user2
-        user2 = self._create_user()
-        url_user2_hashed = reverse( 'list_events_group_rss_hashed',
-            kwargs = {'group_id': group.id, 'user_id': user2.id,
-                'hashcode': ExtendedUser.calculate_hash( user2.id )} )
-        self._validate_rss( url_user2_hashed )
-        content = self.client.get( url_user2_hashed ).content
-        self.assertTrue( 'publicevent' in content )
-        self.assertFalse( 'privateevent' in content )
-        # anonymous
-        url_non_hashed = reverse( 'list_events_group_rss',
-                kwargs = {'group_id': group.id,} )
-        self._validate_rss( url_non_hashed )
-        content = self.client.get( url_non_hashed ).content
-        self._validate_rss( url_non_hashed )
-        self.assertTrue( 'publicevent' in content )
-        self.assertFalse( 'privateevent' in content )
+        url = reverse( 'list_events_group_rss',
+            kwargs = {'group_id': group.id,} )
+        self._validate_rss( url )
+        content = self.client.get( url ).content
+        self.assertTrue( 'title1' in content )
+        self.assertTrue( 'title2' in content )
+        event1.delete()
+        event2.delete()
 
     def test_filter_notification( self ): # {{{2
         """ test filter notification """
@@ -469,31 +336,19 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         user2 = self._create_user()
         Filter.objects.create(
                 user = user2, query = '#filter', name = "test", email = True )
-        Event.objects.create( title = 'public',
+        self.assertEqual(len(mail.outbox), 0)
+        eve = Event.objects.create( title = 'test filter notification',
                 tags = 'filter', start = datetime.date.today(), user = user1 )
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to[0], user2.email)
         mail.outbox = []
-
-    def test_visibility_private_event_in_group_when_searching( self ): # {{{2
-        """ test that a private event added to a group is visible in the result
-        of a search for a member of the group """
-        user1 = self._create_user()
-        user2 = self._create_user()
-        group = self._create_group(user1)
-        membership = Membership.objects.create(user=user2, group=group)
-        membership.save()
-        event = Event(user = user1, public = False, title="private",
-                    start=datetime.date.today() + timedelta(days=10),
-                    tags="test")
-        event.save()
-        cal = Calendar.objects.create(event = event, group = group)
-        cal.save()
-        self._login( user2 )
-        content = self.client.get( reverse( 
-                'search_query',
-                kwargs = {'query': 'test',} ) )
-        self.assertTrue( event in content.context['events'].object_list )
+        # no notification if event changes
+        self.assertEqual(len(mail.outbox), 0)
+        eve.title = 'title changes'
+        eve.save()
+        self.assertEqual(len(mail.outbox), 0)
+        # TODO: makes this work even if emails are sent in a different thread
+        eve.delete()
 
     def test_updateupcoming( self ):
         now = datetime.datetime.now().isoformat()
@@ -573,29 +428,39 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         updateupcoming.handle_noargs()
         event = Event.objects.get( pk = event.id )
         assert( event.start == event.upcoming )
+        event.delete()
 
     def test_event_ical( self ): # {{{2
         "test for one ical file for each event"
+        user = self._create_user()
+        event1 = Event.objects.create( title = 'title1',
+                tags = 'test', start = datetime.date.today(), user = user )
+        event2 = Event.objects.create( title = 'title2',
+                tags = 'test', start = datetime.date.today(), user = user )
         events = Event.objects.all()
         for event in events:
             self._validate_ical( reverse( 'event_show_ical',
                                       kwargs = {'event_id':event.id} ) )
+        event1.delete()
+        event2.delete()
 
     def test_search_ical( self ): # {{{2
         "test for ical search"
-        Event.objects.create( title = 'berlin'+str(time()), tags = 'berlin',
-                start = datetime.date.today() )
+        event = Event.objects.create( title = 'berlin'+str(time()),
+                tags = 'berlin', start = datetime.date.today() )
         self._validate_ical( reverse( 'search_ical',
                                       kwargs = {'query':'berlin'} ) )
         # TODO: text for a no match also
+        event.delete()
 
     def test_search_rss( self ): # {{{2
         "test for rss search"
-        Event.objects.create( title = 'berlin', tags = 'berlin',
-                start = datetime.date.today() )
+        event = Event.objects.create( title = 'berlin',
+                tags = 'berlin', start = datetime.date.today() )
         self._validate_rss( reverse( 'search_rss',
                                       kwargs = {'query':'berlin',} ) )
         # TODO: text for a no match also
+        event.delete()
 
     def test_valid_html( self ): # {{{2
         """ validates html with validator.w3.org """
@@ -622,8 +487,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         # TODO check also a clone of another clone
 
     # TODO {{{2
-    #This test can't work with sqlite, because sqlite not support multiusers, 
-    #is recomendet to use this in future
+    #This test can't work with sqlite, because sqlite not support multiusers. 
+    #It is recomended to use this in future
     # def test_visibility_in_thread(self):
     #     "testing visibility public and private events in thread"
     #     class TestThread(threading.Thread):
