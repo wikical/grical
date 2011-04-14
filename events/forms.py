@@ -204,10 +204,7 @@ class DatesTimesField(Field): # {{{1
                 raise ValidationError( _('end time is before start time') )
 
 def get_event_form(user): # {{{1
-    """returns a simplied event form with or without the public field"""
-    """ returns a dictionary with four values: start_date, end_date,
-    start_time, end_time """
-
+    """returns a simplied event form """
     if user.is_authenticated():
         return SimplifiedEventForm()
     return SimplifiedEventFormAnonymous()
@@ -276,15 +273,14 @@ class CoordinatesField( CharField ):
 
 
 class EventForm(ModelForm): # {{{1
-    """ ModelForm for all editable fields of Event except `public` """
+    """ ModelForm for all editable fields of Event """
     coordinates = CoordinatesField( max_length = 26, required = False )
     # TODO: put this in the right position within the form, see
     # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         if kwargs.has_key('instance'):
-            # not a new event and ``public`` cannot be changed after creation
-            self.fields['public'].widget = HiddenInput()
+            # not a new event
             self.fields['latitude'].widget = HiddenInput()
             self.fields['longitude'].widget = HiddenInput()
             # We use a single field called 'coordinates' for
@@ -327,7 +323,7 @@ class EventForm(ModelForm): # {{{1
 
 class SimplifiedEventForm(EventForm): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
-    `public` """
+    """
     where = CharField( max_length = 100, required = False )
     when = DatesTimesField()
     web = URLFieldExtended(verify_exists=True)
@@ -347,7 +343,7 @@ class SimplifiedEventForm(EventForm): # {{{1
         #self.fields['web'].widget.attrs["size"] = 42
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        fields = ('title', 'tags', 'public')
+        fields = ('title', 'tags',)
 
 class SimplifiedEventFormAnonymous(SimplifiedEventForm): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`

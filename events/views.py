@@ -100,7 +100,7 @@ def event_edit( request, event_id = False ): # {{{1
     >>> from gridcalendar.events.models import Event
     >>> import datetime
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'ee_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('event_edit',
     ...         kwargs={'event_id': e.id,})).status_code
@@ -114,22 +114,6 @@ def event_edit( request, event_id = False ): # {{{1
         event_id = unicode( event_id )
     if event_id:
         event = get_object_or_404( Event, pk = event_id )
-        # checks if the user is allowed to edit this event public events can be
-        # edited by anyone, otherwise only by the submitter and the group the
-        # event belongs to
-        if not event.public :
-            if not request.user.is_authenticated():
-                return main( request, error_messages =
-                    _( u'You need to be logged-in to be able to edit the ' \
-                        u'event with the number %(event_id)s.' ) % \
-                            {'event_id': event_id,} )
-            else:
-                if not Event.is_event_viewable_by_user(
-                        event_id, request.user.id ):
-                    return main( request, error_messages =
-                        _( u'You are not allowed to edit the event with ' \
-                            u'the number %(event_id)s.' ) % \
-                                {'event_id': event_id,} )
         can_delete = True
     else:
         event = Event()
@@ -235,7 +219,7 @@ def event_edit_raw( request, event_id ): # {{{1
     >>> from gridcalendar.events.models import Event
     >>> import datetime
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'eer_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('event_edit_raw',
     ...         kwargs={'event_id': e.id,})).status_code
@@ -245,23 +229,6 @@ def event_edit_raw( request, event_id ): # {{{1
         event_id = int( event_id )
     # checks if the event exists
     event = get_object_or_404( Event, pk = event_id )
-    # checks if the user is allowed to edit this event
-    # public events can be edited by anyone, otherwise only by the submitter
-    # and the group the event belongs to
-    if ( not event.public ):
-        if ( not request.user.is_authenticated() ):
-            return main( request, error_messages =
-                _( ''.join(['You need to be logged-in to be able to edit the ',
-                    'private event with the number %(event_id)d. ',
-                    'Please log in a try again.'] )) % \
-                            {'event_id': event_id} )
-        else:
-            if not Event.is_event_viewable_by_user(
-                    event_id, request.user.id ):
-                return main( request, error_messages =
-                    _( ''.join(['You are not allowed to edit the event with ',
-                        'the number %s(event_id)d'] ) ) % \
-                                {'event_id': event_id} )
     if request.method == 'POST':
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
@@ -319,7 +286,7 @@ def event_show( request, event_id ): # {{{1
     >>> from gridcalendar.events.models import Event
     >>> import datetime
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'es_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('event_show',
     ...         kwargs={'event_id': e.id,})).status_code
@@ -327,26 +294,26 @@ def event_show( request, event_id ): # {{{1
     """
     if isinstance(event_id, str) or isinstance(event_id, unicode):
         event_id = int(event_id)
+    # TODO: use here and in other places:
+    #   Event.objects.select_related( depth = 2 ).get(pk = event_id)
+    #   See # http://docs.djangoproject.com/en/1.3/ref/models/querysets/#select-related
+    #   This will increase performance and allow for custom error messages
+    #   instead of a general 404
     event = get_object_or_404( Event, pk = event_id )
-    if not Event.is_event_viewable_by_user( event_id, request.user.id ):
-        return main( request, error_messages =
-            _( ''.join(['You are not allowed to view the event with the ',
-                'number %(event_id)d']) ) % {'event_id': event_id,} )
-    else:
-        about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
-        title = unicode(event.upcoming)
-        if event.city:
-            title += " " + event.city
-        if event.country:
-            title += " (" + event.country + ")"
-        title += " - " + event.title + " | " + Site.objects.get_current().name
-        templates = {
-                'title': title,
-                'event': event,
-                'about_text': about_text,
-                }
-        return render_to_response( 'event_show_all.html', templates,
-                context_instance = RequestContext( request ) )
+    about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    title = unicode(event.upcoming)
+    if event.city:
+        title += " " + event.city
+    if event.country:
+        title += " (" + event.country + ")"
+    title += " - " + event.title + " | " + Site.objects.get_current().name
+    templates = {
+            'title': title,
+            'event': event,
+            'about_text': about_text,
+            }
+    return render_to_response( 'event_show_all.html', templates,
+            context_instance = RequestContext( request ) )
 
 def event_show_raw( request, event_id ): # {{{1
     """ View that shows an event as text
@@ -356,25 +323,20 @@ def event_show_raw( request, event_id ): # {{{1
     >>> from gridcalendar.events.models import Event
     >>> import datetime
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'esr_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('event_show_raw',
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
     event = get_object_or_404( Event, pk = event_id )
-    if not Event.is_event_viewable_by_user( event_id, request.user.id ):
-        return main( request, error_messages =
-            _( ''.join(['You are not allowed to view the event with the ',
-                'number %(event_id)d']) ) % {'event_id': event_id,} )
-    else:
-        event_textarea = event.as_text()
-        templates = {
-                'title': _( "view as text" ),
-                'event_textarea': event_textarea,
-                'event': event }
-        return render_to_response( 'event_show_raw.html',
-                templates, context_instance = RequestContext( request ) )
+    event_textarea = event.as_text()
+    templates = {
+            'title': _( "view as text" ),
+            'event_textarea': event_textarea,
+            'event': event }
+    return render_to_response( 'event_show_raw.html',
+            templates, context_instance = RequestContext( request ) )
 
 def search( request, query = None, view = 'boxes' ): # {{{1
     """ View to get the data of a search query.
@@ -394,10 +356,10 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> e1 = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 's1_test', tags = 'berlin',
     ...         start = datetime.date.today())
     >>> e2 = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 's2_test', tags = 'berlin',
     ...         start = datetime.date.today())
     >>> Client().get(reverse('search_query',
     ...         kwargs={'query': 'test',})).status_code
@@ -460,7 +422,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                     'query': query,
                     'view': view }
         context['user_id'] = request.user.id
-        context['hash'] = ExtendedUser.calculate_hash(request.user.id)
         context['query'] = query
         if len( search_result ) == 0:
             context['no_results'] = True
@@ -524,38 +485,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         raise Http404
     return render_to_response( 'search.html',
             context,
-            context_instance = RequestContext( request ) )
-
-# FIXME: adapt this fuction to the new search function
-def search_hashed( request, query, user_id, hashcode ): # {{{1
-    """ View to show the results of a search query with hashed authentification
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from gridcalendar.events.models import ExtendedUser
-    >>> u = User.objects.create_user('l_e_s_h', '0@example.com', 'p')
-    >>> u = ExtendedUser.objects.get( pk = u.pk )
-    >>> Client().get(reverse('search_hashed',
-    ...         kwargs={'query': 'abcdef', 'user_id': u.id,
-    ...         'hashcode': u.get_hash()})).status_code
-    200
-    """
-    if ExtendedUser.calculate_hash(user_id) != hashcode:
-        raise Http404
-    search_result = Filter.matches(query, user_id)
-    if len( search_result ) == 0:
-        return main( request, messages = 
-                _( u"Your search didn't get any result" ) )
-    else:
-        return render_to_response( 'search.html',
-            {
-                'title': _( "search results" ),
-                'events': search_result,
-                'query': query,
-                'user_id': request.user.id,
-                'hash': ExtendedUser.calculate_hash(request.user.id),
-            },
             context_instance = RequestContext( request ) )
 
 @login_required
@@ -713,7 +642,7 @@ def list_filters_my( request ): # {{{1
 #    >>> from django.contrib.auth.models import User
 #    >>> u = User.objects.create_user('l_e_o_u', '0@example.com', 'p')
 #    >>> e = Event.objects.create(
-#    ...         title = 'test', tags = 'berlin',
+#    ...         title = 'lefu_test', tags = 'berlin',
 #    ...         start = datetime.date.today(), user = u )
 #    >>> client = Client()
 #    >>> client.login(username = u.username, password = 'p')
@@ -728,7 +657,6 @@ def list_filters_my( request ): # {{{1
 #            user = User.objects.get( username__exact = username )
 #            useridtmp = user.id
 #            events = Event.objects.filter( user = useridtmp ) # FIXME: what is this?
-#            events = Event.objects.filter( public = True )
 #            if len( events ) == 0:
 #                return _error( request,
 #                        _( "Your search didn't get any result" ) )
@@ -763,7 +691,7 @@ def list_events_my( request ): # {{{1
     >>> from django.contrib.auth.models import User
     >>> u = User.objects.create_user('l_e_m', '0@example.com', 'p')
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'lem_test', tags = 'berlin',
     ...         start = datetime.date.today(), user = u )
     >>> client = Client()
     >>> client.login(username = u.username, password = 'p')
@@ -782,7 +710,7 @@ def list_events_tag( request, tag ): # {{{1
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'let_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('list_events_tag',
     ...         kwargs={'tag': 'berlin',})).status_code
@@ -808,7 +736,7 @@ def list_events_location( request, location ): # {{{1
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'test',
+    ...         title = 'lel_test', tags = 'test',
     ...         city = 'Berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('list_events_location',
@@ -846,15 +774,10 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
         if event_form.is_valid():
             cleaned_data = event_form.cleaned_data
             # create a new entry and saves the data
-            if request.user.is_authenticated():
-                public = cleaned_data['public']
-            else:
-                public = True
             event = Event( user_id = request.user.id,
                       title = cleaned_data['title'],
                       start = cleaned_data['when']['start_date'],
-                      tags = cleaned_data['tags'],
-                      public = public )
+                      tags = cleaned_data['tags'], )
             # TODO simplified with for set_something(Event, ..., ...)
             if cleaned_data['when'].has_key('end_date'):
                 event.end = cleaned_data['when']['end_date']
@@ -896,13 +819,6 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
                 Q(start__gte=today) |
                 Q(end__gte=today) |
                 Q(deadlines__deadline__gte=today) )
-    if not request.user.is_authenticated():
-        elist = elist.filter(public = True)
-    else:
-        elist = elist.filter(
-                Q( user = request.user ) |
-                Q( calendar__group__membership__user = request.user ) |
-                Q( public = True ) )
     elist = elist.distinct().order_by('upcoming')
     elist = elist[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
@@ -1075,7 +991,7 @@ def group_add_event(request, event_id): # {{{2
     >>> g, c = Group.objects.get_or_create(name = 'test')
     >>> m = Membership.objects.create(user = u, group = g)
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'gae_test', tags = 'berlin',
     ...         start = datetime.date.today(), user = u )
     >>> m = Calendar.objects.create(group = g, event = e)
     >>> client.get(reverse('group_add_event',
@@ -1091,12 +1007,10 @@ def group_add_event(request, event_id): # {{{2
             form = AddEventToGroupForm(
                     data=request.POST, user=user, event=event)
             if form.is_valid():
+                # TODO: if event is part of a serie, ask to copy all
+                # events in the serie
                 for group in form.cleaned_data['grouplist']:
-                    if event.public:
-                        event_for_group = event
-                    else:
-                        event_for_group = event.clone()
-                    calentry = Calendar(event=event_for_group, group=group)
+                    calentry = Calendar(event = event, group=group)
                     calentry.save()
                 return HttpResponseRedirect(reverse('list_groups_my'))
             else:
@@ -1116,58 +1030,31 @@ def group_add_event(request, event_id): # {{{2
 
 def group_name_view(request, group_name): # {{{2
     """ lists everything about a group for members of the group, or the
-    description and public events for everyone else. """
+    description and events for everyone else. """
     group = get_object_or_404(Group, name__iexact = group_name)
     return group_view( request, group.id )
 
 def group_view(request, group_id): # {{{2
     """ lists everything about a group for members of the group, and the
-    description and public events for everyone else
+    description and events for everyone else
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> from django.contrib.auth.models import User
     >>> from gridcalendar.events.models import Group, Membership, Calendar
     >>> u1g = User.objects.create_user('groupview1', '0@example.com', 'p')
-    >>> u2 = User.objects.create_user('groupview2', '0@example.com', 'p')
     >>> g, c = Group.objects.get_or_create(name = 'test')
     >>> m, c = Membership.objects.get_or_create(user = u1g, group = g)
-    >>> public_e = Event.objects.create(
-    ...         title = 'public group view', tags = 'group-view',
+    >>> e = Event.objects.create(
+    ...         title = 'event in group', tags = 'group-view',
     ...         start = datetime.date.today(), user = u1g )
-    >>> private_e = Event.objects.create( public = False,
-    ...         title = 'private group view', tags = 'group-view',
-    ...         start = datetime.date.today(), user = u1g )
-    >>> m, c = Calendar.objects.get_or_create(group = g, event = public_e)
-    >>> m, c = Calendar.objects.get_or_create(group = g, event = private_e)
+    >>> m, c = Calendar.objects.get_or_create(group = g, event = e)
     >>> client = Client()
     >>> response = client.get(reverse('group_view',
     ...         kwargs={'group_id': g.id,}))
     >>> response.status_code
     200
-    >>> 'public group view' in response.content
-    True
-    >>> 'private group view' in response.content
-    False
-    >>> client.login(username = u2.username, password = 'p')
-    True
-    >>> response = client.get(reverse('group_view',
-    ...         kwargs={'group_id': g.id,}))
-    >>> response.status_code
-    200
-    >>> 'public group view' in response.content
-    True
-    >>> 'private group view' in response.content
-    False
-    >>> client.login(username = u1g.username, password = 'p')
-    True
-    >>> response = client.get(reverse('group_view',
-    ...         kwargs={'group_id': g.id,}))
-    >>> response.status_code
-    200
-    >>> 'public group view' in response.content
-    True
-    >>> 'private group view' in response.content
+    >>> 'event in group' in response.content
     True
     """
     group = get_object_or_404( Group, id = group_id )
@@ -1175,7 +1062,7 @@ def group_view(request, group_id): # {{{2
                     Group.is_user_in_group(request.user, group) ):
         events = group.get_coming_events( limit = -1 )
     else:
-        events = group.get_coming_public_events( limit = -1 )
+        events = group.get_coming_events( limit = -1 )
     return render_to_response(
             'groups/group_view.html',
             {
@@ -1261,7 +1148,7 @@ def ICalForSearch( request, query ): # {{{2
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'icfs_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('search_ical',
     ...         kwargs={'query': 'berlin',})).status_code
@@ -1276,7 +1163,7 @@ def ICalForEvent( request, event_id ): # {{{2
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'icfe_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('event_show_ical',
     ...         kwargs={'event_id': e.id,})).status_code
@@ -1284,66 +1171,10 @@ def ICalForEvent( request, event_id ): # {{{2
     """
     event = get_object_or_404( Event, id = event_id )
     elist = [event,]
-    elist = [eve for eve in elist if eve.is_viewable_by_user(request.user)]
     return _ical_http_response_from_event_list( elist, event.title )
 
-def ICalForEventHash (request, event_id, user_id, hashcode): # {{{2
-    """ 
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from gridcalendar.events.models import ExtendedUser
-    >>> from gridcalendar.events.models import Event
-    >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
-    ...         start = datetime.date.today() )
-    >>> u = User.objects.create_user('ICalForEventHash', '0@example.com', 'p')
-    >>> u = ExtendedUser.objects.get( pk = u.pk )
-    >>> Client().get(reverse('event_show_ical_hash',
-    ...         kwargs={'event_id': e.id, 'user_id': u.id,
-    ...         'hashcode': u.get_hash()})).status_code
-    200
-    """
-    user = get_object_or_404( ExtendedUser, id = user_id )
-    if hashcode != user.get_hash():
-        return main( request, error_messages = 
-            _(u"hash authentification failed") )
-    event = get_object_or_404(Event, id = event_id )
-    if not event.is_viewable_by_user( user ):
-        return HttpResponseForbidden( 
-        _('You are not allowed to see the event with the number %(event_id)d'%\
-                {'event_id': event_id,} ), mimetype='text/plain' )
-    return _ical_http_response_from_event_list(
-            [event,], event.title)
-            
-
-def ICalForSearchHash( request, query, user_id, hashcode ): # {{{2
-    """ ical file for the result of a search with hash authentification
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from gridcalendar.events.models import ExtendedUser
-    >>> from gridcalendar.events.models import Event
-    >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
-    ...         start = datetime.date.today() )
-    >>> u = User.objects.create_user('ICalForSearchHash', '0@example.com', 'p')
-    >>> u = ExtendedUser.objects.get( pk = u.pk )
-    >>> Client().get(reverse('search_ical_hashed',
-    ...         kwargs={'query': 'berlin', 'user_id': u.id,
-    ...         'hashcode': u.get_hash()})).status_code
-    200
-    """
-    user = get_object_or_404( ExtendedUser, id = user_id )
-    if hashcode != user.get_hash():
-        return HttpResponseBadRequest( _(u"hash authentification failed"),
-                mimetype='text/plain' )
-    elist = Filter.matches( query, user_id )
-    return _ical_http_response_from_event_list( elist, query )
-
 def ICalForGroup( request, group_id ): # {{{2
-    """ return all public events with a date in the future in icalendar format
+    """ return all events with a date in the future in icalendar format
     belonging to a group
 
     >>> from django.test import Client
@@ -1352,7 +1183,7 @@ def ICalForGroup( request, group_id ): # {{{2
     >>> from gridcalendar.events.models import Event
     >>> from gridcalendar.events.models import Group, Membership, Calendar
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'icfg_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> u = User.objects.create_user('ICalForGroup', '0@example.com', 'p')
     >>> g, c = Group.objects.get_or_create(name = 'test')
@@ -1366,54 +1197,10 @@ def ICalForGroup( request, group_id ): # {{{2
     200
     """
     group = get_object_or_404(Group, pk = group_id)
-    elist = Event.objects.filter(calendar__group = group, public = True)
+    elist = Event.objects.filter( calendar__group = group )
     today = datetime.date.today()
-    elist = elist.filter (
-                Q(start__gte=today) |
-                Q(end__gte=today) |
-                Q(deadlines__deadline__gte=today) )
-    elist = elist.distinct().order_by('upcoming')
-    return _ical_http_response_from_event_list( elist, group.name )
-
-def ICalForGroupHash( request, group_id, user_id, hashcode ): # {{{2
-    """ return all events with a date in the future in icalendar format
-    belonging to a group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from gridcalendar.events.models import ExtendedUser
-    >>> from gridcalendar.events.models import Event
-    >>> from gridcalendar.events.models import Group, Membership, Calendar
-    >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
-    ...         start = datetime.date.today() )
-    >>> u = User.objects.create_user('ICalForGroupHash', '0@example.com', 'p')
-    >>> u = ExtendedUser.objects.get( pk = u.pk )
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m = Membership.objects.get_or_create(user = u, group = g)
-    >>> c = Calendar.objects.get_or_create(group = g, event = e)
-    >>> Client().get(reverse('list_events_group_ical_hashed',
-    ...         kwargs={'group_id': g.id, 'user_id': u.id,
-    ...         'hashcode': u.get_hash()})).status_code
-    200
-    """
-    user = get_object_or_404( ExtendedUser, id = user_id )
-    if hashcode != user.get_hash():
-        return HttpResponseBadRequest( _(u"hash authentification failed"),
-                mimetype='text/plain' )
-    group = get_object_or_404( Group, id = group_id )
-    if not group.is_member(user_id):
-        return HttpResponseBadRequest(
-                _('not a member of the requested group'),
-                mimetype='text/plain' )
-    elist = Event.objects.filter(calendar__group = group)
-    today = datetime.date.today()
-    elist = elist.filter (
-                Q(start__gte=today) |
-                Q(end__gte=today) |
-                Q(deadlines__deadline__gte=today) )
-    elist = elist.distinct().order_by('upcoming')
+    elist = elist.filter ( upcoming__gte = today )
+    elist = elist.distinct().order_by('upcoming') # TODO: needed?
     return _ical_http_response_from_event_list( elist, group.name )
 
 def _ical_http_response_from_event_list( elist, filename ): # {{{2
@@ -1439,25 +1226,18 @@ def _ical_http_response_from_event_list( elist, filename ): # {{{2
     return response
 
 def all_events_text ( request ): #{{{1
-    """ returns a text file with all events which the logged-in user can see,
-    only public events if there is no logged-in user
-    
+    """ returns a text file with all events.
+
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> e = Event.objects.create(
-    ...         title = 'test', tags = 'berlin',
+    ...         title = 'aet_test', tags = 'berlin',
     ...         start = datetime.date.today() )
     >>> Client().get(reverse('all_events_text')).status_code
     200
     """
-    if request.user.is_authenticated():
-        user = request.user
-        elist = Event.objects.filter(
-                Q( user = user ) | Q( group__membership__user = user ) |
-                Q( public = True ) )
-    else:
-        elist = Event.objects.filter( public = True )
+    elist = Event.objects.all()
     text = Event.list_as_text( elist )
     response = HttpResponse( text, mimetype = 'text/text;charset=UTF-8' )
     filename =  Site.objects.get_current().name + '_' + \

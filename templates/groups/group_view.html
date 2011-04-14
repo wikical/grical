@@ -2,11 +2,7 @@
 {% load i18n %}
 
 {% block extraheaders %}
-{% if user_is_in_group %}
-    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss_hashed group.id USER.id USER.get_hash %}" />
-{% else %}
     <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss group.id %}" />
-{% endif %}
 {%endblock extraheaders %}
 
 {% block column1 %}
@@ -34,7 +30,7 @@
         {% endfor %}
     </ul>
 {% else %}
-    {% if group.has_coming_public_events %}
+    {% if group.has_coming_events %}
         <h2> {% trans "Public upcoming events" %} </h2>
         <ul>
             {% for event in events %}
@@ -56,27 +52,14 @@
         {% endblocktrans %}
     </h2>
     <p> {{ group.description|urlize }} </p>
-    {% if user_is_in_group %}
-        <p>
-            <a href="{% url list_events_group_rss_hashed group.id USER.id USER.get_hash %}">
-                <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
-                Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
-        </p>
-        <p>
-            <a href="{% url list_events_group_ical_hashed group.id USER.id USER.get_hash %}">
-                <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
-                Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
-        </p>
-    {% else %}
-        <p>
-            <a href="{% url list_events_group_rss group.id %}">
-                <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
-                Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
-        </p>
-        <p>
-            <a href="{% url list_events_group_ical group.id %}">
-                <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
-                Get the upcoming public events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
-        </p>
-    {% endif %}
+    <p>
+        <a href="{% url list_events_group_rss group.id %}">
+            <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
+            Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
+    </p>
+    <p>
+        <a href="{% url list_events_group_ical group.id %}">
+            <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
+            Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
+    </p>
 {% endblock %}

@@ -29,8 +29,7 @@ from django.conf.urls.defaults import *
 
 from gridcalendar.events import views
 from gridcalendar.events.feeds import (
-        PublicUpcomingEventsFeed, PublicSearchEventsFeed, HashSearchEventsFeed,
-        PublicGroupEventsFeed, HashGroupEventsFeed )
+        UpcomingEventsFeed, SearchEventsFeed, GroupEventsFeed, )
 
 # main url {{{1
 urlpatterns = patterns('',            # pylint: disable-msg=C0103
@@ -60,9 +59,6 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/show/(?P<event_id>\d+)/ical/$',
         views.ICalForEvent,             name='event_show_ical'),
 
-    url(r'^e/show/(?P<event_id>\d+)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.ICalForEventHash,  name='event_show_ical_hash'),
-
     url(r'^e/group/(?P<event_id>\d+)/$',
         views.group_add_event,      name='group_add_event'),
     )
@@ -73,14 +69,8 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^s/(?P<query>[^/]*)/ical/$',
         views.ICalForSearch,      name='search_ical'),
 
-    url(r'^s/(?P<query>[^/]*)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.ICalForSearchHash,  name='search_ical_hashed'),
-
     url(r'^s/(?P<query>[^/]*)/rss/$',
-        PublicSearchEventsFeed(), name='search_rss'),
-
-    url(r'^s/(?P<query>[^/]*)/rss/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        HashSearchEventsFeed(),   name='search_rss_hashed'),
+        SearchEventsFeed(), name='search_rss'),
 
     url(r'^s/(?P<query>[^/]+)/(?P<view>[^/]+)/$',
         views.search,             name='search_query_view'),
@@ -90,9 +80,6 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 
     url(r'^s/$',
         views.search,             name='search'),
-
-    url(r'^s/(?P<query>[^/]*)/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.search_hashed,   name='search_hashed'),
 
     )
 
@@ -120,14 +107,8 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
     url(r'^g/(?P<group_id>\d+)/ical/$',
         views.ICalForGroup,           name='list_events_group_ical'),
 
-    url(r'^g/(?P<group_id>\d+)/ical/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        views.ICalForGroupHash,       name='list_events_group_ical_hashed'),
-
     url(r'^g/(?P<group_id>\d+)/rss/$',
-        PublicGroupEventsFeed(),      name='list_events_group_rss'),
-
-    url(r'^g/(?P<group_id>\d+)/rss/(?P<user_id>\d+)/(?P<hashcode>\w+)/$',
-        HashGroupEventsFeed(),        name='list_events_group_rss_hashed'),
+        GroupEventsFeed(),      name='list_events_group_rss'),
 
     url(r'^g/new/$',
         views.group_new,              name='group_new'),
@@ -185,7 +166,7 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
 # ^r rss main feed url {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
      url(r'^r/upcoming/$',
-         PublicUpcomingEventsFeed(), name='public_upcoming_events_rss'),
+         UpcomingEventsFeed(), name='upcoming_events_rss'),
      )
 
 # ^o output urls {{{1

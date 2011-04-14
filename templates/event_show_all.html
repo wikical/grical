@@ -76,14 +76,23 @@
         </ul>
     {% endif %}
 
-    {% if event.get_all_events_in_serie %}
-        <h2>{% trans "All events in the serie" %}</h2>
-        {% for event in event.get_all_events_in_serie %}
-            {# FIXME: show private events that the user can see #}
-            {% if event.public %}
-                <p>{% include "event_show_small.html" %}</p>
-            {% endif %}
-        {% endfor %}
+    {% if event.recurrence or event.instances.count > 0 %}{# is part of a serie as intermediate instance OR is master of a serie #}
+        <h2>{% trans "Other events in the serie" %}</h2>
+        {% if event.recurrence %}
+            {% for event in event.recurrence.master.instances.all %}
+                {# FIXME: show private events that the user can see #}
+                {% if event.public %}
+                    <p>{% include "event_show_small.html" %}</p>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {% for event in event.instances %}
+                {# FIXME: show private events that the user can see #}
+                {% if event.public %}
+                    <p>{% include "event_show_small.html" %}</p>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     {% endif %}
 
     {% if event.urls.all %}

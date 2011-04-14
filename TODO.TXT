@@ -96,6 +96,7 @@ high priority
 medium priority
 ---------------
 
+- better url schema, allowing human/seo urls like grical.org/142/My-Event-Name-With-Spaces
 - Privacy issues:
     - Don't save IPs (see e.g. AnonymizeIP for Piwik) or, if doing so, inform the users
     - Others? Check German law

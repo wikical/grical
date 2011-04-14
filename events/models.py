@@ -325,7 +325,6 @@ tags: calendar software open-source gridmind gridcalendar
 urls:
     code    http://example.com
     web    http://example.com
-public: True
 address: Gleimstr. 6
 postcode: 10439
 city: Berlin
@@ -346,8 +345,17 @@ GridCalendar will be presented"""
 # TODO: add alters_data=True to all functions that do that.
 # see http://docs.djangoproject.com/en/1.2/ref/templates/api/
 
-# regexes
+# regexes {{{1
 DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
+
+class EventManager( models.Manager ): # {{{1
+    """ manager for deserialization.
+
+    See http://docs.djangoproject.com/en/1.3/topics/serialization/#deserialization-of-natural-keys
+    """
+    def get_by_natural_key(self, title, start):
+        """ returns an event with a given ``title`` and ``start`` """
+        return self.get( title = title, start = start )
 
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model """ # doc {{{2
@@ -382,9 +390,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             u"(these can be international, like: αöł), digits and hyphens (-)",
             u"are allowed. Tags are separated with spaces. Example: ",
             u"demonstration software-patents"] ) ) )
-    public = models.BooleanField( _( u'Public' ), default = True,
-        help_text = _( u"A public event can be seen and edited by anyone, \
-        otherwise only by the members of selected groups" ) )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
             max_length = 2, choices = COUNTRIES )
     city = models.CharField( 
@@ -405,16 +410,28 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
 
-    clone_of = models.ForeignKey( 'self',
-            editable = False, blank = True, null = True )
-    """ Relation to orginal object, or null if this is original."""
+    # TODO: remove
+    public = models.BooleanField( _( u'Public' ), default = True, )
+
+    objects = EventManager()
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         verbose_name = _( u'Event' )
         verbose_name_plural = _( u'Events' )
+        unique_together = (('title', 'start'),)
+        # get_latest_by = "start" #TODO: useful? see also # http://docs.djangoproject.com/en/1.3/ref/generic-views/#date-based-generic-views
+        # needed for proper order of e.g. master_event.instances:
+        ordering = ['upcoming']
 
     # methods {{{2
+
+    def natural_key(self):
+        """ used for serialization.
+
+        See http://docs.djangoproject.com/en/1.3/topics/serialization/#serialization-of-natural-keys
+        """
+        return ( self.title, self.start )
 
     def tags_separated_by_comma(self): #{{{3
         """ returns the list of tags separated by commas as unicode string """
@@ -465,7 +482,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def next_coming_date_or_start(self): #{{{3
         """ returns the next most proximate date of an event to today, which
         can be the start date, the end date or one of the deadlines; otherwise
-        the start date if all are in the past
+        it returns the start date if all are in the past
         
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -473,9 +490,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         ...     start=timedelta(days=1)+today,
         ...     end=timedelta(days=2)+today,
         ...     tags="test")
+        >>> event.save()
         >>> assert today + timedelta(days=1) == event.next_coming_date_or_start()
-
-        >>> from datetime import timedelta
         >>> today = datetime.date.today()
         >>> event3 = Event(title="test 3 for n_c_d " + today.isoformat(),
         ...     start=timedelta(days=3)+today, tags="test")
@@ -497,6 +513,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> assert sorted_list[0] == event1
         >>> assert sorted_list[1] == event2
         >>> assert sorted_list[2] == event3
+        >>> event.delete()
+        >>> event1.delete()
+        >>> event2.delete()
+        >>> event3.delete()
         """
         # creates a list with all dates of the event (self)
         dates = []
@@ -537,6 +557,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> ical = vobject.readOne(ical.serialize())
         >>> assert (ical.vevent.categories.serialize() == 
         ...  u'CATEGORIES:calendar,software,open-source,gridmind,gridcalendar\\r\\n')
+        >>> event.delete()
         """
         if ical is None:
             ical = vobject.iCalendar()
@@ -578,9 +599,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if self.description: vevent.add('DESCRIPTION').value = self.description
         # see rfc5545 3.8.7.2. Date-Time Stamp
         vevent.add('DTSTAMP').value = self.modification_time
-        if self.public:
-            vevent.add('CLASS').value = 'PUBLIC'
-        else: vevent.add('CLASS').value = 'PRIVATE'
+        vevent.add('CLASS').value = 'PUBLIC'
         if self.latitude and self.longitude:
             vevent.add('GEO').value = \
                 unicode(self.latitude) + u";" + unicode(self.longitude)
@@ -590,79 +609,87 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # http://linuxwiki.de/Zentralkalender
         return ical
 
-    def clone( self, user, except_models = [], **kwargs ): #{{{3
-        """ Makes, saves and return a deep clone of the event as an 
-        event of the user ``user``.
-
-        If ``self`` is a clone of other parent event, the returned clone will
-        have ``clone_of`` pointing to the parent.
-        
-        It makes a clone of all related objects, and relates them to the new
-        created clone, except for the models in ``except_models``
-
-        ``kwargs`` can contain field names and values to replace the original
-        values in the ``clone``, e.g. ``"description" = "some text"``
-
-        The attribute :attr:`Event.clone_of` of the new created clone is set to
-        the original event.
-
-        >>> from events.models import Event, Group, Membership
-        >>> from django.utils.encoding import smart_str
-        >>> now = datetime.datetime.now().isoformat()
-        >>> user = User.objects.create(username = "user " + now)
-        >>> event = Event.parse_text(EXAMPLE)
-        >>> clone = event.clone( user )
-        >>> assert event.public
-        >>> clone_text = clone.as_text()
-        >>> assert ( event.as_text() == clone_text )
+    # this is a workarround described at http://code.djangoproject.com/ticket/10227
+    def _get_recurring( self ):
+        """ returns the recurrence instance associated with ``self`` or None
         """
-        # code inspired on http://djangosnippets.org/snippets/1282/
-        orginal_pk = self.pk
-        collected_objs = CollectedObjects()
-        self._collect_sub_objects( collected_objs )
-        # collected_objs is a special structure containing classes, instances
-        # and its ids. Example of its string representation:
-        # [(<class 'gridcalendar.events.models.EventUrl'>,
-        #   {9: <EventUrl: http://www.oaod2010.de/>}),
-        #  (<class 'gridcalendar.events.models.Calendar'>,
-        #   {5: <Calendar: Calendar object>}),
-        #  (<class 'gridcalendar.events.models.Event'>,
-        #   {8: <Event: 2010-12-13 : Expert Conference on OPENACCESS and OPENDATA>})]
-        related_models = collected_objs.keys()
-        # related_models is now a list of model classes. We are going to use
-        # it to copy all data from all classes (calling a special method
-        # clone).
-        # A test in tests.py checks that all classes with references to
-        # Event implement a clone method with self, event and user as only
-        # parameters.
+        try:
+            return self._recurring
+        except Recurrence.DoesNotExist:
+            return None
+    def _set_recurring( self, value ):
+        self._recurring = value
+    recurring = property( _get_recurring, _set_recurring )
 
-        # we now clone the event and do some checks
+    def clone( self, user, except_models = [], recurrence=True, **kwargs ):#{{{3
+        """ Makes, saves and return a deep clone of the event as an 
+        event of the user ``user``, and stores from which event the clone was
+        made of in the table defined in :class:`Recurrence` (unless the
+        parameter ``recurrence`` is False)
 
-        events = collected_objs[ Event ]
-        # events is a dictionary containing as keys self.id and all events-ids
-        # of events which are clone of self
-        original_event = events[self.id] # notice that it cheks we got
-        # the right event. Other id will produce a KeyError
-        assert original_event == self
-        # del collected_objs[ Event ] # sadly not supported by collected_objs
+        Notice that because there cannot be two events with the same title and
+        start date, either 'title' or 'start' must be used in **kwargs.
+
+        If ``self`` has a master in :class:`Recurrence`, the master
+        of the returned clone in :class:`Recurrence` will be set to the same
+        master.
+        
+        This method makes a clone of all related objects, and relates them to
+        the new created clone, except for the models in ``except_models``,
+        which are ignored.
+
+        ``kwargs`` can contain field names and values to replace in the clone
+        the original of ``self``, e.g. ``{"start": today()}``
+
+        >>> from events.models import Event
+        >>> from django.utils.encoding import smart_str
+        >>> import datetime
+        >>> now_t = datetime.datetime.now().isoformat()
+        >>> today = datetime.date.today()
+        >>> today_t = today.isoformat()
+        >>> user = User.objects.create(username = "user " + now_t)
+        >>> event = Event.parse_text(EXAMPLE)
+        >>> clone = event.clone( user, start = today )
+        >>> clone_text = clone.as_text()
+        >>> clone_text = clone_text.replace(
+        ...     today_t, event.start.isoformat(), 1 )
+        >>> assert ( event.as_text() == clone_text )
+        >>> event.delete()
+        >>> clone.delete()
+        """
         clone = Event()
         for field in self.get_simple_fields():
-            setattr( clone, field, getattr(self, field) )
-        clone.description = self.description # not a simple field
-        if self.clone_of:
-            clone.clone_of = self.clone_of
+            if kwargs.has_key( field ):
+                setattr( clone, field, kwargs[field] )
+            else: 
+                setattr( clone, field, getattr(self, field) )
+        # Dealing now with :attr:`Event.description` which is not returned by
+        # :meth:`Event.get_simple_fields` (see above)
+        assert u'description' in [unicode(f.name) for f in Event._meta.fields]
+        if kwargs.has_key( 'description' ):
+            clone.description = kwargs['description']
         else:
-            clone.clone_of = self
+            clone.description = self.description
+        if recurrence and self.recurring:
+            # we want to take into consideration recurrences AND self is a
+            # recurrence of a serie
+            if self.recurring.master == self:
+                # self is the master of the recurrence: we make clone a new
+                # recurrence of the serie
+                self.recurrences.create( event = clone )
+            else: # self is a recurrence of another master
+                self.recurring.master.recurrences.create( event = clone )
         clone.user = user
         for key, value in kwargs.items():
             if key == 'user':
                 continue
             setattr( clone, key, value )
         clone.save() # we need the id # TODO: ask in the ML if there is other option
+        related_models = [EventDeadline, EventSession, EventUrl] # TODO: get the list automatically
         try: # because we need to delete the clone if something goes wrong
             new_objs = [] # list of new related objects
             # we now traverse all related models and its objects
-            for model in reversed( related_models ):
+            for model in ( related_models ):
                 if model == Event or model in except_models:
                     continue
                 # next line is not the proper thing to do hear because for
@@ -700,14 +727,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             # something went wrong, we delete the objects
             for obj in new_objs:
                 obj.delete()
-            clone.delete()
+            clone.delete() # this deletes also the entries in Recurrence
             raise
         return clone
-
-    def get_clones( self ): #{{{3
-        "get all clones of event"
-        clones = Event.objects.filter( clone_of = self )
-        return clones
 
     def set_tags( self, tags ): #{{{3
         "set tags"
@@ -717,18 +739,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         "get tags"
         return Tag.objects.get_for_object( self )
 
-    def get_all_events_in_serie( self ): #{{{3
-        """ return a queryset ordered by 'start' with all events in the serie
-        of recurring events, or None if the event doesn't belong to a serie """
-        if not self.clone_of:
-            queryset = Event.objects.filter( clone_of = self )
-            if queryset:
-                # we add self to the serie ( querysets can be added with | ):
-                queryset |= Event.objects.filter ( pk = self.pk )
-        else:
-            queryset = Event.objects.filter(
-                    Q( clone_of = self.clone_of ) | Q( pk = self.clone_of.pk ))
-        return queryset.order_by('start')
 
     def __unicode__( self ): #{{{3
         return self.start.isoformat() + u" : " + self.title
@@ -739,18 +749,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return ( 'event_show', (), {'event_id': self.id,} )
 
     def save( self, *args, **kwargs ): #{{{3
-        """ Call the real 'save' function after checking that a private event
-        has an owner and that the public field is not changed ever after
-        creation, and also update :attr:`Event.upcoming` """
-        # It is not allowed to have a non-public event without owner:
-        assert not ( ( self.public == False ) and ( 
-            self.user == None  or self.user.id == None ) )
-        # checks that the public field is not changed if the Event already
-        # exists
+        """ Marks an event as new or not (for :meth:`Event.post_save) and call
+        the real 'save' function after updating :attr:`Event.upcoming` """
         try:
-            old_event = Event.objects.get( id = self.id )
-            # It is not allowed to modify the 'public' field:
-            assert ( self.public == old_event.public )
+            Event.objects.get( id = self.id )
             self.not_new = True # Event.post_save uses this
         except Event.DoesNotExist:
             pass
@@ -765,7 +767,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """
         # TODO: don't notify the user submitting the change
         event = kwargs['instance']
-        if event.clone_of:
+        if event.recurring:
+            # this event is an instance of a serie of recurring events
             return
         # TODO: users might also want to be informed of changes
         # not_new is set by Event.save
@@ -780,31 +783,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 args = [ event, ] )
         thread.setDaemon(True)
         thread.start()
-    #
-    #    # save history
-    #   #FIXME: save history
-    #    try:
-    #        new_event = Event.objects.get( pk = self.pk )
-    #        new = new_event.as_text()
-    #         date = EventHistory.objects.latest( 'date' )
-    #        try:
-    #            date = EventHistory.objects.filter( event = new_event )\
-    #            .latest( 'date' )
-    #            history = EventHistory.objects.get( event = new_event, \
-    #                                                 date = date )
-    #            history.new = new
-    #
-    #        except EventHistory.DoesNotExist:
-    #            user = Event.objects.get_user()
-    #            history = EventHistory( \
-    #                                    event = new_event,
-    #                                    user = Event.objects.get_user() \
-    #                                    if Event.objects.get_user() \
-    #                                    else None, \
-    #                                    new = new, old = None )
-    #        history.save()
-    #    except Event.DoesNotExist:
-    #        pass
 
     @staticmethod # def example(): {{{3
     def example():
@@ -815,11 +793,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event = Event.parse_text(example)
         >>> assert (smart_str(example) == event.as_text())
         >>> text = example.replace(u'DE', u'Germany')
+        >>> event.delete()
         >>> event = Event.parse_text(text)
         >>> assert (smart_str(example) == event.as_text())
         >>> text = text.replace(u'Germany', u'de')
+        >>> event.delete()
         >>> event = Event.parse_text(text)
         >>> assert (smart_str(example) == event.as_text())
+        >>> event.delete()
         """
         return EXAMPLE
 
@@ -876,8 +857,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'tags':
                 if self.tags:
                     to_return += keyword + u": " + self.tags + u"\n"
-            elif keyword == u'public':
-                to_return += keyword + u": " + unicode(self.public) + u"\n"
             elif keyword == u'address':
                 if self.address:
                     to_return += keyword + u": " + self.address + u"\n"
@@ -955,7 +934,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> assert(s[u'latitude'] ==  u'52.55247')
         >>> assert(s[u'longitude'] ==  u'13.40364')
         >>> assert(s[u'postcode'] ==  u'10439')
-        >>> assert(s[u'public'] ==  u'True')
         >>> assert(s[u'start'] ==  u'2010-12-29')
         >>> assert(s[u'starttime'] ==  u'10:00')
         >>> assert(s[u'tags'] ==
@@ -1039,8 +1017,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         It raises a ValidationError when the data is wrong, e.g. when a date is
         not valid. It raises and Event.DoesNotExist error when there is no
         event with ``event_id``. It raises a User.DoesNotExist when there is no
-        user with ``user_id``. It raises a RuntimeError if the event is not
-        viewable by the user.
+        user with ``user_id``.
 
         A text to be parsed as an event is of the form::
 
@@ -1116,10 +1093,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else:
             # the following line can raise an Event.DoesNotExist
             event = Event.objects.get( id = event_id )
-            if user is not None:
-                if not event.is_viewable_by_user(user):
-                    raise RuntimeError(
-                        _(u'the event is not viewable by the user'))
             event_form = EventForm( simple_fields, instance = event )
         # processing description
         if complex_fields.has_key(u'description'):
@@ -1130,25 +1103,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # testing data
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
-        # test field 'public'
-        if simple_fields.has_key('public'):
-            #  event_form.data['public'] is unicode
-            # event_form.clenaed_data['public'] is boolean
-
-            # TODO: indicate which values are accepted ('True', 'False',
-            # something else?). If not of the accepted values are displayed, it
-            # says which one are accepted. Translations of e.g. 'True' possible?
-
-            public = event_form.cleaned_data['public']
-            if (not public) and (not user):
-                # raises an error if ``public`` is False and the user is not
-                # logged-in
-                raise ValidationError(
-                        _(u"You have tried to create a non-public (private)" \
-                        " event, however only logged-in users can create" \
-                        " private events") )
-        else:
-            public = True
         # check syntax of complex fields before saving the form
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls(
@@ -1181,7 +1135,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                 {'date': date} )
         # save the form and get the event
         event = event_form.save(commit=False)
-        event.public = public
         event.user = user
         event.save() # TODO: can we process the complex fields without saving the event first?
         event_form.save_m2m()
@@ -1201,11 +1154,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             del complex_fields[u'sessions']
         if complex_fields.has_key(u'recurring'):
             for date in dates:
-                # we do not clone deadlines nor sessions, as they probably
+                # we do not clone deadlines nor sessions, as they 
                 # refer to the main event and not to the recurring events.
+                # TODO: inform the user
                 event.clone( user = user,
                         except_models = [EventDeadline, EventSession],
-                        public = event.public, start = date, end = None )
+                        start = date, end = None )
             del complex_fields[u'recurring']
         assert(len(complex_fields) == 0)
         return event
@@ -1227,7 +1181,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names.remove(u"user")
         field_names.remove(u"creation_time")
         field_names.remove(u"modification_time")
-        field_names.remove(u"clone_of")
         field_names.remove(u"description")
         field_names.remove(u"upcoming")
         return tuple(field_names)
@@ -1256,7 +1209,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> assert(gpl_len + 1  == len(synonyms_values_set))
         """
         return (u"acronym", u"title", u"start", u"starttime", u"end",
-                u"endtime", u"tags", u"urls", u"public", u"address",
+                u"endtime", u"tags", u"urls", u"address",
                 u"postcode", u"city", u"country", u"latitude", u"longitude",
                 u"deadlines", u"sessions", u"description")
  
@@ -1339,10 +1292,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'acronym', u'acronym' )         # acronym
         add( synonyms, u'ac', u'acronym' )
         add( synonyms, u'acro', u'acronym' )
-        add( synonyms, u'public', u'public' )           # public
-        add( synonyms, u'pu', u'public' )
-        add( synonyms, u'open', u'public' )
-        add( synonyms, u'op', u'public' )
         add( synonyms, u'country', u'country' )         # country
         add( synonyms, u'co', u'country' )
         add( synonyms, u'coun', u'country' )
@@ -1397,52 +1346,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # (*) can have multi-lines and are not simple text fields
         return synonyms
 
-    def is_viewable_by_user(self, user): #{{{3
-        """ returns true if ``user`` can see ``event`` """
-        return Event.is_event_viewable_by_user(self, user)
-
-    @staticmethod # def is_event_viewable_by_user( event, user ): {{{3
-    def is_event_viewable_by_user( event, user ):
-        """ returns true if ``user`` can see ``event`` """
-        # checking event parameter
-        if event is None:
-            raise  TypeError("`event` parameter was None")
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int):
-            event = Event.objects.get(pk=event)
-        elif isinstance(event, unicode) or isinstance(event, str):
-            event = Event.objects.get( pk = int(event) )
-        else:
-            raise TypeError(
-                "'event' must be an Event or an integer but it was: " +
-                str(event.__class__))
-        if event.public:
-            return True
-        # checking user parameter
-        if user is None:
-            return event.public
-        if isinstance(user, User):
-            pass
-        elif isinstance(user, int):
-            user = User.objects.get(pk=user)
-        elif isinstance(user, unicode) or isinstance(user, str):
-            user = User.objects.get( pk = int(user) )
-        elif user.id is None:
-            return event.public
-        else: raise TypeError(
-                "'user' must be a User or an integer but it was: " +
-                str(user.__class__))
-        if not user.is_authenticated():
-            return event.public
-        if event.user.id == user.id:
-            return True
-        # iterating over all groups that the event belongs to
-        for group in Group.objects.filter( events__id__exact = event.id ):
-            if Group.is_user_in_group( user.id, group.id ):
-                return True
-        return False
-
     def groups_id_list( self ): #{{{3
         """ returns a list of ids of groups the event is member of """
         groups_id_list = list()
@@ -1464,10 +1367,138 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         cal_entry = Calendar.objects.get( event = self, group = group )
         cal_entry.delete()
 
-# post_save.connect {{{1
+# Event post_save.connect {{{1
 # see http://docs.djangoproject.com/en/1.2/topics/signals/
 post_save.connect( Event.post_save, sender = Event, dispatch_uid="Event.post_save" )
 
+class RecurrenceManager( models.Manager ): #{{{1
+    def get_by_natural_key(self, event):
+        return self.get( event = Event.get_by_natural_key( *event ) )
+
+class Recurrence( models.Model ): #{{{1
+    # doc {{{2
+    """ stores which is the master of and event belonging to a serie of
+    recurring events.
+
+    - A master is the first event (or recurrence) of a serie of recurring
+      events.
+    - All recurring events of the serie should have the same master.
+    - A master has itself as master.
+    - An event, which have a master, cannot be itself a master of another event.
+
+    If we have an event ``e``, we can check if it is a recurrence of a serie
+    with::
+
+        if e.recurring
+
+    If we have an event ``e`` with a master (.e. ``e`` is a recurrence of a
+    serie with ``m`` as master), we can get its master with::
+
+        e.recurring.master
+
+    For a master of a serie::
+
+        e.recurring.master == e
+
+    To get all recurrences of an event (``m``) which is a master::
+
+        m.recurrences.all()
+
+    The above code returns an empty list if there is no event with ``m`` as
+    master.
+
+    To count the number of recurrences (more efficient than retrieving them)::
+
+        m.recurrences.count()
+
+    If we have an event ``m``, we attach an instance (``e``) to a serie
+    having ``m`` as master with::
+
+        m.recurrences.create(event = e)
+
+    >>> import datetime
+    >>> e1 = Event.objects.create(title="Re1", start=datetime.date.today())
+    >>> e2 = Event.objects.create(title="Re2", start=datetime.date.today())
+    >>> e3 = Event.objects.create(title="Re3", start=datetime.date.today())
+    >>> assert e1.recurring == None
+    >>> assert e2.recurring == None
+    >>> assert e3.recurring == None
+    >>> r = e1.recurrences.create(event = e2)
+    >>> r = e1.recurrences.create(event = e3)
+    >>> assert e1.recurring
+    >>> assert e2.recurring
+    >>> assert e3.recurring
+    >>> assert e1.recurring.master == e1
+    >>> assert e2.recurring.master == e1
+    >>> assert e3.recurring.master == e1
+    >>> event_list = [r.event for r in e1.recurrences.all()]
+    >>> assert e1 in event_list
+    >>> assert e2 in event_list
+    >>> assert e3 in event_list
+    >>> e1.recurrences.count()
+    3
+    >>> e3.delete() ; e2.delete() ; e1.delete()
+    """
+    # note that it would be possible to just have an attribute ``master`` in
+    # the class Event, but that would make impossible to use natural keys with
+    # events, because natural keys don't work with self references. TODO:
+    # discuss self referenced natural keys with the Django developers: it
+    # should work.
+    # attributes and methods {{{2
+    event = models.OneToOneField( Event,
+            primary_key = True,
+            # workarround described at
+            # http://code.djangoproject.com/ticket/10227
+            related_name = '_recurring',
+            verbose_name = _('event') )
+            
+    master = models.ForeignKey( Event,
+            related_name = 'recurrences',
+            verbose_name = _('master'), )
+
+    objects = RecurrenceManager()
+
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
+        verbose_name = _( u'Recurrence' )
+        verbose_name_plural = _( u'Recurrences' )
+        # see http://docs.djangoproject.com/en/1.3/ref/models/options/#order-with-respect-to
+        # order_with_respect_to = 'master'
+
+    def natural_key( self ):
+        return self.event.natural_key()
+    natural_key.dependencies = ['events.event']
+
+    def save( self, *args, **kwargs ):
+        """ Call the real 'save' function after checking that the master
+        doesn't have a master itself, raising an AssertionError otherwise.
+
+        The design of recurring events is that all events of a serie have the
+        same master (the first event in the serie), thus it is not allowed to
+        have a master with a different master itself.
+        """
+        # saving a new recurrence with an event (self.event) and its master
+        # (self.master)
+        if self.master.recurring:
+            # master is an instance of a serie.
+            if self.master.recurring.master == self.master :
+                # master is the master of the serie
+                pass # do nothing
+            else:
+                # master is part of a serie but it is not its master, which
+                # means something went wrong or someone didn't understand how
+                # recurrences work: ask for attention:
+                raise RuntimeError()
+            # Call the "real" save() method:
+            super( Recurrence, self ).save( *args, **kwargs )
+        else:
+            # master is not part of a serie, so we save the recurrence and
+            # additionaly a self reference to master.
+            super( Recurrence, self ).save( *args, **kwargs )
+            self_reference = Recurrence(
+                    master = self.master,
+                    event = self.master )
+            super( Recurrence, self_reference ).save( *args, **kwargs )
+    
 class ExtendedUser(User): # {{{1
     """ Some aditional funtions to users
     
@@ -1500,18 +1531,6 @@ class ExtendedUser(User): # {{{1
     class Meta: # {{{2
         proxy = True
 
-    def get_hash(self): # {{{2
-        """ return the hash code to authenticate by url """
-        return ExtendedUser.calculate_hash(self.id)
-
-    @staticmethod # def calculate_hash(user_id): {{{2
-    def calculate_hash(user_id):
-        """ returns the identification hash of the user or None """
-        if user_id is None:
-            return None
-        return hashlib.sha256(
-                "%s!%s" % (settings.SECRET_KEY, user_id)).hexdigest()
-
     def has_groups(self): # {{{2
         """ returns True if the user is at least member of a group, False
         otherwise """
@@ -1539,6 +1558,12 @@ class ExtendedUser(User): # {{{1
                 return True
         return False
 
+class EventUrlManager( models.Manager ): # {{{1
+    def get_by_natural_key(self, url_name, event):
+        return self.get(
+                url_name = url_name,
+                event = Event.objects.get_by_natural_key( *event ) )
+
 class EventUrl( models.Model ): # {{{1
     """ stores urls of events
     
@@ -1554,9 +1579,15 @@ class EventUrl( models.Model ): # {{{1
             u"Example: information about accomodation" ) )
     url = models.URLField( _( u'URL' ), blank = False, null = False )
 
+    objects = EventUrlManager()
+
     class Meta: # pylint: disable-msg=C0111
         ordering = ['url_name']
         unique_together = ( "event", "url_name" )
+
+    def natural_key( self ):
+        return ( self.url_name, self.event.natural_key() )
+    natural_key.dependencies = ['events.event']
 
     def __unicode__( self ): # {{{2
         return self.url
@@ -1661,6 +1692,7 @@ class EventUrl( models.Model ): # {{{1
         >>> event_urls = EventUrl.objects.filter(event=event)
         >>> assert(len(event_urls) == 1)
         >>> assert(event_urls[0].url_name == u'url')
+        >>> event.delete()
         """
         if isinstance(event, Event):
             pass
@@ -1694,11 +1726,16 @@ class EventUrl( models.Model ): # {{{1
         for event_url in event_urls:
             event_url.save()
         # delete old urls of the event which are not in ``text`` parameter
-        # TODO: save history
         event_urls = EventUrl.objects.filter(event=event)
         for event_url in event_urls:
             if not urls.has_key(event_url.url_name):
                 event_url.delete()
+
+class EventDeadlineManager( models.Manager ): # {{{1
+    def get_by_natural_key(self, deadline_name, event):
+        return self.get(
+                deadline_name = deadline_name,
+                event = Event.objects.get_by_natural_key( *event ) )
 
 class EventDeadline( models.Model ): # {{{1
     """ stores deadlines for events """
@@ -1710,10 +1747,16 @@ class EventDeadline( models.Model ): # {{{1
     deadline = models.DateField( _( u'Deadline' ), blank = False, null = False,
             validators = [validate_year] )
 
+    objects = EventDeadlineManager()
+
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         ordering = ['deadline', 'deadline_name']
         unique_together = ( "event", "deadline_name" )
 
+    def natural_key( self ):
+        return ( self.deadline_name, self.event.natural_key() )
+    natural_key.dependencies = ['events.event']
+    
     def save( self, *args, **kwargs ): #{{{2
         """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
         # Call the "real" save() method:
@@ -1864,6 +1907,7 @@ class EventDeadline( models.Model ): # {{{1
         >>> event_deadlines = EventDeadline.objects.filter(event=event)
         >>> assert(len(event_deadlines) == 1)
         >>> assert(event_deadlines[0].deadline_name == u'test3')
+        >>> event.delete()
         """
         if isinstance(event, Event):
             pass
@@ -1904,6 +1948,12 @@ class EventDeadline( models.Model ): # {{{1
             if not deadlines.has_key(event_deadline.deadline_name):
                 event_deadline.delete()
 
+class EventSessionManager( models.Manager ): # {{{1
+    def get_by_natural_key(self, session_name, event):
+        return self.get(
+                session_name = session_name,
+                event = Event.objects.get_by_natural_key( *event ) )
+
 class EventSession( models.Model ): # {{{1
     """ stores sessions for events """
     # TODO: check when submitting that session_dates are within the limits of
@@ -1919,6 +1969,12 @@ class EventSession( models.Model ): # {{{1
             _( u'Session start time' ), blank = False, null = False )
     session_endtime = models.TimeField( 
             _( u'Session end time' ), blank = False, null = False )
+
+    objects = EventSessionManager()
+
+    def natural_key( self ):
+        return ( self.session_name, self.event.natural_key() )
+    natural_key.dependencies = ['events.event']
 
     class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         ordering = ['session_date', 'session_starttime']
@@ -2069,6 +2125,7 @@ class EventSession( models.Model ): # {{{1
         >>> event_sessions = EventSession.objects.filter(event=event)
         >>> assert(len(event_sessions) == 1)
         >>> assert(event_sessions[0].session_name == u'test1')
+        >>> event.delete()
         """
         if isinstance(event, Event):
             pass
@@ -2105,7 +2162,6 @@ class EventSession( models.Model ): # {{{1
         for event_session in event_sessions:
             event_session.save()
         # delete old sessions of the event which are not in ``text`` parameter
-        # TODO: save history
         event_sessions = EventSession.objects.filter(event=event)
         for event_session in event_sessions:
             found = False
@@ -2116,35 +2172,11 @@ class EventSession( models.Model ): # {{{1
             if not found:
                 event_session.delete()
 
-#class EventHistory( models.Model ): # {{{1
-#    """ keeps history of changes (editions) on an event """
-#    event = models.ForeignKey( Event )
-#    user = models.ForeignKey( User, unique = False,
-#                            verbose_name = _( u'User' ),
-#                            blank = True, null = True )
-#    ip = models.IPAddressField( _( u'IP' ), blank = True, null = True )
-#    date = models.DateTimeField( _( u'Creation time' ), editable = False,
-#            auto_now_add = True )
-#    """Time stamp when the change was done""" # pyling: disable-msg=W0105
-#    old = models.TextField( _( u'Old data' ), blank = True, null = True )
-#    """the event as text before the change""" # pyling: disable-msg=W0105
-#    new = models.TextField( _( u'New data' ), blank = True, null = True )
-#    """ the event as text after the change """ # pyling: disable-msg=W0105
-#    def clone( self, event, user ):
-#        """ history is not copied when an event is cloned """
-#        return None
-#    class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
-#        unique_together = ( "event", "user", "date" )
-#        verbose_name = _( u'History' )
-#        verbose_name_plural = _( u'Histories' )
-#    def __unicode__( self ): # {{{2
-#        if (not self.user) or not self.user.id:
-#            if self.ip:
-#                return date.strftime('%Y-%m-%d %T') + " (" + self.ip + ")"
-#            else:
-#                return date.strftime('%Y-%m-%d %T')
-#        else:
-#            return date.strftime('%Y-%m-%d %T') + " (" + self.user.username + ")"
+class FilterManager( models.Manager ): # {{{1
+    def get_by_natural_key(self, name, username):
+        return self.get(
+                name = name,
+                user = User.objects.get( username = username ) )
 
 class Filter( models.Model ): # {{{1
     """ search queries of users """
@@ -2160,10 +2192,16 @@ class Filter( models.Model ): # {{{1
     email = models.BooleanField( _( u'Email' ), default = False, help_text =
             _(u'If set it sends an email to a user when a new event matches'))
 
+    objects = FilterManager()
+
     class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         unique_together = ( "user", "name" )
         verbose_name = _( u'Filter' )
         verbose_name_plural = _( u'Filters' )
+
+    def natural_key( self ):
+        return (self.name, self.user.username)
+    natural_key.dependencies = ['auth.user']
 
     def __unicode__( self ): # {{{2
         return self.name
@@ -2232,7 +2270,7 @@ class Filter( models.Model ): # {{{1
     @staticmethod # def matches( query, user, related = True ): {{{2
     def matches( query, user, related = True ):
         """ returns a sorted (by :attr:`Event.upcoming`) list of
-        events matching *query* viewable by *user* adding related events if
+        events matching ``query`` adding related events if
         *related* is True.
         
         If *related* is True it adds to the result events with related tags,
@@ -2265,7 +2303,7 @@ class Filter( models.Model ): # {{{1
     @staticmethod # def related_events( queryset, user, query ): {{{2
     def related_events( queryset, user, query ):    
         """ returns a list of related events to *queryset* as a result of
-        *query* and viewable by *user*
+        ``query``
         """
         limit = len ( queryset )
         # if the query has a location restriction, we save only related events
@@ -2300,8 +2338,7 @@ class Filter( models.Model ): # {{{1
             for tag in related_tags:
                 events = TaggedItem.objects.get_by_model(Event, tag)
                 for event in events:
-                    if ( event.is_viewable_by_user( user ) and
-                            ( event not in queryset ) ):
+                    if event not in queryset:
                         if not has_date_constraint:
                             if event.upcoming < today:
                                 continue
@@ -2341,9 +2378,6 @@ class Filter( models.Model ): # {{{1
                 user = None
         # TODO: use the catche system for queries
         queryset = Event.objects.all()
-        # if no user get only public events
-        if user is None or user.id is None:
-            queryset = queryset.filter(public = True)
         # groups
         regex = re.compile('!(\w+)', UNICODE)
         for group_name in regex.findall(query):
@@ -2422,12 +2456,6 @@ class Filter( models.Model ): # {{{1
         # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
         # remove duplicates
         queryset = queryset.distinct() # TODO: needed? we start with .all()
-        # filter events the user cannot see
-        if user is not None and user.id is not None:
-            queryset = queryset.filter( 
-                    Q( public = True ) |
-                    Q( user = user ) | 
-                    Q( calendar__group__membership__user = user ) )
         return queryset
 
     @staticmethod # def notify_users_when_wanted( event ): {{{2
@@ -2447,8 +2475,6 @@ class Filter( models.Model ): # {{{1
         # TODO: show a diff of the changes
         users = User.objects.all()
         for user in users:
-            if not event.is_viewable_by_user(user):
-                continue
             user_filters = Filter.objects.filter( user = user ).filter(
                     email = True)
             for fil in user_filters:
@@ -2477,6 +2503,9 @@ class Filter( models.Model ): # {{{1
                         # FIXME: do something meaningfull, e.g. error log
                         pass
 
+class GroupManager( models.Manager ): # {{{1
+    def get_by_natural_key(self, name):
+        return self.get( name = name )
 
 class Group( models.Model ): # {{{1
     """ groups of users and events
@@ -2516,10 +2545,15 @@ class Group( models.Model ): # {{{1
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
 
+    objects = GroupManager()
+
     class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         ordering = ['name']
         verbose_name = _( u'Group' )
         verbose_name_plural = _( u'Groups' )
+
+    def natural_key( self ):
+        return (self.name,)
 
     def __unicode__( self ): # {{{2
         return self.name
@@ -2650,17 +2684,20 @@ class Group( models.Model ): # {{{1
         else:
             return events[0:limit]
 
-    def get_coming_public_events(self, limit=5): # {{{2
-        """ Returns a list of maximal *limit* public events with at least one
+    def get_coming_events(self, limit=5): # {{{2
+        """ Returns a list of maximal *limit* events with at least one
         date in the future (start, end or deadline). If *limit* is -1 it
         returns all
         """
         today = datetime.date.today()
         events = Event.objects.filter(
-                Q(public = True) & Q(calendar__group = self) & (
-                    Q(start__gte=today) | Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today) ))
-        events = events.distinct().order_by('upcoming')
+                Q(calendar__group = self) & Q(upcoming__gte=today) )
+        # the code without using upcoming would be:
+        #events = Event.objects.filter(
+        #        Q(calendar__group = self) & (
+        #            Q(start__gte=today) | Q(end__gte=today) |
+        #            Q(deadlines__deadline__gte=today) ))
+        events = events.distinct().order_by('upcoming') # TODO: needed?
         if limit == -1:
             return events
         else:
@@ -2675,15 +2712,18 @@ class Group( models.Model ): # {{{1
                     Q(start__gte=today) | Q(end__gte=today) |
                     Q(deadlines__deadline__gte=today) )).count() > 0
 
-    def has_coming_public_events(self): # {{{2
-        """ returns True if the group has coming public events (with *start*,
+    def has_coming_events(self): # {{{2
+        """ returns True if the group has coming events (with *start*,
         *end* or a *deadline* of an event of the group in the future)
         """
         today = datetime.date.today()
-        return Event.objects.filter(
-                Q( public = True ) & Q( calendar__group = self ) & (
-                    Q(start__gte=today) | Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today) )).count() > 0
+        return Event.objects.filter( Q(calendar__group = self) &
+                Q(upcoming__gte=today) ).count() > 0
+        # the code without using upcoming would be:
+        # return Event.objects.filter(
+        #         Q( calendar__group = self ) & (
+        #             Q(start__gte=today) | Q(end__gte=today) |
+        #             Q(deadlines__deadline__gte=today) )).count() > 0
 
     @staticmethod # def events_in_groups(groups, limit=5): {{{2
     def events_in_groups(groups, limit=5):

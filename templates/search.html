@@ -27,18 +27,18 @@
         {# shows links to download or links to external services #}
         {% if USER.is_authenticated %}
             <span id="calendar_view">
-                <a href='http://30boxes.com/external/widget?url=http://{{ DOMAIN }}{% url search_ical_hashed query|urlencode|iriencode user_id hash %}'>
+                <a href='http://30boxes.com/external/widget?url=http://{{ DOMAIN }}{% url search_ical query|urlencode|iriencode %}'>
                     {% trans "calendar" %}</a>
                 {# FIXME: the above URL doesn't work when # is in the search (maybe a bug in 30boxes #}
             </span>
             <span id="ical_view">
-                <a href='{% url search_ical_hashed query|urlencode|iriencode user_id hash %}'>iCalendar</a>
+                <a href='{% url search_ical query|urlencode|iriencode %}'>iCalendar</a>
                     <!-- doesn't look nice in IE7 at least
                     <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
                     -->
             </span>
             <span id="rss_view">
-                <a href='{% url search_rss_hashed query|urlencode|iriencode user_id hash %}'>RSS</a>
+                <a href='{% url search_rss query|urlencode|iriencode %}'>RSS</a>
                     <!-- doesn't look nice in IE7 at least
                     <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
                     -->
