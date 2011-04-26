@@ -35,7 +35,7 @@ from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
-from django.db.models import Max, Q
+from django.contrib.gis.db.models import Max, Q
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
@@ -472,14 +472,25 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         data = serializers.serialize(
                 'json',
                 search_result,
-                fields=('title', 'upcoming', 'start', 'tags', 'latitude',
-                    'longitude'),
+                fields=('title', 'upcoming', 'start', 'tags', 'coordinates'),
+                indent = 2,
                 ensure_ascii=False )
         if jsonp:
             data = jsonp + '(' + data + ')'
             mimetype = "application/javascript"
         else:
             mimetype = "application/json"
+        return HttpResponse( mimetype = mimetype, content = data )
+    elif view in ('yaml', 'xml'):
+        data = serializers.serialize(
+                view,
+                search_result,
+                indent = 2,
+                fields=('title', 'upcoming', 'start', 'tags', 'coordinates') )
+        if view == 'xml':
+            mimetype = "application/xml"
+        else:
+            mimetype = "application/x-yaml"
         return HttpResponse( mimetype = mimetype, content = data )
     else:
         raise Http404

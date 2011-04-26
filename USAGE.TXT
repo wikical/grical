@@ -1,50 +1,48 @@
-.. This file is written in ReStructuredText, explains how GridCalendar works and is part of the generated web
+.. Topic:: Help.
 
-Help
-====
+    This page summarizes how to use this site.
 
-This page summarizes how to use this site.
+.. contents:: Contents:
 
+Introduction
+------------
 
-Events
-------
+**Grid Calendar** (abbreviated as **grical**), is an open web where people store
+quickly a few information about interesting events, so that others can also
+easily know about them. Grical makes easy and fast for its users to get
+notified and store interesting events in its own external calendars.
 
-An event can be public or private. Public events can be edited by anyone like pages of the
-Wikipedia_. You can *subscribe* to an event to get notified of any change, comment, etc. Private
-events can be seen and edited only by the submitter of the event and the the group the event belongs
-to. When a private event is added to a group, the event is clone (i.e. a deep copy of the event is
-done) and is accessible and modifiable only by the members of the group. I.e. each private event
-belongs to a single group.
+Grical offers its **content as free content**  allowing its reuse by any party under the
+conditions of the `CC-BY-SA license`_. Its source code is `Free Software`_ and
+thus respects the `Open Knowledge Definition`_ and the
+`Open Software Service Definition`_ of the `Open Knowledge Foundation`_.
 
-The public/private flag of an event cannot be changed after creation, but an
-event can be cloned (copy) into any other group the user is also a member of.
-
-Events submitted by anonymous users are public.
-
-The main reason of private events belonging only to a single group is that events have comments, and
-members of a group commenting on an event might not want non-members to see their comments. Another
-important reason is that you might trust the members of a group, but not the whole world in
-order to keep the information of an event accurate and interesting to you.
-
-When a private event is clone to another group, the comments are not copied.
+Events in Grical can be edited by anyone like pages of the Wikipedia_. You can
+*subscribe* to an event (or to the result of filters) to get notified of any
+change, comment, or new event matching a filter.
 
 .. _Wikipedia: http://en.wikipedia.org/wiki/Help:About
+.. _CC-BY-SA license: http://creativecommons.org/licenses/by-sa/3.0/
+.. _Free Software: http://en.wikipedia.org/wiki/Free_software
+.. _Open Knowledge Definition: http://www.opendefinition.org/okd
+.. _Open Software Service Definition: http://www.opendefinition.org/ossd
+.. _Open Knowledge Foundation: http://okfn.org/
 
 
 Groups
 ------
 
-A group consist of some users and events. When an event is public, comments and
-modifications of the event can be seen by anyone, otherwise only by the members
-of the group. When a private event is added to a group, a clone (i.e. a deep
-copy) of the event is created an attached to the group. This means that a
-private event can have only one group.
+Grical has groups. A group consist of some users and events. When an event is
+public, comments and modifications of the event can be seen by anyone,
+otherwise only by the members of the group. When a private event is added to a
+group, a clone (i.e. a deep copy) of the event is created an attached to the
+group. This means that a private event can have only one group.
 
 
 Events as text
 --------------
 
-Events can be submitted per email to "``event ät gridmind.org``". The subject of the email is ignored.
+Events can be submitted per email to ``event ät gridmind.org``. The subject of the email is ignored.
 Example of the body of an email::
 
     title: GridCalendar presentation
@@ -64,13 +62,11 @@ You can optionally include more data in the submission. Example::
     urls:
         code    http://example.com
         web    http://example.com
-    public: True
     address: Gleimstr. 6
     postcode: 10439
     city: Berlin
     country: DE
-    latitude: 52.55247
-    longitude: 13.40364
+    coordinates: 52.55247, 13.40364
     deadlines:
         2009-11-01    visitor tickets
         2010-10-01    call for papers
@@ -95,18 +91,48 @@ Searches and filters
 - searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and ``country``
 - all given words must appear in at least one of the fields
 - search results contain also related events (with similar tags), unless one or more of the special search options are used (see bellow)
-- one or more dates in isoformat (``yyyy-mm-dd``) restrict the query to events with dates from the the lowest to the highest, or to one day if there is only one date
+- one or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the the oldest to the newest, or to one day if there is only one date
 - If there is no date in the query only future events are showed
 - Single words are looked up in the fields ``title``, ``tags``, ``city``, ``country`` and ``acronym``
-- Tags (``#tag_name``) restricts the query to events with these tags
-- Locations (``@location_name``) restricts the query to events having these location in the fields ``city`` or ``country``
-- Groups (``!group_name``) restricts the query to events of the groups
-- Searches starting with an asterisk and one space (``* ``) makes the search broader, including past events
+- Tags ( ``#tag_name`` ) restricts the query to events with these tags
+- Groups ( ``!group_name`` ) restricts the query to events of the groups
+- Searches starting with an asterisk and one space makes the search broader, including past events
   (if no dates are specified), text in the description, urls (name and url), sessions (name) and deadlines (name)
+- Locations restricts the query to events within the given location. There are four possibilities. When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
+  
+  - giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``
+  - giving the name of a place and a distance. ``@london+100`` would look 100
+    kilometers arround the center of the most relevant place with the name ``london`` (being it London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most relevant city with the name London in Canada).
+  - giving a coordinate and a distance ( ``@52.55247,13.40364+500km`` )
+  - giving four coordinates defining a rectangle: longitude_west,
+    longitude_east, latitude_north, latitude_south. Example: ``@13.324,13.463,52.5503,52.4701``
 
+- Any search can be saved as a filter by logged-in users. To be able to logg-in
+  you need to register. A confirmation email will be sent in the proccess.
+
+- You can select to get notified of new events matching one of your filters.
+
+- The result of searches also have a `RSS feed`_ which can be subscribed even
+  by non-logged-in users.
+
+- The result of searches also have an `iCalendar file`_ which can be imported in
+  external calendars.
+
+- Both the `RSS feed`_ and the `iCalendar file`_ will contain in the future new
+  events.
+
+.. _RSS feed: http://en.wikipedia.org/wiki/Rss
+.. _iCalendar File: http://en.wikipedia.org/wiki/ICalendar
+
+API
+---
+
+Grical content can be integrated in external pages. See `the wiki page about our API`__
+
+__ http://code.grical.org/wiki/OnAPI
 
 More help
-=========
+---------
 
 If you need more help, you can contact our mailing list at ``grical ät gridmind.org`` or try our IRC
 (`what is IRC?`_) channel `irc://irc.freenode.net/calendar`__

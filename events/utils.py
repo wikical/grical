@@ -30,12 +30,17 @@ import time
 import datetime
 from dateutil.relativedelta import relativedelta
 import urllib
+import urllib2
 import httplib
 from xml.etree.ElementTree import fromstring
+from xml.parsers.expat import ExpatError
 
+from django.contrib.gis.geos import Point
 from django.contrib.gis.utils import GeoIP
 from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
+
+from settings import GEONAMES_USERNAME
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
 # OpenStreetMap doesn't want more than one query per second
@@ -281,8 +286,66 @@ def search_address_google( data, country_code = None ): # {{{1
         return result
     return None
 
+# TODO cache API searches and download the data of geonames to use when running
+# out of allowed queries
+def search_name( name ): # {{{1
+    """ it uses the geonames API returning a ``Point`` with the most relevant
+    location given e.g. ``London,GB``
+
+    As of April 2011, the restrictions are 2000 queries per hour and 30.000 per day.
+    See http://www.geonames.org/export/
+    
+    Example query:
+    ``http://api.geonames.org/search?q=london,ca&maxRows=1&username=demo``
+
+    Result::
+
+        <geonames style="MEDIUM">
+          <totalResultsCount>44</totalResultsCount>
+          <geoname>
+            <toponymName>London</toponymName>
+            <name>London</name>
+            <lat>42.98339</lat>
+            <lng>-81.23304</lng>
+            <geonameId>6058560</geonameId>
+            <countryCode>CA</countryCode>
+            <countryName>Canada</countryName>
+            <fcl>P</fcl>
+            <fcode>PPL</fcode>
+          </geoname>
+        </geonames>
+    
+    >>> p = search_name( u'london,ca' )
+    >>> unicode(p.x)
+    u'-81.23304'
+    >>> unicode(p.y)
+    u'42.98339'
+    """
+    query = urllib.quote( name.encode('utf-8') )
+    url = 'http://api.geonames.org/search?q=%s&maxRows=1&username=%s' % \
+            ( query, GEONAMES_USERNAME )
+    try:
+        # FIXME: check for API limit reached
+        response = urllib2.urlopen( url, timeout = 10 )
+        if not response:
+            return None
+        response_text = response.read()
+        doc = fromstring( response_text ) # can raise a ExpatError
+        geonames = doc.findall( 'geoname' )
+        # if no geoname, genonames is None and when trying to get geonames[0] a
+        # IndexError is raised
+        # if no lat, no text and an AttributeError is raised:
+        lat = float( geonames[0].find('lat').text )
+        # if no lng, no text and an AttributeError is raised:
+        lng = float( geonames[0].find('lng').text )
+    except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
+            IndexError, AttributeError ) as err:
+        # TODO: log the err
+        return None
+    return Point( lng, lat )
+
 def search_address_osm( data ): # {{{1
-    """ uses nominatim.openstreetmap.org to look up for ``data``.
+    """ uses nominatim.openstreetmap.org to look up for ``data``.#{{{
 
     See ``search_address``
 
@@ -299,7 +362,7 @@ def search_address_osm( data ): # {{{1
     'DE'
     """
     # FIXME check response code, etc and return None if no address are given or
-    # an error occur
+    # an error occur#}}}
     address = urllib.quote( data.encode('utf-8') )
     params = ''.join( [
         '&format=xml',

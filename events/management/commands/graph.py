@@ -28,7 +28,7 @@
 # ./graph.py <django_app_name> | dot -Tpng -o graph.png
 
 import sys
-from django.db.models import get_app, get_models
+from django.contrib.gis.db.models import get_app, get_models
 from django.core.management.base import BaseCommand, CommandError
 
 class Command( BaseCommand ): # {{{1

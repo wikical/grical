@@ -30,7 +30,7 @@ import datetime
 from django.contrib.sites.models import Site
 from django.http import Http404
 from django.utils.translation import ugettext as _
-from django.db.models import Q
+from django.contrib.gis.db.models import Q
 from django.contrib.syndication.views import Feed
 from django.core.urlresolvers import reverse
 
