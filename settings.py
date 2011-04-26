@@ -141,6 +141,7 @@ INSTALLED_APPS = (
     'django.contrib.databrowse',
     'django.contrib.admindocs',
     'django.contrib.comments',
+    'django.contrib.gis',
     'tagging',
     'registration',
     'django.contrib.markup', # used for rendering ReStructuredText

@@ -28,7 +28,7 @@ in the future and :attr:`events.models.Event.upcoming` in the past """
 # imports {{{1
 import datetime
 import sys
-from django.db.models import F, Q
+from django.contrib.gis.db.models import F, Q
 from django.core.management.base import NoArgsCommand
 from gridcalendar.events.models import Event, EventDeadline
 

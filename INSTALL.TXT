@@ -1,4 +1,5 @@
 .. This file is written in ReStructuredText and used to generate the content of some web pages
+.. vim:ft=rst
 
 Installation instructions for Debian based systems
 ==================================================
@@ -13,7 +14,7 @@ Installation instructions for Debian based systems
    hg pull
    hg update
 
-#. Install the following packages: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools``. Django must be at least Version 1.2.3
+#. Install the following packages and their dependencies: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools python-gdal python-yaml``. Django must be at least Version 1.3
 
 #. Install ``django-tables``::
 
@@ -30,16 +31,22 @@ Installation instructions for Debian based systems
 
 #. If you want to develop GridCalendar:
    
-   #. Install ``python-django-debug-toolbar``, ``python-profiler``, ``python-webtest`` and ``django-webtest``. As root::
+   #. Install ``python-django-debug-toolbar``, ``python-profiler``,
+      ``python-webtest`` and ``django-webtest``. webtest version 1.3 is needed for
+      Django 1.3. As root::
 
-        aptitude install python-django-debug-toolbar python-webtest
-        easy_install django-webtest
+          aptitude install python-django-debug-toolbar python-webtest
+          easy_install django-webtest
+
+      If you have an old version of django-webtest already installed::
+
+          easy_install --upgrade django-webtest
 
    #. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the
       IP(s) you use when developing. Example::
 
-        DEBUG = True
-        INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
+          DEBUG = True
+          INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
 
    #. You can run a web test server with ``python manage.py testserver``
 
@@ -127,13 +134,20 @@ future. This is necessary for performance and scalability reasons. Add to you cr
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
 
+    #. `Install SpatiaLite`__
+
+__ http://docs.djangoproject.com/en/1.3/ref/contrib/gis/install/#creating-a-spatial-database-for-spatialite
+
 #. If you want to use postgresql (instead of SQLite) for storing your data:
    
-    #. Install the packages ``postgresql-8.3`` and ``python-psycopg2``
+    #. Install the packages (and its dependencies) ``postgresql-8.4 python-psycopg2 postgresql-8.4-postgis libgeos-c1``
 
-    #. as root edit your ``/etc/postgresql/*/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
+    #. as root edit your ``/etc/postgresql/8.4/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
 
     #. reload the configuration: ``killall -HUP postgres``
+
+    #. as user ``postgres`` download and execute the script
+    `create_template_postgis-debian.sh<http://docs.djangoproject.com/en/1.3/_downloads/create_template_postgis-debian.sh>`
 
     #. create the GridCalendar ``postgres`` user with a password::
 
@@ -146,9 +160,9 @@ future. This is necessary for performance and scalability reasons. Add to you cr
         Shall the new role be allowed to create databases? (y/n) y
         Shall the new role be allowed to create more new roles? (y/n) n
 
-    #. create the gridcalendar database::
+    #. create the gridcalendar database (use the same password as before)::
 
-        postgres$ createdb -U gridcalendar -O gridcalendar gridcalendar
+        postgres$ createdb -U gridcalendar -O gridcalendar --password -T template_postgis gridcalendar
         Password:
 
     #. Install the Django tables::

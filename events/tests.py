@@ -93,7 +93,7 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
         title = 'event submission ' + str( datetime.datetime.now() )
         event_form['title'] = title
         event_form['when'] = datetime.date.today().isoformat()
-        event_form['tags'] = 'submission'
+        event_form['tags'] = 'submission test'
         event_form['web'] = 'http://example.com'
         # submitt and get extended form
         response = event_form.submit().follow()

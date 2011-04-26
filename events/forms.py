@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vi:expandtab:tabstop=4:shiftwidth=4:textwidth=79:fdm=marker
 # GPL {{{1
 #############################################################################
 # Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
@@ -28,6 +28,7 @@ import re
 import datetime
 import urlparse
 
+from django.contrib.gis.geos import Point
 from django.core import validators
 from django.forms import ( CharField, IntegerField, HiddenInput,
         ModelMultipleChoiceField, ModelForm, ValidationError,
@@ -37,7 +38,7 @@ from django.utils.translation import ugettext as _
 
 from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
-        EventSession, Filter, Group, Membership)
+        EventSession, Filter, Group, Membership, COORDINATES_REGEX)
 from gridcalendar.events.utils import validate_year
 
 def _date(string): # {{{1
@@ -51,16 +52,13 @@ def _time(string): # {{{1
     """ parse a time in the format: hh:mm """
     return datetime.datetime.strptime(string, '%H:%M').time()
 
-# Tue Mar  8 10:08:46 CET 2011:
-# From Django repository in order to append 'http' when missing.
-# Additionally, added support for in-URL basic AUTH ( code found at
-# http://code.djangoproject.com/ticket/9791 )
-class URLFieldExtended(CharField):
+class URLFieldExtended(CharField): #{{{1
+    """ like URLFiled but adding support for in-URL basic AUTH, see
+        http://code.djangoproject.com/ticket/9791 """
     default_error_messages = {
         'invalid': _(u'Enter a valid URL.'),
         'invalid_link': _(u'This URL appears to be a broken link.'),
     }
-
     def __init__(self, max_length=None, min_length=None, verify_exists=False,
             validator_user_agent=validators.URL_VALIDATOR_USER_AGENT,
             *args, **kwargs):
@@ -69,7 +67,6 @@ class URLFieldExtended(CharField):
         self.validators.append( validators.URLValidator(
             verify_exists=verify_exists,
             validator_user_agent=validator_user_agent ) )
-
     def to_python(self, value):
         if value:
             split_result = urlparse.urlsplit(value) # returns a SplitResult
@@ -203,6 +200,37 @@ class DatesTimesField(Field): # {{{1
             if value['start_time'] > value['end_time']:
                 raise ValidationError( _('end time is before start time') )
 
+class CoordinatesField( CharField ): #{{{1
+    default_error_messages = {
+            'invalid': _(
+                u'Enter a valid pair of coordinates (latitude,longitude)'),
+        }
+    def __init__(self, max_length=None, min_length=None, *args, **kwargs):
+        super( CoordinatesField, self).__init__(
+                max_length, min_length, *args, **kwargs )
+        self.validators.append( CoordinatesField.validate_latitude )
+        self.validators.append( CoordinatesField.validate_longitude )
+    def to_python( self, value ):
+        """Normalize coordinates to a dictionary with two keys: latitude and
+        longitude. """
+        if not value:
+            return {}
+        value = value.strip()
+        matcher = COORDINATES_REGEX.match( value )
+        if not matcher:
+            raise ValidationError(_(u'No two separate numbers with decimals'))
+        return {
+            'latitude':  float ( matcher.group(1) ),
+            'longitude': float ( matcher.group(2) )}
+    @staticmethod
+    def validate_latitude( value ):
+        if value['latitude'] < -90 or value['latitude'] > 90:
+            raise ValidationError( _( u'Latitude is not within (-90,90)' ) )
+    @staticmethod
+    def validate_longitude( value ):
+        if value['longitude'] < -180 or value['longitude'] > 180:
+            raise ValidationError( _(u'Longitude is not within (-180,180)') )
+
 def get_event_form(user): # {{{1
     """returns a simplied event form """
     if user.is_authenticated():
@@ -235,43 +263,6 @@ class FilterForm(ModelForm): # {{{1
     #                         {'filter_name': data.get('name')} )
     #    return data
 
-
-class CoordinatesField( CharField ):
-    default_error_messages = {
-            'invalid': _(u'Enter a valid pair of coordinates'),
-        }
-
-    def __init__(self, max_length=None, min_length=None, *args, **kwargs):
-        super( CoordinatesField, self).__init__(
-                max_length, min_length, *args, **kwargs )
-        self.validators.append( CoordinatesField.validate_latitude )
-        self.validators.append( CoordinatesField.validate_longitude )
-
-    def to_python( self, value ):
-        """Normalize coordinates to a dictionary with two keys: latitude and
-        longitude. """
-        if not value:
-            return {}
-        value = value.strip()
-        regex = re.compile(r'(-?\s*\d+\.\d+)\s*[,;:+| ]\s*(-?\s*\d+\.\d+)')
-        matcher = regex.match( value )
-        if not matcher:
-            raise ValidationError(_(u'No two separate numbers with decimals'))
-        return {
-            'latitude':  float ( matcher.group(1) ),
-            'longitude': float ( matcher.group(2) )}
-
-    @staticmethod
-    def validate_latitude( value ):
-        if value['latitude'] < -90 or value['latitude'] > 90:
-            raise ValidationError( _( u'Latitude is not within (-90,90)' ) )
-
-    @staticmethod
-    def validate_longitude( value ):
-        if value['longitude'] < -180 or value['longitude'] > 180:
-            raise ValidationError( _(u'Longitude is not within (-180,180)') )
-
-
 class EventForm(ModelForm): # {{{1
     """ ModelForm for all editable fields of Event """
     coordinates = CoordinatesField( max_length = 26, required = False )
@@ -281,18 +272,15 @@ class EventForm(ModelForm): # {{{1
         super(EventForm, self).__init__(*args, **kwargs)
         if kwargs.has_key('instance'):
             # not a new event
-            self.fields['latitude'].widget = HiddenInput()
-            self.fields['longitude'].widget = HiddenInput()
-            # We use a single field called 'coordinates' for
-            # showing/editing/entering latitude and longitude, we populate now
-            # 'coordinates' with the values of event.latitude and
-            # event.longitude
+            # We use a custom field called 'coordinates' for
+            # showing/editing/entering latitude and longitude stored in
+            # Event.coordinates (which is a Point). We populate now
+            # 'coordinates' with the values of event.coordinates
             instance = kwargs['instance']
             coordinates_value = u''
-            if instance.latitude:
-                coordinates_value += str( instance.latitude )
-            if instance.longitude:
-                coordinates_value += ", " + str( instance.longitude )
+            if instance.coordinates:
+                coordinates_value += str( instance.coordinates.y ) + ', ' + \
+                        str( instance.coordinates.x )
             if coordinates_value:
                 self.fields['coordinates'].initial = coordinates_value
         #TODO: use css instead
@@ -309,17 +297,24 @@ class EventForm(ModelForm): # {{{1
         self.fields['description'].widget.attrs["cols"] = 70
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
+        exclude = ('coordinates',) # excludes the model field 'coordinates'
     def clean_tags(self): # pylint: disable-msg=C0111
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
             raise ValidationError(_(u"Punctuation marks are not allowed"))
-        # Always return the cleaned data, whether you have changed it or not.
+        # this method has to return the cleaned data, whether you have changed
+        # it or not:
         return data
-    def clean_coordinates( self ):
-        coordinates = self.cleaned_data['coordinates']
-        if coordinates:
-            self.cleaned_data['latitude'] = coordinates['latitude']
-            self.cleaned_data['longitude'] = coordinates['longitude']
+    def clean( self ):
+        """ it adds the value of coordinates to the Event instance """
+        cleaned_data = super(EventForm, self).clean()
+        if cleaned_data.has_key('coordinates'):
+            coordinates = cleaned_data['coordinates']
+            if coordinates:
+                self.instance.coordinates = Point(
+                        float(coordinates['longitude']),
+                        float(coordinates['latitude']) )
+        return self.cleaned_data
 
 class SimplifiedEventForm(EventForm): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
@@ -359,12 +354,12 @@ class EventUrlForm(ModelForm): # {{{1
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventUrl
 
-class EventDeadlineForm(ModelForm):
+class EventDeadlineForm(ModelForm): # {{{1
     """ ModelForm for EventDeadline """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventDeadline
 
-class EventSessionForm(ModelForm):
+class EventSessionForm(ModelForm): # {{{1
     """ A ModelForm for an EventSession with small sizes for the widget of some
         fields. """
     # TODO: better use CSS: modify the widget to add a html css class name.
@@ -381,13 +376,13 @@ class EventSessionForm(ModelForm):
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventSession
 
-class NewGroupForm(ModelForm):
+class NewGroupForm(ModelForm): # {{{1
     """ ModelForm for Group with only the fields `name` and `description` """
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Group
         fields = ('name', 'description',)
 
-class AddEventToGroupForm(Form):
+class AddEventToGroupForm(Form): # {{{1
     """ Form with a overriden constructor that takes an user and an event and
     provides selectable group names in which the user is a member of and the
     event is not already in the group. """
@@ -399,7 +394,7 @@ class AddEventToGroupForm(Form):
                 Group.groups_for_add_event(user, event)
         self.fields['grouplist'].label = _(u'Groups:')
 
-class InviteToGroupForm(Form):
+class InviteToGroupForm(Form): # {{{1
     """ Form for a user name to invite to a group """
     group_id = IntegerField(widget=HiddenInput)
     # TODO: use the constrains of the model User

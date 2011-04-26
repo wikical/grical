@@ -38,9 +38,13 @@ import vobject
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.utils.encoding import smart_str, smart_unicode
-from django.db import models
+from django.contrib.gis.db import models
 # http://docs.djangoproject.com/en/1.2/topics/db/queries/#filters-can-reference-fields-on-the-model
-from django.db.models import Q
+#from django.db.models import Q
+from django.contrib.gis.db.models import Q
+from django.contrib.gis.geos import Point, Polygon
+from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
+from django.db.models.signals import pre_save, post_save
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
@@ -56,13 +60,14 @@ from gridcalendar.events.signals import user_auth_signal
 
 from tagging.fields import TagField
 from tagging.models import Tag, TaggedItem
-from utils import validate_year
+from utils import validate_year, search_name
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
 # names (in different languages) and codes like e.g. ES, es,  ESP, eSp, 724,
 # España, etc. Name colisions in different languages needs to be checked.
 # OR use python.django.countries
+# TODO: use the language selected by the user in all APIs
 COUNTRIES = (
     ( 'AF', _( u'Afghanistan' ) ),
     ( 'AX', _( u'Åland Islands' ) ),
@@ -328,8 +333,7 @@ address: Gleimstr. 6
 postcode: 10439
 city: Berlin
 country: DE
-latitude: 52.55247
-longitude: 13.40364
+coordinates: 52.55247, 13.40364
 deadlines:
     2009-11-01    visitor tickets
     2010-10-01    call for papers
@@ -346,8 +350,10 @@ GridCalendar will be presented"""
 
 # regexes {{{1
 DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
+COORDINATES_REGEX = re.compile(
+        r'\s*([+-]?\s*\d+(?:\.\d*)?)\s*[,;:+| ]\s*([+-]?\s*\d+(?:\.\d*)?)' )
 
-class EventManager( models.Manager ): # {{{1
+class EventManager( models.GeoManager ): # {{{1
     """ manager for deserialization.
 
     See http://docs.djangoproject.com/en/1.3/topics/serialization/#deserialization-of-natural-keys
@@ -359,6 +365,7 @@ class EventManager( models.Manager ): # {{{1
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model """ # doc {{{2
     # fields {{{2
+    objects = EventManager()
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
     """The user who created the event or null if AnonymousUser""" # pyling: disable-msg=W0105
@@ -398,21 +405,38 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     address = models.CharField( _( u'Address' ), blank = True,
             null = True, max_length = 100, # TODO: increase to 200
             help_text = _( u'Complete address including city and country' ) )
-    latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
-            help_text = _( u'In decimal degrees, not ' \
-            u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
-            u'for North' ) )
-    longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
-            help_text = _( u'In decimal degrees, not ' \
-                u'degrees/minutes/seconds. Prefix with "-" for West, no ' \
-                u'sign for East' ) )
+    coordinates = models.PointField( _('Coordinates'),
+            editable = False, blank=True, null=True )
+    """ used for calculating events within a distance to a point """
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
+    # old code before switching to postgis with the new geo field coordiantes
+    # latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
+    #         help_text = _( u'In decimal degrees, not ' \
+    #         u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
+    #         u'for North' ) )
+    # longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
+    #         help_text = _( u'In decimal degrees, not ' \
+    #             u'degrees/minutes/seconds. Prefix with "-" for West, no ' \
+    #             u'sign for East' ) )
 
-    # TODO: remove
-    public = models.BooleanField( _( u'Public' ), default = True, )
-
-    objects = EventManager()
+    # convienent properties {{{2
+    # custom latitude and longitude properties which raise an error when
+    # setting them when self.coordinates is not initialized
+    # Custom latitude property
+    def _get_latitude(self):
+        if self.coordinates:
+            return self.coordinates.y
+        return None
+    def _set_latitude(self, value): self.coordinate.y = value
+    latitude = property(_get_latitude,_set_latitude)
+    # Custom longitude property
+    def _get_longitude(self):
+        if self.coordinates:
+            return self.coordinate.x
+        return None
+    def _set_longitude(self, value): self.coordinate.x = value
+    longitude = property(_get_longitude,_set_longitude)
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -421,11 +445,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         unique_together = (('title', 'start'),)
         # get_latest_by = "start" #TODO: useful? see also # http://docs.djangoproject.com/en/1.3/ref/generic-views/#date-based-generic-views
         # needed for proper order of e.g. master_event.instances:
-        ordering = ['upcoming']
+        ordering = ['upcoming'] # TODO: see sql queries because this may make
+                                # everything too slot
 
     # methods {{{2
 
-    def natural_key(self):
+    def natural_key(self): # {{{3
         """ used for serialization.
 
         See http://docs.djangoproject.com/en/1.3/topics/serialization/#serialization-of-natural-keys
@@ -599,9 +624,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # see rfc5545 3.8.7.2. Date-Time Stamp
         vevent.add('DTSTAMP').value = self.modification_time
         vevent.add('CLASS').value = 'PUBLIC'
-        if self.latitude and self.longitude:
+        if self.coordinates:
             vevent.add('GEO').value = \
-                unicode(self.latitude) + u";" + unicode(self.longitude)
+                unicode(self.coordinates.y) +u";"+ unicode(self.coordinates.x)
         # TODO: add deadlines. As VALARMs or there is something better in
         # rfc5545 ?
         # TODO: think of options for decentralization commented on
@@ -646,7 +671,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> now_t = datetime.datetime.now().isoformat()
         >>> today = datetime.date.today()
         >>> today_t = today.isoformat()
-        >>> user = User.objects.create(username = "user " + now_t)
+        >>> user = User.objects.create( username = unicode(now_t) )
         >>> event = Event.parse_text(EXAMPLE)
         >>> clone = event.clone( user, start = today )
         >>> clone_text = clone.as_text()
@@ -749,7 +774,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def save( self, *args, **kwargs ): #{{{3
         """ Marks an event as new or not (for :meth:`Event.post_save) and call
-        the real 'save' function after updating :attr:`Event.upcoming` """
+        the real 'save' function after updating :attr:`Event.upcoming`."""
         try:
             Event.objects.get( id = self.id )
             self.not_new = True # Event.post_save uses this
@@ -844,12 +869,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'country':
                 if self.country:
                     to_return += keyword + u": " + self.country + u"\n"
-            elif keyword == u'latitude':
-                if self.latitude:
-                    to_return += keyword + u": " + unicode(self.latitude)+u"\n"
-            elif keyword == u'longitude':
-                if self.longitude:
-                    to_return += keyword + u": " + unicode(self.longitude)+u"\n"
+            elif keyword == u'coordinates':
+                if self.coordinates:
+                    to_return += u"coordinates: %s, %s\n" % (
+                            unicode( self.coordinates.y ),
+                            unicode( self.coordinates.x ) )
             elif keyword == u'acronym':
                 if self.acronym:
                     to_return += keyword + u": " + self.acronym + u"\n"
@@ -924,30 +948,40 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
         >>> example = Event.example()
         >>> s,c = Event.get_fields(example)
-        >>> assert(s[u'acronym'] ==  u'GriCal')
-        >>> assert(s[u'address'] ==  u'Gleimstr. 6')
-        >>> assert(s[u'city'] ==  u'Berlin')
-        >>> assert(s[u'country'] ==  u'DE')
-        >>> assert(s[u'end'] ==  u'2010-12-30')
-        >>> assert(s[u'endtime'] ==  u'18:00')
-        >>> assert(s[u'latitude'] ==  u'52.55247')
-        >>> assert(s[u'longitude'] ==  u'13.40364')
-        >>> assert(s[u'postcode'] ==  u'10439')
-        >>> assert(s[u'start'] ==  u'2010-12-29')
-        >>> assert(s[u'starttime'] ==  u'10:00')
-        >>> assert(s[u'tags'] ==
-        ...         u'calendar software open-source gridmind gridcalendar')
-        >>> assert(s[u'title'] ==  u'GridCalendar presentation')
-        >>> assert(c[u'description'][2] == u'GridCalendar will be presented')
-        >>> assert(c[u'deadlines'][1].replace(' ','')
-        ...         == u'2009-11-01visitortickets')
-        >>> assert(c[u'deadlines'][2].replace(' ','') ==
-        ...         u'2010-10-01callforpapers')
+        >>> s[u'acronym']
+        u'GriCal'
+        >>> s[u'address']
+        u'Gleimstr. 6'
+        >>> s[u'city']
+        u'Berlin'
+        >>> s[u'country']
+        u'DE'
+        >>> s[u'end']
+        u'2010-12-30'
+        >>> s[u'endtime']
+        u'18:00'
+        >>> s[u'coordinates']
+        u'52.55247, 13.40364'
+        >>> s[u'postcode']
+        u'10439'
+        >>> s[u'start']
+        u'2010-12-29'
+        >>> s[u'starttime']
+        u'10:00'
+        >>> s[u'tags']
+        u'calendar software open-source gridmind gridcalendar'
+        >>> s[u'title']
+        u'GridCalendar presentation'
+        >>> c[u'description'][2]
+        u'GridCalendar will be presented'
+        >>> c[u'deadlines'][1].replace(' ','')
+        u'2009-11-01visitortickets'
+        >>> c[u'deadlines'][2].replace(' ','')
+        u'2010-10-01callforpapers'
         >>> c['deadlines'][3]
         Traceback (most recent call last):
             ...
         IndexError: list index out of range
-
         """
         if not isinstance(text, unicode):
             text = smart_unicode(text)
@@ -994,7 +1028,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             if not syns.has_key(field_m.group(1).lower()):
                 raise ValidationError(_(u"wrong field name: ") + field_m.group(1))
             if syns[field_m.group(1).lower()] in simple_list:
-                simple_dic[ syns[field_m.group(1).lower()]] = field_m.group(2)
+                simple_dic[ syns[field_m.group(1).lower()] ] = field_m.group(2)
                 continue
             if not syns[field_m.group(1).lower()] in complex_list:
                 raise RuntimeError("field %s was not in 'complex_list'" %
@@ -1200,8 +1234,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         representation, but it is not present in the output text
         representation.
  
-        >>> gpl_len = len(Event.get_priority_list())  # 18
-        >>> gsf_len = len(Event.get_simple_fields())  # 14
+        >>> gpl_len = len(Event.get_priority_list())  # 16
+        >>> gsf_len = len(Event.get_simple_fields())  # 12
         >>> gcf_len = len(Event.get_complex_fields()) #  5 recurring not in gpl
         >>> assert(gpl_len + 1 == gsf_len + gcf_len)
         >>> synonyms_values_set = set(Event.get_synonyms().values())
@@ -1209,7 +1243,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """
         return (u"acronym", u"title", u"start", u"starttime", u"end",
                 u"endtime", u"tags", u"urls", u"address",
-                u"postcode", u"city", u"country", u"latitude", u"longitude",
+                u"postcode", u"city", u"country", u"coordinates",
                 u"deadlines", u"sessions", u"description")
  
     @staticmethod # def get_synonyms(): {{{3
@@ -1310,12 +1344,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         add( synonyms, u'ad', u'address' )
         add( synonyms, u'addr', u'address' )
         add( synonyms, u'street', u'address' )
-        add( synonyms, u'latitude', u'latitude' )       # latitude
-        add( synonyms, u'lati', u'latitude' )
-        add( synonyms, u'la', u'latitude' )
-        add( synonyms, u'longitude', u'longitude' )     # longitude
-        add( synonyms, u'lo', u'longitude' )
-        add( synonyms, u'long', u'longitude' )
+        add( synonyms, u'coordinates', u'coordinates' ) # coordinates
+        add( synonyms, u'point', u'coordinates' )
+        add( synonyms, u'points', u'coordinates' )
+        add( synonyms, u'coordinate', u'coordinates' )
+        add( synonyms, u'co', u'coordinates' )
+        add( synonyms, u'coor', u'coordinates' )
+        add( synonyms, u'coo', u'coordinates' )
+        add( synonyms, u'position', u'coordinates' )
         add( synonyms, u'description', u'description' ) # description
         add( synonyms, u'de', u'description' )
         add( synonyms, u'desc', u'description' )
@@ -1509,7 +1545,7 @@ class ExtendedUser(User): # {{{1
 
     >>> from events.models import Event, Group, Membership
     >>> now = datetime.datetime.now().isoformat()
-    >>> user = User.objects.create(username = "user " + now)
+    >>> user = User.objects.create(username = now)
     >>> group1 = Group.objects.create(name="group1 " + now)
     >>> m = Membership.objects.create(user=user, group=group1)
     >>> group2 = Group.objects.create(name="group2 " + now)
@@ -1568,7 +1604,7 @@ class EventUrl( models.Model ): # {{{1
     
     Code example: getting all events with more than one url:
     >>> from gridcalendar.events.models import Event
-    >>> from django.db.models import Count
+    >>> from django.contrib.gis.db.models import Count
     >>> urls_numbers = Event.objects.annotate(Count('urls'))
     >>> gt1 = filter(lambda x: x.urls__count > 1, urls_numbers)
     """
@@ -1695,7 +1731,7 @@ class EventUrl( models.Model ): # {{{1
         """
         if isinstance(event, Event):
             pass
-        elif isinstance(event, int):
+        elif isinstance(event, int) or isinstance(event, long):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
@@ -1910,7 +1946,7 @@ class EventDeadline( models.Model ): # {{{1
         """
         if isinstance(event, Event):
             pass
-        elif isinstance(event, int):
+        elif isinstance(event, int) or isinstance(event, long):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
@@ -2128,7 +2164,7 @@ class EventSession( models.Model ): # {{{1
         """
         if isinstance(event, Event):
             pass
-        elif isinstance(event, int):
+        elif isinstance(event, int) or isinstance(event, long):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
@@ -2240,7 +2276,7 @@ class Filter( models.Model ): # {{{1
         >>> calendar = Calendar.objects.create( group = group,
         ...     event = event )
         >>> calendar.save()
-        >>> user = User.objects.create(username = "user " + now)
+        >>> user = User.objects.create(username = now)
         >>> fil = Filter.objects.create(user=user, name=now, query='test')
         >>> assert fil.matches_event(event)
         >>> fil.query = today.isoformat()
@@ -2359,8 +2395,6 @@ class Filter( models.Model ): # {{{1
         """ returns a queryset without touching the database, see
         :meth:`Filter.matches` 
 
-        **IMPORTANT**: this code must be consistent with :meth:`Filter.matches`
-
         If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
         ``query`` is None or an empty string.
         """
@@ -2384,12 +2418,82 @@ class Filter( models.Model ): # {{{1
                     calendar__group__name__iexact = group_name)
         query = regex.sub("", query)
         # locations
-        regex = re.compile('@(\w+)', UNICODE)
-        for loc_name in regex.findall(query):
-            queryset = queryset.filter(
-                    Q( city__icontains = loc_name ) | Q(
-                        country__iexact = loc_name ) )
-                    # TODO: use also translations of locations
+        # the regex start with @ and has 4 alternatives, examples:
+        # 52.1234,-0.1234+300km
+        # 52.1234,-0.1234,53.1234,-0.2345
+        # london+50mi
+        # berlin
+        regex = re.compile(r"""
+                @(?:                    # loc regex starts with @
+                (?:                     # four floats separated by ,
+                    ([+-]?\d+           # [0] one or more digits
+                        (?:\.\d*)?)     # optionally . or . and decimals
+                    ,
+                    ([+-]?\d+           # [1] one or more digits
+                        (?:\.\d*)?)     # optionally . or . and decimals
+                    ,
+                    ([+-]?\d+           # [2] one or more digits
+                        (?:\.\d*)?)     # optionally . or . and decimals
+                    ,
+                    ([+-]?\d+           # [3] one or more digits
+                        (?:\.\d*)?)     # optionally . or . and decimals
+                )|(?:                   # or float,float+int and opt. a unit
+                    ([+-]?\d+           # [4] one or more digits
+                        (?:\.\d*)?)     # optionally . or . and decimals
+                    ,\s*                # spaces because some people copy/paste
+                    ([+-]?\d+           # [5] one or more digits
+                        (?:\.\d*)?)     # optionally . or . and decimals
+                    \+(\d+)             # [6] distance
+                    (km|mi)?            # [7] optional unit
+                )|(?:                   # or a name, +, distance and opt. unit
+                    (\w+)               # [8] name
+                    \+(\d+)             # [9] distance
+                    (km|mi)?            # [10] optional unit
+                )|(                     # or just a name
+                    \w+                 # [11]
+                ))""", re.UNICODE | re.X )
+        for loc in regex.findall(query):
+            if loc[11]:
+                # name given
+                queryset = queryset.filter(
+                        # TODO: searching for 'Washington' doens't match
+                        # 'Washington D.C.'. OTOH searching for 'us' would
+                        # match 'Brussels' if 'city__icontains' were used
+                        Q( city__iexact = loc[11] ) | Q(
+                            country__iexact = loc[11] ) )
+                        # TODO: use also translations of locations and
+                        # alternative names
+            elif loc[8]:
+                point = search_name( loc[8] )
+                if loc[10]:
+                    distance = {loc[10]: loc[9],}
+                else:
+                    distance = { settings.DISTANCE_UNIT_DEFAULT: loc[9],}
+                # example: ...filter(coordinates__distance_lte=(pnt, D(km=7)))
+                queryset = queryset.filter( coordinates__distance_lte =
+                        ( point, D( **distance ) ) )
+            elif loc[4]:
+                # coordinates given
+                point = Point( float(loc[5]), float(loc[4]) )
+                if loc[7]:
+                    distance = {loc[7]: loc[6],}
+                else:
+                    distance = { settings.DISTANCE_UNIT_DEFAULT: loc[6],}
+                queryset = queryset.filter( coordinates__distance_lte =
+                        ( point, D( **distance ) ) )
+            elif loc[0]:
+                # We have 4 floats: longitude_west [0], longitude_east [1],
+                # latitude_north [2], latitude_south [3]
+                lng1 = float( loc[0] )
+                lat1 = float( loc[3] )
+                lng2 = float( loc[1] )
+                lat2 = float( loc[2] )
+                rectangle = Polygon( ((lng1, lat1), (lng2,lat1),
+                    (lng2,lat2), (lng1,lat2), (lng1, lat1)) ) 
+                queryset = queryset.filter( coordinates__within = rectangle )
+            else:
+                pass
+                # TODO: log error
         query = regex.sub("", query)
         # tags
         regex = re.compile('#(\w+)', UNICODE)
@@ -2464,7 +2568,7 @@ class Filter( models.Model ): # {{{1
         the event """
         if isinstance(event, Event):
             pass
-        elif isinstance(event, int):
+        elif isinstance(event, int) or isinstance(event, long):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))
@@ -2527,7 +2631,7 @@ class Group( models.Model ): # {{{1
     >>> assert ( len(group.get_coming_events()) == 1 )
     >>> assert ( group.has_coming_events() )
     >>> assert ( len(group.get_users()) == 0 )
-    >>> user = User.objects.create(username = "user " + now)
+    >>> user = User.objects.create(username = now)
     >>> membership = Membership.objects.create(group = group, user = user)
     >>> assert ( len(group.get_users()) == 1 )
     """
@@ -2565,7 +2669,7 @@ class Group( models.Model ): # {{{1
     def is_member( self, user ): # {{{2
         """ returns True if *user* is a member of the group, False otherwise
         """
-        if isinstance(user, int):
+        if isinstance(user, int) or isinstance(user, long):
             try:
                 user = User.objects.get(id = user)
             except User.DoesNotExist:
@@ -2591,8 +2695,8 @@ class Group( models.Model ): # {{{1
         >>> from django.contrib.auth.models import User
         >>> from events.models import Event, Group, Membership
         >>> now = datetime.datetime.now().isoformat()
-        >>> user1 = User.objects.create(username = "user1 " + now)
-        >>> user2 = User.objects.create(username = "user2 " + now)
+        >>> user1 = User.objects.create(username = "u1" + now)
+        >>> user2 = User.objects.create(username = "u2" + now)
         >>> group1 = Group.objects.create(name="group1 " + now)
         >>> m = Membership.objects.create(user=user1, group=group1)
         >>> assert (Group.is_user_in_group(user1, group1))
@@ -2602,7 +2706,7 @@ class Group( models.Model ): # {{{1
         """
         if isinstance(user, User):
             user_id = user.id
-        elif isinstance(user, int):
+        elif isinstance(user, int) or isinstance(user, long):
             user_id = user
         elif isinstance(user, unicode) or isinstance(user, str):
             user_id = int(user)
@@ -2610,7 +2714,7 @@ class Group( models.Model ): # {{{1
             return False
         if isinstance(group, Group):
             group_id = group.id
-        elif isinstance(group, int):
+        elif isinstance(group, int) or isinstance(group, long):
             group_id = group
         elif isinstance(group, unicode) or isinstance(group, str):
             group_id = int(group)
@@ -2638,14 +2742,14 @@ class Group( models.Model ): # {{{1
         >>> from django.contrib.auth.models import User
         >>> from events.models import Event, Group, Membership
         >>> now = datetime.datetime.now().isoformat()
-        >>> user1 = User.objects.create(username = "user1 " + now)
-        >>> user2 = User.objects.create(username = "user2 " + now)
+        >>> user1 = User.objects.create(username = "u1" + now)
+        >>> user2 = User.objects.create(username = "u2" + now)
         >>> group12 = Group.objects.create(name="group12 " + now)
         >>> group2 = Group.objects.create(name="group2 " + now)
         >>> m1 = Membership.objects.create(user=user1, group=group12)
         >>> m2 = Membership.objects.create(user=user2, group=group12)
         >>> m3 = Membership.objects.create(user=user2, group=group2)
-        >>> groups_of_user_2 = Group.groups_of_user(user2.id)
+        >>> groups_of_user_2 = Group.groups_of_user(user2)
         >>> assert(len(groups_of_user_2) == 2)
         >>> assert(isinstance(groups_of_user_2, list))
         >>> assert(isinstance(groups_of_user_2[0], Group))
@@ -2658,7 +2762,7 @@ class Group( models.Model ): # {{{1
             return list()
         if isinstance(user, User):
             pass
-        elif isinstance(user, int):
+        elif isinstance(user, int) or isinstance(user, long):
             user = User.objects.get(id=user)
         elif isinstance(user, unicode) or isinstance(user, str):
             user = User.objects.get( id = int( user ) )
@@ -2750,7 +2854,7 @@ class Group( models.Model ): # {{{1
         """
         if isinstance(event, Event):
             pass
-        elif isinstance(event, int):
+        elif isinstance(event, int) or isinstance(event, long):
             event = Event.objects.get(pk = event)
         else:
             event = Event.objects.get(pk = int(event))

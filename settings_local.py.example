@@ -30,6 +30,14 @@ try:
 except:
     HOST_IP = "127.0.0.1"
 
+# This is used for getting the coordinates from a location using the API of
+# GeoNames.org. You need to register here http://www.geonames.org/login and
+# then activate the use of the API in you account.
+GEONAMES_USERNAME = 'demo'
+
+# Default value for distance unit, possible values are: 'km' and 'mi'
+DISTANCE_UNIT_DEFAULT = 'km'
+
 # ======================================================================
 # imap settings for getting events as emails
 # ======================================================================
