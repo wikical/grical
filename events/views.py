@@ -519,18 +519,23 @@ def filter_save( request ): # {{{1
         return main( request, error_messages = 
             _( u"You are trying to save a search without any query text" ) )
     if request.method == 'POST':
-        try:
-            maximum = Filter.objects.aggregate( Max( 'id' ) )['id__max'] #FIXME
-            efilter = Filter()
-            efilter.user = request.user
-            efilter.query = query_lowercase
-            efilter.name = str( request.user ) + "'s filter " + str( maximum )
-            efilter.save()
-            return HttpResponseRedirect( reverse(
-                'filter_edit', kwargs = {'filter_id': efilter.id} ) )
-        except Exception:
-            return main( request, error_messages = 
-                    _( 'An error has ocurred, nothing was saved' ) )
+        maximum = Filter.objects.filter(user = request.user).count() + 1
+        efilter = Filter()
+        efilter.user = request.user
+        efilter.query = query_lowercase
+        efilter.name = _( u"%(username)s's filter %(number)s" ) % \
+                {'username':request.user.username, 'number': str(maximum)}
+        # the above code has the problem that the name might already been
+        # used by the same user. We check it:
+        taken = Filter.objects.filter(
+                user = request.user, name = efilter.name ).count()
+        while taken:
+            efilter.name += "'"
+            taken = Filter.objects.filter(
+                    user = request.user, name = efilter.name ).count()
+        efilter.save()
+        return HttpResponseRedirect( reverse(
+            'filter_edit', kwargs = {'filter_id': efilter.id} ) )
     elif request.method == 'GET':
         return main( request, error_messages =
                 _( ''.join(['You have submitted a GET request which is not ',

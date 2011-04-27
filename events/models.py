@@ -55,7 +55,6 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db.models.signals import pre_save, post_save
-from gridcalendar.events.signals import user_auth_signal
 # FIXME from gridcalendar.events.decorators import autoconnect
 
 from tagging.fields import TagField
