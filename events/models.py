@@ -418,14 +418,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if self.coordinates:
             return self.coordinates.y
         return None
-    def _set_latitude(self, value): self.coordinate.y = value
+    def _set_latitude(self, value): self.coordinates.y = value
     latitude = property(_get_latitude,_set_latitude)
     # Custom longitude property
     def _get_longitude(self):
         if self.coordinates:
-            return self.coordinate.x
+            return self.coordinates.x
         return None
-    def _set_longitude(self, value): self.coordinate.x = value
+    def _set_longitude(self, value): self.coordinates.x = value
     longitude = property(_get_longitude,_set_longitude)
 
     # Meta {{{2
