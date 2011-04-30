@@ -409,15 +409,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ used for calculating events within a distance to a point """
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
-    # old code before switching to postgis with the new geo field coordiantes
-    # latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
-    #         help_text = _( u'In decimal degrees, not ' \
-    #         u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
-    #         u'for North' ) )
-    # longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
-    #         help_text = _( u'In decimal degrees, not ' \
-    #             u'degrees/minutes/seconds. Prefix with "-" for West, no ' \
-    #             u'sign for East' ) )
 
     # convienent properties {{{2
     # custom latitude and longitude properties which raise an error when
@@ -782,6 +773,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         self.upcoming = self.next_coming_date_or_start()
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
+        # FIXME: bot test
+        try:
+            with open('/tmp/gricalbotpipe', 'a') as pipe:
+                if hasattr(self, "not_new") and self.not_new:
+                    pipe.write(str(self.id) + '-update')
+                else:
+                    pipe.write(str(self.id) + '-create')
+        except:
+            pass
 
     @staticmethod # def post_save( sender, **kwargs ): {{{3
     def post_save( sender, **kwargs ):
