@@ -35,6 +35,7 @@ from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models import Max, Q
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory
@@ -806,10 +807,11 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
             if addresses and len( addresses ) == 1:
                 address = addresses.values()[0]
                 event.address = addresses.keys()[0]
-                if address.has_key( 'longitude' ):
-                    event.longitude = address['longitude']
-                if address.has_key( 'latitude' ):
-                    event.latitude = address['latitude']
+                if address.has_key( 'longitude' ) and \
+                        address.has_key( 'latitude' ):
+                    event.coordinates = Point(
+                            float( address['longitude'] ),
+                            float( address['latitude'] ) )
                 if address.has_key( 'country' ):
                     event.country = address['country']
                 if address.has_key( 'postcode' ):
