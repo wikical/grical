@@ -188,6 +188,7 @@ medium priority
 low priority
 ------------
 
+- Show what happened (maybe from Wikipedia) and other events on the start day of events
 - shows a map to choose a point as the point for an event. see
     http://yml-blog.blogspot.com/2008/10/how-to-create-view-to-add-object.html
 - contest for a better search algorithm, with given queries and expected results, objectively taken

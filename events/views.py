@@ -38,7 +38,7 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models import Max, Q
 from django.core.exceptions import ValidationError
-from django.forms.models import inlineformset_factory
+from django.forms.models import inlineformset_factory, ModelForm
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
 from django.shortcuts import ( render_to_response, get_object_or_404,
@@ -52,8 +52,7 @@ from tagging.models import Tag, TaggedItem
 
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
-    EventSessionForm, NewGroupForm, InviteToGroupForm,
-    AddEventToGroupForm )
+     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar)
@@ -120,17 +119,17 @@ def event_edit( request, event_id = False ): # {{{1
         event = Event()
         can_delete = False
     event_urls_factory = inlineformset_factory( 
-            Event, EventUrl, extra = 4, can_delete = can_delete )
-    evetn_deadlines_factory = inlineformset_factory( 
-            Event, EventDeadline, extra = 4, can_delete = can_delete )
+            Event, EventUrl, extra = 4, can_delete = can_delete, )
+    event_deadlines_factory = inlineformset_factory( 
+            Event, EventDeadline, extra = 4, can_delete = can_delete, )
     event_sessions_factory = inlineformset_factory( 
-            Event, EventSession, extra = 4, form = EventSessionForm,
-            can_delete = can_delete )
+            Event, EventSession, extra = 4, can_delete = can_delete, )
+            
     if request.method == 'POST':
         event_form = EventForm( request.POST, instance = event )
         formset_url = event_urls_factory(
                 request.POST, instance = event )
-        formset_deadline = evetn_deadlines_factory(
+        formset_deadline = event_deadlines_factory(
                 request.POST, instance = event )
         formset_session = event_sessions_factory(
                 request.POST, instance = event )
@@ -150,7 +149,7 @@ def event_edit( request, event_id = False ): # {{{1
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
-        formset_deadline = evetn_deadlines_factory( instance = event )
+        formset_deadline = event_deadlines_factory( instance = event )
         formset_session = event_sessions_factory( instance = event )
     templates = {
             'title': 'edit event',
@@ -833,11 +832,9 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
             event_form = SimplifiedEventFormAnonymous()
     # calculates events to show
     today = datetime.date.today()
-    elist = Event.objects.filter (
-                Q(start__gte=today) |
-                Q(end__gte=today) |
-                Q(deadlines__deadline__gte=today) )
-    elist = elist.distinct().order_by('upcoming')
+    elist = Event.objects.filter( upcoming__gte = today )
+    # TODO: a lot of queries are issued for getting the tags of each event. Can
+    # it be optimized?
     elist = elist[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     # Generate the response with a custom status code. Rationale: our custom

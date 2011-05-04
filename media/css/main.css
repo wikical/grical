@@ -72,22 +72,39 @@ h6 {
  */
 
 #header {
-    padding-bottom: 10px;
+    background-color: #3176B9;
     border-bottom: 1px solid #003A6B;
-    background-color: #3176b9;
     color: black;
     min-height: 60px;
+    padding: 10px;
     position: relative;
-    width: 100%;
+    top: 0;
+    left: 0;
+}
+#header #logo {
+    float:left;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+#header #description {
+    font-size: 0.75em;
+    position: absolute; /* relative to #header, which expends if needed */
+    left: 0px;
+    top: 0px;
+    text-align: center;
+    width: 225px;
+}
+#header #content {
+    margin-left: 225px;
+}
+#header #flattr {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
 }
 #header a {
     color: black;
 }
-#header form { display:inline }
-#header #logo {
-    text-align: right;
-    float: left;
-    padding: 5px; }
 
 .container {
     margin: 0px 10px 10px 10px;
