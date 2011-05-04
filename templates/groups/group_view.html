@@ -1,65 +1,42 @@
-{% extends "base_2columns.html" %}
+{% extends "base.html" %}
 {% load i18n %}
+
+{% block container %}
 
 {% block extraheaders %}
     <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss group.id %}" />
 {%endblock extraheaders %}
-
-{% block column1 %}
 
 <h1>
     {% blocktrans with group.name as group_name %}
         Group {{ group_name }}
     {% endblocktrans %}
 </h1>
-
-{% if user_is_in_group %}
-    {% if group.has_coming_events %}
-        <h2> {% trans "Next upcoming events" %} </h2>
-        {% for event in events %}
-            <p> {% include "event_show_small.html" %} </p>
-        {% endfor %}
-    {% else %}
-        <p>{% trans "There is no upcoming events." %}</p>
-        {% comment %}TODO: show option to see past events {% endcomment %}
-    {% endif %}
-    <h2> {% trans "Members" %} </h2>
-    <ul>
-        {% for user in group.get_users %}
-            <li> {{ user.username }} </li>
-        {% endfor %}
-    </ul>
+<p>
+    <a href="{% url list_events_group_rss group.id %}">
+        <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
+        Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
+</p>
+<p>
+    <a href="{% url list_events_group_ical group.id %}">
+        <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
+        Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
+</p>
+<p> {{ group.description|urlize }} </p>
+<h2> {% trans "Members" %} </h2>
+<ul>
+    {% for user in group.get_users %}
+        <li> {{ user.username }} </li>
+    {% endfor %}
+</ul>
+{% if group.has_coming_events %}
+    <h2> {% trans "Next upcoming events" %} </h2>
+    {% for event in events %}
+        <p> {% include "event_show_small.html" %} </p>
+    {% endfor %}
 {% else %}
-    {% if group.has_coming_events %}
-        <h2> {% trans "Public upcoming events" %} </h2>
-        <ul>
-            {% for event in events %}
-                <li> {% include "event_show_small.html" %} </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>{% trans "This group has no public upcoming events." %}</p>
-    {% endif %}
-    {% comment %}TODO: link to ask to become a member of the group %}{% endcomment %}
+    <p>{% trans "There is no upcoming events." %}</p>
+    {% comment %}TODO: show option to see past events {% endcomment %}
 {% endif %}
 
-{% endblock %}
-    
-{% block column2 %}
-    <h2>
-        {% blocktrans with group.name as group_name %}
-            About the group "{{ group_name }}"
-        {% endblocktrans %}
-    </h2>
-    <p> {{ group.description|urlize }} </p>
-    <p>
-        <a href="{% url list_events_group_rss group.id %}">
-            <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
-            Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
-    </p>
-    <p>
-        <a href="{% url list_events_group_ical group.id %}">
-            <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
-            Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
-    </p>
 {% endblock %}

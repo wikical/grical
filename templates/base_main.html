@@ -1,60 +1,46 @@
-{% extends "base_2columns.html" %}
+{% extends "base.html" %}
 {% load i18n %}
 
 {% block extraheaders %}
 <link rel="alternate" type="application/rss+xml" title="RSS" href="{% url upcoming_events_rss %}" />
 {%endblock extraheaders %}
 
-{% block column1 %}
+{% block container %}
 
-<br />
+    <div style='float: right; max-width: 35em; padding: 1em 0em;'>
+        <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
+            <form action="" method="post">{% csrf_token %}
+                <fieldset>
+                    <legend>{% trans "Submit an event" %}</legend>
+                    {% for field in form.visible_fields %}
+                        {# Include the hidden fields in the form #}
+                        {% if forloop.first %}
+                            {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                        {% endif %}
+                        {{ field.errors }}
+                        <div class="field">{{ field.label_tag }} {{ field }}</div>
+                        <div class="help_text">{{ field.help_text }}</div>
+                    {% endfor %}
+                    <input type="submit" value="{% trans "Submit" %}" />
+                </fieldset>
+            </form>
 
-{% if events %}
-    {% for event in events %}
-        {% include "event_show_medium.html" %}
-    {% endfor %}
-{% endif %}
+            <p style="font-size: 0.75em">
+                {% trans "Alternatively:" %}
+                <a href="{% url event_new %}">{% trans "extended form" %}</a>, 
+                <a href="{% url event_new_raw %}">{% trans "textarea" %}</a>
+                <br />
+            </p>
 
-{% endblock %}
-
-
-{% block column2 %}
-
-    <br />
-    <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
-        <form action="" method="post">{% csrf_token %}
-            <fieldset>
-                <legend>{% trans "Submit an event" %}</legend>
-                {% for field in form.visible_fields %}
-                    {# Include the hidden fields in the form #}
-                    {% if forloop.first %}
-                        {% for hidden in form.hidden_fields %}
-                            {{ hidden }}
-                        {% endfor %}
-                    {% endif %}
-                    {{ field.errors }}
-                    <div class="field">{{ field.label_tag }} {{ field }}</div>
-                    <div class="help_text">{{ field.help_text }}</div>
-                {% endfor %}
-                <input type="submit" value="{% trans "Submit" %}" />
-            </fieldset>
-        </form>
+        </div>
     </div>
 
-    <p>
-        {% trans "Alternatively:" %}
-        <a href="{% url event_new %}">{% trans "extended form" %}</a>, 
-        <a href="{% url event_new_raw %}">{% trans "textarea" %}</a>
-        <br />
-    </p>
-
-    {% comment %}
-    {% if user.username %}
-    <p class="info">{% trans "Change what is displayed here in" %}:
-        <a href="{% url settings %}">{% trans "filters" %}</a></p>
+    {% if events %}
+        {% for event in events %}
+            {% include "event_show_medium.html" %}
+        {% endfor %}
     {% endif %}
-    {% endcomment %}
-
-    {% include "events_in_groups_or_intro.html" %}
 
 {% endblock %}

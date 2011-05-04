@@ -32,7 +32,8 @@ from django.contrib.gis.geos import Point
 from django.core import validators
 from django.forms import ( CharField, IntegerField, HiddenInput,
         ModelMultipleChoiceField, ModelForm, ValidationError,
-        TextInput, CheckboxSelectMultiple, Form, Field, DateField )
+        TextInput, CheckboxSelectMultiple, Form, Field, DateField, TimeField,
+        URLField, )
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -346,35 +347,6 @@ class SimplifiedEventFormAnonymous(SimplifiedEventForm): # {{{1
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags')
-
-class EventUrlForm(ModelForm): # {{{1
-    """ ModelForm for EventUrl """
-    def __init__(self, *args, **kwargs):
-        super(EventForm, self).__init__(*args, **kwargs)
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        model = EventUrl
-
-class EventDeadlineForm(ModelForm): # {{{1
-    """ ModelForm for EventDeadline """
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        model = EventDeadline
-
-class EventSessionForm(ModelForm): # {{{1
-    """ A ModelForm for an EventSession with small sizes for the widget of some
-        fields. """
-    # TODO: better use CSS: modify the widget to add a html css class name.
-    def __init__(self, *args, **kwargs):
-        super(EventSessionForm, self).__init__(*args, **kwargs)
-        assert(self.fields.has_key('session_date'))
-        self.fields['session_date'].widget = TextInput(attrs = {'size':10})
-        assert(self.fields.has_key('session_starttime'))
-        self.fields['session_starttime'].widget = TextInput(
-                attrs = { 'size': 5, 'format': '%H:%M' } )
-        assert(self.fields.has_key('session_endtime'))
-        self.fields['session_endtime'].widget = TextInput(
-                attrs = { 'size': 5, 'format': '%H:%M' } )
-    class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        model = EventSession
 
 class NewGroupForm(ModelForm): # {{{1
     """ ModelForm for Group with only the fields `name` and `description` """

@@ -409,6 +409,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ used for calculating events within a distance to a point """
     description = models.TextField(
             _( u'Description' ), blank = True, null = True )
+    # old code before switching to postgis with the new geo field coordiantes
+    # latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
+    #         help_text = _( u'In decimal degrees, not ' \
+    #         u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
+    #         u'for North' ) )
+    # longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
+    #         help_text = _( u'In decimal degrees, not ' \
+    #             u'degrees/minutes/seconds. Prefix with "-" for West, no ' \
+    #             u'sign for East' ) )
 
     # convienent properties {{{2
     # custom latitude and longitude properties which raise an error when
@@ -773,6 +782,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         self.upcoming = self.next_coming_date_or_start()
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
+        # TODO: this code is called many times when e.g. editing an event and
+        # changing the acronym and a deadline, make the calling only one. Maybe
+        # usefull: Django messaging and the transaction middleware recommended
+        # by django-reversion
         # FIXME: bot test
         try:
             with open('/tmp/gricalbotpipe', 'a') as pipe:
@@ -1282,102 +1295,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # TODO: implement a system for using translations for tags (maybe
         # related to a preferred language user-based)
         synonyms = {} # TODO: think of using translations instead of synonyms
-        add( synonyms, u'title', u'title' )             # title
-        add( synonyms, u'ti', u'title' )
-        add( synonyms, u'titl', u'title' )
-        add( synonyms, u'start', u'start' )             # start
-        add( synonyms, u'st', u'start' )
-        add( synonyms, u'starts', u'start' )
-        add( synonyms, u'date', u'start' )
-        add( synonyms, u'da', u'start' )
-        add( synonyms, u'start date', u'start' )
-        add( synonyms, u'start-date', u'start' )
-        add( synonyms, u'start_date', u'start' )
-        add( synonyms, u'sd', u'start' )
-        add( synonyms, u'starttime', u'starttime' )     # starttime
-        add( synonyms, u'time', u'starttime' )
-        add( synonyms, u'start_time', u'starttime' )
-        add( synonyms, u'start time', u'starttime' )
-        add( synonyms, u'startime', u'starttime' )
-        add( synonyms, u'endtime', u'endtime' )         # endtime
-        add( synonyms, u'end_time', u'endtime' )
-        add( synonyms, u'end time', u'endtime' )
-        add( synonyms, u'tags', u'tags' )               # tags
-        add( synonyms, u'ta', u'tags' )
-        add( synonyms, u'tag', u'tags' )
-        add( synonyms, u'subjects', u'tags' )
-        add( synonyms, u'subject', u'tags' )
-        add( synonyms, u'su', u'tags' )
-        add( synonyms, u'subj', u'tags' )
-        add( synonyms, u'end', u'end' )                 # end
-        add( synonyms, u'en', u'end' )
-        add( synonyms, u'ends', u'end' )
-        add( synonyms, u'finish', u'end' )
-        add( synonyms, u'finishes', u'end' )
-        add( synonyms, u'fi', u'end' )
-        add( synonyms, u'enddate', u'end' )
-        add( synonyms, u'end date', u'end' )
-        add( synonyms, u'end-date', u'end' )
-        add( synonyms, u'end_date', u'end' )
-        add( synonyms, u'ed', u'end' )
-        add( synonyms, u'endd', u'end' )
-        add( synonyms, u'acronym', u'acronym' )         # acronym
-        add( synonyms, u'ac', u'acronym' )
-        add( synonyms, u'acro', u'acronym' )
-        add( synonyms, u'country', u'country' )         # country
-        add( synonyms, u'co', u'country' )
-        add( synonyms, u'coun', u'country' )
-        add( synonyms, u'nation', u'country' )
-        add( synonyms, u'nati', u'country' )
-        add( synonyms, u'na', u'country' )
-        add( synonyms, u'city', u'city' )               # city
-        add( synonyms, u'ci', u'city' )
-        add( synonyms, u'town', u'city' )
-        add( synonyms, u'to', u'city' )
-        add( synonyms, u'postcode', u'postcode' )       # postcode
-        add( synonyms, u'po', u'postcode' )
-        add( synonyms, u'zip', u'postcode' )
-        add( synonyms, u'zi', u'postcode' )
-        add( synonyms, u'code', u'postcode' )
-        add( synonyms, u'address', u'address' )         # address
-        add( synonyms, u'ad', u'address' )
-        add( synonyms, u'addr', u'address' )
-        add( synonyms, u'street', u'address' )
-        add( synonyms, u'coordinates', u'coordinates' ) # coordinates
-        add( synonyms, u'point', u'coordinates' )
-        add( synonyms, u'points', u'coordinates' )
-        add( synonyms, u'coordinate', u'coordinates' )
-        add( synonyms, u'co', u'coordinates' )
-        add( synonyms, u'coor', u'coordinates' )
-        add( synonyms, u'coo', u'coordinates' )
-        add( synonyms, u'position', u'coordinates' )
-        add( synonyms, u'description', u'description' ) # description
-        add( synonyms, u'de', u'description' )
-        add( synonyms, u'desc', u'description' )
-        add( synonyms, u'des', u'description' )
-        add( synonyms, u'info', u'description' )
-        add( synonyms, u'infos', u'description' )
-        add( synonyms, u'in', u'description' )
-        add( synonyms, u'urls', u'urls' )               # urls (*)
-        add( synonyms, u'ur', u'urls' )
-        add( synonyms, u'url', u'urls' )
-        add( synonyms, u'web', u'urls' )
-        add( synonyms, u'webs', u'urls' )
-        add( synonyms, u'we', u'urls' )
-        add( synonyms, u'deadlines', u'deadlines' )     # deadlines (*)
-        add( synonyms, u'deadline', u'deadlines' )
-        add( synonyms, u'dl', u'deadlines' )
-        add( synonyms, u'sessions', u'sessions' )       # sessions (*)
-        add( synonyms, u'se', u'sessions' )
-        add( synonyms, u'session', u'sessions' )
-        add( synonyms, u'recurring', u'recurring' )     # recurring (*)
-        add( synonyms, u'clone', u'recurring' )
-        add( synonyms, u'clones', u'recurring' )
-        add( synonyms, u'dates', u'recurring' )
-        add( synonyms, u'recurrings', u'recurring' )
-        add( synonyms, u'repetition', u'recurring' )
-        add( synonyms, u'repetitions', u'recurring' )
-        # (*) can have multi-lines and are not simple text fields
+        for (syn, field) in settings.SYNONYMS:
+            add( synonyms, syn, field )
         return synonyms
 
     def groups_id_list( self ): #{{{3
@@ -2060,37 +1979,42 @@ class EventSession( models.Model ): # {{{1
         # session's names as keys, Session instances as values
         sessions = dict()
         errors = list()
-        field_p = re.compile(
-                r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(\d\d):(\d\d)-(\d\d):(\d\d)\s+(.*?)\s*$")
-                #      1          2      3        4      5      6      7        8
+        field_p = re.compile(r"""
+                ^\s+(\d\d\d\d)-(\d\d?)-(\d\d?)       # 1 2 3 date  parts
+                \s+(\d\d?)(?::(\d\d?))?              # 4 5   time1 parts
+                \s*[\s-]\s*(\d\d?)(?::(\d\d?))?      # 6 7   time2 parts
+                \s+(.+?)\s*$""", re.UNICODE | re.X ) # 8     description
         for line in lines[1:]:
             field_m = field_p.match(line)
-            if not field_m:
+            if not field_m or not field_m.group(1) or not field_m.group(2) or \
+                    not field_m.group(3) or not field_m.group(4) or \
+                    not field_m.group(6) or not field_m.group(8) :
                 errors.append(
                         _(u"the following session line is malformed: ") + line)
-            name = field_m.group(8)
-            if sessions.has_key(name):
-                errors.append( 
-                        _(u'the following session name appers more than one:' \
-                                ' %(name)s') % {'name': name} )
             else:
-                try:
-                    sessions[name] = Session(
-                        date = datetime.date(
-                            int(field_m.group(1)),
-                            int(field_m.group(2)),
-                            int(field_m.group(3))),
-                        start = datetime.time(
-                            int(field_m.group(4)),
-                            int(field_m.group(5))),
-                        end = datetime.time(
-                            int(field_m.group(6)),
-                            int(field_m.group(7))),
-                        name = name )
-                except (TypeError, ValueError, AttributeError), e:
-                    errors.append(
-                            _(u"time/date entry error in line: ") + line)
-                # TODO: use local time of event if present
+                name = field_m.group(8)
+                if sessions.has_key(name):
+                    errors.append( 
+                        _(u'the following session name appers more than one:' \
+                        ' %(name)s') % {'name': name} )
+                else:
+                    try:
+                        sessions[name] = Session(
+                            date = datetime.date(
+                                int(field_m.group(1)),
+                                int(field_m.group(2)),
+                                int(field_m.group(3))),
+                            start = datetime.time(
+                                int(field_m.group(4)),
+                                int(field_m.group(5) or 0)), # min. default: 0
+                            end = datetime.time(
+                                int(field_m.group(6)),
+                                int(field_m.group(7) or 0)), # min. default: 0
+                            name = name )
+                    except (TypeError, ValueError, AttributeError), e:
+                        errors.append(
+                                _(u"time/date entry error in line: ") + line)
+                    # TODO: use local time of event if present
         if errors:
             raise ValidationError( errors )
         # we now check each session using django.core.validators for the fields
@@ -2547,7 +2471,8 @@ class Filter( models.Model ): # {{{1
                         Q( title__icontains = word ) |
                         Q( tags__icontains = word ) |
                         Q( city__icontains = word ) |
-                        Q( country__iexact = word ) |
+                        Q( country__icontains = word ) |
+                        Q( address__icontains = word ) |
                         Q( acronym__icontains = word ) |
                         Q( description__icontains = word ) |
                         Q( urls__url_name__icontains = word ) |

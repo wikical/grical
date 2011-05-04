@@ -106,11 +106,11 @@ EMAIL_USE_TLS = True
 # database settings
 # ======================================================================
 
-# 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_ENGINE   = 'sqlite3'
-# DB Name (or path to database file if using sqlite3)
-DATABASE_NAME     = os.path.join(PROJECT_ROOT, 'gridcalendar.sqlite')
-DATABASE_USER     = ''                     # Not used with sqlite3.
-DATABASE_PASSWORD = ''                     # Not used with sqlite3.
-DATABASE_HOST     = ''                     # Not used with sqlite3.
-DATABASE_PORT     = ''                     # Not used with sqlite3.
+DATABASES = {  
+    'default': {  
+         'ENGINE': 'django.contrib.gis.db.backends.postgis',
+         'NAME': 'testbed',
+         'USER': 'tester',           
+         'PASSWORD': 'a_password',
+     }
+}
