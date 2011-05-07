@@ -26,8 +26,8 @@ http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-man
 
 from tagging.models import Tag
 
-from gridcalendar.events.models import ( Event, Group, EventUrl, EventSession )
-from gridcalendar.events.models import Membership, Calendar, EventDeadline
+from gridcalendar.events.models import ( Event, Group, EventUrl, EventSession,
+        Membership, Calendar, EventDeadline )
 
 from django.contrib import admin
 
