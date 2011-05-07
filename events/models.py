@@ -54,11 +54,15 @@ from django.forms import ValidationError
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
+from django.db import transaction
 from django.db.models.signals import pre_save, post_save
 # FIXME from gridcalendar.events.decorators import autoconnect
 
 from tagging.fields import TagField
 from tagging.models import Tag, TaggedItem
+import reversion
+from reversion import revision
+
 from utils import validate_year, search_name
 
 # COUNTRIES {{{1
@@ -448,7 +452,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                 # everything too slot
 
     # methods {{{2
-
     def natural_key(self): # {{{3
         """ used for serialization.
 
@@ -575,6 +578,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
 
+        >>> events = Event.objects.filter( title='GridCalendar presentation',
+        ...     start='2010-12-29' )
+        >>> if events: events.delete()
         >>> event = Event.parse_text(EXAMPLE)
         >>> ical = event.icalendar()
         >>> ical = vobject.readOne(ical.serialize())
@@ -671,6 +677,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> today = datetime.date.today()
         >>> today_t = today.isoformat()
         >>> user = User.objects.create( username = unicode(now_t) )
+        >>> events = Event.objects.filter( title='GridCalendar presentation',
+        ...     start='2010-12-29' )
+        >>> if events: events.delete()
         >>> event = Event.parse_text(EXAMPLE)
         >>> clone = event.clone( user, start = today )
         >>> clone_text = clone.as_text()
@@ -825,6 +834,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns an example of an event as unicode
         
         >>> from django.utils.encoding import smart_str
+        >>> events = Event.objects.filter( title='GridCalendar presentation',
+        ...     start='2010-12-29' )
+        >>> if events: events.delete()
         >>> example = Event.example()
         >>> event = Event.parse_text(example)
         >>> assert (smart_str(example) == event.as_text())
@@ -1051,8 +1063,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             complex_dic[current] = lines
         return simple_dic, complex_dic
 
-    @classmethod
-    def parse_text( cls, input_text_in, event_id = None, user_id = None ): #{{{3
+    # parse_text {{{3
+    @staticmethod
+    @revision.create_on_success # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
+    @transaction.commit_on_success # see http://docs.djangoproject.com/en/1.3/topics/db/transactions/#controlling-transaction-management-in-views
+    def parse_text( input_text_in, event_id = None, user_id = None ):
         # doc {{{4
         """It parses a text and saves it as a single event in the data base and
         return the event object, or doesn't save the event and raises a
@@ -1120,6 +1135,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             user = User.objects.get(id = user_id)
         else:
             user = None
+        revision.user = user
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
         # languages but taking care of colisions
@@ -1148,22 +1164,114 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # testing data
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
-        # check syntax of complex fields before saving the form
+        # save the form and get the event (including id)
+        event = event_form.save()
+        event.user = None
+        # urls {{{5
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls(
                     u'\n'.join(complex_fields[u'urls']) )
-        else:
-            urls = None
+            event_urls = list() # stores EventURLs to be saved at the end
+            for url_name, url in urls.items():
+                try:
+                    previous_event_url = EventUrl.objects.get(
+                            event=event, url_name=url_name)
+                except EventUrl.DoesNotExist:
+                    event_url = EventUrl(event=event, url_name=url_name, url=url)
+                    # see
+                    # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                    event_url.full_clean()
+                    event_urls.append(event_url)
+                else:
+                    previous_event_url.url = url
+                    assert(previous_event_url.url_name == url_name)
+                    assert(previous_event_url.event == event)
+                    previous_event_url.full_clean()
+                    event_urls.append(previous_event_url)
+            assert(len(event_urls) == len(urls))
+            # save all
+            for event_url in event_urls:
+                event_url.save()
+            # delete old urls of the event which are not in ``text`` parameter
+            event_urls = EventUrl.objects.filter(event=event)
+            for event_url in event_urls:
+                if not urls.has_key(event_url.url_name):
+                    event_url.delete()
+            del complex_fields[u'urls']
+        # deadlines {{{5
         if complex_fields.has_key(u'deadlines'):
             deadlines = EventDeadline.get_deadlines(
                     u'\n'.join(complex_fields[u'deadlines']))
-        else:
-            deadlines = None
+            event_deadlines = list() # stores EventDeadline instances to be saved
+                                     # at the end
+            for name, deadline in deadlines.items():
+                try:
+                    previous_event_deadline = EventDeadline.objects.get(
+                            event=event, deadline_name=name)
+                except EventDeadline.DoesNotExist:
+                    event_deadline = EventDeadline(event=event, deadline_name=name,
+                            deadline=deadline)
+                    # see
+                    # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                    event_deadline.full_clean()
+                    event_deadlines.append(event_deadline)
+                else:
+                    previous_event_deadline.deadline = deadline
+                    assert(previous_event_deadline.deadline_name == name)
+                    assert(previous_event_deadline.event == event)
+                    previous_event_deadline.full_clean()
+                    event_deadlines.append(previous_event_deadline)
+            assert(len(event_deadlines) == len(deadlines))
+            # save all
+            for event_deadline in event_deadlines:
+                event_deadline.save()
+            # delete old deadlines of the event which are not in ``text`` parameter
+            event_deadlines = EventDeadline.objects.filter(event=event)
+            for event_deadline in event_deadlines:
+                if not deadlines.has_key(event_deadline.deadline_name):
+                    event_deadline.delete()
+            del complex_fields[u'deadlines']
+        # sessions {{{5
         if complex_fields.has_key(u'sessions'):
             sessions = EventSession.get_sessions(
                     u'\n'.join(complex_fields[u'sessions']) )
-        else:
-            sessions = None
+            event_sessions = list() # stores EventSessions to be saved at the end
+            for session in sessions:
+                try:
+                    # check if there is an EventSession with the same name
+                    previous_event_session = EventSession.objects.get(
+                            event = event, session_name = session.name)
+                except EventSession.DoesNotExist:
+                    event_session = EventSession(
+                            event = event,
+                            session_name = session.name,
+                            session_date = session.date,
+                            session_starttime = session.start,
+                            session_endtime = session.end)
+                    # see
+                    # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                    event_session.full_clean()
+                    event_sessions.append(event_session)
+                else:
+                    previous_event_session.session_date = session.date
+                    previous_event_session.session_starttime = session.start
+                    previous_event_session.session_endtime = session.end
+                    previous_event_session.full_clean()
+            # save all
+            for event_session in event_sessions:
+                event_session.save()
+            # delete old sessions of the event which are not in ``text`` parameter
+            event_sessions = EventSession.objects.filter(event=event)
+            for event_session in event_sessions:
+                found = False
+                for session in sessions:
+                    if session.name == event_session.session_name:
+                        found = True
+                        break
+                if not found:
+                    event_session.delete()
+            del complex_fields[u'sessions']
+        # recurring {{{5
         if complex_fields.has_key(u'recurring'):
             date_regex = re.compile(r"^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$")
             dates = list()
@@ -1178,27 +1286,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     raise ValidationError( _(
                         u'date not in iso format (yyyy-mm-dd): %(date)s') % \
                                 {'date': date} )
-        # save the form and get the event
-        event = event_form.save(commit=False)
-        event.user = user
-        event.save() # TODO: can we process the complex fields without saving the event first?
-        event_form.save_m2m()
-        event_id = event.id
-        # adding complex fields data
-        if complex_fields.has_key(u'urls'):
-            EventUrl.parse_text(event,
-                    u'\n'.join(complex_fields[u'urls']), urls)
-            del complex_fields[u'urls']
-        if complex_fields.has_key(u'deadlines'):
-            EventDeadline.parse_text(event,
-                    u'\n'.join(complex_fields[u'deadlines']), deadlines)
-            del complex_fields[u'deadlines']
-        if complex_fields.has_key(u'sessions'):
-            EventSession.parse_text(event,
-                    u'\n'.join(complex_fields[u'sessions']), sessions)
-            del complex_fields[u'sessions']
-        if complex_fields.has_key(u'recurring'):
-            for date in dates:
                 # we do not clone deadlines nor sessions, as they 
                 # refer to the main event and not to the recurring events.
                 # TODO: inform the user
@@ -1206,6 +1293,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         except_models = [EventDeadline, EventSession],
                         start = date, end = None )
             del complex_fields[u'recurring']
+        # test and return event {{{5
         assert(len(complex_fields) == 0)
         return event
 
@@ -1319,6 +1407,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         group = Group.objects.get( id = group_id )
         cal_entry = Calendar.objects.get( event = self, group = group )
         cal_entry.delete()
+
+if not reversion.is_registered( Event ): # {{{1
+    reversion.register( Event, format = "yaml",
+            follow=[ "urls_set", "sessions_set", "deadlines_set" ] )
 
 # Event post_save.connect {{{1
 # see http://docs.djangoproject.com/en/1.2/topics/signals/
@@ -1451,7 +1543,7 @@ class Recurrence( models.Model ): #{{{1
                     master = self.master,
                     event = self.master )
             super( Recurrence, self_reference ).save( *args, **kwargs )
-    
+
 class ExtendedUser(User): # {{{1
     """ Some aditional funtions to users
     
@@ -1617,72 +1709,9 @@ class EventUrl( models.Model ): # {{{1
             raise ValidationError( errors )
         return urls
 
-    @staticmethod # def parse_text(event, text, urls = None): {{{2
-    def parse_text(event, text, urls = None):
-        """ validates and saves text lines containing EventUrl entries, raising
-        ValidationErrors if there are errors
-
-        It also removes all previous EventUrls for ``event`` if no errors occur.
-
-        >>> now = datetime.datetime.now().isoformat()
-        >>> event = Event(title="test for parse_text in EventUrl" + now,
-        ...         start=datetime.date(2020, 1, 1), tags="test")
-        >>> event.save()
-        >>> event_url = EventUrl(event=event,
-        ...         url_name="test", url="http://example.com")
-        >>> event_url.save()
-        >>> text = u"urls:\\n    test1 http://example.com\\n    test2 http://example.com"
-        >>> EventUrl.parse_text(event, text)
-        >>> event_urls = EventUrl.objects.filter(event=event)
-        >>> assert(len(event_urls) == 2)
-        >>> text = u"urls:\\n    test3 http://example.com"
-        >>> EventUrl.parse_text(event, text)
-        >>> event_urls = EventUrl.objects.filter(event=event)
-        >>> assert(len(event_urls) == 1)
-        >>> assert(event_urls[0].url_name == u'test3')
-        >>> text = u"web: http://example.com "
-        >>> EventUrl.parse_text(event, text)
-        >>> event_urls = EventUrl.objects.filter(event=event)
-        >>> assert(len(event_urls) == 1)
-        >>> assert(event_urls[0].url_name == u'url')
-        >>> event.delete()
-        """
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int) or isinstance(event, long):
-            event = Event.objects.get(pk = event)
-        else:
-            event = Event.objects.get(pk = int(event))
-        if not isinstance(text, unicode):
-            text = smart_unicode(text)
-        if urls is None:
-            urls = EventUrl.get_urls( text )
-        event_urls = list() # stores EventURLs to be saved at the end
-        for url_name, url in urls.items():
-            try:
-                previous_event_url = EventUrl.objects.get(
-                        event=event, url_name=url_name)
-            except EventUrl.DoesNotExist:
-                event_url = EventUrl(event=event, url_name=url_name, url=url)
-                # see
-                # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
-                event_url.full_clean()
-                event_urls.append(event_url)
-            else:
-                previous_event_url.url = url
-                assert(previous_event_url.url_name == url_name)
-                assert(previous_event_url.event == event)
-                previous_event_url.full_clean()
-                event_urls.append(previous_event_url)
-        assert(len(event_urls) == len(urls))
-        # save all
-        for event_url in event_urls:
-            event_url.save()
-        # delete old urls of the event which are not in ``text`` parameter
-        event_urls = EventUrl.objects.filter(event=event)
-        for event_url in event_urls:
-            if not urls.has_key(event_url.url_name):
-                event_url.delete()
+if not reversion.is_registered( EventUrl ): # {{{1
+    reversion.register(EventUrl, format = "yaml" )
+    # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 class EventDeadlineManager( models.Manager ): # {{{1
     def get_by_natural_key(self, deadline_name, event):
@@ -1832,74 +1861,9 @@ class EventDeadline( models.Model ): # {{{1
             raise ValidationError( errors )
         return deadlines
 
-    @staticmethod # def parse_text(event, text, deadlines = None ): {{{2
-    def parse_text(event, text, deadlines = None ):
-        """ validates and saves text lines containing EventDeadline entries,
-        raising ValidationErrors if there are errors.
-
-        ``deadlines`` can be a dictionary of deadline names and dates. If it is
-        None, ``text`` is parsed to build ``deadlines``
-
-        It also removes all previous EventDeadline instances for ``event`` if
-        no errors occur.
-
-        >>> now = datetime.datetime.now().isoformat()
-        >>> event = Event(title="test for parse_text in EventDeadline " + now,
-        ...         start=datetime.date(2020, 1, 1), tags="test")
-        >>> event.save()
-        >>> event_deadline = EventDeadline(
-        ...         event = event, deadline_name = "test1",
-        ...         deadline = datetime.date(2020,1,1))
-        >>> event_deadline.save()
-        >>> text = u"deadlines:\\n    2010-01-02 test1\\n    2010-02-02 test2"
-        >>> EventDeadline.parse_text(event, text)
-        >>> event_deadlines = EventDeadline.objects.filter(event=event)
-        >>> assert(len(event_deadlines) == 2)
-        >>> text = u"deadlines:\\n    2010-03-03 test3"
-        >>> EventDeadline.parse_text(event, text)
-        >>> event_deadlines = EventDeadline.objects.filter(event=event)
-        >>> assert(len(event_deadlines) == 1)
-        >>> assert(event_deadlines[0].deadline_name == u'test3')
-        >>> event.delete()
-        """
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int) or isinstance(event, long):
-            event = Event.objects.get(pk = event)
-        else:
-            event = Event.objects.get(pk = int(event))
-        if not isinstance(text, unicode):
-            text = smart_unicode(text)
-        if deadlines is None:
-            deadlines = EventDeadline.get_deadlines( text )
-        event_deadlines = list() # stores EventDeadline instances to be saved
-                                 # at the end
-        for name, deadline in deadlines.items():
-            try:
-                previous_event_deadline = EventDeadline.objects.get(
-                        event=event, deadline_name=name)
-            except EventDeadline.DoesNotExist:
-                event_deadline = EventDeadline(event=event, deadline_name=name,
-                        deadline=deadline)
-                # see
-                # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
-                event_deadline.full_clean()
-                event_deadlines.append(event_deadline)
-            else:
-                previous_event_deadline.deadline = deadline
-                assert(previous_event_deadline.deadline_name == name)
-                assert(previous_event_deadline.event == event)
-                previous_event_deadline.full_clean()
-                event_deadlines.append(previous_event_deadline)
-        assert(len(event_deadlines) == len(deadlines))
-        # save all
-        for event_deadline in event_deadlines:
-            event_deadline.save()
-        # delete old deadlines of the event which are not in ``text`` parameter
-        event_deadlines = EventDeadline.objects.filter(event=event)
-        for event_deadline in event_deadlines:
-            if not deadlines.has_key(event_deadline.deadline_name):
-                event_deadline.delete()
+if not reversion.is_registered( EventDeadline ): # {{{1
+    reversion.register( EventDeadline, format = 'yaml' )
+    # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 class EventSessionManager( models.Manager ): # {{{1
     def get_by_natural_key(self, session_name, event):
@@ -2044,91 +2008,9 @@ class EventSession( models.Model ): # {{{1
             raise ValidationError( errors )
         return sessions.values()
 
-    @staticmethod # def parse_text( event, text, sessions = None ): {{{2
-    def parse_text( event, text, sessions = None ):
-        """ validates and saves text lines containing EventSession entries,
-        raising ValidationErrors if there are errors.
-
-        ``sessions`` is a dictionary of session names and instances of the
-        class ``Session``. If it is None ``text`` is parsed to build the
-        dictionary.
-
-        It also removes all previous EventSessions for ``event`` if no errors
-        occur.
-
-        Example::
-
-            sessions:
-                2009-01-01 10:00-16:00 first day
-                2009-01-01 11:00-12:00 speech about GridCalendar
-
-        >>> import datetime
-        >>> now = datetime.datetime.now().isoformat()
-        >>> event = Event(title="test for parse_text in EventSession " + now,
-        ...         start=datetime.date(2020, 1, 1), tags="test")
-        >>> event.save()
-        >>> event_session = EventSession(
-        ...     event=event, session_name="test1",
-        ...     session_date = datetime.date(2010,1,1),
-        ...     session_starttime = datetime.time(0,0),
-        ...     session_endtime = datetime.time(1,0))
-        >>> event_session.save()
-        >>> text = u"sessions:\\n    2010-01-02 11:00-12:00 test1\\n"
-        >>> text = text +      "    2010-01-03 12:00-13:00 test2"
-        >>> EventSession.parse_text(event, text)
-        >>> event_sessions = EventSession.objects.filter(event=event)
-        >>> assert(len(event_sessions) == 2)
-        >>> text = u"sessions:\\n    2010-01-02 13:00-14:00 test1"
-        >>> EventSession.parse_text(event, text)
-        >>> event_sessions = EventSession.objects.filter(event=event)
-        >>> assert(len(event_sessions) == 1)
-        >>> assert(event_sessions[0].session_name == u'test1')
-        >>> event.delete()
-        """
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int) or isinstance(event, long):
-            event = Event.objects.get(pk = event)
-        else:
-            event = Event.objects.get(pk = int(event))
-        if not isinstance(text, unicode):
-            text = smart_unicode(text)
-        sessions = EventSession.get_sessions( text )
-        event_sessions = list() # stores EventSessions to be saved at the end
-        for session in sessions:
-            try:
-                # check if there is an EventSession with the same name
-                previous_event_session = EventSession.objects.get(
-                        event = event, session_name = session.name)
-            except EventSession.DoesNotExist:
-                event_session = EventSession(
-                        event = event,
-                        session_name = session.name,
-                        session_date = session.date,
-                        session_starttime = session.start,
-                        session_endtime = session.end)
-                # see
-                # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
-                event_session.full_clean()
-                event_sessions.append(event_session)
-            else:
-                previous_event_session.session_date = session.date
-                previous_event_session.session_starttime = session.start
-                previous_event_session.session_endtime = session.end
-                previous_event_session.full_clean()
-        # save all
-        for event_session in event_sessions:
-            event_session.save()
-        # delete old sessions of the event which are not in ``text`` parameter
-        event_sessions = EventSession.objects.filter(event=event)
-        for event_session in event_sessions:
-            found = False
-            for session in sessions:
-                if session.name == event_session.session_name:
-                    found = True
-                    break
-            if not found:
-                event_session.delete()
+if not reversion.is_registered( EventSession ): # {{{1
+    reversion.register(EventSession, format = 'yaml' )
+    # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 class FilterManager( models.Manager ): # {{{1
     def get_by_natural_key(self, name, username):
