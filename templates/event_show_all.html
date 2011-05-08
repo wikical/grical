@@ -8,6 +8,8 @@
     <div class="options">
         <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
         &nbsp;|&nbsp;
+        <a href="{% url event_history event.id %}">{% trans "history" %}</a>
+        &nbsp;|&nbsp;
         <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
         &nbsp;|&nbsp;
         <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>

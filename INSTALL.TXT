@@ -14,7 +14,7 @@ Installation instructions for Debian based systems
    hg pull
    hg update
 
-#. Install the following packages and their dependencies: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools python-gdal python-yaml postgresql-8.4 python-psycopg2 postgresql-8.4-postgis libgeos-c1 python-django-reversion``. 
+#. Install the following packages and their dependencies: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools python-gdal python-yaml postgresql-8.4 python-psycopg2 postgresql-8.4-postgis libgeos-c1``
 
     - python-django must be at least Version 1.3
     - python-django-reversion must be compatible with Django 1.3, see
@@ -23,6 +23,10 @@ Installation instructions for Debian based systems
 #. Install ``django-tables``::
 
     easy_install django-tables
+
+#. Install the `proper version of django-reversion`__ for the installed Django version.
+
+__ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
 
 #. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt

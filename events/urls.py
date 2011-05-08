@@ -39,7 +39,7 @@ urlpatterns = patterns('',            # pylint: disable-msg=C0103
 # ^e single event {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/new/$',
-        views.event_edit,                name='event_new'),
+        views.event_edit,               name='event_new'),
 
     url(r'^e/new/raw/$',
         views.event_new_raw,            name='event_new_raw'),
@@ -53,6 +53,9 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/show/(?P<event_id>\d+)/$',
         views.event_show,               name='event_show'),
 
+    url(r'^e/history/(?P<event_id>\d+)/$',
+        views.event_history,       name='event_history'),
+
     url(r'^e/show/(?P<event_id>\d+)/raw/$',
         views.event_show_raw,           name='event_show_raw'),
 
@@ -60,7 +63,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.ICalForEvent,             name='event_show_ical'),
 
     url(r'^e/group/(?P<event_id>\d+)/$',
-        views.group_add_event,      name='group_add_event'),
+        views.group_add_event,          name='group_add_event'),
     )
 
 # ^s searches urls {{{1

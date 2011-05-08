@@ -26,8 +26,10 @@
 
 # imports {{{1
 import datetime
+import re
 import vobject
 import unicodedata
+from difflib import HtmlDiff, unified_diff
 
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
@@ -49,13 +51,15 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 
 from tagging.models import Tag, TaggedItem
+from reversion import revision
+from reversion.models import Version
 
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
      NewGroupForm, InviteToGroupForm, AddEventToGroupForm, )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
-    Membership, GroupInvitation, ExtendedUser, Calendar)
+    Membership, GroupInvitation, ExtendedUser, Calendar, RevisionDiff )
 from gridcalendar.events.utils import search_address
 from gridcalendar.events.tables import EventTable
 
@@ -92,7 +96,7 @@ def legal_notice( request ): # {{{1
                     ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
-def event_edit( request, event_id = False ): # {{{1
+def event_edit( request, event_id = None ): # {{{1
     """ view to edit or create an event as a form
 
     >>> from django.test import Client
@@ -115,16 +119,17 @@ def event_edit( request, event_id = False ): # {{{1
     if event_id:
         event = get_object_or_404( Event, pk = event_id )
         can_delete = True
+        old_as_text = event.as_text().splitlines()
     else:
         event = Event()
         can_delete = False
+        old_as_text = None
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4, can_delete = can_delete, )
     event_deadlines_factory = inlineformset_factory( 
             Event, EventDeadline, extra = 4, can_delete = can_delete, )
     event_sessions_factory = inlineformset_factory( 
             Event, EventSession, extra = 4, can_delete = can_delete, )
-            
     if request.method == 'POST':
         event_form = EventForm( request.POST, instance = event )
         formset_url = event_urls_factory(
@@ -139,13 +144,30 @@ def event_edit( request, event_id = False ): # {{{1
                     formset_session.is_valid() & formset_deadline.is_valid() :
                 # FIXME: don't allow to save an event with missing basic data
                 # like a URL
-                # TODO: use the session middleware to commit as an atom
                 event.save()
                 formset_url.save()
                 formset_session.save()
                 formset_deadline.save()
+                # we save diffs in revision if appropiate. See
+                # https://github.com/etianen/django-reversion/wiki/Low-Level-API
+                if old_as_text:
+                    new_as_text = event.as_text().splitlines()
+                    html_diff = HtmlDiff( tabsize = 4 ).make_table(
+                            old_as_text, new_as_text )
+                    text_diff = unified_diff(
+                            old_as_text, new_as_text, n = 0, lineterm = "" )
+                    # we now delete from the text diff all control lines TODO:
+                    # when the description field of an event contains such
+                    # lines, they will be deleted: avoid it.
+                    text_diff = [line for line in text_diff if not
+                            re.match(r"^---\s*$", line) and not
+                            re.match(r"^\+\+\+\s*$", line) and not
+                            re.match(r"^@@.*@@$", line)]
+                    text_diff = '\n'.join( text_diff )
+                    revision.add_meta( RevisionDiff,
+                            html_diff = html_diff, text_diff = text_diff )
                 return HttpResponseRedirect( 
-                        reverse( 'event_show', kwargs = {'event_id': event.id} ) )
+                        reverse('event_show', kwargs = {'event_id': event.id}))
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
@@ -336,6 +358,22 @@ def event_show_raw( request, event_id ): # {{{1
             'event_textarea': event_textarea,
             'event': event }
     return render_to_response( 'event_show_raw.html',
+            templates, context_instance = RequestContext( request ) )
+
+def event_history( request, event_id ): # {{{1
+    """ show the history of an event """
+    # TODO: tests including one that checks that a revision has only one
+    # element in its revisiondiff_set
+    event = get_object_or_404( Event, pk = event_id )
+    revisions = [ version.revision for version in
+            Version.objects.get_for_object( event ) ]
+    revisions.reverse()
+    templates = {
+            'title': _( "History of event %(event_nr)s" ) % \
+                    {'event_nr': str(event.id)},
+            'event': event,
+            'revisions': revisions }
+    return render_to_response( 'event_history.html',
             templates, context_instance = RequestContext( request ) )
 
 def search( request, query = None, view = 'boxes' ): # {{{1
