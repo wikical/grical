@@ -24,6 +24,7 @@
 """ Models """
 
 # imports {{{1
+from difflib import HtmlDiff, unified_diff
 import random
 import re
 from re import UNICODE
@@ -795,15 +796,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # changing the acronym and a deadline, make the calling only one. Maybe
         # usefull: Django messaging and the transaction middleware recommended
         # by django-reversion
-        # FIXME: bot test
-        try:
-            with open('/tmp/gricalbotpipe', 'a') as pipe:
-                if hasattr(self, "not_new") and self.not_new:
-                    pipe.write(str(self.id) + '-update')
-                else:
-                    pipe.write(str(self.id) + '-create')
-        except:
-            pass
+        # FIXME: include bot in source and make it optional in settings
+        if not settings.DEBUG:
+            try:
+                with open('/tmp/gricalbotpipe', 'a') as pipe:
+                    if hasattr(self, "not_new") and self.not_new:
+                        pipe.write(str(self.id) + '-update')
+                    else:
+                        pipe.write(str(self.id) + '-create')
+            except:
+                pass
 
     @staticmethod # def post_save( sender, **kwargs ): {{{3
     def post_save( sender, **kwargs ):
@@ -1151,9 +1153,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         from gridcalendar.events.forms import EventForm
         if event_id == None :
             event_form = EventForm( simple_fields )
+            old_as_text = None
         else:
             # the following line can raise an Event.DoesNotExist
             event = Event.objects.get( id = event_id )
+            old_as_text = event.as_text().splitlines()
             event_form = EventForm( simple_fields, instance = event )
         # processing description
         if complex_fields.has_key(u'description'):
@@ -1164,7 +1168,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # testing data
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
-        # save the form and get the event (including id)
+        # save the event from the form
         event = event_form.save()
         event.user = None
         # urls {{{5
@@ -1295,6 +1299,23 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             del complex_fields[u'recurring']
         # test and return event {{{5
         assert(len(complex_fields) == 0)
+        # we save diffs in revision if appropiate
+        if old_as_text:
+            new_as_text = event.as_text().splitlines()
+            html_diff = HtmlDiff( tabsize = 4 ).make_table(
+                    old_as_text, new_as_text )
+            text_diff = unified_diff(
+                    old_as_text, new_as_text, n = 0, lineterm = "" )
+            # we now delete from the text diff all control lines
+            # TODO: when the description field of an event contains such lines,
+            # they will be deleted: avoid it.
+            text_diff = [line for line in text_diff if not
+                    re.match(r"^---\s*$", line) and not
+                    re.match(r"^\+\+\+\s*$", line) and not
+                    re.match(r"^@@.*@@$", line)]
+            text_diff = '\n'.join( text_diff )
+            revision.add_meta( RevisionDiff,
+                    html_diff = html_diff, text_diff = text_diff )
         return event
 
     @staticmethod # def get_complex_fields(): {{{3
@@ -1409,8 +1430,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         cal_entry.delete()
 
 if not reversion.is_registered( Event ): # {{{1
-    reversion.register( Event, format = "yaml",
+    reversion.register( Event, format = "yaml", # TODO: use custom serializer
             follow=[ "urls_set", "sessions_set", "deadlines_set" ] )
+
+class RevisionDiff( models.Model ): # {{{1
+    # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
+    revision = models.ForeignKey("reversion.Revision")
+    text_diff = models.TextField()
+    html_diff = models.TextField()
 
 # Event post_save.connect {{{1
 # see http://docs.djangoproject.com/en/1.2/topics/signals/
@@ -2011,6 +2038,32 @@ class EventSession( models.Model ): # {{{1
 if not reversion.is_registered( EventSession ): # {{{1
     reversion.register(EventSession, format = 'yaml' )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
+
+# class EventHistoryManager( models.Manager ): # {{{1
+#     def get_by_natural_key(self, modification_time, username):
+#         return self.get(
+#                 modification_time = modification_time,
+#                 user = User.objects.get( username = username ) )
+# 
+# class EventHistory( models.Model ): # {{{1
+#     user = models.ForeignKey( User,
+#             unique = False, verbose_name = _( u'User' ) )
+#     event = models.ForeignKey( Event, unique = False,
+#             verbose_name = _( u'Event' ), related_name = 'history' )
+#     modification_time = models.DateTimeField( _( u'Modification time' ),
+#             editable = False, auto_now = True )
+#     as_text = models.TextField(
+#             _( u'Event as text' ), blank = False, null = False )
+#     objects = EventHistoryManager()
+#     class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
+#         unique_together = ( "user", "modification_time" )
+#         verbose_name = _( u'History' )
+#         verbose_name_plural = _( u'Histories' )
+#         ordering = ['-modification_time']
+#     def post_save_receiver(self, instance, created, **kwargs):
+#         pass
+#     def pre_delete_receiver(self, instance, **kwargs):
+#         pass
 
 class FilterManager( models.Manager ): # {{{1
     def get_by_natural_key(self, name, username):

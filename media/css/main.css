@@ -181,6 +181,33 @@ h6 {
 }
 
 /*
+ * event history
+ */
+.event_history .options {
+    font-size: 0.8em;
+    text-align: right;
+}
+.event_history .diff_chg {
+    color: blue ;
+    font-weight:bold;
+}
+.event_history .diff_add {
+    color: green ;
+    font-weight:bold;
+}
+.event_history .diff_sub {
+    color: red ;
+    font-weight:bold;
+}
+.event_history .diff_next, .event_history .diff_header {
+    display: none;
+}
+td {
+    border: 0;
+    padding: 0.1em 5em 0 0;
+}
+
+/*
  * event full format 
  */
 .event_full h1 a[href] {
