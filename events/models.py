@@ -24,7 +24,6 @@
 """ Models """
 
 # imports {{{1
-from difflib import HtmlDiff, unified_diff
 import random
 import re
 from re import UNICODE
@@ -36,8 +35,13 @@ from itertools import chain
 
 import vobject
 
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.comments import Comment
+from django.contrib.comments.signals import comment_was_posted
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail, BadHeaderError, EmailMessage
+from django.core.urlresolvers import reverse
+from django.core.validators import RegexValidator
 from django.utils.encoding import smart_str, smart_unicode
 from django.contrib.gis.db import models
 # http://docs.djangoproject.com/en/1.2/topics/db/queries/#filters-can-reference-fields-on-the-model
@@ -45,7 +49,7 @@ from django.contrib.gis.db import models
 from django.contrib.gis.db.models import Q
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
@@ -56,15 +60,15 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.db import transaction
-from django.db.models.signals import pre_save, post_save
 # FIXME from gridcalendar.events.decorators import autoconnect
 
 from tagging.fields import TagField
 from tagging.models import Tag, TaggedItem
 import reversion
 from reversion import revision
+from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
-from utils import validate_year, search_name
+from utils import validate_year, search_name, text_diff
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -332,7 +336,7 @@ endtime: 18:00
 tags: calendar software open-source gridmind gridcalendar
 urls:
     code    http://example.com
-    web    http://example.com
+    web    http://example.org
 address: Gleimstr. 6
 postcode: 10439
 city: Berlin
@@ -390,7 +394,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             help_text = _( u"Example: 2010-08-26"),
             validators = [validate_year] )
     upcoming = models.DateField( _( u'Upcoming deadline or start' ),
-            editable = False )
+            editable = False, db_index = True )
     starttime = models.TimeField( 
             _( u'Start time' ), blank = True, null = True )
     endtime = models.TimeField( 
@@ -779,7 +783,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     @models.permalink
     def get_absolute_url( self ): #{{{3
         "get URL of an event"
-        return ( 'event_show', (), {'event_id': self.id,} )
+        return ( 'event_show_all', (), {'event_id': self.id,} )
 
     def save( self, *args, **kwargs ): #{{{3
         """ Marks an event as new or not (for :meth:`Event.post_save) and call
@@ -792,20 +796,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         self.upcoming = self.next_coming_date_or_start()
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
-        # TODO: this code is called many times when e.g. editing an event and
-        # changing the acronym and a deadline, make the calling only one. Maybe
-        # usefull: Django messaging and the transaction middleware recommended
-        # by django-reversion
-        # FIXME: include bot in source and make it optional in settings
-        if not settings.DEBUG:
-            try:
-                with open('/tmp/gricalbotpipe', 'a') as pipe:
-                    if hasattr(self, "not_new") and self.not_new:
-                        pipe.write(str(self.id) + '-update')
-                    else:
-                        pipe.write(str(self.id) + '-create')
-            except:
-                pass
 
     @staticmethod # def post_save( sender, **kwargs ): {{{3
     def post_save( sender, **kwargs ):
@@ -1153,11 +1143,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         from gridcalendar.events.forms import EventForm
         if event_id == None :
             event_form = EventForm( simple_fields )
-            old_as_text = None
         else:
             # the following line can raise an Event.DoesNotExist
             event = Event.objects.get( id = event_id )
-            old_as_text = event.as_text().splitlines()
             event_form = EventForm( simple_fields, instance = event )
         # processing description
         if complex_fields.has_key(u'description'):
@@ -1299,23 +1287,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             del complex_fields[u'recurring']
         # test and return event {{{5
         assert(len(complex_fields) == 0)
-        # we save diffs in revision if appropiate
-        if old_as_text:
-            new_as_text = event.as_text().splitlines()
-            html_diff = HtmlDiff( tabsize = 4 ).make_table(
-                    old_as_text, new_as_text )
-            text_diff = unified_diff(
-                    old_as_text, new_as_text, n = 0, lineterm = "" )
-            # we now delete from the text diff all control lines
-            # TODO: when the description field of an event contains such lines,
-            # they will be deleted: avoid it.
-            text_diff = [line for line in text_diff if not
-                    re.match(r"^---\s*$", line) and not
-                    re.match(r"^\+\+\+\s*$", line) and not
-                    re.match(r"^@@.*@@$", line)]
-            text_diff = '\n'.join( text_diff )
-            revision.add_meta( RevisionDiff,
-                    html_diff = html_diff, text_diff = text_diff )
+        revision.add_meta( RevisionInfo,
+                as_text = smart_unicode( event.as_text() ) )
         return event
 
     @staticmethod # def get_complex_fields(): {{{3
@@ -1433,11 +1406,14 @@ if not reversion.is_registered( Event ): # {{{1
     reversion.register( Event, format = "yaml", # TODO: use custom serializer
             follow=[ "urls_set", "sessions_set", "deadlines_set" ] )
 
-class RevisionDiff( models.Model ): # {{{1
+class RevisionInfo( models.Model ): # {{{1
+    """ used to store additional info in revisions """
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
     revision = models.ForeignKey("reversion.Revision")
-    text_diff = models.TextField()
-    html_diff = models.TextField()
+    as_text = models.TextField( blank = True, null = True )
+    redirect = models.IntegerField( blank = True, null = True )
+    reason = models.CharField( blank = True, null = True, max_length = 100 )
+    """ event id used to redirect deleted events """
 
 # Event post_save.connect {{{1
 # see http://docs.djangoproject.com/en/1.2/topics/signals/
@@ -1986,7 +1962,7 @@ class EventSession( models.Model ): # {{{1
                 name = field_m.group(8)
                 if sessions.has_key(name):
                     errors.append( 
-                        _(u'the following session name appers more than one:' \
+                        _(u'the following session name appers more than once:' \
                         ' %(name)s') % {'name': name} )
                 else:
                     try:
@@ -2177,7 +2153,12 @@ class Filter( models.Model ): # {{{1
         If the query contains a group term (marked with ``!``) or a tag term
         (marked with ``#``), no related events are added.
 
+        If the query evaluates to False, an empty queryset (EmptyQuerySet) is
+        returned.
+
         """
+        if not query:
+            return Event.objects.none()
         # TODO: return a queryset, not a list. See some ideas described in:
         # http://stackoverflow.com/questions/431628/how-to-combine-2-or-more-querysets-in-a-django-view
         queryset = Filter.matches_queryset(query, user)
@@ -2494,9 +2475,14 @@ class Group( models.Model ): # {{{1
     >>> membership = Membership.objects.create(group = group, user = user)
     >>> assert ( len(group.get_users()) == 1 )
     """
-    # FIXME: groups only as lowerDeadlines case ascii (case insensitive).
-    # Validate everywhere including save method.
-    name = models.CharField( _( u'Name' ), max_length = 80, unique = True )
+    # TODO test names with special characters including urls like grical.org/group_name
+    name = models.CharField( _( u'Name' ), max_length = 80, unique = True,
+            validators = [ RegexValidator(
+                re.compile(r'.*[^0-9].*'),
+                message = _(u'a group name must contain at least one ' \
+                        'character which is not a number') ) ] )
+            # the validation above is needed in order to show an event with the
+            # short url e.g. grical.org/1234
     description = models.TextField( _( u'Description' ) )
     members = models.ManyToManyField( User, through = 'Membership',
             verbose_name = _( u'Members' ) )
@@ -3029,12 +3015,92 @@ class Session: #{{{1
                 " " + unicode(self.end.strftime( "%H:%M" )) + \
                 " " + unicode(self.name)
 
-# old code and comments {{{1
-# TODO: add setting info to users. See the auth documentation because there is
-# a method for adding fields to User. E.g.
-#   - interesting locations
-#   - interesting tags
-#   - hidden: location and tags clicked before
+# LOG to a pipe {{{1
+# it is recommended in the Django documentation to connect to signals in
+# models.py. That is why this code is here.
+if settings.PIPE_TO_LOG_TO:
+    def write_to_pipe( **kwargs ): # {{{2
+        site = Site.objects.get_current().domain
+        with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
+            # comment {{{3
+            if kwargs['sender'] == Comment:
+                comment = kwargs['comment']
+                pipe.write(
+                    'http://%(site)s%(comment_url)s\n' \
+                    '*** %(comment)s ***\n' % {
+                        'site': site,
+                        'comment_url': comment.get_absolute_url(),
+                        'comment': comment.comment } )
+            # event created/updated {{{3
+            elif kwargs['sender'] == RevisionInfo:
+                revision_info = kwargs['instance']
+                revision = revision_info.revision
+                event_content_type = ContentType.objects.get_for_model( Event )
+                # in each revision there is only one version for an Event
+                event_version = revision.version_set.get(
+                        content_type = event_content_type )
+                try:
+                    event = Event.objects.get( pk = event_version.object_id )
+                except Event.DoesNotExist:
+                    # this happens when an event has been deleted
+                    return
+                event_url = event.get_absolute_url()
+                # TODO: optimize the next code to hit the db less
+                pipe.write(
+                    'http://%(site)s%(event_url)s\n'  % {
+                        'site': site, 'event_url': event_url } )
+                revisions = [ version.revision for version in
+                    Version.objects.get_for_object( event ) ]
+                if len( revisions ) > 1:
+                    diff = text_diff(
+                            revisions[-2].revisioninfo_set.all()[0].as_text,
+                            revisions[-1].revisioninfo_set.all()[0].as_text )
+                    pipe.write( diff )
+                    #pipe.write( ''.join( ['\n  ' + line for line in 
+                    #    diff.splitlines() ] ) )
+                else:
+                    pipe.write( ''.join( ['\n  ' + line for line in 
+                        event.as_text().splitlines() ] ) )
+            # event deleted {{{3
+            elif kwargs['sender'] == Event:
+                event = kwargs['instance']
+                deleted_url = reverse( 'event_deleted',
+                        kwargs={'event_id': event.id,} )
+                pipe.write( 'http://%(site)s%(deleted_url)s' % {
+                    'site': site, 'deleted_url': deleted_url, } )
+            #  Revision, used to log undeletions {{{3
+            elif kwargs['sender'] == Version:
+                version = kwargs['instance']
+                # undeletions have version.type = VERSION_ADD and the version
+                # before has version.type = VERSION_DELETE
+                if not version.type == VERSION_ADD:
+                    return
+                event_content_type = ContentType.objects.get_for_model( Event )
+                revision_list = Revision.objects.filter(
+                       version__object_id = version.object_id,
+                       version__content_type = event_content_type )
+                revision_list = revision_list.order_by( '-date_created' )
+                if len( revision_list ) < 2:
+                    return
+                previous = None
+                for revision in revision_list:
+                    if previous and previous == version.revision:
+                        ver = revision.version_set.get(
+                                content_type = event_content_type )
+                        if ver.type == VERSION_DELETE:
+                            history_url = reverse( 'event_history',
+                                kwargs={'event_id': version.object_id,} )
+                            pipe.write( 'http://%(site)s%(history_url)s' % {
+                                'site': site, 'history_url': history_url, } )
+                        return
+                    previous = revision
 
-#TODO: events comment model. Check for already available django comment module
-
+    # signals connects {{{2
+    post_save.connect( write_to_pipe , sender = RevisionInfo,
+        weak = False, dispatch_uid = 'pipe_logger_revisioninfo' )
+    comment_was_posted.connect( write_to_pipe, sender = Comment,
+        weak = False, dispatch_uid = 'pipe_logger_comment' )
+    post_delete.connect( write_to_pipe, sender = Event,
+        weak = False, dispatch_uid = 'pipe_logger_event_deleted' )
+    post_save.connect( write_to_pipe, sender = Version,
+        weak = False, dispatch_uid = 'pipe_logger_undeleted' )

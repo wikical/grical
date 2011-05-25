@@ -23,7 +23,7 @@
             <td>{{ event.start }}</td>
             <td>{% if event.city %}{{ event.city }}{% endif %}</td>
             <td>{% if event.country %}{{ event.country }}{% endif %}</td>
-            <td><a href="{% url event_show event.id %}">{{ event.title }}</a></td>
+            <td><a href="{% url event_show_all event.id %}">{{ event.title }}</a></td>
             <td>{% if event.tags %} {{ event.tags }}{% endif %}</td>
         </tr>
     {% endfor %}

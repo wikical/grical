@@ -96,6 +96,7 @@ high priority
 medium priority
 ---------------
 
+- use the google prediction API to find related events http://code.google.com/apis/predict/
 - add link for Google calendar import like at
     http://agendadulibre.org/icallist.php
 - better url schema, allowing human/seo urls like grical.org/142/My-Event-Name-With-Spaces

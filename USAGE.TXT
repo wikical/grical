@@ -124,6 +124,20 @@ Searches and filters
 .. _RSS feed: http://en.wikipedia.org/wiki/Rss
 .. _iCalendar File: http://en.wikipedia.org/wiki/ICalendar
 
+Event history and event deletions
+---------------------------------
+
+Since events can be modified by anyone, including anonymous (not logged-in)
+users, Grical stores (remembers) all revisions (states) of events. All
+revisions of an event is called history, like the history of an entry in the
+Wikipedia.
+
+Only logged-in users can delete or revert an event to a previous revision.
+
+When an event is deleted, it is possible to indicate another event containing
+the information of the deleted event. Users trying to access the deleted event
+will be then redirected to the other one.
+
 API
 ---
 

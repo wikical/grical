@@ -14,7 +14,7 @@
 # 
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the Affero GNU Generevent.idal Public License
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # for more details.
 # 
 # You should have received a copy of the GNU Affero General Public License
