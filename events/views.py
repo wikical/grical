@@ -438,7 +438,7 @@ def event_revert( request, revision_id, event_id ): # {{{1
 def event_delete( request, event_id ):
     event = get_object_or_404( Event, pk = event_id )
     user = request.user
-    if request.POST:
+    if request.method == "POST":
         form = DeleteEventForm( data = request.POST )
         if form.is_valid():
             # revision.user = user # done by the reversion middleware
@@ -455,10 +455,6 @@ def event_delete( request, event_id ):
             messages.success( request, _('Event %(event_id)s deleted.') % \
                     {'event_id': event_id,} )
             return HttpResponseRedirect( reverse('main') )
-        else:
-            return render_to_response( 'event_delete.html',
-                    {'form': form, 'event': event},
-                    context_instance = RequestContext( request ) )
     else:
         # TODO: if event is part of a serie, ask to delete only this event,
         # also all futures events, also all past events or all
@@ -1213,7 +1209,7 @@ def group_add_event(request, event_id): # {{{2
     event = get_object_or_404( Event, id = event_id )
     user = request.user
     if len(Group.groups_for_add_event(user, event)) > 0:
-        if request.POST:
+        if request.method == "POST":
             form = AddEventToGroupForm(
                     data=request.POST, user=user, event=event)
             if form.is_valid():
@@ -1314,7 +1310,7 @@ def group_invite(request, group_id): # {{{2
                 "'%(group_name)s', but you are yourself not a member " \
                 "of it" ) % {'group_name': group.name,} )
         return main( request )
-    if request.POST:
+    if request.method == "POST":
         username_dirty = request.POST['username']
         # TODO think of malicious manipulations of these fields:
         formdata = {'username': username_dirty,
@@ -1465,7 +1461,7 @@ def handler404(request): #{{{1
 
 def handler500(request): #{{{1
     """ custom 500 handler """
-    messages.error(
+    messages.error( request,
             _( u'We are very sorry but an error has ocurred. We have ' \
             'been automatically informed and will fix it in no time, ' \
             'because we care' ) )
