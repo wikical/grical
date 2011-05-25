@@ -416,6 +416,7 @@ def search_address_osm( data ): # {{{1
 
 def validate_event_exists( value ):
     """ checks that there is an event with ``value`` as id """
+    from gridcalendar.events.models import Event
     try:
         Event.objects.get( pk = value )
     except Event.DoesNotExist:

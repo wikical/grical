@@ -309,7 +309,8 @@ def event_does_not_exist( request, event_id, redirect_url ): # {{{1
         messages.info( request,
                 _( u'redirected from deleted event %(event_nr)s' ) % \
                         {'event_nr': event_id} )
-        return HttpResponseRedirect( redirect_url )
+        return HttpResponseRedirect( reverse( redirect_url,
+            kwargs = {'event_id': redirect,} ) )
     else:
         messages.info( request,
             _('You have tried to access an event which has been deleted.'))
@@ -340,8 +341,7 @@ def event_show_all( request, event_id ): # {{{1
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
-        return event_does_not_exist( request, event_id, reverse(
-            'event_show_all', kwargs = {'event_id': event_id,} ) )
+        return event_does_not_exist( request, event_id, 'event_show_all' )
     # about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     title = unicode(event.upcoming)
     if event.city:
@@ -370,8 +370,7 @@ def event_show_raw( request, event_id ): # {{{1
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
-        return event_does_not_exist( request, event_id, reverse(
-            'event_show_raw', kwargs = {'event_id': redirect} ) )
+        return event_does_not_exist( request, event_id, 'event_show_raw' )
     event_textarea = event.as_text()
     templates = {
             'title': _( "view as text" ),
@@ -388,8 +387,7 @@ def event_history( request, event_id ): # {{{1
     try:
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
-        return event_does_not_exist( request, event_id, reverse(
-            'event_history', kwargs = {'event_id': redirect} ) )
+        return event_does_not_exist( request, event_id, 'event_history' )
     revisions = [ version.revision for version in
             Version.objects.get_for_object( event ) ]
     revisions.reverse()
