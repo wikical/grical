@@ -30,27 +30,24 @@ try:
 except:
     HOST_IP = "127.0.0.1"
 
-# This is used for getting the coordinates from a location using the API of
-# GeoNames.org. You need to register here http://www.geonames.org/login and
-# then activate the use of the API in you account.
-GEONAMES_USERNAME = 'demo'
-
-# Default value for distance unit, possible values are: 'km' and 'mi'
-DISTANCE_UNIT_DEFAULT = 'km'
-
 # ======================================================================
 # imap settings for getting events as emails
 # ======================================================================
-IMAP_SERVER = '127.0.0.1'
-IMAP_LOGIN = 'CHANGE THIS'
-IMAP_PASSWD = 'CHANGE THIS'
+IMAP_SERVER = ''
+IMAP_LOGIN = ''
+IMAP_PASSWD = ''
 IMAP_SSL = False
 
 # ======================================================================
 # geonames settings
 # ======================================================================
 
+# This is used for getting the coordinates from a location using the API of
+# GeoNames.org. You need to register here http://www.geonames.org/login and
+# then activate the use of the API in your account.
 GEONAMES_USERNAME = 'your_geonames.org_password'
+
+# Default value for distance unit, possible values are: 'km' and 'mi'
 DISTANCE_UNIT_DEFAULT = 'km' # alternative: 'mi'
 
 # ======================================================================
@@ -61,10 +58,10 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 # http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
-# Also use by the toolbar middleware, see
+# Also used by the toolbar middleware, see
 # /usr/share/doc/python-django-debug-toolbar/README.Debian and
 # /usr/share/doc/python-django-debug-toolbar/README.rst.gz
-INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
+INTERNAL_IPS = ('127.0.0.1',)
 
 if DEBUG:
     TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
@@ -91,16 +88,39 @@ MANAGERS = ADMINS
 
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to
-REPLY_TO = 'EMAIL'
+REPLY_TO = 'None'
 
-DEFAULT_FROM_EMAIL = 'EMAIL'
-SERVER_EMAIL = 'EMAIL'
+DEFAULT_FROM_EMAIL = ''
+SERVER_EMAIL = ''
 
 EMAIL_HOST = '127.0.0.1'
 EMAIL_PORT = 25
-EMAIL_HOST_USER = 'CHANGE THIS'
-EMAIL_HOST_PASSWORD = 'CHANGE THIS'
-EMAIL_USE_TLS = True
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+
+# ======================================================================
+# LOG PIPE
+# ======================================================================
+
+# If this value is not False, events changes will be logged to this pipe
+# Make sure it is writtable
+PIPE_TO_LOG_TO = False # example '/tmp/gricallogpipe'
+# the group id. Should be group id of the proccess running Django
+PIPE_TO_LOG_TO_GID = 33
+
+# ======================================================================
+# IRC
+# ======================================================================
+
+# to log events changes ( see PIPE_TO_LOG_TO ) to a IRC channel, run the script
+# irclogger.py
+
+IRC_NETWORK = 'irc.freenode.net'
+IRC_PORT = 6667
+IRC_CHANNEL = '#test'
+IRC_NICK = 'test'
+IRC_NAME = 'test'
 
 # ======================================================================
 # database settings

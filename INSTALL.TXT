@@ -28,6 +28,19 @@ Installation instructions for Debian based systems
 
 __ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
 
+    #. If you have already a database running and have some data or you import data e.g. with
+       ``manage.py loadata``, you should create manually a first revision, for this issue the
+       commands::
+
+        ./manage.py createinitialrevisions
+        ./manage.py createrevisioninfo
+
+#. GriCal can log into an IRC channel. To use the IRC logger, install ``python-irclib``.
+Configure the appropiate parameters in ``settings_local.py``. When GriCal is running, you can start
+the IRC logger with::
+
+    ./manage.py irclogger
+
 #. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
    Using this data improves the front page, search results and the introduction of addresses of events.
@@ -37,13 +50,15 @@ __ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
     wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
     gzip -d GeoLiteCity.dat.gz
 
+#. Create and edit ``settings_local.py`` (see as example ``settings_local.py.example``)
+
 #. If you want to develop GridCalendar:
    
    #. Install ``python-django-debug-toolbar``, ``python-profiler``,
       ``python-webtest`` and ``django-webtest``. webtest version 1.3 is needed for
       Django 1.3. As root::
 
-          aptitude install python-django-debug-toolbar python-webtest
+          aptitude install python-django-debug-toolbar python-webtest python-profiler
           easy_install django-webtest
 
       If you have an old version of django-webtest already installed::
@@ -54,22 +69,20 @@ __ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
       IP(s) you use when developing. Example::
 
           DEBUG = True
-          INTERNAL_IPS = ('127.0.0.1', '85.183.50.38')
+          INTERNAL_IPS = ('127.0.0.1',)
 
    #. You can run a web test server with ``python manage.py testserver``
 
    #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
       could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
 
-#. Create and edit ``settings_local.py`` (see an example at ``settings_local.py.example``)
-
 #. It is needed to run a command each day at 00:01 (just after midnight), which will update a field
 in the database (Event.upcoming) which is needed for sorting the events and finding events in the
-future. This is necessary for performance and scalability reasons. Add to you cron file::
+future. This is necessary for performance and scalability reasons. Add to your cron file::
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py updateupcoming
 
-#. To parse events submitted as emails to an imap server automatically, add to your cron file::
+#. To parse events submitted as emails to an imap server, add to a cron file::
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
@@ -108,18 +121,18 @@ future. This is necessary for performance and scalability reasons. Add to you cr
 
     #. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
-#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server reload every request, in order to be able to see changes immediately. Remove this in the production version::
+#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
 
         MaxRequestsPerChild 1
    
 #. configuring postgresql:
    
-    #. as root edit your ``/etc/postgresql/8.4/main/pg_hba.conf`` file to include: ``local all gridcalendar md5``
+    #. as root edit your ``/etc/postgresql/8.4/main/pg_hba.conf`` file to include the line: ``local all gridcalendar md5``
 
     #. reload the configuration: ``killall -HUP postgres``
 
-    #. as user ``postgres`` download and execute the script
-    ``create_template_postgis-debian.sh<http://docs.djangoproject.com/en/1.3/_downloads/create_template_postgis-debian.sh>``::
+    #. as user ``postgres`` download and execute the script `create_template_postgis-debian.sh` and
+    run it::
 
         su postgres
         cd ~
@@ -127,21 +140,20 @@ future. This is necessary for performance and scalability reasons. Add to you cr
         chmod +x create_template_postgis-debian.sh
         ./create_template_postgis-debian.sh
 
-    #. create the GridCalendar ``postgres`` user with a password::
+    #. create the GridCalendar ``postgres`` user with a password. If you intend to develop Grid
+    Calendar, allow him to create databases. Example on the command line::
 
-        $ su
-        # su postgres
-        postgres$ createuser --pwprompt gridcalendar
-        Enter password for new role:
-        Enter it again:
+        su postgres
+        createuser --pwprompt gridcalendar
+        Enter password for new role: xxx
+        Enter it again: xxx
         Shall the new role be a superuser? (y/n) n
         Shall the new role be allowed to create databases? (y/n) y
         Shall the new role be allowed to create more new roles? (y/n) n
 
     #. create the gridcalendar database (use the same password as before)::
 
-        postgres$ createdb -U gridcalendar -O gridcalendar --password -T template_postgis gridcalendar
-        Password:
+        createdb -U gridcalendar -O gridcalendar --password -T template_postgis gridcalendar
 
     #. modify settings_local.py to use postgresql. Example::
 
@@ -154,7 +166,7 @@ future. This is necessary for performance and scalability reasons. Add to you cr
              }
         }
 
-    #. Install the Django tables::
+    #. Make Django create the needed database tables. In the proccess you can create a superuser::
 
         $ cd /usr/local/gridcalendar/
         $ python manage.py syncdb
@@ -164,9 +176,11 @@ future. This is necessary for performance and scalability reasons. Add to you cr
         ...
 
     #. Configure the ``django_site`` table. **Important note**: the first entry in this table is
-       used when sending emails outside of the web, e.g. by ``events/management/commands/imap.py``
-       which can be used by a cronjob to read and reply emails. Configure the table with::
+       used when sending emails, e.g. by ``events/management/commands/imap.py``
+       which can be used by a cronjob to read and reply emails (see above). As root you can update the table with::
 
+        su postgre
+        psql gridcalendar
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
 

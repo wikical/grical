@@ -2,19 +2,24 @@
 
 {% load i18n %}
 {% load event_tags %} 
+{% load comments %}
 {% block container %}
 <div class="event_full">
 
     <div class="options">
         <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
         &nbsp;|&nbsp;
-        <a href="{% url event_history event.id %}">{% trans "history" %}</a>
-        &nbsp;|&nbsp;
         <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
         &nbsp;|&nbsp;
         <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
         &nbsp;|&nbsp;
+        <a href="{% url event_history event.id %}">{% trans "history" %}</a>
+        &nbsp;|&nbsp;
         {% show_add_to_group %}
+        {% if user.is_authenticated %}
+            &nbsp;|&nbsp;
+            <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+        {% endif %}
     </div>
     <h1>{% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
     <div class="dates">
@@ -25,7 +30,7 @@
             </span>
         {% endif %}
         {% if event.end and not event.start == event.end %}
-            {{ event.end }}
+            : {{ event.end }}
             {% if event.endtime %}
                 <span class="times">
                     {{ event.endtime|time }}
@@ -178,6 +183,15 @@
             );
         </script>
     {% endif %}
+
+    {# comments #}
+    {% get_comment_count for event as comment_count %}
+    {% if comment_count > 0 %}
+        <h2>{% trans "Comments" %}</h2>
+        {% render_comment_list for event %}
+    {% endif %}
+    <h2>{% trans "Post a comment" %}</h2>
+    {% render_comment_form for event %}
 
 </div>
 {% endblock %}

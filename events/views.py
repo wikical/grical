@@ -29,7 +29,6 @@ import datetime
 import re
 import vobject
 import unicodedata
-from difflib import HtmlDiff, unified_diff
 
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
@@ -37,6 +36,7 @@ from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.contrib import messages
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models import Max, Q
 from django.core.exceptions import ValidationError
@@ -47,20 +47,21 @@ from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
 from django.template import RequestContext, Context, loader
 from django.utils.translation import ugettext as _
+from django.utils.encoding import smart_unicode
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 
 from tagging.models import Tag, TaggedItem
 from reversion import revision
-from reversion.models import Version
+from reversion.models import Version, Revision
 
 from gridcalendar.events.forms import ( 
-    SimplifiedEventForm, SimplifiedEventFormAnonymous, EventForm, FilterForm,
-     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, )
+    SimplifiedEventForm, EventForm, FilterForm,
+     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
-    Membership, GroupInvitation, ExtendedUser, Calendar, RevisionDiff )
-from gridcalendar.events.utils import search_address
+    Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo )
+from gridcalendar.events.utils import search_address, html_diff
 from gridcalendar.events.tables import EventTable
 
 # TODO: check if this works with i18n
@@ -113,17 +114,19 @@ def event_edit( request, event_id = None ): # {{{1
     200
     """
     # FIXME: create more tests above for e.g. trying to save a new event
-    # without a URL
+    # without a URL; and deleting some urls, deadlines and sessions
     if event_id and isinstance( event_id, int ):
         event_id = unicode( event_id )
     if event_id:
         event = get_object_or_404( Event, pk = event_id )
         can_delete = True
-        old_as_text = event.as_text().splitlines()
     else:
         event = Event()
         can_delete = False
-        old_as_text = None
+    # TODO: when removing all fields of a row the expected behaviour is to
+    # delete the entry, but the inlineformset shows an error telling that the
+    # fields are required, change it. Notice that the user can delete with the
+    # delete check box, but deleting all fields should also work.
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4, can_delete = can_delete, )
     event_deadlines_factory = inlineformset_factory( 
@@ -131,6 +134,7 @@ def event_edit( request, event_id = None ): # {{{1
     event_sessions_factory = inlineformset_factory( 
             Event, EventSession, extra = 4, can_delete = can_delete, )
     if request.method == 'POST':
+        # revision.user = request.user # done by the reversion middleware
         event_form = EventForm( request.POST, instance = event )
         formset_url = event_urls_factory(
                 request.POST, instance = event )
@@ -148,26 +152,10 @@ def event_edit( request, event_id = None ): # {{{1
                 formset_url.save()
                 formset_session.save()
                 formset_deadline.save()
-                # we save diffs in revision if appropiate. See
-                # https://github.com/etianen/django-reversion/wiki/Low-Level-API
-                if old_as_text:
-                    new_as_text = event.as_text().splitlines()
-                    html_diff = HtmlDiff( tabsize = 4 ).make_table(
-                            old_as_text, new_as_text )
-                    text_diff = unified_diff(
-                            old_as_text, new_as_text, n = 0, lineterm = "" )
-                    # we now delete from the text diff all control lines TODO:
-                    # when the description field of an event contains such
-                    # lines, they will be deleted: avoid it.
-                    text_diff = [line for line in text_diff if not
-                            re.match(r"^---\s*$", line) and not
-                            re.match(r"^\+\+\+\s*$", line) and not
-                            re.match(r"^@@.*@@$", line)]
-                    text_diff = '\n'.join( text_diff )
-                    revision.add_meta( RevisionDiff,
-                            html_diff = html_diff, text_diff = text_diff )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( event.as_text() ) )
                 return HttpResponseRedirect( 
-                        reverse('event_show', kwargs = {'event_id': event.id}))
+                    reverse('event_show_all', kwargs = {'event_id': event.id}))
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
@@ -183,7 +171,7 @@ def event_edit( request, event_id = None ): # {{{1
     # add a warning message if the start date is in the past, which is probably
     # a mistake
     if event_id and event.start < datetime.date.today():
-        templates['messages'] = [ _('warning: the start date is in the past') ]
+        messages.warning(request, _('warning: the start date is in the past'))
     return render_to_response( 'event_edit.html', templates,
             context_instance = RequestContext( request ) )
 
@@ -196,38 +184,40 @@ def event_new_raw( request ): # {{{1
     200
     """
     if request.method == 'POST':
+        # revision.user = request.user # done by the reversion middleware
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
             try:
                 event = Event.parse_text(event_textarea, None, request.user.id)
-                # TODO: inform that the event was saved
+                messages.success( request, _( u'event saved' ) )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( event.as_text() ) )
                 return HttpResponseRedirect( 
-                        reverse( 'event_show', kwargs={'event_id': event.id} ))
+                    reverse( 'event_show_all', kwargs={'event_id': event.id} ))
             except ValidationError as err:
-                error_messages = []
                 if hasattr( err, 'message_dict' ):
                     # if hasattr(err, 'message_dict'), it looks like:
                     # {'url': [u'Enter a valid value.']}
                     for field_name, error_message in err.message_dict.items():
-                        error_messages.append(
+                        messages.error( request,
                                 field_name + ": " + error_message )
                 elif hasattr( err, 'messages' ):
                     for message in err.messages:
-                        error_messages.append( message )
+                        messages.error( request, message )
                 elif hasattr( err, 'message' ):
-                    error_messages.append( err.message )
+                    messages.error( request, err.message )
                 templates = {
                         'title': _( "edit event as text" ),
-                        'error_messages': error_messages,
                         'event_textarea': event_textarea, }
                 return render_to_response(
                         'event_new_raw.html',
                         templates,
                         context_instance = RequestContext( request ) )
         else:
-            return main( request, error_messages =
-                _( ''.join( ["You submitted an empty form, nothing was saved. ",
-                "Click the back button in your browser and try again."])) )
+            messages.error( request, _(u"You submitted an empty form, " \
+                    "nothing has been saved. Click the back button in your " \
+                    "browser and try again.") )
+            return main( request )
     else:
         templates = { 'title': _( "edit event as text" ), }
         return render_to_response( 'event_new_raw.html', templates,
@@ -252,6 +242,7 @@ def event_edit_raw( request, event_id ): # {{{1
     # checks if the event exists
     event = get_object_or_404( Event, pk = event_id )
     if request.method == 'POST':
+        # revision.user = request.user # done by the reversion middleware
         if 'event_astext' in request.POST:
             event_textarea = request.POST['event_astext']
             try:
@@ -259,37 +250,40 @@ def event_edit_raw( request, event_id ): # {{{1
                             event_textarea, event_id, request.user.id )
             except ValidationError as err:
                 # found a validation error with one or more errors
-                error_messages = []
                 if hasattr( err, 'message_dict' ):
                     # if hasattr(err, 'message_dict'), it looks like:
                     # {'url': [u'Enter a valid value.']}
                     for field_name, error_message in err.message_dict.items():
                         if isinstance(error_message, list):
                             error_message = " ; ".join(error_message)
-                        error_messages.append(
+                        messages.error( request,
                                 field_name + ": " + error_message )
                 elif hasattr( err, 'messages' ):
                     for message in err.messages:
-                        error_messages.append( message )
+                        messages.error( request, message )
                 elif hasattr( err, 'message' ):
-                    error_messages.append( err.message )
+                    messages.error( request, err.message )
                 templates = {
                         'title': _( "edit event as text" ),
                         'event_textarea': event_textarea,
                         'event_id': event_id,
-                        'error_messages': error_messages,
                         'example': Event.example() }
                 return render_to_response( 'event_edit_raw.html', templates,
                         context_instance = RequestContext( request ) )
             if isinstance(event, Event):
+                messages.success( request, _( u'event modifed' ) )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( event.as_text() ) )
                 return HttpResponseRedirect( 
-                    reverse( 'event_show', kwargs = {'event_id': event_id} ) )
+                    reverse('event_show_all', kwargs = {'event_id': event_id}))
             else:
-                return main( request, error_messages = event )
+                messages.error( request, event )
+                return main( request )
         else:
-            return main( request, error_messages = 
-                _( ''.join( ['You submitted an empty form, nothing was saved.',
-                    ' Click the back button in your browser and try again.'])))
+            messages.error( request, 
+                    _(u'You submitted an empty form, nothing was saved. ' \
+                    'Click the back button in your browser and try again.') )
+            return main( request )
     else:
         event_textarea = event.as_text()
         templates = {
@@ -300,7 +294,29 @@ def event_edit_raw( request, event_id ): # {{{1
         return render_to_response( 'event_edit_raw.html', templates,
                 context_instance = RequestContext( request ) )
 
-def event_show( request, event_id ): # {{{1
+def event_does_not_exist( request, event_id, redirect_url ): # {{{1
+    """ if event_id was deleted it shows event redirection or deleted page,
+    otherwise raises 404 """
+    try:
+        deleted_version = Version.objects.get_deleted_object(
+                Event, object_id = event_id )
+    except Version.DoesNotExist:
+        raise Http404
+    revision_meta = deleted_version.revision.revisioninfo_set.all()
+    assert( len( revision_meta ) == 1 )
+    redirect = revision_meta[0].redirect
+    if redirect:
+        messages.info( request,
+                _( u'redirected from deleted event %(event_nr)s' ) % \
+                        {'event_nr': event_id} )
+        return HttpResponseRedirect( redirect_url )
+    else:
+        messages.info( request,
+            _('You have tried to access an event which has been deleted.'))
+        return HttpResponseRedirect( reverse(
+            'event_deleted', kwargs = { 'event_id': event_id } ) )
+
+def event_show_all( request, event_id ): # {{{1
     """ View that shows an event
 
     >>> from django.test import Client
@@ -310,7 +326,7 @@ def event_show( request, event_id ): # {{{1
     >>> e = Event.objects.create(
     ...         title = 'es_test', tags = 'berlin',
     ...         start = datetime.date.today() )
-    >>> Client().get(reverse('event_show',
+    >>> Client().get(reverse('event_show_all',
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
@@ -321,19 +337,19 @@ def event_show( request, event_id ): # {{{1
     #   See # http://docs.djangoproject.com/en/1.3/ref/models/querysets/#select-related
     #   This will increase performance and allow for custom error messages
     #   instead of a general 404
-    event = get_object_or_404( Event, pk = event_id )
-    about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    try:
+        event = Event.objects.get( pk = event_id )
+    except Event.DoesNotExist:
+        return event_does_not_exist( request, event_id, reverse(
+            'event_show_all', kwargs = {'event_id': event_id,} ) )
+    # about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     title = unicode(event.upcoming)
     if event.city:
         title += " " + event.city
     if event.country:
         title += " (" + event.country + ")"
     title += " - " + event.title + " | " + Site.objects.get_current().name
-    templates = {
-            'title': title,
-            'event': event,
-            'about_text': about_text,
-            }
+    templates = { 'title': title, 'event': event, }
     return render_to_response( 'event_show_all.html', templates,
             context_instance = RequestContext( request ) )
 
@@ -351,7 +367,11 @@ def event_show_raw( request, event_id ): # {{{1
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
-    event = get_object_or_404( Event, pk = event_id )
+    try:
+        event = Event.objects.get( pk = event_id )
+    except Event.DoesNotExist:
+        return event_does_not_exist( request, event_id, reverse(
+            'event_show_raw', kwargs = {'event_id': redirect} ) )
     event_textarea = event.as_text()
     templates = {
             'title': _( "view as text" ),
@@ -363,17 +383,157 @@ def event_show_raw( request, event_id ): # {{{1
 def event_history( request, event_id ): # {{{1
     """ show the history of an event """
     # TODO: tests including one that checks that a revision has only one
-    # element in its revisiondiff_set
-    event = get_object_or_404( Event, pk = event_id )
+    # element in its revisioninfo_set
+    # TODO: undeleted events history is confusing, fix it
+    try:
+        event = Event.objects.get( pk = event_id )
+    except Event.DoesNotExist:
+        return event_does_not_exist( request, event_id, reverse(
+            'event_history', kwargs = {'event_id': redirect} ) )
     revisions = [ version.revision for version in
             Version.objects.get_for_object( event ) ]
     revisions.reverse()
+    # we create a list of tuples with a revision and a string which is a html
+    # diff to the previous revision (or None if it is not possible)
+    revisions_diffs = []
+    previous = None
+    for revision in revisions:
+        if previous:
+            try:
+                # TODO: the code below is hitting the db all the time: optimize
+                # using above something like: revisions_infos =
+                # RevisionInfo.objects.select_related(depth = 3).filter(...
+                old_as_text = previous.revisioninfo_set.all()[0].as_text
+                new_as_text = revision.revisioninfo_set.all()[0].as_text
+                revisions_diffs.append( ( revision,
+                    html_diff( new_as_text, old_as_text ) ) )
+            except:
+                revisions_diffs.append( (revision, None) )
+        else:
+            revisions_diffs.append( (revision, None) )
+        previous = revision
     templates = {
             'title': _( "History of event %(event_nr)s" ) % \
                     {'event_nr': str(event.id)},
             'event': event,
-            'revisions': revisions }
+            'revisions_diffs': revisions_diffs }
     return render_to_response( 'event_history.html',
+            templates, context_instance = RequestContext( request ) )
+
+@login_required
+def event_revert( request, revision_id, event_id ): # {{{1
+    event = get_object_or_404( Event, pk = event_id )
+    revision = get_object_or_404( Revision, pk = revision_id )
+    # we check that the event is a version of the revision (a revision in
+    # django-reversion consists of one or more versions, which are changes to
+    # an object of the database, e.g. an event object or a EventUrl object)
+    assert unicode(event.id) in [ version.object_id for version in
+            revision.version_set.all() ]
+    revision.revert()
+    messages.success( request, _(u'event has been reverted') )
+    return HttpResponseRedirect( reverse(
+            'event_show_all', kwargs = {'event_id': event.id,} ) )
+
+@login_required
+def event_delete( request, event_id ):
+    event = get_object_or_404( Event, pk = event_id )
+    user = request.user
+    if request.POST:
+        form = DeleteEventForm( data = request.POST )
+        if form.is_valid():
+            # revision.user = user # done by the reversion middleware
+            info_dict = {}
+            reason = form.cleaned_data['reason']
+            if reason:
+                info_dict['reason'] = reason
+            redirect = form.cleaned_data['redirect']
+            if redirect:
+                info_dict['redirect'] = redirect
+            info_dict['as_text'] = smart_unicode( event.as_text() )
+            revision.add_meta( RevisionInfo, **info_dict )
+            event.delete()
+            messages.success( request, _('Event %(event_id)s deleted.') % \
+                    {'event_id': event_id,} )
+            return HttpResponseRedirect( reverse('main') )
+        else:
+            return render_to_response( 'event_delete.html',
+                    {'form': form, 'event': event},
+                    context_instance = RequestContext( request ) )
+    else:
+        # TODO: if event is part of a serie, ask to delete only this event,
+        # also all futures events, also all past events or all
+        form = DeleteEventForm()
+    context = dict()
+    context['form'] = form
+    context['event'] = event
+    return render_to_response('event_delete.html',
+            context_instance = RequestContext( request, context) )
+
+def event_deleted( request, event_id ): # {{{1
+    """ inform the user the event has been deleted, show a link of a redirect
+    if present and, if the user is authenticated, allow undeleting the event.
+    """
+    try:
+        deleted_version = Version.objects.get_deleted_object( Event,
+                object_id = event_id )
+    except Version.DoesNotExist:
+        raise Http404
+    revision = deleted_version.revision
+    revisioninfos = revision.revisioninfo_set.all()
+    # a revision should have only one revisioninfo (design constraint)
+    # TODO check this constranint with a post_save signal in revisioninfo
+    assert len( revisioninfos ) == 1
+    revisioninfo = revisioninfos[0]
+    templates = {
+            'title': _( "deleted event %(event_nr)s" ) % \
+                    {'event_nr': deleted_version.object_id,},
+            'revision': revision,
+            'revisioninfo': revisioninfo,
+            'username': revision.user.username,
+            'deleted_version': deleted_version,
+            'event_id': event_id }
+    return render_to_response( 'event_deleted.html',
+            templates, context_instance = RequestContext( request ) )
+
+@login_required
+def event_undelete( request, event_id ): # {{{1
+    try:
+        deleted_version = Version.objects.get_deleted_object( Event,
+                object_id = event_id )
+    except Version.DoesNotExist:
+        raise Http404
+    # TODO ask the user for a reason for the undeletion
+    revision = deleted_version.revision
+    revisioninfos = revision.revisioninfo_set.all()
+    # a revision should have only one revisioninfo (design constraint)
+    # TODO check this constranint with a post_save signal in revisioninfo
+    assert len( revisioninfos ) == 1
+    revisioninfo = revisioninfos[0]
+    # we check if there is an event with the same name and start date
+    # TODO test when there is one
+    as_text = revisioninfo.as_text
+    simple_fields = Event.get_fields( as_text )[0]
+    title = simple_fields['title']
+    start = simple_fields['start']
+    try:
+        equal = Event.objects.get( title = title, start = start )
+    except Event.DoesNotExist:
+        revision.revert()
+        equal = False
+    if not equal:
+        messages.info( request, _('Event has been successfully undeleted.') )
+        return HttpResponseRedirect( reverse(
+            'event_show_all', kwargs = {'event_id': event_id} ) )
+    messages.error( request, _( 'Undelete operation not possible' ) )
+    templates = {
+            'title': _( "undelete event %(event_nr)s" ) % \
+                        {'event_nr': deleted_version.object_id,},
+            'as_text': as_text,
+            'event_id': event_id,
+            'title': title,
+            'start': start,
+            'equal': equal,}
+    return render_to_response( 'event_undelete_error.html',
             templates, context_instance = RequestContext( request ) )
 
 def search( request, query = None, view = 'boxes' ): # {{{1
@@ -413,9 +573,10 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if 'query' in request.GET and request.GET['query']:
         query = request.GET['query']
         if query.find('/') != -1:
-            return main( request, error_messages = 
+            messages.error( request, 
                 _( u"A search with the character '/' was submitted, but it " \
-                        "is not allowed" ) )
+                "is not allowed" ) )
+            return main( request )
             # the character / cannot be allowed because Django won't be able to
             # create a URL for the ical result of the search. For a discussion,
             # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
@@ -425,8 +586,11 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     # shows the homepage with a message if no query, except when view=json
     # because client expect json
     if (not query) and (view != 'json'):
-        return main( request, error_messages = 
+        # When a client ask for json, html should not be the response
+        # TODO: test what happens for empty query with json, xml and yaml
+        messages.error( query, 
             _( u"A search was submitted without a query string" ) )
+        return main( request )
     # limit
     if 'limit' in request.GET and request.GET['limit']:
         try:
@@ -554,8 +718,9 @@ def filter_save( request ): # {{{1
     if 'q' in request.POST and request.POST['q']:
         query_lowercase = request.POST['q'].lower()
     else:
-        return main( request, error_messages = 
+        messages.error( request, 
             _( u"You are trying to save a search without any query text" ) )
+        return main( request )
     if request.method == 'POST':
         maximum = Filter.objects.filter(user = request.user).count() + 1
         efilter = Filter()
@@ -575,9 +740,10 @@ def filter_save( request ): # {{{1
         return HttpResponseRedirect( reverse(
             'filter_edit', kwargs = {'filter_id': efilter.id} ) )
     elif request.method == 'GET':
-        return main( request, error_messages =
-                _( ''.join(['You have submitted a GET request which is not ',
-                'a valid method for saving a filter']) ))
+        messages.error( request, 
+                _(u'You have submitted a GET request which is not ' \
+                'a valid method for saving a filter') )
+        return main( request )
 
 @login_required
 def filter_edit( request, filter_id ): # {{{1
@@ -601,9 +767,10 @@ def filter_edit( request, filter_id ): # {{{1
         filter_id = int ( filter_id )
     efilter = get_object_or_404( Filter, pk = filter_id )
     if efilter.user.id != request.user.id:
-        return main( request, error_messages =
-                _( ''.join(['You are not allowed to edit the filter with the ',
-                    'number %(filter_id)d']) ) % {'filter_id': filter_id,} )
+        messages.error( request, 
+                _(u'You are not allowed to edit the filter with the ' \
+                'number %(filter_id)d') % {'filter_id': filter_id,} )
+        return main( request )
     if request.method == 'POST':
         ssf = FilterForm( request.POST, instance = efilter )
         if ssf.is_valid():
@@ -651,9 +818,10 @@ def filter_drop( request, filter_id ): # {{{1
     efilter = get_object_or_404( Filter, pk = filter_id )
     if ( ( not request.user.is_authenticated() ) or \
             ( efilter.user.id != request.user.id ) ):
-        return main( request, error_messages =
-                _(''.join(['You are not allowed to delete the filter with the ',
-                    'number %(filter_id)d']) ) % {'filter_id': filter_id,} )
+        messages.error( request,
+                _(u'You are not allowed to delete the filter with the ' \
+                'number %(filter_id)d') % {'filter_id': filter_id,} )
+        return main( request )
     else:
         if request.method == 'POST':
             assert False
@@ -680,8 +848,8 @@ def list_filters_my( request ): # {{{1
     """
     list_of_filters = Filter.objects.filter( user = request.user )
     if list_of_filters is None or len( list_of_filters ) == 0:
-        return main( request, error_messages = 
-            _( "You do not have any filters" ) )
+        messages.error( request, _( "You do not have any filters" ) )
+        return main( request )
     else:
         return render_to_response( 'list_filters_my.html',
             {'title': _( u'list of my filters' ), 'filters': list_of_filters},
@@ -804,7 +972,7 @@ def list_events_location( request, location ): # {{{1
     # location and change the code everywhere using Event.objects.location()
     return search( request, query = '@'+location, view = 'table' )
 
-def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
+def main( request, status_code=200 ):# {{{1
     """ main view
     
     >>> from django.test import Client
@@ -813,18 +981,10 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
     >>> r.status_code # /
     200
     """
-    # convert messages to a list if necessary
-    if messages and not hasattr(messages,'__iter__'):
-        messages = [messages,]
-    # convert error_messages to a list if necessary
-    if error_messages and not hasattr(error_messages,'__iter__'):
-        error_messages = [error_messages,]
     # processes the event form
     if request.method == 'POST':
-        if request.user.is_authenticated():
-            event_form = SimplifiedEventForm( request.POST )
-        else:
-            event_form = SimplifiedEventFormAnonymous( request.POST )
+        # revision.user = request.user # done by the reversion middleware
+        event_form = SimplifiedEventForm( request.POST )
         if event_form.is_valid():
             cleaned_data = event_form.cleaned_data
             # create a new entry and saves the data
@@ -832,7 +992,6 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
                       title = cleaned_data['title'],
                       start = cleaned_data['when']['start_date'],
                       tags = cleaned_data['tags'], )
-            # TODO simplified with for set_something(Event, ..., ...)
             if cleaned_data['when'].has_key('end_date'):
                 event.end = cleaned_data['when']['end_date']
             if cleaned_data['when'].has_key('start_time'):
@@ -840,7 +999,6 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
             if cleaned_data['when'].has_key('end_time'):
                 event.endtime = cleaned_data['when']['end_time']
             addresses = search_address( cleaned_data['where'] )
-            # TODO simplified with for set_something(Event, ..., ...)
             if addresses and len( addresses ) == 1:
                 address = addresses.values()[0]
                 event.address = addresses.keys()[0]
@@ -856,18 +1014,18 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
                 if address.has_key( 'city' ):
                     event.city = address['city']
             else:
-                #FIXME: deal with more than one address or none
+                #FIXME: deal with more than one address, none or general
+                # coordinates like e.g. pointing to the center of city/country
                 event.address = cleaned_data['where']
             event.save()
             # create the url data
             event.urls.create( url_name = "web", url = cleaned_data['web'] )
+            revision.add_meta( RevisionInfo,
+                    as_text = smart_unicode( event.as_text() ) )
             return HttpResponseRedirect( reverse( 'event_edit',
                     kwargs = {'event_id': str( event.id )} ) )
     else:
-        if request.user.is_authenticated():
-            event_form = SimplifiedEventForm()
-        else:
-            event_form = SimplifiedEventFormAnonymous()
+        event_form = SimplifiedEventForm()
     # calculates events to show
     today = datetime.date.today()
     elist = Event.objects.filter( upcoming__gte = today )
@@ -885,8 +1043,6 @@ def main( request, messages=None, error_messages=None, status_code=200 ):# {{{1
                 'form': event_form,
                 'events': elist,
                 'about_text': about_text,
-                'messages': messages,
-                'error_messages': error_messages,
             } )
     return HttpResponse(
             content = template.render( context ),
@@ -970,8 +1126,9 @@ def list_groups_my(request): # {{{2
     user = User(request.user)
     groups = Group.objects.filter(membership__user=user)
     if len(groups) == 0:
-        return main( request, error_messages = 
+        messages.error( request,
             _("You are not a member of any group") )
+        return main( request )
     else:
         return render_to_response('groups/list_my.html',
             {'title': 'list my groups', 'groups': groups},
@@ -1067,8 +1224,7 @@ def group_add_event(request, event_id): # {{{2
                     calentry.save()
                 return HttpResponseRedirect(reverse('list_groups_my'))
             else:
-                request.user.message_set.create(
-                        message='Please check your data.')
+                raise RuntimeError()
         else:
             form = AddEventToGroupForm(user=user, event=event)
         context = dict()
@@ -1077,9 +1233,10 @@ def group_add_event(request, event_id): # {{{2
         return render_to_response('groups/add_event_to_group.html',
                 context_instance=RequestContext(request, context))
     else:
-        return main(request, messages = 
-                _(''.join( ['The event %(event_id)d is already in all the ',
-                    'groups that you are in'] )) % {'event_id': event_id,} )
+        messages.info( request,
+                _(u'The event %(event_id)d is already in all the ' \
+                'groups that you are in') % {'event_id': event_id,} )
+        return main(request )
 
 def group_name_view(request, group_name): # {{{2
     """ lists everything about a group for members of the group, or the
@@ -1152,10 +1309,11 @@ def group_invite(request, group_id): # {{{2
     group = get_object_or_404(Group, id = group_id )
     if not Membership.objects.filter(
             user = request.user, group = group).exists():
-        return main( request, error_messages =
-            _( ''.join(["Your have tried to add a member to the group ",
-        "'%(group_name)s', but you are yourself not a member of it"]) ) % \
-        {'group_name': group.name,} )
+        messages.error( request,
+                _(u"Your have tried to add a member to the group " \
+                "'%(group_name)s', but you are yourself not a member " \
+                "of it" ) % {'group_name': group.name,} )
+        return main( request )
     if request.POST:
         username_dirty = request.POST['username']
         # TODO think of malicious manipulations of these fields:
@@ -1301,14 +1459,14 @@ def all_events_text ( request ): #{{{1
 
 def handler404(request): #{{{1
     """ custom 404 handler """
-    return main( request, error_messages = 
-            _("An object couldn't be retrieved. Check the URL"),
-            status_code = 404)
+    messages.error( request,
+            _(u"An object couldn't be retrieved. Check the URL") )
+    return main( request, status_code = 404 )
 
 def handler500(request): #{{{1
     """ custom 500 handler """
-    return main( request, error_messages = 
-            _(''.join(['We are very sorry but an error has ocurred. We have ',
-                'been automatically informed and will fix it in no time, ',
-                'because we care'])),
-            status_code = 500 )
+    messages.error(
+            _( u'We are very sorry but an error has ocurred. We have ' \
+            'been automatically informed and will fix it in no time, ' \
+            'because we care' ) )
+    return main( request, status_code = 500 )

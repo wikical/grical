@@ -103,7 +103,7 @@ except NameError:
 try:
     DATE_FORMAT
 except NameError:
-    DATE_FORMAT = 'Y-m-d'
+    DATE_FORMAT = 'Y-m-d D'
 
 # =============================================================================
 # for the tagging application
@@ -134,6 +134,7 @@ INSTALLED_APPS = (
     'gridcalendar.events',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.messages',
     'django.contrib.humanize',
     'django.contrib.sessions',
     'django.contrib.sites',
@@ -158,6 +159,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     'reversion.middleware.RevisionMiddleware',
  )
@@ -166,6 +168,9 @@ if DEBUG:
         'debug_toolbar.middleware.DebugToolbarMiddleware', )
     MIDDLEWARE_CLASSES += (
         'gridcalendar.middlewares.ProfileMiddleware', )
+
+MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
+# see http://docs.djangoproject.com/en/1.3/ref/contrib/messages/
 
 # used by python-django-debug-toolbar
 if DEBUG:
@@ -201,6 +206,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.auth",
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
+    'django.contrib.messages.context_processors.messages',
     "context_processors.global_template_vars",
  )
 # http://docs.djangoproject.com/en/dev/ref/templates/api/#django-core-context-processors-debug

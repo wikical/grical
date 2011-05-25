@@ -51,10 +51,22 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.event_edit_raw,           name='event_edit_raw'),
 
     url(r'^e/show/(?P<event_id>\d+)/$',
-        views.event_show,               name='event_show'),
+        views.event_show_all,               name='event_show_all'),
 
     url(r'^e/history/(?P<event_id>\d+)/$',
-        views.event_history,       name='event_history'),
+        views.event_history,            name='event_history'),
+
+    url(r'^e/revert/(?P<revision_id>\d+)/(?P<event_id>\d+)/$',
+        views.event_revert,             name='event_revert'),
+
+    url(r'^e/delete/(?P<event_id>\d+)/$',
+        views.event_delete,           name='event_delete'),
+
+    url(r'^e/deleted/(?P<event_id>\d+)/$',
+        views.event_deleted,           name='event_deleted'),
+
+    url(r'^e/undelete/(?P<event_id>\d+)/$',
+        views.event_undelete,           name='event_undelete'),
 
     url(r'^e/show/(?P<event_id>\d+)/raw/$',
         views.event_show_raw,           name='event_show_raw'),

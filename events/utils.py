@@ -25,10 +25,12 @@
 """ utilities """
 
 # imports {{{1
-import sys
-import time
+from difflib import HtmlDiff, unified_diff
 import datetime
 from dateutil.relativedelta import relativedelta
+import re
+import sys
+import time
 import urllib
 import urllib2
 import httplib
@@ -37,8 +39,9 @@ from xml.parsers.expat import ExpatError
 
 from django.contrib.gis.geos import Point
 from django.contrib.gis.utils import GeoIP
-from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
+from django.utils.encoding import smart_unicode
+from django.utils.translation import ugettext as _
 
 from settings import GEONAMES_USERNAME
 
@@ -411,6 +414,14 @@ def search_address_osm( data ): # {{{1
         return result
     return None
 
+def validate_event_exists( value ):
+    """ checks that there is an event with ``value`` as id """
+    try:
+        Event.objects.get( pk = value )
+    except Event.DoesNotExist:
+        raise ValidationError( _(u'An event with the number %(event_nr)s ' \
+                'does not exists.') % {'event_nr': value,} )
+
 def validate_year( value ):
     """ it validates ``value.year`` newer than 1900 and less than 2 years from
     now.
@@ -432,6 +443,30 @@ def validate_year( value ):
         raise ValidationError(
             _( u'%(year)s is more than two years in the future, ' \
                     'which is not allowed' ) % {'year': value.year,} )
+
+def html_diff(old_as_text, new_as_text):
+    """ returns a utf8 string containing the code of a html table showing
+    differences of the utf8 parameters """
+    old_as_text = old_as_text.splitlines()
+    new_as_text = new_as_text.splitlines()
+    return HtmlDiff( tabsize = 4 ).make_table( old_as_text, new_as_text )
+
+def text_diff(old_as_text, new_as_text):
+    """ returns a unicode string containing a diff text showing
+    differences of the utf8 parameters """
+    old_as_text = smart_unicode( old_as_text ).splitlines()
+    new_as_text = smart_unicode( new_as_text ).splitlines()
+    text_diff = unified_diff(
+            old_as_text, new_as_text, n = 0, lineterm = "" )
+    # we now delete from the text diff all control lines
+    # TODO: when the description field of an event contains such lines,
+    # they will be deleted: avoid it.
+    text_diff = [line for line in text_diff if not
+            re.match(r"^---\s*$", line) and not
+            re.match(r"^\+\+\+\s*$", line) and not
+            re.match(r"^@@.*@@$", line)]
+    text_diff = u'\n'.join( text_diff )
+    return text_diff
 
 # only for testing:
 if __name__ == "__main__": # {{{1

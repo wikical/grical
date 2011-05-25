@@ -152,6 +152,38 @@ h6 {
     min-width: 25em;
 }
 
+/* TODO: simplify this file: there are some repeated directives like for
+general forms and for event_form */
+
+/* general form directives */
+form .helptext {
+    color: gray;
+    font-size: 0.8em;
+}
+form label {
+    color: #003A6B;
+    font-weight: bold;
+}
+input[type="text"], textarea, input[type="checkbox"] {
+    border: 1px solid #3176B9;
+}
+form ul {
+    list-style: none;
+    padding: 0;
+}
+form li {
+    padding: 1em 0em 1em 0em ;
+}
+
+
+.options img {
+    vertical-align: middle;
+}
+
+.daybox {
+    float:left;
+    margin: 0.5em;
+}
 /*
  * event medium format (shown in main page, search results, etc.
  */
@@ -175,6 +207,9 @@ h6 {
 }
 .event_medium .dates {
     color: #cc6100;
+}
+.event_medium .deadline {
+    color: #aa3100;
 }
 .event_medium .times {
     color: #fcb100;
@@ -245,26 +280,21 @@ td {
     color:red;
 }
 
-/* error messages and error_messages */
-#error_messages {
+/* messages and error_messages */
+.messages {
     font-size:90%;
-    color:red;
+    list-style-type: none;
 }
-#messages {
-    font-size:90%;
-    color:blue;
-}
-#messages ul, #error_messages ul {
+.messages ul li {
     display: inline ;
     margin: 0 1em 0 0 ;
 }
-#messages ul li, #error_messages ul li {
-    display: inline ;
-    margin: 0 1em 0 0 ;
-}
-#messages li:before, #error_messages li:before {
+.messages li:before {
     content: "\00BB \0020";
 }
+.messages .info { color:blue; }
+.messages .warning { color:green; }
+.messages .error { color:red; }
 
 /* list of groups and some events */
 #groups ul {

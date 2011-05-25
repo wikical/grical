@@ -34,7 +34,7 @@
             {% for event in g.el %}
                 <p>
                     <div class="field">
-                        <a href="{% url event_show event.id %}">{{ event.title }}</a><br />
+                        <a href="{% url event_show_all event.id %}">{{ event.title }}</a><br />
                         <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
                         </span>
                     </div>

@@ -40,7 +40,7 @@ from django.utils.translation import ugettext as _
 from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
         EventSession, Filter, Group, Membership, COORDINATES_REGEX)
-from gridcalendar.events.utils import validate_year
+from gridcalendar.events.utils import validate_year, validate_event_exists
 
 def _date(string): # {{{1
     """ parse a date in the format ``yyyy-mm-dd`` using
@@ -232,12 +232,6 @@ class CoordinatesField( CharField ): #{{{1
         if value['longitude'] < -180 or value['longitude'] > 180:
             raise ValidationError( _(u'Longitude is not within (-180,180)') )
 
-def get_event_form(user): # {{{1
-    """returns a simplied event form """
-    if user.is_authenticated():
-        return SimplifiedEventForm()
-    return SimplifiedEventFormAnonymous()
-
 class FilterForm(ModelForm): # {{{1
     """ ModelForm using Filter excluding `user` """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -317,16 +311,17 @@ class EventForm(ModelForm): # {{{1
                         float(coordinates['latitude']) )
         return self.cleaned_data
 
-class SimplifiedEventForm(EventForm): # {{{1
+class SimplifiedEventForm( ModelForm ): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
     """
     where = CharField( max_length = 100, required = False )
     when = DatesTimesField()
     web = URLFieldExtended(verify_exists=True)
     def __init__(self, *args, **kwargs):
-        super(EventForm, self).__init__(*args, **kwargs)
-        del self.fields['coordinates']
+        super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'What')
+        self.fields['title'].widget.attrs["size"] = 70
+        self.fields['tags'].widget.attrs["size"] = 70
         self.fields['where'].label = _(u'Where')
         self.fields['where'].help_text = \
                 _(u'Example: Malmöer Str. 6, Berlin, DE')
@@ -339,14 +334,47 @@ class SimplifiedEventForm(EventForm): # {{{1
         #self.fields['web'].widget.attrs["size"] = 42
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        fields = ('title', 'tags',)
+        fields = ('title', 'tags', 'where', 'when', 'web')
+    def clean_tags(self): # pylint: disable-msg=C0111
+        data = self.cleaned_data['tags']
+        if re.search("[^ \-\w]", data, re.UNICODE):
+            raise ValidationError(_(u"Punctuation marks are not allowed"))
+        # this method has to return the cleaned data, whether you have changed
+        # it or not:
+        return data
+    def clean( self ):
+        """ checks that there is no other event with the same name and start
+        date """
+        # see # http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
+        cleaned_data = super(SimplifiedEventForm, self).clean()
+        title = cleaned_data["title"]# neccesary field, no checks
+        when = cleaned_data["when"]
+        start = when['start_date']   # neccesary field, no checks
+        if Event.objects.filter( title = title, start = start ).exists():
+            raise ValidationError( _('There is already an event with the ' \
+                    'same title and start date ' \
+                    '(for events taking place in different locations ' \
+                    'at the same day, ' \
+                    'create different events with a differentiated toponym ' \
+                    'in the title).' ) )
+        return cleaned_data
 
-class SimplifiedEventFormAnonymous(SimplifiedEventForm): # {{{1
-    """ ModelForm for Events with only the fields `title`, `start`, `tags`
-    """
-    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
-        model = Event
-        fields = ('title', 'tags')
+class DeleteEventForm(Form): # {{{1
+    reason = CharField( required = True, max_length = 100,
+            label = _(u'Reason for the deletion'),
+            help_text = _(u'please summarize the reason for the deletion' \
+                    ' (maximum 100 characters).') )
+    redirect = IntegerField( required = False,
+            label = _(u"Number of the event to redirect to" \
+                    " (or blank for no redirection)"),
+            help_text = _(u'If there is another event holding the ' \
+                    'information of this one (e.g. if this one is a ' \
+                    'duplicate), add here the number of that event.') )
+    def __init__(self, *args, **kwargs):
+        super(DeleteEventForm, self).__init__(*args, **kwargs)
+        self.fields['redirect'].validators.append( validate_event_exists )
+        self.fields['reason'].widget.attrs["size"] = 50
+        self.fields['redirect'].widget.attrs["size"] = 5
 
 class NewGroupForm(ModelForm): # {{{1
     """ ModelForm for Group with only the fields `name` and `description` """

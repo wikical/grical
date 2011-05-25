@@ -8,7 +8,7 @@
     </span>
     &nbsp;&nbsp;
     <span class="title">
-        <a href="{% url event_show event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
+        <a href="{% url event_show_all event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
     </span>
     <br />
 
@@ -41,8 +41,9 @@
     {% if event.upcoming != event.start and event.upcoming != event.end %}
       <br />
       <span class="deadline">
-          {{ event.upcoming }} {{ event.next_deadline_names }}
+          {{ event.upcoming }}
       </span>
+      {{ event.next_deadline_names }}
     {% endif %}
     {% if event.get_tags %}
       <br />
@@ -59,5 +60,9 @@
     <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
     &nbsp;|&nbsp;
     {% show_add_to_group %}
+    {% if user.is_authenticated %}
+        &nbsp;|&nbsp;
+        <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+    {% endif %}
   </div>
 </div>
