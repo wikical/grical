@@ -3030,7 +3030,8 @@ if settings.PIPE_TO_LOG_TO:
                     '*** %(comment)s ***\n' % {
                         'site': site,
                         'comment_url': comment.get_absolute_url(),
-                        'comment': comment.comment } )
+                        'comment': smart_str( comment.comment,
+                            encoding='ascii', errors='ignore' ) } )
             # event created/updated {{{3
             elif kwargs['sender'] == RevisionInfo:
                 revision_info = kwargs['instance']
