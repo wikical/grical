@@ -31,15 +31,17 @@ import vobject
 import unicodedata
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.gis.geos import Point
+from django.contrib.gis.db.models import Max, Q
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
-from django.contrib import messages
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models import Max, Q
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.forms.models import inlineformset_factory, ModelForm
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
@@ -48,8 +50,6 @@ from django.shortcuts import ( render_to_response, get_object_or_404,
 from django.template import RequestContext, Context, loader
 from django.utils.translation import ugettext as _
 from django.utils.encoding import smart_unicode
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator, InvalidPage, EmptyPage
 
 from tagging.models import Tag, TaggedItem
 from reversion import revision
@@ -975,8 +975,10 @@ def main( request, status_code=200 ):# {{{1
     >>> r.status_code # /
     200
     """
-    # processes the event form
-    if request.method == 'POST':
+    # processes the event form, but not if status_code is 404 or 500 because
+    # request can contain POST data coming from another form
+    if (not status_code == 404) and (not status_code == 500) and \
+            request.method == 'POST':
         # revision.user = request.user # done by the reversion middleware
         event_form = SimplifiedEventForm( request.POST )
         if event_form.is_valid():
@@ -1457,7 +1459,7 @@ def handler404(request): #{{{1
             _(u"An object couldn't be retrieved. Check the URL") )
     return main( request, status_code = 404 )
 
-def handler500(request): #{{{1
+def handler500( request ): #{{{1
     """ custom 500 handler """
     messages.error( request,
             _( u'We are very sorry but an error has ocurred. We have ' \

@@ -7,10 +7,10 @@
     {% for event in events.object_list %}
         {% ifchanged event.upcoming %}
             {% if forloop.first %}
-                <div class="daybox">
+                <div class="dayboxsearch">
             {% else %}
                 </div>
-                <div class="daybox">
+                <div class="dayboxsearch">
             {% endif %}
             <h1>{{ event.upcoming|naturalday }}</h1>
         {% endifchanged %}
