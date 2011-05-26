@@ -3021,6 +3021,7 @@ class Session: #{{{1
 if settings.PIPE_TO_LOG_TO:
     def write_to_pipe( **kwargs ): # {{{2
         site = Site.objects.get_current().domain
+        # TODO: open utf8 and remove from below encoding='ascii'
         with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
             # comment {{{3
             if kwargs['sender'] == Comment:
@@ -3058,6 +3059,8 @@ if settings.PIPE_TO_LOG_TO:
                     diff = text_diff(
                             rev_info_old[0].as_text,
                             rev_info_new[0].as_text )
+                    diff = smart_str( diff,
+                            encoding='ascii', errors='ignore' )
                     pipe.write( diff )
                     #pipe.write( ''.join( ['\n  ' + line for line in 
                     #    diff.splitlines() ] ) )
