@@ -42,18 +42,9 @@
     {% if events %}
         {% for event in events %}
             {% ifchanged event.upcoming %}
-                {% if forloop.first %}
-                    <div class="daybox">
-                {% else %}
-                    </div>
-                    <div class="daybox">
-                {% endif %}
-                <h1>{{ event.upcoming|naturalday }}</h1>
+                <div class="daytitle">{{ event.upcoming|naturalday }}</div>
             {% endifchanged %}
             {% include "event_show_medium.html" %}
-            {% if forloop.last %}
-                </div>
-            {% endif %}
         {% endfor %}
     {% endif %}
 

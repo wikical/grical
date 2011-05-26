@@ -176,17 +176,26 @@ form li {
 }
 
 
-.options img {
-    vertical-align: middle;
-}
-
-.daybox {
+.dayboxsearch {
     float:left;
     margin: 0.5em;
 }
+.daytitle {
+    font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+    color: #003a6b;
+    clear: left;
+    font-size: 130%;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #fcb100;
+    max-width: 10em;
+}
+
 /*
- * event medium format (shown in main page, search results, etc.
+ * event medium format (used in main page and box-search-results)
  */
+.options img {
+    vertical-align: middle;
+}
 .event_medium {
     float:left;
     margin: 0.5em;

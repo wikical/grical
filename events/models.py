@@ -3053,9 +3053,11 @@ if settings.PIPE_TO_LOG_TO:
                 revisions = [ version.revision for version in
                     Version.objects.get_for_object( event ) ]
                 if len( revisions ) > 1:
+                    rev_info_old = revisions[-2].revisioninfo_set.all()
+                    rev_info_new = revisions[-1].revisioninfo_set.all()
                     diff = text_diff(
-                            revisions[-2].revisioninfo_set.all()[0].as_text,
-                            revisions[-1].revisioninfo_set.all()[0].as_text )
+                            rev_info_old[0].as_text,
+                            rev_info_new[0].as_text )
                     pipe.write( diff )
                     #pipe.write( ''.join( ['\n  ' + line for line in 
                     #    diff.splitlines() ] ) )
