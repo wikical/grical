@@ -1057,8 +1057,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     # parse_text {{{3
     @staticmethod
-    @revision.create_on_success # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
     @transaction.commit_on_success # see http://docs.djangoproject.com/en/1.3/topics/db/transactions/#controlling-transaction-management-in-views
+    @revision.create_on_success # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
     def parse_text( input_text_in, event_id = None, user_id = None ):
         # doc {{{4
         """It parses a text and saves it as a single event in the data base and
