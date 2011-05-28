@@ -4,6 +4,7 @@
 
 .. contents:: Contents:
 
+
 Introduction
 ------------
 
@@ -124,6 +125,7 @@ Searches and filters
 .. _RSS feed: http://en.wikipedia.org/wiki/Rss
 .. _iCalendar File: http://en.wikipedia.org/wiki/ICalendar
 
+
 Event history and event deletions
 ---------------------------------
 
@@ -138,12 +140,40 @@ When an event is deleted, it is possible to indicate another event containing
 the information of the deleted event. Users trying to access the deleted event
 will be then redirected to the other one.
 
+
 API
 ---
 
 Grical content can be integrated in external pages. See `the wiki page about our API`__
 
 __ http://code.grical.org/wiki/OnAPI
+
+
+GriCalDroid (Android App)
+-------------------------
+
+We have an Android__ App that displays upcoming events from GriCal on an OSM__ map.
+
+__ http://en.wikipedia.org/wiki/Android_(operating_system)
+__ http://en.wikipedia.org/wiki/OpenStreetMap
+
+
+To use GriCalDroid, follow the next steps:
+
+- `Download GriCalDroid`__ to your phone and install it.
+
+.. image:: http:/m/GriCalDroid_url_qrcode.png
+
+__ http:/m/GriCalDroid.apk
+
+- Download into your phone one or more of `the maps available`__.
+
+.. image:: http:/m/maps_of_mapsforge_url_qrcode.png
+
+__ ftp://ftp.mapsforge.org/
+
+- Activate them in the settings of GriCalDroid.
+
 
 More help
 ---------

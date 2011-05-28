@@ -12,6 +12,15 @@ LICENSE
 
 GridCalendar is licensed under the GNU Affero General Public License. See the file LICENSE.TXT
 
+The subproject GriCalDroid is licensed under the GPLv3__.
+
+__ http://www.gnu.org/licenses/gpl.html
+
+GriCalDroid uses mapsforge__ which is licensed under the LGPL3__
+
+__ http://code.google.com/p/mapsforge/
+__ http://www.gnu.org/licenses/lgpl.html
+
 
 CONTACT
 =======
