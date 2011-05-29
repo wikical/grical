@@ -302,9 +302,9 @@ class EventForm(ModelForm): # {{{1
         return data
     def clean( self ):
         """ it adds the value of coordinates to the Event instance """
-        cleaned_data = super(EventForm, self).clean()
-        if cleaned_data.has_key('coordinates'):
-            coordinates = cleaned_data['coordinates']
+        self.cleaned_data = super(EventForm, self).clean()
+        if self.cleaned_data.has_key('coordinates'):
+            coordinates = self.cleaned_data['coordinates']
             if coordinates:
                 self.instance.coordinates = Point(
                         float(coordinates['longitude']),
@@ -334,7 +334,7 @@ class SimplifiedEventForm( ModelForm ): # {{{1
         #self.fields['web'].widget.attrs["size"] = 42
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        fields = ('title', 'tags', 'where', 'when', 'web')
+        fields = ('title', 'tags',)
     def clean_tags(self): # pylint: disable-msg=C0111
         data = self.cleaned_data['tags']
         if re.search("[^ \-\w]", data, re.UNICODE):
@@ -346,18 +346,18 @@ class SimplifiedEventForm( ModelForm ): # {{{1
         """ checks that there is no other event with the same name and start
         date """
         # see # http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
-        cleaned_data = super(SimplifiedEventForm, self).clean()
-        title = cleaned_data["title"]# neccesary field, no checks
-        when = cleaned_data["when"]
-        start = when['start_date']   # neccesary field, no checks
-        if Event.objects.filter( title = title, start = start ).exists():
-            raise ValidationError( _('There is already an event with the ' \
-                    'same title and start date ' \
-                    '(for events taking place in different locations ' \
-                    'at the same day, ' \
-                    'create different events with a differentiated toponym ' \
-                    'in the title).' ) )
-        return cleaned_data
+        self.cleaned_data = super(SimplifiedEventForm, self).clean()
+        title = self.cleaned_data.get("title", None)# neccesary field, no checks
+        when = self.cleaned_data.get("when", None)
+        if title and when:
+            start = when['start_date']   # neccesary field, no checks
+            if Event.objects.filter( title = title, start = start ).exists():
+                raise ValidationError( _('There is already an event with the ' \
+                        'same title and start date ' \
+                        '(for events taking place in different locations ' \
+                        'at the same day, create different events with ' \
+                        'a differentiated toponym in the title).' ) )
+        return self.cleaned_data
 
 class DeleteEventForm(Form): # {{{1
     reason = CharField( required = True, max_length = 100,
