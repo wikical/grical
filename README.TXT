@@ -21,6 +21,11 @@ GriCalDroid uses mapsforge__ which is licensed under the LGPL3__
 __ http://code.google.com/p/mapsforge/
 __ http://www.gnu.org/licenses/lgpl.html
 
+Reversion__ uses the `Modified BSD License`__ which is `compatible with the GPLv3`__
+
+__ https://github.com/etianen/django-reversion/
+__ http://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_.28.22New_BSD_License.22_or_.22Modified_BSD_License.22.29
+__ http://en.wikipedia.org/wiki/List_of_FSF_approved_software_licenses
 
 CONTACT
 =======

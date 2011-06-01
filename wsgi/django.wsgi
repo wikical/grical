@@ -11,3 +11,9 @@ environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 import django.core.handlers.wsgi
 
 application = django.core.handlers.wsgi.WSGIHandler()
+
+import settings
+# see http://blog.dscpl.com.au/2008/12/using-modwsgi-when-developing-django.html
+import gridcalendar.monitor
+if settings.DEBUG:
+    gridcalendar.monitor.start(interval=1.0)

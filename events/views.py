@@ -582,7 +582,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if (not query) and (view != 'json'):
         # When a client ask for json, html should not be the response
         # TODO: test what happens for empty query with json, xml and yaml
-        messages.error( query, 
+        messages.error( request, 
             _( u"A search was submitted without a query string" ) )
         return main( request )
     # limit
