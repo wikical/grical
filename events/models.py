@@ -64,9 +64,10 @@ from django.db import transaction
 
 from tagging.fields import TagField
 from tagging.models import Tag, TaggedItem
+
+from gridcalendar.reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 import reversion
 from reversion import revision
-from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from utils import validate_year, search_name, text_diff
 
