@@ -64,10 +64,9 @@ from django.db import transaction
 
 from tagging.fields import TagField
 from tagging.models import Tag, TaggedItem
-
-from gridcalendar.reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 import reversion
 from reversion import revision
+from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from utils import validate_year, search_name, text_diff
 
@@ -3020,6 +3019,7 @@ class Session: #{{{1
 # it is recommended in the Django documentation to connect to signals in
 # models.py. That is why this code is here.
 if settings.PIPE_TO_LOG_TO:
+    # FIXME: put everything on a try and add a timeout
     def write_to_pipe( **kwargs ): # {{{2
         site = Site.objects.get_current().domain
         # TODO: open utf8 and remove from below encoding='ascii'
