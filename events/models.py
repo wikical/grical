@@ -2141,7 +2141,7 @@ class Filter( models.Model ): # {{{1
         """ returns a sorted (by :attr:`Event.upcoming`) list of
         events matching ``query`` adding related events if
         *related* is True.
-        
+
         If *related* is True it adds to the result events with related tags,
         but no more that the number of results. I.e. if the result contains two
         events, only a miximum of two more related events will be added. If the
@@ -2232,10 +2232,12 @@ class Filter( models.Model ): # {{{1
     @staticmethod # def matches_queryset( query, user ): {{{2
     def matches_queryset( query, user ):
         """ returns a queryset without touching the database, see
-        :meth:`Filter.matches` 
+        :meth:`Filter.matches`
 
         If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
         ``query`` is None or an empty string.
+
+        If ``query`` contains `` | `` strings, they are consider as logical ``or``.
         """
         if not query:
             return Event.objects.none()
@@ -2248,6 +2250,8 @@ class Filter( models.Model ): # {{{1
                 user = User.objects.get(id = int(user))
             except User.DoesNotExist:
                 user = None
+        terms = query.split(' | ')
+        query = terms[0]
         # TODO: use the catche system for queries
         queryset = Event.objects.all()
         # groups
@@ -2328,7 +2332,7 @@ class Filter( models.Model ): # {{{1
                 lng2 = float( loc[1] )
                 lat2 = float( loc[2] )
                 rectangle = Polygon( ((lng1, lat1), (lng2,lat1),
-                    (lng2,lat2), (lng1,lat2), (lng1, lat1)) ) 
+                    (lng2,lat2), (lng1,lat2), (lng1, lat1)) )
                 queryset = queryset.filter( coordinates__within = rectangle )
             else:
                 pass
@@ -2398,7 +2402,9 @@ class Filter( models.Model ): # {{{1
         # TODO: add full indexing text on Event.description and comments. See
         # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
         # remove duplicates
-        queryset = queryset.distinct() # TODO: needed? we start with .all()
+        if len( terms ) > 1:
+            return queryset | Filter.matches_queryset(
+                    ' | '.join( terms[1:] ), user )
         return queryset
 
     @staticmethod # def notify_users_when_wanted( event ): {{{2
