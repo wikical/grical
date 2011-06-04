@@ -89,21 +89,31 @@ __ http://en.wikipedia.org/wiki/ReStructuredText
 Searches and filters
 --------------------
 
-- searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and ``country``
+- searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and
+  ``country``
 - all given words must appear in at least one of the fields
-- search results contain also related events (with similar tags), unless one or more of the special search options are used (see bellow)
-- one or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the the oldest to the newest, or to one day if there is only one date
+- search results contain also related events (with similar tags), unless one or more of the special
+  search options are used (see bellow)
+- one or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the
+  the oldest to the newest, or to one day if there is only one date
 - If there is no date in the query only future events are showed
 - Single words are looked up in the fields ``title``, ``tags``, ``city``, ``country`` and ``acronym``
 - Tags ( ``#tag_name`` ) restricts the query to events with these tags
 - Groups ( ``!group_name`` ) restricts the query to events of the groups
+- The string `` | `` can be used to concatenate results of different searches (logical or). For
+  example ``linux | foss`` will search for all future events matching ``linux`` or matching
+  ``foss``.
 - Searches starting with an asterisk and one space makes the search broader, including past events
-  (if no dates are specified), text in the description, urls (name and url), sessions (name) and deadlines (name)
-- Locations restricts the query to events within the given location. There are four possibilities. When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
+  (if no dates are specified), text in the description, urls (name and url), sessions (name) and
+  deadlines (name)
+- Locations restricts the query to events within the given location. There are four possibilities.
+  When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
   
   - giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``
   - giving the name of a place and a distance. ``@london+100`` would look 100
-    kilometers arround the center of the most relevant place with the name ``london`` (being it London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most relevant city with the name London in Canada).
+    kilometers arround the center of the most relevant place with the name ``london`` (being it
+    London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most
+    relevant city with the name London in Canada).
   - giving a coordinate and a distance ( ``@52.55247,13.40364+500km`` )
   - giving four coordinates defining a rectangle: longitude_west,
     longitude_east, latitude_north, latitude_south. Example: ``@13.324,13.463,52.5503,52.4701``
