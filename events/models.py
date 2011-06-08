@@ -360,6 +360,45 @@ GridCalendar will be presented"""
 DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
 COORDINATES_REGEX = re.compile(
         r'\s*([+-]?\s*\d+(?:\.\d*)?)\s*[,;:+| ]\s*([+-]?\s*\d+(?:\.\d*)?)' )
+# regex.findall('=1234 aa =234 =34')
+# ['1234', '234', '34']
+EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', UNICODE)
+GROUP_REGEX = re.compile(r'(?:^|\s)!(\w+)\b', UNICODE)
+TAG_REGEX = re.compile(r'(?:^|\s)!(#w+)\b', UNICODE)
+# the regex start with @ and has 4 alternatives, examples:
+# 52.1234,-0.1234+300km
+# 52.1234,-0.1234,53.1234,-0.2345
+# london+50mi
+# berlin
+LOCATION_REGEX = re.compile(r"""
+        @(?:                    # loc regex starts with @
+        (?:                     # four floats separated by ,
+            ([+-]?\d+           # [0] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,
+            ([+-]?\d+           # [1] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,
+            ([+-]?\d+           # [2] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,
+            ([+-]?\d+           # [3] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+        )|(?:                   # or float,float+int and opt. a unit
+            ([+-]?\d+           # [4] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,\s*                # spaces because some people copy/paste
+            ([+-]?\d+           # [5] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            \+(\d+)             # [6] distance
+            (km|mi)?            # [7] optional unit
+        )|(?:                   # or a name, +, distance and opt. unit
+            (\w+)               # [8] name
+            \+(\d+)             # [9] distance
+            (km|mi)?            # [10] optional unit
+        )|(                     # or just a name
+            \w+                 # [11]
+        ))""", re.UNICODE | re.X )
 
 class EventManager( models.GeoManager ): # {{{1
     """ manager for deserialization.
@@ -411,8 +450,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     postcode = models.CharField( _( u'Postcode' ), blank = True, null = True,
             max_length = 16 )
     address = models.CharField( _( u'Address' ), blank = True,
-            null = True, max_length = 100, # TODO: increase to 200
-            help_text = _( u'Complete address including city and country' ) )
+            null = True, max_length = 200,
+            help_text = _( u'Complete address including city and country. ' \
+                u'Example: Malmöer Str. 6, Berlin, DE' ) )
     coordinates = models.PointField( _('Coordinates'),
             editable = False, blank=True, null=True )
     """ used for calculating events within a distance to a point """
@@ -1033,8 +1073,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 else:
                     if re.match(r"[^\s]", line[0]):
                         raise ValidationError(_(
-                            "extra lines for %(field_name)s must start with " \
-                            + "identation") % {'field_name': current,})
+                            u"extra lines for %(field_name)s must start with " \
+                            u"identation") % {'field_name': current,})
                     lines.append(line)
                     continue
             if (not current) and not field_m:
@@ -1685,7 +1725,7 @@ class EventUrl( models.Model ): # {{{1
                 if urls.has_key( name ):
                     raise ValidationError(
                             _('found more than one url with the same name: ' \
-                                    '%(name)s') % {'name': name} )
+                                    u'%(name)s') % {'name': name} )
                 urls[name] = field_m.group(2)
         # we now check each url using django.core.validators for the fields of
         # this class
@@ -1743,15 +1783,19 @@ class EventDeadline( models.Model ): # {{{1
     natural_key.dependencies = ['events.event']
     
     def save( self, *args, **kwargs ): #{{{2
-        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
+        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` if
+        necessary"""
         # Call the "real" save() method:
         super( EventDeadline, self ).save( *args, **kwargs )
-        self.event.save() # needed to update Event.upcoming in the DB
+        if self.event.upcoming != self.event.next_coming_date_or_start():
+            self.event.save() # needed to update Event.upcoming in the DB
 
     def delete( self, *args, **kwargs ): #{{{2
-        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
+        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` if
+        necessary """
         super( EventDeadline, self ).delete( *args, **kwargs )
-        self.event.save() # needed to update Event.upcoming in the DB
+        if self.event.upcoming != self.event.next_coming_date_or_start():
+            self.event.save() # needed to update Event.upcoming in the DB
 
     def __unicode__( self ): # {{{2
         return unicode( self.deadline ) + u'    ' + self.deadline_name
@@ -1762,13 +1806,6 @@ class EventDeadline( models.Model ): # {{{1
                 deadline = self.deadline )
         new.save()
         return new
-
-    def save( self, *args, **kwargs ): #{{{3
-        """ Call the real 'save' function after updating :attr:`Event.upcoming`
-        """
-        # Call the "real" save() method:
-        super( EventDeadline, self ).save( *args, **kwargs )
-        self.event.save() # needed to update :attr:`Event.upcoming`
 
     @staticmethod # def get_deadlines( text ): {{{2
     def get_deadlines( text ):
@@ -1825,7 +1862,7 @@ class EventDeadline( models.Model ): # {{{1
                 name = field_m.group(4)
                 if deadlines.has_key( name ):
                     errors.append( _(u'the following deadline name appers ' \
-                            'more than one: %(name)s') % {'name': name} )
+                            u'more than one: %(name)s') % {'name': name} )
                 else:
                     try:
                         deadlines[ field_m.group(4) ] = datetime.date(
@@ -1833,8 +1870,8 @@ class EventDeadline( models.Model ): # {{{1
                                 int(field_m.group(3)))
                     except (TypeError, ValueError), e:
                         errors.append(
-                            _("The deadline '%(deadline_name)s' is not " \
-                                    "correct") % {'deadline_name':
+                            _(u"The deadline '%(deadline_name)s' is not " \
+                                    u"correct") % {'deadline_name':
                                         field_m.group(4),} )
         if errors:
             raise ValidationError( errors )
@@ -1963,7 +2000,7 @@ class EventSession( models.Model ): # {{{1
                 if sessions.has_key(name):
                     errors.append( 
                         _(u'the following session name appers more than once:' \
-                        ' %(name)s') % {'name': name} )
+                        u' %(name)s') % {'name': name} )
                 else:
                     try:
                         sessions[name] = Session(
@@ -2141,7 +2178,7 @@ class Filter( models.Model ): # {{{1
         """ returns a sorted (by :attr:`Event.upcoming`) list of
         events matching ``query`` adding related events if
         *related* is True.
-        
+
         If *related* is True it adds to the result events with related tags,
         but no more that the number of results. I.e. if the result contains two
         events, only a miximum of two more related events will be added. If the
@@ -2150,8 +2187,9 @@ class Filter( models.Model ): # {{{1
         (``yyyy-mm-dd`` or ``yyyy-mm-dd yyyy-mm-dd``), only related events with the
         same time are added.
 
-        If the query contains a group term (marked with ``!``) or a tag term
-        (marked with ``#``), no related events are added.
+        If the query contains a group term (marked with ``!``), a tag term
+        (marked with ``#``), or an event term (marked with ``=``) no related
+        events are added.
 
         If the query evaluates to False, an empty queryset (EmptyQuerySet) is
         returned.
@@ -2161,12 +2199,12 @@ class Filter( models.Model ): # {{{1
             return Event.objects.none()
         # TODO: return a queryset, not a list. See some ideas described in:
         # http://stackoverflow.com/questions/431628/how-to-combine-2-or-more-querysets-in-a-django-view
-        queryset = Filter.matches_queryset(query, user)
+        queryset = Filter.matches_queryset(query, user).distinct()
         # creates a list of
         # related events with no more than the length of queryset and combines
         # both
-        if related and ( query.find('!') == -1 ) and ( query.find('#') == -1 ) \
-                and ( len( queryset ) > 0 ) :
+        if related and not ( GROUP_REGEX.findall(query) or
+                TAG_REGEX.findall(query) or EVENT_REGEX.findall( query ) ):
             related_events = Filter.related_events( queryset, user, query )
             # chains both and sorts the result
             return sorted(
@@ -2180,6 +2218,8 @@ class Filter( models.Model ): # {{{1
         ``query``
         """
         limit = len ( queryset )
+        if limit < 1:
+            return Event.objects.none()
         # if the query has a location restriction, we save only related events
         # in the same location. Same applies for a time restriction
         constraint_query = u''
@@ -2232,10 +2272,15 @@ class Filter( models.Model ): # {{{1
     @staticmethod # def matches_queryset( query, user ): {{{2
     def matches_queryset( query, user ):
         """ returns a queryset without touching the database, see
-        :meth:`Filter.matches` 
+        :meth:`Filter.matches`
 
         If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
         ``query`` is None or an empty string.
+
+        If ``query`` contains `` | `` strings (space, pipe, space), they are
+        consider as logical ``or``.
+
+        The returned ``queryset`` can contain repeated events.
         """
         if not query:
             return Event.objects.none()
@@ -2248,50 +2293,29 @@ class Filter( models.Model ): # {{{1
                 user = User.objects.get(id = int(user))
             except User.DoesNotExist:
                 user = None
-        # TODO: use the catche system for queries
+        terms = query.split(' | ')
+        query = terms[0]
+        # TODO: use the cache system for queries
         queryset = Event.objects.all()
+        # broad search check
+        broad_regex = re.compile(r'^\* +', UNICODE) # beginninig with * followed
+                                                    # by 1 ore more spaces
+        if broad_regex.match( query ):
+            broad = True
+            query = broad_regex.sub("", query)
+        else:
+            broad = False
+        # single events
+        for event_id in EVENT_REGEX.findall( query ):
+            queryset = queryset.filter( pk = event_id )
+        query = EVENT_REGEX.sub("", query)
         # groups
-        regex = re.compile('!(\w+)', UNICODE)
-        for group_name in regex.findall(query):
+        for group_name in GROUP_REGEX.findall(query):
             queryset = queryset.filter(
                     calendar__group__name__iexact = group_name)
-        query = regex.sub("", query)
+        query = GROUP_REGEX.sub("", query)
         # locations
-        # the regex start with @ and has 4 alternatives, examples:
-        # 52.1234,-0.1234+300km
-        # 52.1234,-0.1234,53.1234,-0.2345
-        # london+50mi
-        # berlin
-        regex = re.compile(r"""
-                @(?:                    # loc regex starts with @
-                (?:                     # four floats separated by ,
-                    ([+-]?\d+           # [0] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,
-                    ([+-]?\d+           # [1] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,
-                    ([+-]?\d+           # [2] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,
-                    ([+-]?\d+           # [3] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                )|(?:                   # or float,float+int and opt. a unit
-                    ([+-]?\d+           # [4] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,\s*                # spaces because some people copy/paste
-                    ([+-]?\d+           # [5] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    \+(\d+)             # [6] distance
-                    (km|mi)?            # [7] optional unit
-                )|(?:                   # or a name, +, distance and opt. unit
-                    (\w+)               # [8] name
-                    \+(\d+)             # [9] distance
-                    (km|mi)?            # [10] optional unit
-                )|(                     # or just a name
-                    \w+                 # [11]
-                ))""", re.UNICODE | re.X )
-        for loc in regex.findall(query):
+        for loc in LOCATION_REGEX.findall(query):
             if loc[11]:
                 # name given
                 queryset = queryset.filter(
@@ -2328,27 +2352,18 @@ class Filter( models.Model ): # {{{1
                 lng2 = float( loc[1] )
                 lat2 = float( loc[2] )
                 rectangle = Polygon( ((lng1, lat1), (lng2,lat1),
-                    (lng2,lat2), (lng1,lat2), (lng1, lat1)) ) 
+                    (lng2,lat2), (lng1,lat2), (lng1, lat1)) )
                 queryset = queryset.filter( coordinates__within = rectangle )
             else:
                 pass
                 # TODO: log error
-        query = regex.sub("", query)
+        query = LOCATION_REGEX.sub("", query)
         # tags
-        regex = re.compile('#(\w+)', UNICODE)
-        tags = regex.findall(query)
+        tags = TAG_REGEX.findall(query)
         if tags:
             queryset = TaggedItem.objects.get_intersection_by_model(
                     queryset, tags )
-        query = regex.sub("", query)
-        # broad search check
-        broad_regex = re.compile('^\* +', UNICODE) # beginninig with * followed
-                                                   # by 1 ore more spaces
-        if broad_regex.match( query ):
-            broad = True
-            query = broad_regex.sub("", query)
-        else:
-            broad = False
+        query = TAG_REGEX.sub("", query)
         # dates
         dates = DATE_REGEX.findall( query )
         if dates:
@@ -2371,7 +2386,7 @@ class Filter( models.Model ): # {{{1
             #         Q(start__gte = date) | Q(end__gte = date) |
             #         Q(deadlines__deadline__gte = date) )
         # look for words
-        regex = re.compile('([^!@#]\w+)', UNICODE)
+        regex = re.compile('(\w+)', UNICODE)
         for word in regex.findall(query):
             word = word.strip()
             if not broad:
@@ -2398,7 +2413,9 @@ class Filter( models.Model ): # {{{1
         # TODO: add full indexing text on Event.description and comments. See
         # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
         # remove duplicates
-        queryset = queryset.distinct() # TODO: needed? we start with .all()
+        if len( terms ) > 1:
+            return queryset | Filter.matches_queryset(
+                    ' | '.join( terms[1:] ), user )
         return queryset
 
     @staticmethod # def notify_users_when_wanted( event ): {{{2
@@ -2480,7 +2497,7 @@ class Group( models.Model ): # {{{1
             validators = [ RegexValidator(
                 re.compile(r'.*[^0-9].*'),
                 message = _(u'a group name must contain at least one ' \
-                        'character which is not a number') ) ] )
+                        u'character which is not a number') ) ] )
             # the validation above is needed in order to show an event with the
             # short url e.g. grical.org/1234
     description = models.TextField( _( u'Description' ) )

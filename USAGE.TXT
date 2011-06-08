@@ -18,9 +18,11 @@ conditions of the `CC-BY-SA license`_. Its source code is `Free Software`_ and
 thus respects the `Open Knowledge Definition`_ and the
 `Open Software Service Definition`_ of the `Open Knowledge Foundation`_.
 
-Events in Grical can be edited by anyone like pages of the Wikipedia_. You can
-*subscribe* to an event (or to the result of filters) to get notified of any
-change, comment, or new event matching a filter.
+Events in Grical can be edited by anyone like pages of the Wikipedia_. The description field is
+rendered using ReStructuredText_ syntax.
+
+You can *subscribe* to an event (or to the result of filters) to get notified of any change,
+comment, or new event matching a filter.
 
 .. _Wikipedia: http://en.wikipedia.org/wiki/Help:About
 .. _CC-BY-SA license: http://creativecommons.org/licenses/by-sa/3.0/
@@ -80,36 +82,46 @@ You can optionally include more data in the submission. Example::
 
     GridCalendar will be presented
 
-The field ``description`` must be the last one and its content can contain multiple lines. If the
-content is in valid ReStructuredText__ syntax, it will be rendered accordingly.
-
-__ http://en.wikipedia.org/wiki/ReStructuredText
-
+The field ``description`` must be the last one and its content can contain multiple lines. The
+content is rendered as ReStructuredText_.
 
 Searches and filters
 --------------------
 
-- searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and ``country``
-- all given words must appear in at least one of the fields
-- search results contain also related events (with similar tags), unless one or more of the special search options are used (see bellow)
-- one or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the the oldest to the newest, or to one day if there is only one date
-- If there is no date in the query only future events are showed
-- Single words are looked up in the fields ``title``, ``tags``, ``city``, ``country`` and ``acronym``
-- Tags ( ``#tag_name`` ) restricts the query to events with these tags
-- Groups ( ``!group_name`` ) restricts the query to events of the groups
+- Searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and
+  ``country``.
+- All given words must appear in at least one of the fields.
+- Search results contain also related events (with similar tags), unless one or more of the special
+  search restrictions are used (like # for tags, see bellow)
+- One or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the
+  the oldest to the newest, or to one day if there is only one date.
+- If there is no date in the query only future events are showed.
+- Tags ( ``#tag_name`` ) restricts the query to events with these tags.
+- Groups ( ``!group_name`` ) restricts the query to events of the group.
+- The string `` | `` can be used to concatenate results of different searches (logical or). For
+  example ``#linux | #foss`` will search for all future events with the tag ``linux`` or with the
+  tag ``foss``.
 - Searches starting with an asterisk and one space makes the search broader, including past events
-  (if no dates are specified), text in the description, urls (name and url), sessions (name) and deadlines (name)
-- Locations restricts the query to events within the given location. There are four possibilities. When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
+  (if no dates are specified), text in the description, urls (name and url), sessions (name) and
+  deadlines (name).
+- Locations restricts the query to events within the given location. There are four possibilities.
+  When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
   
-  - giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``
-  - giving the name of a place and a distance. ``@london+100`` would look 100
-    kilometers arround the center of the most relevant place with the name ``london`` (being it London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most relevant city with the name London in Canada).
-  - giving a coordinate and a distance ( ``@52.55247,13.40364+500km`` )
-  - giving four coordinates defining a rectangle: longitude_west,
-    longitude_east, latitude_north, latitude_south. Example: ``@13.324,13.463,52.5503,52.4701``
+  - Giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``.
+  - Giving the name of a place and a distance. ``@london+100`` would look 100.
+    kilometers around the center of the most relevant place with the name ``london`` (being it
+    London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most
+    relevant city with the name London in Canada).
+  - Giving a coordinate and a distance ( ``@52.55247,13.40364+500km`` ).
+  - Giving four coordinates defining a rectangle: longitude_west,
+    longitude_east, latitude_north, latitude_south. Example: ``@13.324,13.463,52.5503,52.4701``.
 
-- Any search can be saved as a filter by logged-in users. To be able to logg-in
-  you need to register. A confirmation email will be sent in the proccess.
+- The operator ``=`` restrict the search to one single event, the one having the number which
+  follows the operator (example ``=123``). This can be used for e.g. sending a list of some events
+  as a URL and showing them on a map, example: ``grical.org/s/=123 | =456 | =789/map``
+
+- Any search can be saved as a filter by logged-in users. To be able to log-in
+  you need to register. A confirmation email will be sent in the process.
 
 - You can select to get notified of new events matching one of your filters.
 
@@ -184,3 +196,6 @@ If you need more help, you can contact our mailing list at ``grical ät gridmind
 __ irc://irc.freenode.net/calendar
 
 .. _what is IRC?: http://en.wikipedia.org/wiki/Internet_Relay_Chat
+.. _ReStructuredText: http://en.wikipedia.org/wiki/ReStructuredText
+
+

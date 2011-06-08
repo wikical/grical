@@ -67,6 +67,26 @@ h6 {
     font-weight: bold;
 }
 
+/** Description rst */
+#description {
+    font-size: 90%;
+}
+
+.tags {
+    margin: 0.5em 0 0.5em 0em;
+}
+.tags a {
+    padding: 0.1em 0.3em 0.1em 0.3em;
+    margin: 0.1em 0.3em 0.1em 0em;
+    border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    border: 1px gray solid;
+    background-color: darkgray;
+    color: black;
+    text-decoration: none;
+}
+
 /**
  * Elements
  */
@@ -251,20 +271,24 @@ td {
     padding: 0.1em 5em 0 0;
 }
 
-/*
- * event full format 
- */
-.event_full h1 a[href] {
-    text-decoration:none;
-}
-.event_full .dates {
+.dates {
     color: #cc6100;
     display: inline ;
+    margin-right: 1em ;
 }
-.event_full .times {
+
+.times {
     color: #fcb100;
     display: inline ;
 }
+
+.event_full .title {
+    font-weight: bold;
+    font-size: 1.2em;
+    display: inline ;
+}
+
+/** event full **/
 .event_full .options {
     font-size: 0.8em;
     text-align: right;
@@ -273,6 +297,7 @@ td {
 .event_full ul, .event_full li {
     display: inline ;
     margin: 0 1em 0 0 ;
+    -moz-padding-start: 0;
 }
 .event_full li:before {
     content: "\00BB \0020";
@@ -333,17 +358,19 @@ input[type="text"], textarea, input[type="checkbox"] {
     border: solid 1px #3176b9;
 }
 
-/* simplified event form */
-#simplified_event_form fieldset {
+fieldset {
   padding: 0.5em;
   border:1px solid #fcb100;
+  margin: 1em 0 1em 0;
 }
-#simplified_event_form legend {
+
+legend {
   padding: 0.2em 0.5em;
   border:1px solid #fcb100;
   color:#003a6b;
   text-align:right;
 }
+
 #simplified_event_form label {
     float:left;
     position: absolute;
@@ -502,7 +529,7 @@ input[type="text"], textarea, input[type="checkbox"] {
 div.olMap {
     z-index: 0;
     padding: 0px!important;
-    margin: 0px!important;
+    margin: 1em 0 !important;
     cursor: default;
 }
 

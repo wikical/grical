@@ -97,29 +97,39 @@ medium priority
 ---------------
 
 - use the google prediction API to find related events http://code.google.com/apis/predict/
-- add link for Google calendar import like at
-    http://agendadulibre.org/icallist.php
+- add link for Google calendar import and others like at http://agendadulibre.org/icallist.php
+
+  - See also http://www.google.com/googlecalendar/event_publisher_guide_detail.html
+  - Some examples of links:
+
+      - http://www.google.com/calendar/event?action=TEMPLATE&text=%TITLE%&dates=%START%/%END%&details=%DESCRIPTION%&location=%LOCATION%&trp=false&sprop=%URL%&sprop=name:%ORG%
+      - http://components.platform.firmstep.com/ical/ical.aspx?start=%START%&end=%END%&title=%TITLE%&desc=%DESCRIPTION%&loc=%LOCATION%&url=%URL%
+      - http://calendar.yahoo.com/?v=60&TITLE=%TITLE%&ST=%START%/%END%&in_loc=%LOCATION%&DESC=%DESCRIPTION%&URL=%URL%
+      - http://calendar.live.com/calendar/calendar.aspx?rru=addevent&summary=%TITLE%&location=%LOCATION%&dtstart=%START%&dtend=%END%&description=%DESCRIPTION%
+
 - better url schema, allowing human/seo urls like grical.org/142/My-Event-Name-With-Spaces
 - Privacy issues:
+
     - Don't save IPs (see e.g. AnonymizeIP for Piwik) or, if doing so, inform the users
     - Others? Check German law
+
 - For event and session (in order to use GriCal as a personal calendar avoiding the need of using
   more than one software as calendar):
   gebauede/raumnr/vortragender/"deadline"(hausarbeiten)/anmerkungen (gruppennummer,persoenliche
   notizen)
 - pictures for events and groups::
 
-    "2011-02-27 14:01" < netAction> ogai: md5(Uhrzeit in Minuten + PK + geheimwort)
-    "2011-02-27 14:01" < netAction> Der Bilderserver bekommt eine Anfrage nach einer URL mit diesem MD5.
-    "2011-02-27 14:02" < ogai> netAction: sehr gut
-    "2011-02-27 14:02" < netAction> Er probiert die letzten 30 Minuten durch. Das geheimwort hat er auch. Wenn er dann keine PK hat, ist die MD5 falsch oder abgelaufen.
-    "2011-02-27 14:02" < netAction> Dafür gibts nen Apache-Modul, die URL lässt sich in einer Zeile Python erzeugen. 
-    "2011-02-27 14:02" < ogai> netAction: moment wieso uhrzeit in minuten? uhrzeit der hochladung auf grical?
-    "2011-02-27 14:03" < netAction> Nein Uhrzeit, zu der die URL erstellt wurde.
-    "2011-02-27 14:03" < netAction> Damit die URL abläuft.
-    "2011-02-27 14:04" < ogai> wer soll wissen, wenn eine url ablaeuft? apache?
-    "2011-02-27 14:05" < netAction> Ja.
-    "2011-02-27 14:05" < netAction> Ich suche dir das Modul raus.
+    - "2011-02-27 14:01" < netAction> ogai: md5(Uhrzeit in Minuten + PK + geheimwort)
+    - "2011-02-27 14:01" < netAction> Der Bilderserver bekommt eine Anfrage nach einer URL mit diesem MD5.
+    - "2011-02-27 14:02" < ogai> netAction: sehr gut
+    - "2011-02-27 14:02" < netAction> Er probiert die letzten 30 Minuten durch. Das geheimwort hat er auch. Wenn er dann keine PK hat, ist die MD5 falsch oder abgelaufen.
+    - "2011-02-27 14:02" < netAction> Dafür gibts nen Apache-Modul, die URL lässt sich in einer Zeile Python erzeugen. 
+    - "2011-02-27 14:02" < ogai> netAction: moment wieso uhrzeit in minuten? uhrzeit der hochladung auf grical?
+    - "2011-02-27 14:03" < netAction> Nein Uhrzeit, zu der die URL erstellt wurde.
+    - "2011-02-27 14:03" < netAction> Damit die URL abläuft.
+    - "2011-02-27 14:04" < ogai> wer soll wissen, wenn eine url ablaeuft? apache?
+    - "2011-02-27 14:05" < netAction> Ja.
+    - "2011-02-27 14:05" < netAction> Ich suche dir das Modul raus.
 
 - implement sitemaps: http://docs.djangoproject.com/en/1.2/ref/contrib/sitemaps/
   IMPORTANT: http://www.mischievous.org/2010/11/generate-sitemap-django.html

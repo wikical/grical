@@ -26,6 +26,10 @@
 
 # imports {{{1
 import datetime
+from docutils import core
+from docutils.parsers.rst import roles, nodes
+from docutils.parsers.rst.roles import set_classes
+from docutils.writers.html4css1 import Writer
 import re
 import vobject
 import unicodedata
@@ -318,7 +322,10 @@ def event_does_not_exist( request, event_id, redirect_url ): # {{{1
             'event_deleted', kwargs = { 'event_id': event_id } ) )
 
 def event_show_all( request, event_id ): # {{{1
-    """ View that shows an event
+    """ View that shows an event.
+
+    It interprets the ``description`` field as ReStructuredText if there are
+    not errors or warnings from docutils.
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -349,7 +356,45 @@ def event_show_all( request, event_id ): # {{{1
     if event.country:
         title += " (" + event.country + ")"
     title += " - " + event.title + " | " + Site.objects.get_current().name
-    templates = { 'title': title, 'event': event, }
+    rst2html = None
+    if event.description:
+        # we try to parse the description as ReStructuredText with one
+        # additional role to get event urls, e.g.: :e:`123`
+        # we create a new RST role to interpret
+        def event_reference_role( # {{{2
+                role, rawtext, text, lineno, inliner, options={}, content=[] ):
+            # hacked using the example at
+            # http://docutils.sourceforge.net/docs/howto/rst-roles.html
+            try:
+                referentiated_event = Event.objects.get( pk = int(text) )
+            except ValueError:
+                msg = inliner.reporter.error(
+                        _(u"The role ':e:' must be followed by a number") )
+                prb = inliner.problematic(rawtext, rawtext, msg)
+                return [prb], [msg]
+            except Event.DoesNotExist:
+                msg = inliner.reporter.error(
+                        _(u'No event with the number %(event_nr)s') %
+                            {'event_nr': text} )
+                prb = inliner.problematic(rawtext, rawtext, msg)
+                return [prb], [msg]
+            set_classes( options )
+            node = nodes.reference( rawtext, event.title,
+                    refuri = referentiated_event.get_absolute_url(),
+                    **options )
+            return [node], []
+        roles.register_local_role('e', event_reference_role)
+        rst2html = core.publish_parts(
+            source = event.description,
+            writer = Writer(),
+            settings_overrides = {'input_encoding': 'unicode', 'output_encoding': 'unicode'},
+            )['html_body']
+        #if '<div class="system-message">' in rst2html:
+        #    # there is a rst syntax error/warning
+        #    # TODO: inform the user that the description couldn't be
+        #    # rendered as rst and provide a link that shows the errors/warnings
+        #    rst2html = None
+    templates = { 'title': title, 'event': event, 'rst2html': rst2html }
     return render_to_response( 'event_show_all.html', templates,
             context_instance = RequestContext( request ) )
 
