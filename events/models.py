@@ -360,6 +360,45 @@ GridCalendar will be presented"""
 DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
 COORDINATES_REGEX = re.compile(
         r'\s*([+-]?\s*\d+(?:\.\d*)?)\s*[,;:+| ]\s*([+-]?\s*\d+(?:\.\d*)?)' )
+# regex.findall('=1234 aa =234 =34')
+# ['1234', '234', '34']
+EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', UNICODE)
+GROUP_REGEX = re.compile(r'(?:^|\s)!(\w+)\b', UNICODE)
+TAG_REGEX = re.compile(r'(?:^|\s)!(#w+)\b', UNICODE)
+# the regex start with @ and has 4 alternatives, examples:
+# 52.1234,-0.1234+300km
+# 52.1234,-0.1234,53.1234,-0.2345
+# london+50mi
+# berlin
+LOCATION_REGEX = re.compile(r"""
+        @(?:                    # loc regex starts with @
+        (?:                     # four floats separated by ,
+            ([+-]?\d+           # [0] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,
+            ([+-]?\d+           # [1] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,
+            ([+-]?\d+           # [2] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,
+            ([+-]?\d+           # [3] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+        )|(?:                   # or float,float+int and opt. a unit
+            ([+-]?\d+           # [4] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            ,\s*                # spaces because some people copy/paste
+            ([+-]?\d+           # [5] one or more digits
+                (?:\.\d*)?)     # optionally . or . and decimals
+            \+(\d+)             # [6] distance
+            (km|mi)?            # [7] optional unit
+        )|(?:                   # or a name, +, distance and opt. unit
+            (\w+)               # [8] name
+            \+(\d+)             # [9] distance
+            (km|mi)?            # [10] optional unit
+        )|(                     # or just a name
+            \w+                 # [11]
+        ))""", re.UNICODE | re.X )
 
 class EventManager( models.GeoManager ): # {{{1
     """ manager for deserialization.
@@ -2148,8 +2187,9 @@ class Filter( models.Model ): # {{{1
         (``yyyy-mm-dd`` or ``yyyy-mm-dd yyyy-mm-dd``), only related events with the
         same time are added.
 
-        If the query contains a group term (marked with ``!``) or a tag term
-        (marked with ``#``), no related events are added.
+        If the query contains a group term (marked with ``!``), a tag term
+        (marked with ``#``), or an event term (marked with ``=``) no related
+        events are added.
 
         If the query evaluates to False, an empty queryset (EmptyQuerySet) is
         returned.
@@ -2159,12 +2199,12 @@ class Filter( models.Model ): # {{{1
             return Event.objects.none()
         # TODO: return a queryset, not a list. See some ideas described in:
         # http://stackoverflow.com/questions/431628/how-to-combine-2-or-more-querysets-in-a-django-view
-        queryset = Filter.matches_queryset(query, user)
+        queryset = Filter.matches_queryset(query, user).distinct()
         # creates a list of
         # related events with no more than the length of queryset and combines
         # both
-        if related and ( query.find('!') == -1 ) and ( query.find('#') == -1 ) \
-                and ( len( queryset ) > 0 ) :
+        if related and not ( GROUP_REGEX.findall(query) or
+                TAG_REGEX.findall(query) or EVENT_REGEX.findall( query ) ):
             related_events = Filter.related_events( queryset, user, query )
             # chains both and sorts the result
             return sorted(
@@ -2178,6 +2218,8 @@ class Filter( models.Model ): # {{{1
         ``query``
         """
         limit = len ( queryset )
+        if limit < 1:
+            return Event.objects.none()
         # if the query has a location restriction, we save only related events
         # in the same location. Same applies for a time restriction
         constraint_query = u''
@@ -2235,7 +2277,10 @@ class Filter( models.Model ): # {{{1
         If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
         ``query`` is None or an empty string.
 
-        If ``query`` contains `` | `` strings, they are consider as logical ``or``.
+        If ``query`` contains `` | `` strings (space, pipe, space), they are
+        consider as logical ``or``.
+
+        The returned ``queryset`` can contain repeated events.
         """
         if not query:
             return Event.objects.none()
@@ -2250,50 +2295,27 @@ class Filter( models.Model ): # {{{1
                 user = None
         terms = query.split(' | ')
         query = terms[0]
-        # TODO: use the catche system for queries
+        # TODO: use the cache system for queries
         queryset = Event.objects.all()
+        # broad search check
+        broad_regex = re.compile(r'^\* +', UNICODE) # beginninig with * followed
+                                                    # by 1 ore more spaces
+        if broad_regex.match( query ):
+            broad = True
+            query = broad_regex.sub("", query)
+        else:
+            broad = False
+        # single events
+        for event_id in EVENT_REGEX.findall( query ):
+            queryset = queryset.filter( pk = event_id )
+        query = EVENT_REGEX.sub("", query)
         # groups
-        regex = re.compile('!(\w+)', UNICODE)
-        for group_name in regex.findall(query):
+        for group_name in GROUP_REGEX.findall(query):
             queryset = queryset.filter(
                     calendar__group__name__iexact = group_name)
-        query = regex.sub("", query)
+        query = GROUP_REGEX.sub("", query)
         # locations
-        # the regex start with @ and has 4 alternatives, examples:
-        # 52.1234,-0.1234+300km
-        # 52.1234,-0.1234,53.1234,-0.2345
-        # london+50mi
-        # berlin
-        regex = re.compile(r"""
-                @(?:                    # loc regex starts with @
-                (?:                     # four floats separated by ,
-                    ([+-]?\d+           # [0] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,
-                    ([+-]?\d+           # [1] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,
-                    ([+-]?\d+           # [2] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,
-                    ([+-]?\d+           # [3] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                )|(?:                   # or float,float+int and opt. a unit
-                    ([+-]?\d+           # [4] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    ,\s*                # spaces because some people copy/paste
-                    ([+-]?\d+           # [5] one or more digits
-                        (?:\.\d*)?)     # optionally . or . and decimals
-                    \+(\d+)             # [6] distance
-                    (km|mi)?            # [7] optional unit
-                )|(?:                   # or a name, +, distance and opt. unit
-                    (\w+)               # [8] name
-                    \+(\d+)             # [9] distance
-                    (km|mi)?            # [10] optional unit
-                )|(                     # or just a name
-                    \w+                 # [11]
-                ))""", re.UNICODE | re.X )
-        for loc in regex.findall(query):
+        for loc in LOCATION_REGEX.findall(query):
             if loc[11]:
                 # name given
                 queryset = queryset.filter(
@@ -2335,22 +2357,13 @@ class Filter( models.Model ): # {{{1
             else:
                 pass
                 # TODO: log error
-        query = regex.sub("", query)
+        query = LOCATION_REGEX.sub("", query)
         # tags
-        regex = re.compile('#(\w+)', UNICODE)
-        tags = regex.findall(query)
+        tags = TAG_REGEX.findall(query)
         if tags:
             queryset = TaggedItem.objects.get_intersection_by_model(
                     queryset, tags )
-        query = regex.sub("", query)
-        # broad search check
-        broad_regex = re.compile('^\* +', UNICODE) # beginninig with * followed
-                                                   # by 1 ore more spaces
-        if broad_regex.match( query ):
-            broad = True
-            query = broad_regex.sub("", query)
-        else:
-            broad = False
+        query = TAG_REGEX.sub("", query)
         # dates
         dates = DATE_REGEX.findall( query )
         if dates:
@@ -2373,7 +2386,7 @@ class Filter( models.Model ): # {{{1
             #         Q(start__gte = date) | Q(end__gte = date) |
             #         Q(deadlines__deadline__gte = date) )
         # look for words
-        regex = re.compile('([^!@#]\w+)', UNICODE)
+        regex = re.compile('(\w+)', UNICODE)
         for word in regex.findall(query):
             word = word.strip()
             if not broad:
