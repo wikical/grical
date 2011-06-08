@@ -980,16 +980,7 @@ def list_events_tag( request, tag ): # {{{1
     ...         kwargs={'tag': 'list-events-tag',})).status_code
     404
     """
-    query_tag = get_object_or_404( Tag, name = tag )
-    events = TaggedItem.objects.get_by_model( Event, query_tag )
-    events = events.order_by( '-start' ) # FIXME: order by next_date
-    return render_to_response( 'list_events_tag.html',
-            {
-                'title': _( "list by tag" ),
-                'events': events,
-                'tag': tag
-            },
-            context_instance = RequestContext( request ) )
+    return search( request, query = u'#' + tag )
 
 def list_events_location( request, location ): # {{{1
     """ returns a view with events having a location

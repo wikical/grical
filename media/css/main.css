@@ -82,7 +82,7 @@ h6 {
     -webkit-border-radius: 0.5em;
     -moz-border-radius: 0.5em;
     border: 1px gray solid;
-    background-color: darkgray;
+    background-color: #cde;
     color: black;
     text-decoration: none;
 }

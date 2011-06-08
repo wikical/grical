@@ -364,7 +364,7 @@ COORDINATES_REGEX = re.compile(
 # ['1234', '234', '34']
 EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', UNICODE)
 GROUP_REGEX = re.compile(r'(?:^|\s)!(\w+)\b', UNICODE)
-TAG_REGEX = re.compile(r'(?:^|\s)!(#w+)\b', UNICODE)
+TAG_REGEX = re.compile(r'(?:^|\s)#(\w+)\b', UNICODE)
 # the regex start with @ and has 4 alternatives, examples:
 # 52.1234,-0.1234+300km
 # 52.1234,-0.1234,53.1234,-0.2345
@@ -2308,6 +2308,7 @@ class Filter( models.Model ): # {{{1
         # single events
         for event_id in EVENT_REGEX.findall( query ):
             queryset = queryset.filter( pk = event_id )
+            broad = True # '=' show past events too
         query = EVENT_REGEX.sub("", query)
         # groups
         for group_name in GROUP_REGEX.findall(query):
