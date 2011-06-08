@@ -43,7 +43,8 @@ if not os.path.exists( settings.PIPE_TO_LOG_TO ):
 os.chmod( settings.PIPE_TO_LOG_TO, 0660 )
 os.chown( settings.PIPE_TO_LOG_TO, os.geteuid(), settings.PIPE_TO_LOG_TO_GID )
 # Create an IRC object
-irclib.DEBUG = settings.DEBUG
+# irclib.DEBUG = settings.DEBUG
+irclib.DEBUG = True
 irc = irclib.IRC()
 # Creates a irc server object, connects and joins the channel
 server = irc.server()
@@ -59,5 +60,5 @@ with open( settings.PIPE_TO_LOG_TO, 'r' ) as pipe:
         for line in pipe.readlines():
             if line and line.strip():
                 server.privmsg ( settings.IRC_CHANNEL, line )
-                time.sleep( 0.1 )
+            time.sleep( 0.5 )
         time.sleep( 1 )
