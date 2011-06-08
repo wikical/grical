@@ -48,8 +48,8 @@
     {% if event.get_tags %}
       <br />
       <span class="tags">
-          {% for tag in event.get_tags|slice:":10" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
-          <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a>&nbsp;</span>
+          {% for tag in event.get_tags|slice:":100" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
+              <span class="tag"><a href='{% url list_events_tag tag %}'>{{ tag }}</a>&nbsp;</span>
         {% endfor %}
       </span>
     {% endif %}
