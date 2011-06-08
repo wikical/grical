@@ -411,8 +411,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     postcode = models.CharField( _( u'Postcode' ), blank = True, null = True,
             max_length = 16 )
     address = models.CharField( _( u'Address' ), blank = True,
-            null = True, max_length = 100, # TODO: increase to 200
-            help_text = _( u'Complete address including city and country' ) )
+            null = True, max_length = 200,
+            help_text = _( u'Complete address including city and country. ' \
+                u'Example: Malmöer Str. 6, Berlin, DE' ) )
     coordinates = models.PointField( _('Coordinates'),
             editable = False, blank=True, null=True )
     """ used for calculating events within a distance to a point """
@@ -1033,8 +1034,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 else:
                     if re.match(r"[^\s]", line[0]):
                         raise ValidationError(_(
-                            "extra lines for %(field_name)s must start with " \
-                            + "identation") % {'field_name': current,})
+                            u"extra lines for %(field_name)s must start with " \
+                            u"identation") % {'field_name': current,})
                     lines.append(line)
                     continue
             if (not current) and not field_m:
@@ -1685,7 +1686,7 @@ class EventUrl( models.Model ): # {{{1
                 if urls.has_key( name ):
                     raise ValidationError(
                             _('found more than one url with the same name: ' \
-                                    '%(name)s') % {'name': name} )
+                                    u'%(name)s') % {'name': name} )
                 urls[name] = field_m.group(2)
         # we now check each url using django.core.validators for the fields of
         # this class
@@ -1743,15 +1744,19 @@ class EventDeadline( models.Model ): # {{{1
     natural_key.dependencies = ['events.event']
     
     def save( self, *args, **kwargs ): #{{{2
-        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
+        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` if
+        necessary"""
         # Call the "real" save() method:
         super( EventDeadline, self ).save( *args, **kwargs )
-        self.event.save() # needed to update Event.upcoming in the DB
+        if self.event.upcoming != self.event.next_coming_date_or_start():
+            self.event.save() # needed to update Event.upcoming in the DB
 
     def delete( self, *args, **kwargs ): #{{{2
-        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` """
+        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` if
+        necessary """
         super( EventDeadline, self ).delete( *args, **kwargs )
-        self.event.save() # needed to update Event.upcoming in the DB
+        if self.event.upcoming != self.event.next_coming_date_or_start():
+            self.event.save() # needed to update Event.upcoming in the DB
 
     def __unicode__( self ): # {{{2
         return unicode( self.deadline ) + u'    ' + self.deadline_name
@@ -1762,13 +1767,6 @@ class EventDeadline( models.Model ): # {{{1
                 deadline = self.deadline )
         new.save()
         return new
-
-    def save( self, *args, **kwargs ): #{{{3
-        """ Call the real 'save' function after updating :attr:`Event.upcoming`
-        """
-        # Call the "real" save() method:
-        super( EventDeadline, self ).save( *args, **kwargs )
-        self.event.save() # needed to update :attr:`Event.upcoming`
 
     @staticmethod # def get_deadlines( text ): {{{2
     def get_deadlines( text ):
@@ -1825,7 +1823,7 @@ class EventDeadline( models.Model ): # {{{1
                 name = field_m.group(4)
                 if deadlines.has_key( name ):
                     errors.append( _(u'the following deadline name appers ' \
-                            'more than one: %(name)s') % {'name': name} )
+                            u'more than one: %(name)s') % {'name': name} )
                 else:
                     try:
                         deadlines[ field_m.group(4) ] = datetime.date(
@@ -1833,8 +1831,8 @@ class EventDeadline( models.Model ): # {{{1
                                 int(field_m.group(3)))
                     except (TypeError, ValueError), e:
                         errors.append(
-                            _("The deadline '%(deadline_name)s' is not " \
-                                    "correct") % {'deadline_name':
+                            _(u"The deadline '%(deadline_name)s' is not " \
+                                    u"correct") % {'deadline_name':
                                         field_m.group(4),} )
         if errors:
             raise ValidationError( errors )
@@ -1963,7 +1961,7 @@ class EventSession( models.Model ): # {{{1
                 if sessions.has_key(name):
                     errors.append( 
                         _(u'the following session name appers more than once:' \
-                        ' %(name)s') % {'name': name} )
+                        u' %(name)s') % {'name': name} )
                 else:
                     try:
                         sessions[name] = Session(
@@ -2486,7 +2484,7 @@ class Group( models.Model ): # {{{1
             validators = [ RegexValidator(
                 re.compile(r'.*[^0-9].*'),
                 message = _(u'a group name must contain at least one ' \
-                        'character which is not a number') ) ] )
+                        u'character which is not a number') ) ] )
             # the validation above is needed in order to show an event with the
             # short url e.g. grical.org/1234
     description = models.TextField( _( u'Description' ) )
