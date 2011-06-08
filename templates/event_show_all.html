@@ -21,7 +21,7 @@
             <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
         {% endif %}
     </div>
-    <h1>{% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
+
     <div class="dates">
         {{ event.start }}
         {% if event.starttime %}
@@ -38,49 +38,48 @@
             {% endif %}
         {% endif %}
     </div>
-    {% if event.address or event.postcode or event.city or event.country %}
+
+    <div class="title">
+        {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
+    </div>
+
+    {% if event.address or event.postcode or event.city or event.country or event.coordinates %}
         <p>
             {% if event.address %}
                 {{ event.address }}
-                {% if event.postcode or event.city or event.country %}
-                    <br />
-                {% else %}
-                    {% if event.coordinates %}
-                        <br />
-                    {% endif %}
-                {% endif %}
             {% endif %}
             {% if event.postcode %}
-                {{ event.postcode }}{% if event.city or event.country %}, {% endif %}
+                &nbsp; &#8212; &nbsp;
+                {{ event.postcode }}
             {% endif %}
             {% if event.city %}
+                &nbsp; &#8212; &nbsp;
                 {# <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst }}</a> #}
                 {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
-                <span class="field_city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>{% if event.country %}, {% endif %}
+                <span class="field_city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>
             {% endif %}
             {% if event.country %}
+                &nbsp; &#8212; &nbsp;
                 <span class="field_country">
                     {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
                     <a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>
                 </span>
             {% endif %}
-        </p>
-    {% endif %}
-    {% if event.coordinates %}
-        <p>
-            {{ event.coordinates.y }}, {{ event.coordinates.x }}
-            ( <a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
-            <a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a> )
+            {% if event.coordinates %}
+                &nbsp; &#8212; &nbsp;
+                {{ event.coordinates.y }}, {{ event.coordinates.x }}
+                ( <a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
+                <a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a> )
+            {% endif %}
         </p>
     {% endif %}
 
     {% if event.get_tags %}
-        <h2>{% trans "Tags" %}</h2>
-        <ul>
+        <p class='tags'>
             {% for tag in event.get_tags %}
-                <li><a href="{% url list_events_tag tag %}">{{ tag }}</a></li>
+                <a href="{% url list_events_tag tag %}">{{ tag }}</a>
             {% endfor %}
-        </ul>
+        </p>
     {% endif %}
 
     {% if event.recurrence or event.instances.count > 0 %}{# is part of a serie as intermediate instance OR is master of a serie #}
@@ -103,7 +102,6 @@
     {% endif %}
 
     {% if event.urls.all %}
-        <h2>{% trans "URLs" %}</h2>
         <ul>
             {% for url in event.urls.all %}
                 <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
@@ -112,7 +110,6 @@
     {% endif %}
 
     {% if event.deadlines.all %}
-        <h2>{% trans "Deadlines" %}</h2>
         <table>
             {% for deadline in event.deadlines.all %}
                 <tr>
@@ -123,7 +120,6 @@
     {% endif %}
             
     {% if event.sessions.all %}
-        <h2> {% trans "Sessions" %} </h2>
         <table>
             {% for session in event.sessions.all %}
                 <tr>
@@ -136,14 +132,20 @@
     {% endif %}
 
     {% if event.description %}
-        <h2>{% trans "Description" %}</h2>
-        <div class="description">
+        <fieldset>
+        <legend>{% trans "Description" %}</legend>
+            {{ rst2html|safe }}
+        </fieldset>
+        {% comment %}
+        {% if rst2html %}
+            {{ rst2html }}
+        {% else %}
             {{ event.description|escape|linebreaksbr|urlize }}
-        </div>
+        {% endif %}
+        {% endcomment %}
     {% endif %}
 
     {% if event.coordinates %}
-        <h2>{% trans "Map" %}</h2>
         {% comment %}FIXME: if the window of the browser is too small, the map breaks
         everything. Solution: check with JavaScript the size of the window and reduce the map
         accordingly. Note: the size is given in main.css currently {% endcomment %}
@@ -190,7 +192,7 @@
         <h2>{% trans "Comments" %}</h2>
         {% render_comment_list for event %}
     {% endif %}
-    <h2>{% trans "Post a comment" %}</h2>
+    <h2>{% trans "Comments" %}</h2>
     {% render_comment_form for event %}
 
 </div>
