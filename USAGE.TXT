@@ -1,0 +1,186 @@
+.. Topic:: Help.
+
+    This page summarizes how to use this site.
+
+.. contents:: Contents:
+
+
+Introduction
+------------
+
+**Grid Calendar** (abbreviated as **grical**), is an open web where people store
+quickly a few information about interesting events, so that others can also
+easily know about them. Grical makes easy and fast for its users to get
+notified and store interesting events in its own external calendars.
+
+Grical offers its **content as free content**  allowing its reuse by any party under the
+conditions of the `CC-BY-SA license`_. Its source code is `Free Software`_ and
+thus respects the `Open Knowledge Definition`_ and the
+`Open Software Service Definition`_ of the `Open Knowledge Foundation`_.
+
+Events in Grical can be edited by anyone like pages of the Wikipedia_. You can
+*subscribe* to an event (or to the result of filters) to get notified of any
+change, comment, or new event matching a filter.
+
+.. _Wikipedia: http://en.wikipedia.org/wiki/Help:About
+.. _CC-BY-SA license: http://creativecommons.org/licenses/by-sa/3.0/
+.. _Free Software: http://en.wikipedia.org/wiki/Free_software
+.. _Open Knowledge Definition: http://www.opendefinition.org/okd
+.. _Open Software Service Definition: http://www.opendefinition.org/ossd
+.. _Open Knowledge Foundation: http://okfn.org/
+
+
+Groups
+------
+
+Grical has groups. A group consist of some users and events. When an event is
+public, comments and modifications of the event can be seen by anyone,
+otherwise only by the members of the group. When a private event is added to a
+group, a clone (i.e. a deep copy) of the event is created an attached to the
+group. This means that a private event can have only one group.
+
+
+Events as text
+--------------
+
+Events can be submitted per email to ``event ät gridmind.org``. The subject of the email is ignored.
+Example of the body of an email::
+
+    title: GridCalendar presentation
+    start: 2010-12-29
+    tags: calendar software open-source gridmind gridcalendar
+    web: http://example.com
+
+You can optionally include more data in the submission. Example::
+
+    acronym: GriCal
+    title: GridCalendar presentation
+    start: 2010-12-29
+    starttime: 10:00
+    end: 2010-12-30
+    endtime: 18:00
+    tags: calendar software open-source gridmind gridcalendar
+    urls:
+        code    http://example.com
+        web    http://example.com
+    address: Gleimstr. 6
+    postcode: 10439
+    city: Berlin
+    country: DE
+    coordinates: 52.55247, 13.40364
+    deadlines:
+        2009-11-01    visitor tickets
+        2010-10-01    call for papers
+    timezone: 60
+    sessions:
+        2010-12-29    10:00-11:00    first presentation
+        2010-12-29    15:00-16:00    second presentation
+        2010-12-30    15:00-16:00    third presentation
+    description:
+
+    GridCalendar will be presented
+
+The field ``description`` must be the last one and its content can contain multiple lines. If the
+content is in valid ReStructuredText__ syntax, it will be rendered accordingly.
+
+__ http://en.wikipedia.org/wiki/ReStructuredText
+
+
+Searches and filters
+--------------------
+
+- searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and ``country``
+- all given words must appear in at least one of the fields
+- search results contain also related events (with similar tags), unless one or more of the special search options are used (see bellow)
+- one or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the the oldest to the newest, or to one day if there is only one date
+- If there is no date in the query only future events are showed
+- Single words are looked up in the fields ``title``, ``tags``, ``city``, ``country`` and ``acronym``
+- Tags ( ``#tag_name`` ) restricts the query to events with these tags
+- Groups ( ``!group_name`` ) restricts the query to events of the groups
+- Searches starting with an asterisk and one space makes the search broader, including past events
+  (if no dates are specified), text in the description, urls (name and url), sessions (name) and deadlines (name)
+- Locations restricts the query to events within the given location. There are four possibilities. When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
+  
+  - giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``
+  - giving the name of a place and a distance. ``@london+100`` would look 100
+    kilometers arround the center of the most relevant place with the name ``london`` (being it London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most relevant city with the name London in Canada).
+  - giving a coordinate and a distance ( ``@52.55247,13.40364+500km`` )
+  - giving four coordinates defining a rectangle: longitude_west,
+    longitude_east, latitude_north, latitude_south. Example: ``@13.324,13.463,52.5503,52.4701``
+
+- Any search can be saved as a filter by logged-in users. To be able to logg-in
+  you need to register. A confirmation email will be sent in the proccess.
+
+- You can select to get notified of new events matching one of your filters.
+
+- The result of searches also have a `RSS feed`_ which can be subscribed even
+  by non-logged-in users.
+
+- The result of searches also have an `iCalendar file`_ which can be imported in
+  external calendars.
+
+- Both the `RSS feed`_ and the `iCalendar file`_ will contain in the future new
+  events.
+
+.. _RSS feed: http://en.wikipedia.org/wiki/Rss
+.. _iCalendar File: http://en.wikipedia.org/wiki/ICalendar
+
+
+Event history and event deletions
+---------------------------------
+
+Since events can be modified by anyone, including anonymous (not logged-in)
+users, Grical stores (remembers) all revisions (states) of events. All
+revisions of an event is called history, like the history of an entry in the
+Wikipedia.
+
+Only logged-in users can delete or revert an event to a previous revision.
+
+When an event is deleted, it is possible to indicate another event containing
+the information of the deleted event. Users trying to access the deleted event
+will be then redirected to the other one.
+
+
+API
+---
+
+Grical content can be integrated in external pages. See `the wiki page about our API`__
+
+__ http://code.grical.org/wiki/OnAPI
+
+
+GriCalDroid (Android App)
+-------------------------
+
+We have an Android__ App that displays upcoming events from GriCal on an OSM__ map.
+
+__ http://en.wikipedia.org/wiki/Android_(operating_system)
+__ http://en.wikipedia.org/wiki/OpenStreetMap
+
+
+To use GriCalDroid, follow the next steps:
+
+- `Download GriCalDroid`__ to your phone and install it.
+
+.. image:: http:/m/GriCalDroid_url_qrcode.png
+
+__ http:/m/GriCalDroid.apk
+
+- Download into your phone one or more of `the maps available`__.
+
+.. image:: http:/m/maps_of_mapsforge_url_qrcode.png
+
+__ ftp://ftp.mapsforge.org/
+
+- Activate them in the settings of GriCalDroid.
+
+
+More help
+---------
+
+If you need more help, you can contact our mailing list at ``grical ät gridmind.org`` or try our IRC
+(`what is IRC?`_) channel `irc://irc.freenode.net/calendar`__
+
+__ irc://irc.freenode.net/calendar
+
+.. _what is IRC?: http://en.wikipedia.org/wiki/Internet_Relay_Chat

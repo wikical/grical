@@ -1,0 +1,68 @@
+{% load i18n %}
+{% load event_tags %}
+
+<div class="event_medium">
+  <div class="content">
+    <span class="ical_logo">
+      <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+    </span>
+    &nbsp;&nbsp;
+    <span class="title">
+        <a href="{% url event_show_all event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
+    </span>
+    <br />
+
+    <span class="dates">
+    {{ event.start }}
+    {% if event.end and event.end != event.start %}
+        : {{ event.end }}
+        </span>
+    {% else %}
+        {% if event.starttime %}
+            </span>
+            {% if event.endtime and event.endtime != event.starttime %}
+                <span class="times">{{ event.starttime|time:"H:i" }}-{{ event.endtime|time:"H:i" }}</span>
+            {% else %}
+                <span class="times">{{ event.starttime|time:"H:i" }}</span>
+            {% endif %}
+        {% else %}
+            </span>
+        {% endif %}
+    {% endif %}
+
+    {% if event.city %}
+        <span class="city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>
+    {% endif %}
+    {% if event.country %}
+      <span class="country">
+        (<a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>)
+      </span>
+    {% endif %}
+    {% if event.upcoming != event.start and event.upcoming != event.end %}
+      <br />
+      <span class="deadline">
+          {{ event.upcoming }}
+      </span>
+      {{ event.next_deadline_names }}
+    {% endif %}
+    {% if event.get_tags %}
+      <br />
+      <span class="tags">
+          {% for tag in event.get_tags|slice:":10" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
+          <span class="tag"><a href="/t/{{ tag }}/">{{ tag }}</a>&nbsp;</span>
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
+  <div class="options">
+    <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+    &nbsp;|&nbsp;
+    <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
+    &nbsp;|&nbsp;
+    {% show_add_to_group %}
+    {% if user.is_authenticated %}
+        &nbsp;|&nbsp;
+        <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+    {% endif %}
+  </div>
+</div>

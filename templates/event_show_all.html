@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load event_tags %} 
+{% load comments %}
+{% block container %}
+<div class="event_full">
+
+    <div class="options">
+        <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+        &nbsp;|&nbsp;
+        <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+        &nbsp;|&nbsp;
+        <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+        &nbsp;|&nbsp;
+        <a href="{% url event_history event.id %}">{% trans "history" %}</a>
+        &nbsp;|&nbsp;
+        {% show_add_to_group %}
+        {% if user.is_authenticated %}
+            &nbsp;|&nbsp;
+            <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+        {% endif %}
+    </div>
+    <h1>{% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
+    <div class="dates">
+        {{ event.start }}
+        {% if event.starttime %}
+            <span class="times">
+                {{ event.starttime|time }}{% if event.endtime %}{% if not event.end or event.start == event.end %}-{{ event.endtime|time }}{% endif %}{% endif %}
+            </span>
+        {% endif %}
+        {% if event.end and not event.start == event.end %}
+            : {{ event.end }}
+            {% if event.endtime %}
+                <span class="times">
+                    {{ event.endtime|time }}
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% if event.address or event.postcode or event.city or event.country %}
+        <p>
+            {% if event.address %}
+                {{ event.address }}
+                {% if event.postcode or event.city or event.country %}
+                    <br />
+                {% else %}
+                    {% if event.coordinates %}
+                        <br />
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            {% if event.postcode %}
+                {{ event.postcode }}{% if event.city or event.country %}, {% endif %}
+            {% endif %}
+            {% if event.city %}
+                {# <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst }}</a> #}
+                {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
+                <span class="field_city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>{% if event.country %}, {% endif %}
+            {% endif %}
+            {% if event.country %}
+                <span class="field_country">
+                    {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
+                    <a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>
+                </span>
+            {% endif %}
+        </p>
+    {% endif %}
+    {% if event.coordinates %}
+        <p>
+            {{ event.coordinates.y }}, {{ event.coordinates.x }}
+            ( <a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
+            <a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a> )
+        </p>
+    {% endif %}
+
+    {% if event.get_tags %}
+        <h2>{% trans "Tags" %}</h2>
+        <ul>
+            {% for tag in event.get_tags %}
+                <li><a href="{% url list_events_tag tag %}">{{ tag }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if event.recurrence or event.instances.count > 0 %}{# is part of a serie as intermediate instance OR is master of a serie #}
+        <h2>{% trans "Other events in the serie" %}</h2>
+        {% if event.recurrence %}
+            {% for event in event.recurrence.master.instances.all %}
+                {# FIXME: show private events that the user can see #}
+                {% if event.public %}
+                    <p>{% include "event_show_small.html" %}</p>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {% for event in event.instances %}
+                {# FIXME: show private events that the user can see #}
+                {% if event.public %}
+                    <p>{% include "event_show_small.html" %}</p>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+
+    {% if event.urls.all %}
+        <h2>{% trans "URLs" %}</h2>
+        <ul>
+            {% for url in event.urls.all %}
+                <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if event.deadlines.all %}
+        <h2>{% trans "Deadlines" %}</h2>
+        <table>
+            {% for deadline in event.deadlines.all %}
+                <tr>
+                    <td>{{ deadline.deadline }}</td><td>{{ deadline.deadline_name|escape }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+            
+    {% if event.sessions.all %}
+        <h2> {% trans "Sessions" %} </h2>
+        <table>
+            {% for session in event.sessions.all %}
+                <tr>
+                    <td>{{ session.session_date }}</td>
+                    <td>{{ session.session_starttime|time:"H:i" }} - {{ session.session_endtime|time:"H:i" }}</td>
+                    <td>{{ session.session_name|escape }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    {% if event.description %}
+        <h2>{% trans "Description" %}</h2>
+        <div class="description">
+            {{ event.description|escape|linebreaksbr|urlize }}
+        </div>
+    {% endif %}
+
+    {% if event.coordinates %}
+        <h2>{% trans "Map" %}</h2>
+        {% comment %}FIXME: if the window of the browser is too small, the map breaks
+        everything. Solution: check with JavaScript the size of the window and reduce the map
+        accordingly. Note: the size is given in main.css currently {% endcomment %}
+        <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
+        <div id="map" class="smallmap"></div>
+        <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <!-- <script type="text/javascript" src="{{ MEDIA_URL }}js/OpenLayers.js"></script> -->
+        <script defer="defer" type="text/javascript">
+            function marker( lon, lat, image ) {
+                return new OpenLayers.Marker(
+                    new OpenLayers.LonLat( lon, lat ).transform(
+                        new OpenLayers.Projection( "EPSG:4326" ),
+                        map.getProjectionObject()
+                    ),
+                    new OpenLayers.Icon( image, new OpenLayers.Size( 32, 32 ), new OpenLayers.Pixel( -16, -16 ) )
+                );
+            }
+            map = new OpenLayers.Map( "map", {
+                    controls:[
+                        new OpenLayers.Control.Navigation(),
+                        new OpenLayers.Control.PanZoomBar(),
+                        new OpenLayers.Control.LayerSwitcher(),
+                        new OpenLayers.Control.Attribution()],
+                    projection: new OpenLayers.Projection( "EPSG:900913" ),
+                    displayProjection: new OpenLayers.Projection( "EPSG:4326" )
+            } );
+            map.addLayer( new OpenLayers.Layer.OSM() );
+            var pois = new OpenLayers.Layer.Markers( "{% trans "Marker" %}" );
+            //These lines should be a list automatically generated by Django
+            pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }}, "{{ MEDIA_URL }}marker_red.png" ) );
+            map.addLayer( pois );
+            mapArea = pois.getDataExtent().toArray();
+            // map.zoomToMaxExtent();
+            map.setCenter (
+                new OpenLayers.LonLat( ( mapArea[0] + mapArea[2]) /2, ( mapArea[1] + mapArea[3] ) /2 ),
+                map.getZoomForExtent( pois.getDataExtent(), true ) -1
+            );
+        </script>
+    {% endif %}
+
+    {# comments #}
+    {% get_comment_count for event as comment_count %}
+    {% if comment_count > 0 %}
+        <h2>{% trans "Comments" %}</h2>
+        {% render_comment_list for event %}
+    {% endif %}
+    <h2>{% trans "Post a comment" %}</h2>
+    {% render_comment_form for event %}
+
+</div>
+{% endblock %}

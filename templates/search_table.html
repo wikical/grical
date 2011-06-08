@@ -1,0 +1,48 @@
+{% load i18n %}
+<table class="event_table">
+    <colgroup> {# see http://www.w3.org/TR/html4/struct/tables.html#h-11.2.4 #}
+        {% for column in events_table.columns %}
+            <col class="col_{{ column.name }}" />
+        {% endfor %}
+    </colgroup>
+    <tr>
+        {% for column in events_table.columns %}
+            <th class="header_for_{{ column.name }}">
+                <a href="?sort={{ column.name_toggled }}">
+                   {{ column }}
+                   {# TODO #}
+                   {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
+                   {# {% if column.is_ordered_reverse %}<img src="/media/img/down.gif" />{% endif %} #}
+                </a>
+            </th>
+        {% endfor %}
+    </tr>
+    {% for event in events_table.rows.page %}
+        <tr class="{% cycle 'odd' 'even' %}">
+            <td>{{ event.upcoming }}</td>
+            <td>{{ event.start }}</td>
+            <td>{% if event.city %}{{ event.city }}{% endif %}</td>
+            <td>{% if event.country %}{{ event.country }}{% endif %}</td>
+            <td><a href="{% url event_show_all event.id %}">{{ event.title }}</a></td>
+            <td>{% if event.tags %} {{ event.tags }}{% endif %}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<div id="pagination_bottom" class="pagination">
+    {% if events_table.page.has_previous %}
+        <span class="step_left">
+            <a href="?sort={{sort_param}}&page={{ events_table.page.previous_page_number }}">{% trans "previous" %}</a>
+        </span>
+    {% endif %}
+    <span class="current">
+        {% blocktrans with events_table.page.number as number and events_table.paginator.num_pages as num_pages %}
+            Page {{ number }} of {{ num_pages }}.
+        {% endblocktrans %}
+    </span>
+    {% if events_table.page.has_next %}
+        <span class="step_right">
+            <a href="?sort={{ sort }}&page={{ events_table.page.next_page_number }}">{% trans "next" %}</a>
+        </span>
+    {% endif %}
+</div>

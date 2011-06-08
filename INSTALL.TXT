@@ -1,0 +1,212 @@
+.. This file is written in ReStructuredText and used to generate the content of some web pages
+.. vim:ft=rst
+
+Installation instructions for Debian based systems
+==================================================
+
+#. To get the development files::
+
+   cd /usr/local/
+   hg clone http://gridcalendar.net:8001 gridcalendar
+
+  You can then update your local copy with the newest changes anytime with the commands::
+
+   hg pull
+   hg update
+
+#. Install the following packages and their dependencies: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools python-gdal python-yaml postgresql-8.4 python-psycopg2 postgresql-8.4-postgis libgeos-c1``
+
+    - python-django must be at least Version 1.3
+    - python-django-reversion must be compatible with Django 1.3, see
+      https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
+
+#. Install ``django-tables``::
+
+    easy_install django-tables
+
+#. Install the `proper version of django-reversion`__ for the installed Django version.
+
+__ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
+
+    #. If you have already a database running and have some data or you import data e.g. with
+       ``manage.py loadata``, you should create manually a first revision, for this issue the
+       commands::
+
+        ./manage.py createinitialrevisions
+        ./manage.py createrevisioninfo
+
+#. GriCal can log into an IRC channel. To use the IRC logger, install ``python-irclib``.
+Configure the appropiate parameters in ``settings_local.py``. When GriCal is running, you can start
+the IRC logger with::
+
+    ./manage.py irclogger
+
+#. If you want to be able to locate cities by the user's IPs, you need to install the data base of
+   Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
+   Using this data improves the front page, search results and the introduction of addresses of events.
+   You can install it following the steps::
+    
+    cd /usr/share/GeoIP
+    wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+    gzip -d GeoLiteCity.dat.gz
+
+#. Create and edit ``settings_local.py`` (see as example ``settings_local.py.example``)
+
+#. If you want to develop GridCalendar:
+   
+   #. Install ``python-django-debug-toolbar``, ``python-profiler``,
+      ``python-webtest`` and ``django-webtest``. webtest version 1.3 is needed for
+      Django 1.3. As root::
+
+          aptitude install python-django-debug-toolbar python-webtest python-profiler
+          easy_install django-webtest
+
+      If you have an old version of django-webtest already installed::
+
+          easy_install --upgrade django-webtest
+
+   #. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the
+      IP(s) you use when developing. Example::
+
+          DEBUG = True
+          INTERNAL_IPS = ('127.0.0.1',)
+
+   #. You can run a web test server with ``python manage.py testserver``
+
+   #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
+      could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
+
+#. It is needed to run a command each day at 00:01 (just after midnight), which will update a field
+in the database (Event.upcoming) which is needed for sorting the events and finding events in the
+future. This is necessary for performance and scalability reasons. Add to your cron file::
+
+   cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py updateupcoming
+
+#. To parse events submitted as emails to an imap server, add to a cron file::
+
+   cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
+
+#. For Apache as the webserver
+   
+    #. Install Apache and the package ``libapache2-mod-wsgi``
+      
+    #. For an Apache Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
+
+        <VirtualHost *:80>
+            ServerName gridcalendar.net
+            ServerAlias www.gridcalendar.net
+            DocumentRoot /var/www/gridcalendar.net
+            ServerAdmin admin@example.com
+        
+            # Logfiles:
+            CustomLog /var/log/apache2/gridcalendar.net.log combined
+            ErrorLog /var/log/apache2/gridcalendar.net.error.log
+            LogLevel warn
+         
+            Alias /robots.txt /var/www/gridcalendar.net/robots.txt
+            Alias /m/ /var/www/gridcalendar.net/m/
+            Alias /favicon.ico /var/www/gridcalendar.net/m/favicon.ico
+
+            WSGIScriptAlias / /usr/local/gridcalendar/apache/django.wsgi
+        
+        </VirtualHost>
+
+    #. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and make sure Apache can read it::
+
+        ln -s /usr/local/gridcalendar/media /var/www/gridcalendar.net/m/
+
+    #. The same for ``favicon.ico``::
+
+        ln -s /usr/local/gridcalendar/media/favicon.ico /var/www/gridcalendar.net/favicon.ico
+
+    #. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+
+#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
+
+        MaxRequestsPerChild 1
+   
+#. configuring postgresql:
+   
+    #. as root edit your ``/etc/postgresql/8.4/main/pg_hba.conf`` file to include the line: ``local all gridcalendar md5``
+
+    #. reload the configuration: ``killall -HUP postgres``
+
+    #. as user ``postgres`` download and execute the script `create_template_postgis-debian.sh` and
+    run it::
+
+        su postgres
+        cd ~
+        wget http://docs.djangoproject.com/en/1.3/_downloads/create_template_postgis-debian.sh
+        chmod +x create_template_postgis-debian.sh
+        ./create_template_postgis-debian.sh
+
+    #. create the GridCalendar ``postgres`` user with a password. If you intend to develop Grid
+    Calendar, allow him to create databases. Example on the command line::
+
+        su postgres
+        createuser --pwprompt gridcalendar
+        Enter password for new role: xxx
+        Enter it again: xxx
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) y
+        Shall the new role be allowed to create more new roles? (y/n) n
+
+    #. create the gridcalendar database (use the same password as before)::
+
+        createdb -U gridcalendar -O gridcalendar --password -T template_postgis gridcalendar
+
+    #. modify settings_local.py to use postgresql. Example::
+
+        DATABASES = {  
+            'default': {  
+                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                 'NAME': 'gridcalendar',
+                 'USER': 'gridcalendar',           
+                 'PASSWORD': 'a_password',
+             }
+        }
+
+    #. Make Django create the needed database tables. In the proccess you can create a superuser::
+
+        $ cd /usr/local/gridcalendar/
+        $ python manage.py syncdb
+        ...
+        You just installed Django's auth system, which means you don't have any superusers defined.
+        Would you like to create one now? (yes/no): no
+        ...
+
+    #. Configure the ``django_site`` table. **Important note**: the first entry in this table is
+       used when sending emails, e.g. by ``events/management/commands/imap.py``
+       which can be used by a cronjob to read and reply emails (see above). As root you can update the table with::
+
+        su postgre
+        psql gridcalendar
+        update django_site set domain='gridcalendar.net' where id=1 ;
+        update django_site set name='Grid Calendar' where id=1 ;
+
+#. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
+   of it.
+
+    #. Group invitations are sent with the sender (``from`` header) set to the user
+       ``group-invitation`` and the host provided by the setting ``DEFAULT_FROM_EMAIL``
+ 
+#. **Graph of the data base**: To generate a graph of the data base::
+
+    cd /usr/local/gridcalendar/
+    aptitude install graphviz ttf-liberation
+    wget http://djangosnippets.org/snippets/1168/download/
+    export PYTHONPATH="/home/hg/gridcalendar:/home/hg/"
+    export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+    python graph_db.py events | dot -Tpng -o media/graph_db.png
+
+#. Dates and times with **leading and/or trailing spaces in web forms**. At this time (Tue May 3
+   21:38:28 CEST 2011) there is an open ticket (`#6362`_) for it in Django. Several approaches (like
+   `snippet 656`_) don't work for ModelForms used with ``inlineformset_factory`` (probably a Django
+   bug). Until `#6362`_ is fixed, you can modify
+   ``/usr/lib/pymodules/python2.6/django/forms/fields.py`` and add in the body of the function
+   ``to_python`` of ``DateField`` and ``TimeField``::
+
+        if hasattr(value, 'strip'): value = value.strip()
+
+.. _#6362: http://code.djangoproject.com/ticket/6362
+.. _snippet 656: http://www.djangosnippets.org/snippets/956/

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load humanize %}
+
+{% block container %}
+
+<h1>{% trans "Deleted event" %}</h1>
+<p>
+    {% blocktrans with revision.date_created.date as date and revision.date_created.time as time and revisioninfo.reason as reason %}
+        The following event was deleted {{ date }} at {{ time }} by {{ username }} given as reason: {{ reason }}.
+    {% endblocktrans %}
+    <pre>
+{{ revisioninfo.as_text }}
+    </pre>
+</p>
+
+<p>
+{% if USER.is_authenticated %}
+    <a href="{% url event_undelete event_id %}">{% trans 'You can undelete it.' %}</a>
+{% else %}
+    {% trans "If you were logged-in, you could undelete this event" %}
+{% endif %}
+</p>
+
+{% endblock %}
+

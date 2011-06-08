@@ -1,0 +1,12 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ DOMAIN }} {% trans " site admin" %}{% endblock %}
+
+{% block branding %}
+<a href="{% url main %}"><img src="{{ MEDIA_URL }}gridcalendar-logo-small.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
+<h1 id="site-name">{{ DOMAIN }}  -  {% trans "Administrative Interface" %}</h1>
+<h3 style="color:black"> {{ VERSION }}</h3>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
