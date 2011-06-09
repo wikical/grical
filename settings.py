@@ -315,10 +315,12 @@ except NameError:
 
 # field names and synonyms/translations
 SYNONYMS = (
-    ( u'title', u'title' ),             # title
+    ( u'title', u'title' ),             # title `
+    ( u'`', u'title' ),
     ( u'ti', u'title' ),
     ( u'titl', u'title' ),
-    ( u'start', u'start' ),             # start
+    ( u'start', u'start' ),             # start [
+    ( u'[', u'start' ),
     ( u'st', u'start' ),
     ( u'starts', u'start' ),
     ( u'date', u'start' ),
@@ -327,22 +329,26 @@ SYNONYMS = (
     ( u'start-date', u'start' ),
     ( u'start_date', u'start' ),
     ( u'sd', u'start' ),
-    ( u'starttime', u'starttime' ),     # starttime
+    ( u'starttime', u'starttime' ),     # starttime {
+    ( u'{', u'starttime' ),
     ( u'time', u'starttime' ),
     ( u'start_time', u'starttime' ),
     ( u'start time', u'starttime' ),
     ( u'startime', u'starttime' ),
-    ( u'endtime', u'endtime' ),         # endtime
+    ( u'endtime', u'endtime' ),         # endtime }
+    ( u'}', u'endtime' ),
     ( u'end_time', u'endtime' ),
     ( u'end time', u'endtime' ),
-    ( u'tags', u'tags' ),               # tags
+    ( u'tags', u'tags' ),               # tags #
+    ( u'#', u'tags' ),
     ( u'ta', u'tags' ),
     ( u'tag', u'tags' ),
     ( u'subjects', u'tags' ),
     ( u'subject', u'tags' ),
     ( u'su', u'tags' ),
     ( u'subj', u'tags' ),
-    ( u'end', u'end' ),                 # end
+    ( u'end', u'end' ),                 # end ]
+    ( u']', u'end' ),
     ( u'en', u'end' ),
     ( u'ends', u'end' ),
     ( u'finish', u'end' ),
@@ -354,55 +360,66 @@ SYNONYMS = (
     ( u'end_date', u'end' ),
     ( u'ed', u'end' ),
     ( u'endd', u'end' ),
-    ( u'acronym', u'acronym' ),         # acronym
+    ( u'acronym', u'acronym' ),         # acronym ^
+    ( u'^', u'acronym' ),
     ( u'ac', u'acronym' ),
     ( u'acro', u'acronym' ),
-    ( u'country', u'country' ),         # country
+    ( u'country', u'country' ),         # country \
+    ( u'\\', u'country' ),
     ( u'co', u'country' ),
     ( u'coun', u'country' ),
     ( u'nation', u'country' ),
     ( u'nati', u'country' ),
     ( u'na', u'country' ),
-    ( u'city', u'city' ),               # city
+    ( u'city', u'city' ),               # city /
+    ( u'/', u'city' ),
     ( u'ci', u'city' ),
     ( u'town', u'city' ),
     ( u'to', u'city' ),
-    ( u'postcode', u'postcode' ),       # postcode
+    ( u'postcode', u'postcode' ),       # postcode .
+    ( u'.', u'postcode' ),
     ( u'po', u'postcode' ),
     ( u'zip', u'postcode' ),
     ( u'zi', u'postcode' ),
     ( u'code', u'postcode' ),
-    ( u'address', u'address' ),         # address
+    ( u'address', u'address' ),         # address ,
+    ( u',', u'address' ),
     ( u'ad', u'address' ),
     ( u'addr', u'address' ),
     ( u'street', u'address' ),
-    ( u'coordinates', u'coordinates' ), # coordinates
+    ( u'coordinates', u'coordinates' ), # coordinates |
+    ( u'|', u'coordinates' ),
     ( u'point', u'coordinates' ),
     ( u'points', u'coordinates' ),
     ( u'coordinate', u'coordinates' ),
     ( u'coor', u'coordinates' ),
     ( u'coo', u'coordinates' ),
     ( u'position', u'coordinates' ),
-    ( u'description', u'description' ), # description
+    ( u'description', u'description' ), # description %
+    ( u'%', u'description' ),
     ( u'de', u'description' ),
     ( u'desc', u'description' ),
     ( u'des', u'description' ),
     ( u'info', u'description' ),
     ( u'infos', u'description' ),
     ( u'in', u'description' ),
-    ( u'urls', u'urls' ),               # urls (*),
+    ( u'urls', u'urls' ),               # urls _ (*)
+    ( u'_', u'urls' ),
     ( u'ur', u'urls' ),
     ( u'url', u'urls' ),
     ( u'web', u'urls' ),
     ( u'webs', u'urls' ),
     ( u'we', u'urls' ),
-    ( u'deadlines', u'deadlines' ),     # deadlines (*),
+    ( u'deadlines', u'deadlines' ),     # deadlines ; (*)
+    ( u';', u'deadlines' ),
     ( u'deadline', u'deadlines' ),
     ( u'dl', u'deadlines' ),
-    ( u'sessions', u'sessions' ),       # sessions (*),
+    ( u'sessions', u'sessions' ),       # sessions ? (*),
+    ( u'?', u'sessions' ),
     ( u'se', u'sessions' ),
     ( u'session', u'sessions' ),
-    ( u'recurring', u'recurring' ),     # recurring (*),
+    ( u'recurring', u'recurring' ),     # recurring : (*),
+    ( u':', u'recurring' ),
     ( u'clone', u'recurring' ),
     ( u'clones', u'recurring' ),
     ( u'dates', u'recurring' ),

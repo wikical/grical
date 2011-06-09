@@ -46,12 +46,11 @@
       {{ event.next_deadline_names }}
     {% endif %}
     {% if event.get_tags %}
-      <br />
-      <span class="tags">
+      <div class="tags">
           {% for tag in event.get_tags|slice:":100" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
               <span class="tag"><a href='{% url list_events_tag tag %}'>{{ tag }}</a>&nbsp;</span>
         {% endfor %}
-      </span>
+      </div>
     {% endif %}
   </div>
   <div class="options">

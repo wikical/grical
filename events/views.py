@@ -27,6 +27,7 @@
 # imports {{{1
 import datetime
 from docutils import core
+from docutils import ApplicationError
 from docutils.parsers.rst import roles, nodes
 from docutils.parsers.rst.roles import set_classes
 from docutils.writers.html4css1 import Writer
@@ -379,16 +380,28 @@ def event_show_all( request, event_id ): # {{{1
                 prb = inliner.problematic(rawtext, rawtext, msg)
                 return [prb], [msg]
             set_classes( options )
-            node = nodes.reference( rawtext, event.title,
+            node = nodes.reference( rawtext, referentiated_event.title,
                     refuri = referentiated_event.get_absolute_url(),
                     **options )
             return [node], []
         roles.register_local_role('e', event_reference_role)
-        rst2html = core.publish_parts(
-            source = event.description,
-            writer = Writer(),
-            settings_overrides = {'input_encoding': 'unicode', 'output_encoding': 'unicode'},
-            )['html_body']
+        try:
+            rst2html = core.publish_parts(
+                source = event.description,
+                writer = Writer(),
+                settings_overrides = {'input_encoding': 'unicode', 'output_encoding': 'unicode'},
+                )['html_body']
+        except ApplicationError as err:
+            # it happens when there is a severe RST syntax error. Text example
+            # that produces such an error:
+            # //////////////
+            # Open Call 2011
+            # \\\\\\\\\\\\\\\
+            messages.error( request, _( u'the event description cannot be ' \
+                'rendered using ReStructuredText syntax. The error is:' ) +
+                err.message )
+            # TODO: get the translated message if there is one in docutils
+            rst2html = None
         #if '<div class="system-message">' in rst2html:
         #    # there is a rst syntax error/warning
         #    # TODO: inform the user that the description couldn't be
@@ -542,8 +555,8 @@ def event_undelete( request, event_id ): # {{{1
     except Version.DoesNotExist:
         raise Http404
     # TODO ask the user for a reason for the undeletion
-    revision = deleted_version.revision
-    revisioninfos = revision.revisioninfo_set.all()
+    deleted_revision = deleted_version.revision
+    revisioninfos = deleted_revision.revisioninfo_set.all()
     # a revision should have only one revisioninfo (design constraint)
     # TODO check this constranint with a post_save signal in revisioninfo
     assert len( revisioninfos ) == 1
@@ -557,7 +570,8 @@ def event_undelete( request, event_id ): # {{{1
     try:
         equal = Event.objects.get( title = title, start = start )
     except Event.DoesNotExist:
-        revision.revert()
+        deleted_revision.revert()
+        revision.add_meta( RevisionInfo, as_text = as_text )
         equal = False
     if not equal:
         messages.info( request, _('Event has been successfully undeleted.') )
@@ -1054,6 +1068,9 @@ def main( request, status_code=200 ):# {{{1
             event.urls.create( url_name = "web", url = cleaned_data['web'] )
             revision.add_meta( RevisionInfo,
                     as_text = smart_unicode( event.as_text() ) )
+            messages.info( request, _( u'Event successfully saved. ' \
+                    'Optionally you can add more information about the ' \
+                    'event now.' ) )
             return HttpResponseRedirect( reverse( 'event_edit',
                     kwargs = {'event_id': str( event.id )} ) )
     else:
