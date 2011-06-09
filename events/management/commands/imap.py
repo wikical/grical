@@ -103,11 +103,11 @@ class Command( NoArgsCommand ): # {{{1
             msgobj = EmailParser().parse( StringIO( mail ), False )
             for part in msgobj.walk():
                 if part.get_content_type() == "text/plain":
-                    text += unicode( 
+                    if part.get_content_charset():
+                        text += unicode( 
                                     part.get_payload( decode = True ),
                                     part.get_content_charset(),
-                                    'replace'
-                                    )
+                                    'replace' )
             # extracs subject
             subject = ''
             if msgobj['Subject'] is not None:

@@ -61,6 +61,13 @@ with open( settings.PIPE_TO_LOG_TO, 'r' ) as pipe:
     while True:
         for line in pipe.readlines():
             if line and line.strip():
-                server.privmsg ( settings.IRC_CHANNEL, line )
+                try:
+                    server.privmsg ( settings.IRC_CHANNEL, line )
+                except irclib.ServerNotConnectedError:
+                    server.connect(
+                            settings.IRC_NETWORK, settings.IRC_PORT,
+                            settings.IRC_NICK, ircname = settings.IRC_NAME )
+                    server.join( settings.IRC_CHANNEL )
+                    server.privmsg ( settings.IRC_CHANNEL, line )
             time.sleep( 0.5 )
         time.sleep( 1 )

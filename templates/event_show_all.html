@@ -134,15 +134,12 @@
     {% if event.description %}
         <fieldset>
         <legend>{% trans "Description" %}</legend>
-            {{ rst2html|safe }}
+            {% if rst2html %}
+                {{ rst2html|safe }}
+            {% else %}
+                {{ event.description|escape|linebreaksbr|urlize }}
+            {% endif %}
         </fieldset>
-        {% comment %}
-        {% if rst2html %}
-            {{ rst2html }}
-        {% else %}
-            {{ event.description|escape|linebreaksbr|urlize }}
-        {% endif %}
-        {% endcomment %}
     {% endif %}
 
     {% if event.coordinates %}

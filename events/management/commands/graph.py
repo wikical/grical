@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
-#!/usr/bin/env python
 
-# Found at http://djangosnippets.org/snippets/1168/
+#############################################################################
+# Copyright 2011, Ivan Villanueva <ivan ät gridmind.org>
+# Based on http://djangosnippets.org/snippets/1168/ by Adam Lofts (2008, GPLv2)
+#
+# This file is part of GridCalendar.
+#
+# GridCalendar is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+#############################################################################
 
-# Copyright (C) 2008 Adam Lofts
-#               2011 Ivan Villanueva <iv ät gridmind.org>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# This program generates a graphviz file to plot a graph of your database
-# layout.
-# 
-# Usage:
-#
 # Set PYTHONPATH and DJANGO_SETTINGS_MODULE for your django app
 # Example:
 # export PYTHONPATH="/home/hg/gridcalendar:/home/hg/" ; export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
@@ -36,9 +36,20 @@ class Command( BaseCommand ): # {{{1
     `DOT<http://en.wikipedia.org/wiki/DOT_language>`_ text describing the
     structure of the database.
     
-    Usage example::
+    Usage example as management command::
 
-            ./manage graph | dot -Tpng -o graph.png
+            ./manage.py graph | dot -Tpng -o graph.png
+
+    Usage example as management command for one application (``events`` as
+    example)::
+
+            ./manage.py graph events | dot -Tpng -o graph.png
+
+    Usage example as script::
+
+        export PYTHONPATH="/home/hg/gridcalendar:/home/hg/"
+        export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+        ./graph.py <django_app_name> | dot -Tpng -o graph.png
 
     """
 
@@ -47,18 +58,16 @@ class Command( BaseCommand ): # {{{1
             "./manage graph | dot -Tpng -o graph.png"
 
     def handle( self, *args, **options ): # {{{2
-        if len( args ) > 1:
+        if len( args ) == 0:
             raise CommandError(
-                    'this command accept 0 or 1 argument but not more' )
-        if len( args ) == 1:
-            application_name = args[0]
-        else:
-            application_name = 'events'
-        graph( application_name, Command.stdout )
+                    'this command needs one or more application names as ' \
+                    'parameters' )
+        graph( args, Command.stdout )
 
-def graph(app, outfile):
-
-    models = get_models(get_app(app))
+def graph(apps, outfile):
+    models = []
+    for app in apps:
+        models += get_models(get_app(app))
 
     outfile.write("digraph G {\n")
 

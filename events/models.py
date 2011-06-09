@@ -435,9 +435,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     upcoming = models.DateField( _( u'Upcoming deadline or start' ),
             editable = False, db_index = True )
     starttime = models.TimeField( 
-            _( u'Start time' ), blank = True, null = True )
+            _( u'Start time' ), blank = True, null = True,
+            help_text = _(u'Example: 18:00') )
     endtime = models.TimeField( 
-            _( u'End time' ), blank = True, null = True )
+            _( u'End time' ), blank = True, null = True,
+            help_text = _(u'Example: 18:00') )
     tags = TagField( _( u'Tags' ), blank = True, null = True,
         help_text = _( u''.join( [u"Tags are case insensitive. Only letters ",
             u"(these can be international, like: αöł), digits and hyphens (-)",
@@ -457,7 +459,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             editable = False, blank=True, null=True )
     """ used for calculating events within a distance to a point """
     description = models.TextField(
-            _( u'Description' ), blank = True, null = True )
+            _( u'Description' ), blank = True, null = True,
+            help_text = _( u'For formating use <a href="http://docutils.' \
+                'sourceforge.net/docs/user/rst/quickref.html">' \
+                'ReStructuredText</a> syntax. Events can be referenced with' \
+                ' for instance :e:`123`' ) )
     # old code before switching to postgis with the new geo field coordiantes
     # latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
     #         help_text = _( u'In decimal degrees, not ' \
@@ -853,6 +859,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return
         # FIXME: implement a Queue, see comments on 
         # http://www.artfulcode.net/articles/threading-django/
+        # see also
+        # http://ask.github.com/celery/getting-started/introduction.html
         # Thing also that getting an Exception here shouldn't propagate to the
         # view.
         thread = threading.Thread(
@@ -3037,88 +3045,97 @@ class Session: #{{{1
 # it is recommended in the Django documentation to connect to signals in
 # models.py. That is why this code is here.
 if settings.PIPE_TO_LOG_TO:
-    # FIXME: put everything on a try and add a timeout
+    # FIXME: implement a Queue, see comments on
+    # http://www.artfulcode.net/articles/threading-django/ see also
+    # http://ask.github.com/celery/getting-started/introduction.html
+    # Thing also that getting an Exception here shouldn't propagate to the
+    # view.
+    def _write_to_pipe( text ):
+        with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
+            pipe.write( text )
+    def _start_thread( text ):
+        thread = threading.Thread( target = _write_to_pipe, args = [ text, ] )
+        thread.setDaemon(True)
+        thread.start()
     def write_to_pipe( **kwargs ): # {{{2
         site = Site.objects.get_current().domain
         # TODO: open utf8 and remove from below encoding='ascii'
-        with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
-            # comment {{{3
-            if kwargs['sender'] == Comment:
-                comment = kwargs['comment']
-                pipe.write(
-                    'http://%(site)s%(comment_url)s\n' \
-                    '*** %(comment)s ***\n' % {
-                        'site': site,
-                        'comment_url': comment.get_absolute_url(),
-                        'comment': smart_str( comment.comment,
-                            encoding='ascii', errors='ignore' ) } )
-            # event created/updated {{{3
-            elif kwargs['sender'] == RevisionInfo:
-                revision_info = kwargs['instance']
-                revision = revision_info.revision
-                event_content_type = ContentType.objects.get_for_model( Event )
-                # in each revision there is only one version for an Event
-                event_version = revision.version_set.get(
-                        content_type = event_content_type )
-                try:
-                    event = Event.objects.get( pk = event_version.object_id )
-                except Event.DoesNotExist:
-                    # this happens when an event has been deleted
+        # comment {{{3
+        if kwargs['sender'] == Comment:
+            comment = kwargs['comment']
+            _start_thread( 'http://%(site)s%(comment_url)s\n' \
+                '*** %(comment)s ***\n' % {
+                    'site': site,
+                    'comment_url': comment.get_absolute_url(),
+                    'comment': smart_str( comment.comment,
+                        encoding='ascii', errors='ignore' ) } )
+        # event created/updated {{{3
+        elif kwargs['sender'] == RevisionInfo:
+            revision_info = kwargs['instance']
+            revision = revision_info.revision
+            event_content_type = ContentType.objects.get_for_model( Event )
+            # in each revision there is only one version for an Event
+            event_version = revision.version_set.get(
+                    content_type = event_content_type )
+            try:
+                event = Event.objects.get( pk = event_version.object_id )
+            except Event.DoesNotExist:
+                # this happens when an event has been deleted
+                return
+            event_url = event.get_absolute_url()
+            # TODO: optimize the next code to hit the db less
+            text = 'http://%(site)s%(event_url)s\n' % {
+                    'site': site, 'event_url': event_url }
+            revisions = [ version.revision for version in
+                Version.objects.get_for_object( event ) ]
+            if len( revisions ) > 1:
+                rev_info_old = revisions[-2].revisioninfo_set.all()
+                rev_info_new = revisions[-1].revisioninfo_set.all()
+                diff = text_diff(
+                        rev_info_old[0].as_text,
+                        rev_info_new[0].as_text )
+                diff = smart_str( diff,
+                        encoding='ascii', errors='ignore' )
+                text += diff
+                #text += ''.join( ['\n  ' + line for line in 
+                #    diff.splitlines() ] )
+            else:
+                text += ''.join( ['\n  ' + line for line in 
+                    event.as_text().splitlines() ] )
+            _start_thread( text + '\n')
+        # event deleted {{{3
+        elif kwargs['sender'] == Event:
+            event = kwargs['instance']
+            deleted_url = reverse( 'event_deleted',
+                    kwargs={'event_id': event.id,} )
+            _start_thread( 'http://%(site)s%(deleted_url)s\n' % {
+                'site': site, 'deleted_url': deleted_url, } )
+        #  Revision, used to log undeletions {{{3
+        elif kwargs['sender'] == Version:
+            version = kwargs['instance']
+            # undeletions have version.type = VERSION_ADD and the version
+            # before has version.type = VERSION_DELETE
+            if not version.type == VERSION_ADD:
+                return
+            event_content_type = ContentType.objects.get_for_model( Event )
+            revision_list = Revision.objects.filter(
+                   version__object_id = version.object_id,
+                   version__content_type = event_content_type )
+            revision_list = revision_list.order_by( '-date_created' )
+            if len( revision_list ) < 2:
+                return
+            previous = None
+            for revision in revision_list:
+                if previous and previous == version.revision:
+                    ver = revision.version_set.get(
+                            content_type = event_content_type )
+                    if ver.type == VERSION_DELETE:
+                        history_url = reverse( 'event_history',
+                            kwargs={'event_id': version.object_id,} )
+                        _start_thread( 'http://%(site)s%(history_url)s\n' % {
+                            'site': site, 'history_url': history_url, } )
                     return
-                event_url = event.get_absolute_url()
-                # TODO: optimize the next code to hit the db less
-                pipe.write(
-                    'http://%(site)s%(event_url)s\n'  % {
-                        'site': site, 'event_url': event_url } )
-                revisions = [ version.revision for version in
-                    Version.objects.get_for_object( event ) ]
-                if len( revisions ) > 1:
-                    rev_info_old = revisions[-2].revisioninfo_set.all()
-                    rev_info_new = revisions[-1].revisioninfo_set.all()
-                    diff = text_diff(
-                            rev_info_old[0].as_text,
-                            rev_info_new[0].as_text )
-                    diff = smart_str( diff,
-                            encoding='ascii', errors='ignore' )
-                    pipe.write( diff )
-                    #pipe.write( ''.join( ['\n  ' + line for line in 
-                    #    diff.splitlines() ] ) )
-                else:
-                    pipe.write( ''.join( ['\n  ' + line for line in 
-                        event.as_text().splitlines() ] ) )
-            # event deleted {{{3
-            elif kwargs['sender'] == Event:
-                event = kwargs['instance']
-                deleted_url = reverse( 'event_deleted',
-                        kwargs={'event_id': event.id,} )
-                pipe.write( 'http://%(site)s%(deleted_url)s' % {
-                    'site': site, 'deleted_url': deleted_url, } )
-            #  Revision, used to log undeletions {{{3
-            elif kwargs['sender'] == Version:
-                version = kwargs['instance']
-                # undeletions have version.type = VERSION_ADD and the version
-                # before has version.type = VERSION_DELETE
-                if not version.type == VERSION_ADD:
-                    return
-                event_content_type = ContentType.objects.get_for_model( Event )
-                revision_list = Revision.objects.filter(
-                       version__object_id = version.object_id,
-                       version__content_type = event_content_type )
-                revision_list = revision_list.order_by( '-date_created' )
-                if len( revision_list ) < 2:
-                    return
-                previous = None
-                for revision in revision_list:
-                    if previous and previous == version.revision:
-                        ver = revision.version_set.get(
-                                content_type = event_content_type )
-                        if ver.type == VERSION_DELETE:
-                            history_url = reverse( 'event_history',
-                                kwargs={'event_id': version.object_id,} )
-                            pipe.write( 'http://%(site)s%(history_url)s' % {
-                                'site': site, 'history_url': history_url, } )
-                        return
-                    previous = revision
+                previous = revision
 
     # signals connects {{{2
     post_save.connect( write_to_pipe , sender = RevisionInfo,
