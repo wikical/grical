@@ -290,12 +290,12 @@ td {
     text-align: right;
     float: right;
 }
-.event_full ul, .event_full li {
+.urls ul, .urls li {
     display: inline ;
     margin: 0 1em 0 0 ;
     -moz-padding-start: 0;
 }
-.event_full li:before {
+.urls li:before {
     content: "\00BB \0020";
 }
 .event_full td {
