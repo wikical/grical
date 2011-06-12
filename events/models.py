@@ -3052,23 +3052,22 @@ if settings.PIPE_TO_LOG_TO:
     # view.
     def _write_to_pipe( text ):
         with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
-            pipe.write( text )
+            pipe.write( smart_str( text, encoding='ascii', errors='ignore' ) )
+            # TODO: make possible non ascii characters
     def _start_thread( text ):
         thread = threading.Thread( target = _write_to_pipe, args = [ text, ] )
         thread.setDaemon(True)
         thread.start()
     def write_to_pipe( **kwargs ): # {{{2
         site = Site.objects.get_current().domain
-        # TODO: open utf8 and remove from below encoding='ascii'
         # comment {{{3
         if kwargs['sender'] == Comment:
             comment = kwargs['comment']
-            _start_thread( 'http://%(site)s%(comment_url)s\n' \
+            _start_thread( u'http://%(site)s%(comment_url)s\n' \
                 '*** %(comment)s ***\n' % {
                     'site': site,
                     'comment_url': comment.get_absolute_url(),
-                    'comment': smart_str( comment.comment,
-                        encoding='ascii', errors='ignore' ) } )
+                    'comment': comment.comment, } )
         # event created/updated {{{3
         elif kwargs['sender'] == RevisionInfo:
             revision_info = kwargs['instance']
@@ -3084,7 +3083,7 @@ if settings.PIPE_TO_LOG_TO:
                 return
             event_url = event.get_absolute_url()
             # TODO: optimize the next code to hit the db less
-            text = 'http://%(site)s%(event_url)s\n' % {
+            text = u'http://%(site)s%(event_url)s\n' % {
                     'site': site, 'event_url': event_url }
             revisions = [ version.revision for version in
                 Version.objects.get_for_object( event ) ]
@@ -3094,21 +3093,17 @@ if settings.PIPE_TO_LOG_TO:
                 diff = text_diff(
                         rev_info_old[0].as_text,
                         rev_info_new[0].as_text )
-                diff = smart_str( diff,
-                        encoding='ascii', errors='ignore' )
                 text += diff
-                #text += ''.join( ['\n  ' + line for line in 
-                #    diff.splitlines() ] )
             else:
-                text += ''.join( ['\n  ' + line for line in 
-                    event.as_text().splitlines() ] )
+                text += u''.join( [u'\n  ' + line for line in 
+                    smart_unicode(event.as_text()).splitlines() ] )
             _start_thread( text + '\n')
         # event deleted {{{3
         elif kwargs['sender'] == Event:
             event = kwargs['instance']
             deleted_url = reverse( 'event_deleted',
                     kwargs={'event_id': event.id,} )
-            _start_thread( 'http://%(site)s%(deleted_url)s\n' % {
+            _start_thread( u'http://%(site)s%(deleted_url)s\n' % {
                 'site': site, 'deleted_url': deleted_url, } )
         #  Revision, used to log undeletions {{{3
         elif kwargs['sender'] == Version:
@@ -3132,7 +3127,7 @@ if settings.PIPE_TO_LOG_TO:
                     if ver.type == VERSION_DELETE:
                         history_url = reverse( 'event_history',
                             kwargs={'event_id': version.object_id,} )
-                        _start_thread( 'http://%(site)s%(history_url)s\n' % {
+                        _start_thread( u'http://%(site)s%(history_url)s\n' % {
                             'site': site, 'history_url': history_url, } )
                     return
                 previous = revision

@@ -102,7 +102,7 @@
     {% endif %}
 
     {% if event.urls.all %}
-        <ul>
+        <ul class='urls'>
             {% for url in event.urls.all %}
                 <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
             {% endfor %}
