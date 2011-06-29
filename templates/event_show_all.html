@@ -56,14 +56,11 @@
             {% endif %}
             {% if event.city %}
                 &nbsp; &#8212; &nbsp;
-                {# <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst }}</a> #}
-                {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
                 <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
             {% endif %}
             {% if event.country %}
                 &nbsp; &#8212; &nbsp;
                 <span class="field_country">
-                    {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
                     <a href="{% urlsearch country=event.country %}">{{ event.country|capfirst }}</a>
                 </span>
             {% endif %}

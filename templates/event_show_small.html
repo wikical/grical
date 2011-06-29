@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load urlsearch %}
 
 <span class="field_dates">
   {% if event.upcoming != event.start and event.upcoming != event.end %}
@@ -10,14 +11,11 @@
 {% if event.acro %} <span class="field_acro">( {{ event.acro }} )</span> {% endif %}
 {% if event.city or country %}@{% endif %}
 {% if event.city %}
-    <span class="city">
-        <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city }}">
-            {{ event.city|lower|capfirst }}</a>
-    </span>
+    <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
 {% endif %}
 {% if event.country %}
     <span class="field_country">
-        (<a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.country }}">{{ event.country|lower|upper }}</a>)
+        <a href="{% urlsearch country=event.country %}">{{ event.country|capfirst }}</a>
     </span>
 {% endif %}
 

@@ -106,8 +106,7 @@ class SearchEventsFeed(EventsFeed): # {{{1
 
     def link(self, obj):
         """ return a link to a search with get http method """
-        # TODO: if the search query is '#tag', does it work?
-        return reverse( 'search_query', kwargs = {'query': obj,} )
+        return reverse( 'search') + '?query=' + obj
 
     def description(self, obj):
         """ description """
