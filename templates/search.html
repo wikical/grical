@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load urlsearch %}
+
 {% block search_info %}
     <span id='search_info'>
         {{ heading }}
@@ -13,6 +15,7 @@
         {% endif %}
     </span>
 {% endblock %}
+
 {% block container %}
     <div id="views">
         {# shows views bottons #}
@@ -20,46 +23,27 @@
             {% ifequal current_view view %}
                 <span id="{{ view }}_view" style="border: 3px black solid;">{{ view }}</span>
             {% else %}
-                <span id="{{ view }}_view"><a href="{% url search_query_view query|urlencode|iriencode view %}">{{ view }}</a></span>
+                <span id="{{ view }}_view"><a href="{% urlsearch query=query view=view %}">{{ view }}</a></span>
             {% endifequal %}
         {% endfor %}
         {# shows links to download or links to external services #}
-        {% if USER.is_authenticated %}
-            <span id="calendar_view">
-                <a href='http://30boxes.com/external/widget?url=http://{{ DOMAIN }}{% url search_ical query|urlencode|iriencode %}'>
-                    {% trans "calendar" %}</a>
-                {# FIXME: the above URL doesn't work when # is in the search (maybe a bug in 30boxes #}
-            </span>
-            <span id="ical_view">
-                <a href='{% url search_ical query|urlencode|iriencode %}'>iCalendar</a>
-                    <!-- doesn't look nice in IE7 at least
-                    <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
-                    -->
-            </span>
-            <span id="rss_view">
-                <a href='{% url search_rss query|urlencode|iriencode %}'>RSS</a>
-                    <!-- doesn't look nice in IE7 at least
-                    <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
-                    -->
-            </span>
-        {% else %}
-            <span id="calendar_view">
-                <a href='http://30boxes.com/external/widget?url=http://{{ DOMAIN }}{% url search_ical query|urlencode|iriencode %}'>
-                    {% trans "calendar" %}</a>
-            </span>
-            <span id="ical_view">
-                <a href='{% url search_ical query|urlencode|iriencode %}'>iCalendar</a>
-                    <!-- doesn't look nice in IE7 at least
-                    <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
-                    -->
-            </span>
-            <span id="rss_view">
-                <a href='{% url search_rss query|urlencode|iriencode %}'>RSS</a>
-                    <!-- doesn't look nice in IE7 at least
-                    <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
-                    -->
-            </span>
-        {% endif %}
+        <span id="calendar_view">
+            <a href='http://30boxes.com/external/widget?url=http://{{ DOMAIN }}{% urlsearch query=query view="ical" %}'>
+                {% trans "calendar" %}</a>
+            {# FIXME: the above URL doesn't work when # is in the search (maybe a bug in 30boxes #}
+        </span>
+        <span id="ical_view">
+            <a href='{% urlsearch query=query view="ical" %}'>iCalendar</a>
+                <!-- doesn't look nice in IE7 at least
+                <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
+                -->
+        </span>
+        <span id="rss_view">
+            <a href='{% urlsearch query=query view="rss" %}'>RSS</a>
+                <!-- doesn't look nice in IE7 at least
+                <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
+                -->
+        </span>
     </div>
     {% if no_results %}
         <p> {% trans "There are no events for this search currently" %}. </p>
@@ -74,5 +58,4 @@
             {% endifequal %}
         {% endifequal %}
     {% endif %}
-
 {% endblock %}

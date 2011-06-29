@@ -52,6 +52,8 @@ from registration.models import RegistrationProfile
 # http://stackoverflow.com/questions/2257958/django-unit-testing-for-form-edit
 # source: http://bitbucket.org/kmike/django-webtest/src
 from django_webtest import WebTest
+from MultipartPostHandler import MultipartPostHandler
+import urllib2
 
 from gridcalendar.events import models, views, forms, utils, recurring
 from gridcalendar.events.models import ( Event, Group, Filter, Membership,
@@ -197,7 +199,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
         params = urllib.urlencode( {'snip':content} )
-        conn = httplib.HTTPConnection( "severinghaus.org", timeout = 10 )
+        conn = httplib.HTTPConnection( "severinghaus.org", timeout = 20 )
         conn.request( "POST", "/projects/icv/", params, headers )
         response = conn.getresponse()
         result = response.read()
@@ -212,7 +214,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
         params = urllib.urlencode( {'rawdata':content} )
-        conn = httplib.HTTPConnection("validator.w3.org", timeout = 10)
+        conn = httplib.HTTPConnection("validator.w3.org", timeout = 20)
         conn.request( "POST", "/feed/check.cgi", params, headers )
         response = conn.getresponse()
         result = response.read()
@@ -329,6 +331,36 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         self.assertTrue( 'title2' in content )
         event1.delete()
         event2.delete()
+
+    def test_lastadded_rss( self ): # {{{2
+        user = self._create_user()
+        event1 = Event.objects.create( title = 'title1',
+                tags = 'test', start = datetime.date.today(), user = user )
+        event2 = Event.objects.create( title = 'title2',
+                tags = 'test', start = datetime.date.today(), user = user )
+        url = reverse( 'lastadded_events_rss' )
+        self._validate_rss( url )
+        content = self.client.get( url ).content
+        self.assertTrue( 'title1' in content )
+        self.assertTrue( 'title2' in content )
+        event1.delete()
+        event2.delete()
+        user.delete()
+
+    def test_upcoming_rss( self ): # {{{2
+        user = self._create_user()
+        event1 = Event.objects.create( title = 'title1',
+                tags = 'test', start = datetime.date.today(), user = user )
+        event2 = Event.objects.create( title = 'title2',
+                tags = 'test', start = datetime.date.today(), user = user )
+        url = reverse( 'upcoming_events_rss' )
+        self._validate_rss( url )
+        content = self.client.get( url ).content
+        self.assertTrue( 'title1' in content )
+        self.assertTrue( 'title2' in content )
+        event1.delete()
+        event2.delete()
+        user.delete()
 
     def test_filter_notification( self ): # {{{2
         """ test filter notification """
@@ -464,16 +496,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
 
     def test_valid_html( self ): # {{{2
         """ validates html with validator.w3.org """
-        conn = httplib.HTTPConnection( "validator.w3.org", timeout = 10 )
         # test main page
-        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2F") # FIXME: avoid the hard-coded URL
-        response = conn.getresponse()
-        result = response.read()
-        self.assertTrue( 'Congratulations' in result )
-        # test log in
-        conn.request( "GET", "/check?uri=http%3A%2F%2Fdev.grical.org%2Fa%2Faccounts%2Flogin%2F")  # FIXME: avoid the hard-coded URL
-        response = conn.getresponse()
-        result = response.read()
+        validatorURL = "http://validator.w3.org/check"
+        opener = urllib2.build_opener(MultipartPostHandler)
+        params = { 'fragment': self.client.get("/").content, }
+        result = opener.open(validatorURL, params).read()
         self.assertTrue( 'Congratulations' in result )
         # TODO: test event edit
         # TODO create an event with everthing and validate the full event output

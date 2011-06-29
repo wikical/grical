@@ -79,6 +79,20 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
         elist = Event.objects.filter(upcoming__gte=today ).order_by('upcoming')
         return elist[:FEED_SIZE]
 
+class LastAddedEventsFeed(EventsFeed): # {{{1
+    """ Feed with the last `settings.FEED_SIZE` added events """
+
+    title = _(u"%(domain)s last added events feed") % \
+            {'domain': SITE_DOMAIN,}
+    link = "/r/upcoming"
+    description = _("Last %(count)s added events." \
+            % {"count": FEED_SIZE}, )
+
+    def items( self ):
+        """ items """
+        elist = Event.objects.all().order_by('-creation_time')
+        return elist[:FEED_SIZE]
+
 class SearchEventsFeed(EventsFeed): # {{{1
     """ feed for the result of a search """
     

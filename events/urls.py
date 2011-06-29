@@ -26,15 +26,16 @@
 
 # imports {{{1
 from django.conf.urls.defaults import *
+from django.views.generic.simple import redirect_to
 
 from gridcalendar.events import views
 from gridcalendar.events.feeds import (
-        UpcomingEventsFeed, SearchEventsFeed, GroupEventsFeed, )
+        UpcomingEventsFeed, LastAddedEventsFeed, SearchEventsFeed,
+        GroupEventsFeed, )
 
 # main url {{{1
 urlpatterns = patterns('',            # pylint: disable-msg=C0103
-    url(r'^$', views.main, name='main'),
-    )
+    url(r'^$', views.main, name='main'), )
 
 # ^e single event {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
@@ -75,8 +76,7 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.ICalForEvent,             name='event_show_ical'),
 
     url(r'^e/group/(?P<event_id>\d+)/$',
-        views.group_add_event,          name='group_add_event'),
-    )
+        views.group_add_event,          name='group_add_event'), )
 
 # ^s searches urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
@@ -94,21 +94,17 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.search,             name='search_query'),
 
     url(r'^s/$',
-        views.search,             name='search'),
-
-    )
+        views.search,             name='search'), )
 
 # ^t tags urls {{{1
-urlpatterns += patterns('',                 # pylint: disable-msg=C0103
-    url(r'^t/(?P<tag>[ \-\w]*)/$' ,
-        views.list_events_tag,    name='list_events_tag'),
-    )
+urlpatterns += patterns( '',                 # pylint: disable-msg=C0103
+    url( r'^t/(?P<tag>[\-\w]+)/$',
+        redirect_to, {'url': '/s/?query=#%(tag)s/'} ) )
 
 # ^l locations urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
-    url(r'^l/(?P<location>[ .,\-\w]*)/$' ,
-        views.list_events_location,    name='list_events_location'),
-    )
+    url(r'^l/(?P<location>.+)/$' ,
+        redirect_to, {'url': '/s/?query=@%(location)s/'} ) )
 
 # ^g groups urls {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103
@@ -139,9 +135,8 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
 
     url(r'^g/quit/(?P<group_id>\d+)/confirm/$',
         views.group_quit,
-        kwargs = {'sure': True,},     name='group_quit_sure'),
+        kwargs = {'sure': True,},     name='group_quit_sure'), )
 
-    )
     # TODO: this should be a view with everything about the group for members
     # and not members; see also list_groups_my
 
@@ -158,8 +153,8 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.list_filters_my,          name='list_filters_my'),
 
     url(r'^u/groups/$',
-        views.list_groups_my,           name='list_groups_my'),
-    )
+        views.list_groups_my,           name='list_groups_my'), )
+
     # not used for now because of privacy concerns:
     #   url(r'^e/list/user/(?P<username>\w+)/$',
     #       views.list_events_of_user,      name='list_events_of_user'),
@@ -174,18 +169,19 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.filter_edit,              name='filter_edit'),
 
     url(r'^f/delete/(?P<filter_id>\d+)/$',
-        views.filter_drop,              name='filter_drop'),
-    )
+        views.filter_drop,              name='filter_drop'), )
 
 
-# ^r rss main feed url {{{1
+# ^r main rss feeds urls {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+
      url(r'^r/upcoming/$',
          UpcomingEventsFeed(), name='upcoming_events_rss'),
-     )
+
+     url(r'^r/lastadded/$',
+         LastAddedEventsFeed(), name='lastadded_events_rss'), )
 
 # ^o output urls {{{1
 urlpatterns += patterns('',                     # pylint: disable-msg=C0103
      url(r'^o/all/text/$',
-         views.all_events_text, name='all_events_text'),
-     )
+         views.all_events_text, name='all_events_text'), )

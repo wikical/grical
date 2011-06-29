@@ -2,6 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 {% load i18n %}
 {% load tagging_tags %}
+{% load urlsearch %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
 <!-- This template is based on a template at http://matthewjamestaylor.com/ and is used with
 permission of the original author -->
@@ -107,16 +108,21 @@ permission of the original author -->
             <li> {% trans "groups:" %}{{ GROUPS_NR }} </li>
         </ul>
     </div>
+    <div class="title">{% trans "RSS feeds" %}</div>
+    <div class="info">
+        <ul>
+            <li> <a href="{% url upcoming_events_rss %}">{% trans "upcoming RSS feed" %}</a></li>
+            <li> <a href="{% url lastadded_events_rss %}">{% trans "last added RSS feed" %}</a></li>
+        </ul>
+    </div>
     <div class="title">{% trans "Tags cloud" %}</div>
     <div class="info">
         {% comment %}TODO: generate this is views.py {% endcomment %}
         {% tag_cloud_for_model events.Event as tags with steps=10 min_count=6 distribution=log %}
-        {% if tags|length < 100 %}
-            {% for tag in tags %}
-                <span class="tag_{{ tag.font_size }}"><a href="{% url list_events_tag tag.name|slugify %}">
-                    {{ tag.name }}</a></span>
-            {% endfor %}
-        {% endif %}
+        {% for tag in tags %}
+            <span class="tag_{{ tag.font_size }}"><a href="{% urlsearch tag=tag.name|slugify %}">
+                {{ tag.name }}</a></span>
+        {% endfor %}
     </div>
 </div>
 
