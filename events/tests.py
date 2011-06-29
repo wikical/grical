@@ -214,7 +214,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
         params = urllib.urlencode( {'rawdata':content} )
-        conn = httplib.HTTPConnection("validator.w3.org", timeout = 20)
+        conn = httplib.HTTPConnection("validator.w3.org", timeout = 60)
         conn.request( "POST", "/feed/check.cgi", params, headers )
         response = conn.getresponse()
         result = response.read()
