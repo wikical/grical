@@ -54,7 +54,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
 
-from django.forms import ValidationError
+# from django.forms import ValidationError
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
@@ -68,7 +68,7 @@ import reversion
 from reversion import revision
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
-from utils import validate_year, search_name, text_diff
+from gridcalendar.events.utils import validate_year, search_name, text_diff
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -363,8 +363,8 @@ COORDINATES_REGEX = re.compile(
 # regex.findall('=1234 aa =234 =34')
 # ['1234', '234', '34']
 EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', UNICODE)
-GROUP_REGEX = re.compile(r'(?:^|\s)!(\w+)\b', UNICODE)
-TAG_REGEX = re.compile(r'(?:^|\s)#(\w+)\b', UNICODE)
+GROUP_REGEX = re.compile(r'(?:^|\s)!([-\w]+)\b', UNICODE)
+TAG_REGEX = re.compile(r'(?:^|\s)#([-\w]+)\b', UNICODE)
 # the regex start with @ and has 4 alternatives, examples:
 # 52.1234,-0.1234+300km
 # 52.1234,-0.1234,53.1234,-0.2345
@@ -373,32 +373,34 @@ TAG_REGEX = re.compile(r'(?:^|\s)#(\w+)\b', UNICODE)
 LOCATION_REGEX = re.compile(r"""
         @(?:                    # loc regex starts with @
         (?:                     # four floats separated by ,
-            ([+-]?\d+           # [0] one or more digits
-                (?:\.\d*)?)     # optionally . or . and decimals
+            ([+-]?\d+           #   [0] one or more digits
+                (?:\.\d*)?)     #   optionally . or . and decimals
             ,
-            ([+-]?\d+           # [1] one or more digits
-                (?:\.\d*)?)     # optionally . or . and decimals
+            ([+-]?\d+           #   [1] one or more digits
+                (?:\.\d*)?)     #   optionally . or . and decimals
             ,
-            ([+-]?\d+           # [2] one or more digits
-                (?:\.\d*)?)     # optionally . or . and decimals
+            ([+-]?\d+           #   [2] one or more digits
+                (?:\.\d*)?)     #   optionally . or . and decimals
             ,
-            ([+-]?\d+           # [3] one or more digits
-                (?:\.\d*)?)     # optionally . or . and decimals
+            ([+-]?\d+           #   [3] one or more digits
+                (?:\.\d*)?)     #   optionally . or . and decimals
         )|(?:                   # or float,float+int and opt. a unit
-            ([+-]?\d+           # [4] one or more digits
-                (?:\.\d*)?)     # optionally . or . and decimals
-            ,\s*                # spaces because some people copy/paste
-            ([+-]?\d+           # [5] one or more digits
-                (?:\.\d*)?)     # optionally . or . and decimals
-            \+(\d+)             # [6] distance
-            (km|mi)?            # [7] optional unit
+            ([+-]?\d+           #   [4] one or more digits
+                (?:\.\d*)?)     #   optionally . or . and decimals
+            ,\s*                #   spaces because some people copy/paste
+            ([+-]?\d+           #   [5] one or more digits
+                (?:\.\d*)?)     #   optionally . or . and decimals
+            \+(\d+)             #   [6] distance
+            (km|mi)?            #   [7] optional unit
         )|(?:                   # or a name, +, distance and opt. unit
-            (\w+)               # [8] name
-            \+(\d+)             # [9] distance
-            (km|mi)?            # [10] optional unit
+            ([^+]+)             #   [8] name
+            \+(\d+)             #   [9] distance
+            (km|mi)?            #   [10] optional unit
         )|(                     # or just a name
-            \w+                 # [11]
+            .+                  #   [11]
         ))""", re.UNICODE | re.X )
+# city, country (optional)
+CITY_COUNTRY_RE = re.compile(r'\s*([^,]+)(?:,\s*(.+))?')
 
 class EventManager( models.GeoManager ): # {{{1
     """ manager for deserialization.
@@ -753,21 +755,23 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             clone.description = kwargs['description']
         else:
             clone.description = self.description
-        if recurrence and self.recurring:
-            # we want to take into consideration recurrences AND self is a
-            # recurrence of a serie
-            if self.recurring.master == self:
-                # self is the master of the recurrence: we make clone a new
-                # recurrence of the serie
-                self.recurrences.create( event = clone )
-            else: # self is a recurrence of another master
-                self.recurring.master.recurrences.create( event = clone )
         clone.user = user
         for key, value in kwargs.items():
             if key == 'user':
                 continue
             setattr( clone, key, value )
         clone.save() # we need the id # TODO: ask in the ML if there is other option
+        if recurrence:
+            if self.recurring:
+                # self is a recurrence of a serie
+                if self.recurring.master == self:
+                    # self is the master of the recurrence: we make clone a new
+                    # recurrence of the serie
+                    self.recurrences.create( event = clone )
+                else: # self is a recurrence of another master
+                    self.recurring.master.recurrences.create( event = clone )
+            else:
+                self.recurrences.create( event = clone )
         related_models = [EventDeadline, EventSession, EventUrl] # TODO: get the list automatically
         try: # because we need to delete the clone if something goes wrong
             new_objs = [] # list of new related objects
@@ -1312,26 +1316,27 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     event_session.delete()
             del complex_fields[u'sessions']
         # recurring {{{5
+        from forms import DatesTimesField
         if complex_fields.has_key(u'recurring'):
-            date_regex = re.compile(r"^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$")
             dates = list()
-            for date in complex_fields[u'recurring'][1:]:
-                matcher = date_regex.match(date)
+            for text_date in complex_fields[u'recurring'][1:]:
+                dates_times_field = DatesTimesField()
                 try:
-                    if not matcher:
-                        raise ValueError()
-                    dates.append( datetime.date( int(matcher.group(1)),
-                        int(matcher.group(2)), int(matcher.group(3)) ) )
-                except ValueError: # raised by date() or by int()
+                    dates_times = dates_times_field.clean( text_date )
+                except ValidationError:
                     raise ValidationError( _(
                         u'date not in iso format (yyyy-mm-dd): %(date)s') % \
-                                {'date': date} )
+                                {'date': text_date} )
+                if dates_times.has_key('end'):
+                    raise ValidationError( _(
+                        u'a repeating date cannot have an end date: (date)s') % \
+                                {'date': text_date} )
                 # we do not clone deadlines nor sessions, as they 
                 # refer to the main event and not to the recurring events.
                 # TODO: inform the user
                 event.clone( user = user,
                         except_models = [EventDeadline, EventSession],
-                        start = date, end = None )
+                        **dates_times )
             del complex_fields[u'recurring']
         # test and return event {{{5
         assert(len(complex_fields) == 0)
@@ -2326,15 +2331,17 @@ class Filter( models.Model ): # {{{1
         # locations
         for loc in LOCATION_REGEX.findall(query):
             if loc[11]:
-                # name given
-                queryset = queryset.filter(
-                        # TODO: searching for 'Washington' doens't match
-                        # 'Washington D.C.'. OTOH searching for 'us' would
-                        # match 'Brussels' if 'city__icontains' were used
-                        Q( city__iexact = loc[11] ) | Q(
-                            country__iexact = loc[11] ) )
+                # name given, which can have a city, a comma and a country
+                city, country = CITY_COUNTRY_RE.findall( loc[11] )[0]
+                if not country:
+                    queryset = queryset.filter(
+                        Q( city__iexact = city ) | Q(
+                            country__iexact = city ) )
                         # TODO: use also translations of locations and
                         # alternative names
+                else:
+                    queryset = queryset.filter(
+                           city__iexact = city, country__iexact = country )
             elif loc[8]:
                 point = search_name( loc[8] )
                 if loc[10]:
@@ -3052,8 +3059,12 @@ if settings.PIPE_TO_LOG_TO:
     # view.
     def _write_to_pipe( text ):
         with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
-            pipe.write( smart_str( text, encoding='ascii', errors='ignore' ) )
             # TODO: make possible non ascii characters
+            text = smart_str( text, encoding='ascii', errors='ignore' )
+            lines = text.splitlines()
+            pipe.write( lines[0] + '\n' )
+            lines = map( lambda line: '    %s\n' % line, lines[1:] )
+            pipe.write( ''.join( lines ) )
     def _start_thread( text ):
         thread = threading.Thread( target = _write_to_pipe, args = [ text, ] )
         thread.setDaemon(True)
@@ -3073,31 +3084,32 @@ if settings.PIPE_TO_LOG_TO:
             revision_info = kwargs['instance']
             revision = revision_info.revision
             event_content_type = ContentType.objects.get_for_model( Event )
-            # in each revision there is only one version for an Event
-            event_version = revision.version_set.get(
-                    content_type = event_content_type )
-            try:
-                event = Event.objects.get( pk = event_version.object_id )
-            except Event.DoesNotExist:
-                # this happens when an event has been deleted
-                return
-            event_url = event.get_absolute_url()
-            # TODO: optimize the next code to hit the db less
-            text = u'http://%(site)s%(event_url)s\n' % {
-                    'site': site, 'event_url': event_url }
-            revisions = [ version.revision for version in
-                Version.objects.get_for_object( event ) ]
-            if len( revisions ) > 1:
-                rev_info_old = revisions[-2].revisioninfo_set.all()
-                rev_info_new = revisions[-1].revisioninfo_set.all()
-                diff = text_diff(
-                        rev_info_old[0].as_text,
-                        rev_info_new[0].as_text )
-                text += diff
-            else:
-                text += u''.join( [u'\n  ' + line for line in 
-                    smart_unicode(event.as_text()).splitlines() ] )
-            _start_thread( text + '\n')
+            text = u''
+            # in a revision there can be more than one event, e.g. when
+            # recurring events are introduced with a text form.
+            for event_version in revision.version_set.filter(
+                    content_type = event_content_type ):
+                try:
+                    event = Event.objects.get( pk = event_version.object_id )
+                except Event.DoesNotExist:
+                    # this happens when an event has been deleted
+                    return
+                event_url = event.get_absolute_url()
+                # TODO: optimize the next code to hit the db less
+                text += u'http://%(site)s%(event_url)s\n' % {
+                        'site': site, 'event_url': event_url }
+                revisions = [ version.revision for version in
+                    Version.objects.get_for_object( event ) ]
+                if len( revisions ) > 1:
+                    rev_info_old = revisions[-2].revisioninfo_set.all()
+                    rev_info_new = revisions[-1].revisioninfo_set.all()
+                    diff = text_diff(
+                            rev_info_old[0].as_text,
+                            rev_info_new[0].as_text )
+                    text += diff
+                else:
+                    text += smart_unicode( event.as_text() )
+            _start_thread( text )
         # event deleted {{{3
         elif kwargs['sender'] == Event:
             event = kwargs['instance']

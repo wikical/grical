@@ -2,7 +2,9 @@
 
 {% load i18n %}
 {% load event_tags %} 
+{% load urlsearch %}
 {% load comments %}
+
 {% block container %}
 <div class="event_full">
 
@@ -56,13 +58,13 @@
                 &nbsp; &#8212; &nbsp;
                 {# <a href="http://{{ LANGUAGE_CODE|slice:"0:2" }}.wikipedia.org/wiki/{{ event.city|urlencode }}">{{ event.city|capfirst }}</a> #}
                 {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
-                <span class="field_city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>
+                <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
             {% endif %}
             {% if event.country %}
                 &nbsp; &#8212; &nbsp;
                 <span class="field_country">
                     {# FIXME: the exact location of the event must be passed, maybe using a custom template tag #}
-                    <a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>
+                    <a href="{% urlsearch country=event.country %}">{{ event.country|capfirst }}</a>
                 </span>
             {% endif %}
             {% if event.coordinates %}
@@ -77,34 +79,26 @@
     {% if event.get_tags %}
         <p class='tags'>
             {% for tag in event.get_tags %}
-                <a href="{% url list_events_tag tag %}">{{ tag }}</a>
+                <a href="{% urlsearch tag=tag %}">{{ tag }}</a>
             {% endfor %}
         </p>
-    {% endif %}
-
-    {% if event.recurrence or event.instances.count > 0 %}{# is part of a serie as intermediate instance OR is master of a serie #}
-        <h2>{% trans "Other events in the serie" %}</h2>
-        {% if event.recurrence %}
-            {% for event in event.recurrence.master.instances.all %}
-                {# FIXME: show private events that the user can see #}
-                {% if event.public %}
-                    <p>{% include "event_show_small.html" %}</p>
-                {% endif %}
-            {% endfor %}
-        {% else %}
-            {% for event in event.instances %}
-                {# FIXME: show private events that the user can see #}
-                {% if event.public %}
-                    <p>{% include "event_show_small.html" %}</p>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
     {% endif %}
 
     {% if event.urls.all %}
         <ul class='urls'>
             {% for url in event.urls.all %}
                 <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if event.recurring %}{# is part of a serie as intermediate instance OR is master of a serie #}
+        <p>{% trans "Recurring events:" %}</p>
+        <ul>
+            {% for recurrence in event.recurring.master.recurrences.all %}
+                {% with recurrence.event as event %}
+                    <li>{% include "event_show_small.html" %}</li>
+                {% endwith %}
             {% endfor %}
         </ul>
     {% endif %}

@@ -54,12 +54,13 @@ the IRC logger with::
 
 #. If you want to develop GridCalendar:
    
-   #. Install ``python-django-debug-toolbar``, ``python-profiler``,
+   #. Install ``MultipartPostHandler``, ``python-django-debug-toolbar``, ``python-profiler``,
       ``python-webtest`` and ``django-webtest``. webtest version 1.3 is needed for
       Django 1.3. As root::
 
           aptitude install python-django-debug-toolbar python-webtest python-profiler
           easy_install django-webtest
+          easy_install MultipartPostHandler
 
       If you have an old version of django-webtest already installed::
 

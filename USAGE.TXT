@@ -98,14 +98,16 @@ Searches and filters
 - If there is no date in the query only future events are showed.
 - Tags ( ``#tag_name`` ) restricts the query to events with these tags.
 - Groups ( ``!group_name`` ) restricts the query to events of the group.
-- The string `` | `` can be used to concatenate results of different searches (logical or). For
-  example ``#linux | #foss`` will search for all future events with the tag ``linux`` or with the
-  tag ``foss``.
-- Searches starting with an asterisk and one space makes the search broader, including past events
+- The string `` | `` (space pipe space) can be used to concatenate results of different searches
+  (logical or). For example ``#linux | #foss`` will search for all future events with the tag
+  ``linux`` or ``foss`` or both.
+- Searches starting with `` * `` (space asterisk space) makes the search broader, including past events
   (if no dates are specified), text in the description, urls (name and url), sessions (name) and
   deadlines (name).
-- Locations restricts the query to events within the given location. There are four possibilities.
-  When given a distance ``km`` (kilometers) and ``mi`` (miles) are allowed as units.
+- Locations (``@location``) restricts the query to events within the given location. **Location terms
+  must be added at the end of the query** (spaces in the name of locations are possible like
+  ``@Los Angeles``). When given a distance, ``km`` (kilometers) and ``mi`` (miles) are allowed as
+  units. There are **four possibilities**:
   
   - Giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``.
   - Giving the name of a place and a distance. ``@london+100`` would look 100.

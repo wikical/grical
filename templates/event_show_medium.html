@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load event_tags %}
+{% load urlsearch %}
 
 <div class="event_medium">
   <div class="content">
@@ -31,12 +32,22 @@
     {% endif %}
 
     {% if event.city %}
-        <span class="city"><a href="{% url list_events_location event.city %}">{{ event.city|capfirst }}</a></span>
-    {% endif %}
-    {% if event.country %}
-      <span class="country">
-        (<a href="{% url list_events_location event.country %}">{{ event.country|capfirst }}</a>)
-      </span>
+        {% if event.country %}
+            <span class="city">
+                <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
+                (<a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)
+            </span>
+        {% else %}
+            <span class="city">
+                <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
+            </span>
+        {% endif %}
+    {% else %}
+        {% if event.country %}
+            <span class="country">
+                (<a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)
+            </span>
+        {% endif %}
     {% endif %}
     {% if event.upcoming != event.start and event.upcoming != event.end %}
       <br />
@@ -48,8 +59,10 @@
     {% if event.get_tags %}
       <div class="tags">
           {% for tag in event.get_tags|slice:":100" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
-              <span class="tag"><a href='{% url list_events_tag tag %}'>{{ tag }}</a>&nbsp;</span>
-        {% endfor %}
+              <span class="tag">
+                  <a href='{% urlsearch tag=tag %}'>{{ tag }}</a>&nbsp;
+              </span>
+          {% endfor %}
       </div>
     {% endif %}
   </div>

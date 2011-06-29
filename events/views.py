@@ -68,6 +68,7 @@ from gridcalendar.events.models import (
     Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo )
 from gridcalendar.events.utils import search_address, html_diff
 from gridcalendar.events.tables import EventTable
+from gridcalendar.events.feeds import SearchEventsFeed
 
 # TODO: check if this works with i18n
 views = [_('table'), _('map'), _('boxes')]
@@ -590,6 +591,7 @@ def event_undelete( request, event_id ): # {{{1
             templates, context_instance = RequestContext( request ) )
 
 def search( request, query = None, view = 'boxes' ): # {{{1
+    # doc {{{2
     """ View to get the data of a search query.
 
     Notice that ``query`` and ``view`` can be a GET value in ``request``, or a
@@ -607,10 +609,10 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> e1 = Event.objects.create(
-    ...         title = 's1_test', tags = 'berlin',
+    ...         title = 's1_test', tags = 'berlin', city = 'prag',
     ...         start = datetime.date.today())
     >>> e2 = Event.objects.create(
-    ...         title = 's2_test', tags = 'berlin',
+    ...         title = 's2_test', tags = 'berlin', city = 'madrid',
     ...         start = datetime.date.today())
     >>> Client().get(reverse('search_query',
     ...         kwargs={'query': 'test',})).status_code
@@ -621,18 +623,34 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> Client().get(reverse('search_query_view',
     ...         kwargs={'query': 'test', 'view': 'map'})).status_code
     200
+ 
+    >>> Client().get(reverse('search'), {'query': '#berlin',}).status_code
+    200
+    >>> response = Client().get(reverse('search'), {'query': '#berlinn',})
+    >>> response = response.content
+    >>> assert 'There are no events for this search currently' in response
+
+    >>> Client().get(reverse('search'), {'query': '@madrid',}).status_code
+    200
+    >>> response = Client().get(reverse('search'), {'query': '@madridd',})
+    >>> response = response.content
+    >>> assert 'There are no events for this search currently' in response
+
+    >>> e1.delete()
+    >>> e2.delete()
     """
+    # function body {{{2
     # query
     if 'query' in request.GET and request.GET['query']:
         query = request.GET['query']
-        if query.find('/') != -1:
-            messages.error( request, 
-                _( u"A search with the character '/' was submitted, but it " \
-                "is not allowed" ) )
-            return main( request )
-            # the character / cannot be allowed because Django won't be able to
-            # create a URL for the ical result of the search. For a discussion,
-            # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
+        #if query.find('/') != -1:
+        #    messages.error( request, 
+        #        _( u"A search with the character '/' was submitted, but it " \
+        #        "is not allowed" ) )
+        #    return main( request )
+        #    # the character / cannot be allowed because Django won't be able to
+        #    # create a URL for the ical result of the search. For a discussion,
+        #    # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
     # view
     if 'view' in request.GET and request.GET['view']:
         view = request.GET['view']
@@ -747,6 +765,10 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         else:
             mimetype = "application/x-yaml"
         return HttpResponse( mimetype = mimetype, content = data )
+    elif view == 'rss':
+        return SearchEventsFeed()( request, query )
+    elif view == 'ical':
+        return ICalForSearch( request, query )
     else:
         raise Http404
     return render_to_response( 'search.html',
@@ -979,43 +1001,6 @@ def list_events_my( request ): # {{{1
             {'title': _( "my events" ), 'events': events},
             context_instance = RequestContext( request ) )
 
-def list_events_tag( request, tag ): # {{{1
-    """ returns a view with events having a tag
- 
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> e = Event.objects.create(
-    ...         title = 'let_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
-    >>> Client().get(reverse('list_events_tag',
-    ...         kwargs={'tag': 'berlin',})).status_code
-    200
-    >>> Client().get(reverse('list_events_tag',
-    ...         kwargs={'tag': 'list-events-tag',})).status_code
-    404
-    """
-    return search( request, query = u'#' + tag )
-
-def list_events_location( request, location ): # {{{1
-    """ returns a view with events having a location
- 
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> e = Event.objects.create(
-    ...         title = 'lel_test', tags = 'test',
-    ...         city = 'Berlin',
-    ...         start = datetime.date.today() )
-    >>> Client().get(reverse('list_events_location',
-    ...         kwargs={'location': 'berlin',})).status_code
-    200
-    >>> Client().get(reverse('list_events_location',
-    ...         kwargs={'location': 'list-events-location',})).status_code
-    200
-    """
-    # FIXME: create a function in the manager of events to return events by
-    # location and change the code everywhere using Event.objects.location()
-    return search( request, query = '@'+location, view = 'table' )
-
 def main( request, status_code=200 ):# {{{1
     """ main view
     
@@ -1036,14 +1021,14 @@ def main( request, status_code=200 ):# {{{1
             # create a new entry and saves the data
             event = Event( user_id = request.user.id,
                       title = cleaned_data['title'],
-                      start = cleaned_data['when']['start_date'],
+                      start = cleaned_data['when']['start'],
                       tags = cleaned_data['tags'], )
-            if cleaned_data['when'].has_key('end_date'):
-                event.end = cleaned_data['when']['end_date']
-            if cleaned_data['when'].has_key('start_time'):
-                event.starttime = cleaned_data['when']['start_time']
-            if cleaned_data['when'].has_key('end_time'):
-                event.endtime = cleaned_data['when']['end_time']
+            if cleaned_data['when'].has_key('end'):
+                event.end = cleaned_data['when']['end']
+            if cleaned_data['when'].has_key('starttime'):
+                event.starttime = cleaned_data['when']['starttime']
+            if cleaned_data['when'].has_key('endtime'):
+                event.endtime = cleaned_data['when']['endtime']
             addresses = search_address( cleaned_data['where'] )
             if addresses and len( addresses ) == 1:
                 address = addresses.values()[0]

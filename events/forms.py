@@ -92,7 +92,7 @@ class URLFieldExtended(CharField): #{{{1
 
 class DatesTimesField(Field): # {{{1
     """ processes one or two dates and optionally one or two times, returning a
-    dictionary with possible keys: start_date, end_date, start_time, end_time
+    dictionary with possible keys: start, end, starttime, endtime
 
     Valid formats:
 
@@ -132,8 +132,8 @@ class DatesTimesField(Field): # {{{1
     >>> d = dt.to_python('25 October, 2006')
     """
     def to_python(self, value):
-        """ returns a dictionary with four values: start_date, end_date,
-        start_time, end_time """
+        """ returns a dictionary with four values: start, end,
+        starttime, endtime """
         re_d = \
             re.compile( r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s*$', re.UNICODE )
         re_d_d = \
@@ -163,26 +163,26 @@ class DatesTimesField(Field): # {{{1
         try:
             matcher = re_d.match( value )
             if matcher:
-                return {'start_date': _date(matcher.group(1)),}
+                return {'start': _date(matcher.group(1)),}
             matcher = re_d_d.match( value )
             if matcher:
-                return {'start_date': _date(matcher.group(1)),
-                        'end_date': _date(matcher.group(2))}
+                return {'start': _date(matcher.group(1)),
+                        'end': _date(matcher.group(2))}
             matcher = re_d_t.match(value)
             if matcher:
-                return {'start_date': _date(matcher.group(1)),
-                        'start_time': _time(matcher.group(2))}
+                return {'start': _date(matcher.group(1)),
+                        'starttime': _time(matcher.group(2))}
             matcher = re_d_t_d_t.match(value)
             if matcher:
-                return {'start_date': _date(matcher.group(1)),
-                        'start_time': _time(matcher.group(2)),
-                        'end_date': _date(matcher.group(3)),
-                        'end_time': _time(matcher.group(4))}
+                return {'start': _date(matcher.group(1)),
+                        'starttime': _time(matcher.group(2)),
+                        'end': _date(matcher.group(3)),
+                        'endtime': _time(matcher.group(4))}
             matcher = re_d_t_t.match(value)
             if matcher:
-                return {'start_date': _date(matcher.group(1)),
-                        'start_time': _time(matcher.group(2)),
-                        'end_time': _time(matcher.group(3))}
+                return {'start': _date(matcher.group(1)),
+                        'starttime': _time(matcher.group(2)),
+                        'endtime': _time(matcher.group(3))}
         except (TypeError, ValueError), e:
             pass
         except ValidationError, e:
@@ -190,15 +190,15 @@ class DatesTimesField(Field): # {{{1
             # message is translated
             raise e
         # No matches. We try now DateField
-        return { 'start_date': DateField().clean( value ) }
+        return { 'start': DateField().clean( value ) }
 
     def validate(self, value):
         """ checks that dates and times are in order, i.e. start before end """
-        if value.has_key('end_date'):
-            if value['start_date'] > value['end_date']:
+        if value.has_key('end'):
+            if value['start'] > value['end']:
                 raise ValidationError( _('end date is before start date') )
-        if value.has_key('end_time'):
-            if value['start_time'] > value['end_time']:
+        if value.has_key('endtime'):
+            if value['starttime'] > value['endtime']:
                 raise ValidationError( _('end time is before start time') )
 
 class CoordinatesField( CharField ): #{{{1
@@ -350,7 +350,7 @@ class SimplifiedEventForm( ModelForm ): # {{{1
         title = self.cleaned_data.get("title", None)# neccesary field, no checks
         when = self.cleaned_data.get("when", None)
         if title and when:
-            start = when['start_date']   # neccesary field, no checks
+            start = when['start']   # neccesary field, no checks
             if Event.objects.filter( title = title, start = start ).exists():
                 raise ValidationError( _('There is already an event with the ' \
                         'same title and start date ' \
