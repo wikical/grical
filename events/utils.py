@@ -423,6 +423,13 @@ def validate_event_exists( value ):
         raise ValidationError( _(u'An event with the number %(event_nr)s ' \
                 'does not exists.') % {'event_nr': value,} )
 
+def validate_tags_chars( value ):
+    """ it validates that tag characters are only international letters, spaces
+    and hyphen """
+    if re.search("[^ \-\w]|_", value, re.UNICODE):
+        raise ValidationError(_(u"Punctuation marks are not allowed, " \
+                "only letters and hyphens (-)"))
+
 def validate_year( value ):
     """ it validates ``value.year`` newer than 1900 and less than 2 years from
     now.
@@ -440,9 +447,9 @@ def validate_year( value ):
         raise ValidationError(
             _( u'%(year)s is before 1900, which is not allowed' ) % \
                     {'year': value.year,} )
-    if value > datetime.date.today() + relativedelta( years = 2 ):
+    if value > datetime.date.today() + relativedelta( years = 4 ):
         raise ValidationError(
-            _( u'%(year)s is more than two years in the future, ' \
+            _( u'%(year)s is more than four years in the future, ' \
                     'which is not allowed' ) % {'year': value.year,} )
 
 def html_diff(old_as_text, new_as_text):

@@ -293,13 +293,6 @@ class EventForm(ModelForm): # {{{1
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         exclude = ('coordinates',) # excludes the model field 'coordinates'
-    def clean_tags(self): # pylint: disable-msg=C0111
-        data = self.cleaned_data['tags']
-        if re.search("[^ \-\w]", data, re.UNICODE):
-            raise ValidationError(_(u"Punctuation marks are not allowed"))
-        # this method has to return the cleaned data, whether you have changed
-        # it or not:
-        return data
     def clean( self ):
         """ it adds the value of coordinates to the Event instance """
         self.cleaned_data = super(EventForm, self).clean()
@@ -335,13 +328,6 @@ class SimplifiedEventForm( ModelForm ): # {{{1
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags',)
-    def clean_tags(self): # pylint: disable-msg=C0111
-        data = self.cleaned_data['tags']
-        if re.search("[^ \-\w]", data, re.UNICODE):
-            raise ValidationError(_(u"Punctuation marks are not allowed"))
-        # this method has to return the cleaned data, whether you have changed
-        # it or not:
-        return data
     def clean( self ):
         """ checks that there is no other event with the same name and start
         date """

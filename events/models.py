@@ -35,31 +35,26 @@ from itertools import chain
 
 import vobject
 
-from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
+from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.comments import Comment
 from django.contrib.comments.signals import comment_was_posted
-from django.contrib.sites.models import Site
-from django.core.mail import send_mail, BadHeaderError, EmailMessage
-from django.core.urlresolvers import reverse
-from django.core.validators import RegexValidator
-from django.utils.encoding import smart_str, smart_unicode
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models
-# http://docs.djangoproject.com/en/1.2/topics/db/queries/#filters-can-reference-fields-on-the-model
-#from django.db.models import Q
 from django.contrib.gis.db.models import Q
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
-from django.db.models.signals import pre_save, post_save, post_delete
-from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sites.models import Site
-
-# from django.forms import ValidationError
-
+from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
-from django.template.loader import render_to_string
+from django.core.mail import send_mail, BadHeaderError, EmailMessage
+from django.core.urlresolvers import reverse
+from django.core.validators import RegexValidator
 from django.db import transaction
+from django.db.models.signals import pre_save, post_save, post_delete
+from django.template.loader import render_to_string
+from django.utils.encoding import smart_str, smart_unicode
+from django.utils.translation import ugettext_lazy as _
 # FIXME from gridcalendar.events.decorators import autoconnect
 
 from tagging.fields import TagField
@@ -68,7 +63,8 @@ import reversion
 from reversion import revision
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
-from gridcalendar.events.utils import validate_year, search_name, text_diff
+from gridcalendar.events.utils import (
+        validate_year, search_name, text_diff, validate_tags_chars )
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -443,10 +439,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             _( u'End time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
     tags = TagField( _( u'Tags' ), blank = True, null = True,
-        help_text = _( u''.join( [u"Tags are case insensitive. Only letters ",
+        help_text = 
+            _( u''.join( [u"Tags are case insensitive. Only letters ",
             u"(these can be international, like: αöł), digits and hyphens (-)",
             u"are allowed. Tags are separated with spaces. Example: ",
-            u"demonstration software-patents"] ) ) )
+            u"demonstration software-patents"] ) ),
+        validators = [validate_tags_chars] )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
             max_length = 2, choices = COUNTRIES )
     city = models.CharField( 
