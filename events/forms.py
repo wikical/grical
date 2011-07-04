@@ -26,14 +26,14 @@
 # imports {{{1
 import re
 import datetime
+import urllib2
 import urlparse
 
 from django.contrib.gis.geos import Point
 from django.core import validators
 from django.forms import ( CharField, IntegerField, HiddenInput,
         ModelMultipleChoiceField, ModelForm, ValidationError,
-        TextInput, CheckboxSelectMultiple, Form, Field, DateField, TimeField,
-        URLField, )
+        TextInput, CheckboxSelectMultiple, Form, Field, DateField, TimeField )
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -53,6 +53,53 @@ def _time(string): # {{{1
     """ parse a time in the format: hh:mm """
     return datetime.datetime.strptime(string, '%H:%M').time()
 
+class URLValidatorExtended( validators.URLValidator ):
+    """ Like ``URLValidation`` but adding support to HTTP Basic Auth.
+    See https://code.djangoproject.com/ticket/9791 """
+    def __call__( self, value ):
+        try:
+            return super( URLValidatorExtended, self ).__call__( value )
+        except ValidationError, err:
+            # we check now http basic auth
+            url = urlparse.urlsplit( value )
+            if url.scheme.lower() != "http" and url.scheme.lower() != "https":
+                raise ValidationError(
+                    _( u"Only http and https are supported" ) )
+            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
+            if url.netloc.find('@') >= 0:
+                user = url.username
+                passwd = url.password
+                url = list(url)
+                url[1] = url[1].split('@')[1]
+                urlf = urlparse.urlunsplit(url)
+                passman.add_password( None, urlf.split("//")[1], user, passwd )
+            else:
+                raise err
+            authhandler = urllib2.HTTPBasicAuthHandler(passman)
+            opener = urllib2.build_opener(authhandler)
+            urllib2.install_opener(opener)
+            headers = {
+                "Accept": "text/xml,application/xml,application/xhtml+xml," \
+                        "text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+                "Accept-Language": "en-us,en;q=0.5",
+                "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
+                "Connection": "close",
+                "User-Agent": self.user_agent,
+            }
+            # TODO: try first a HEAD request, see Django code of URLValidator
+            try:
+                req = urllib2.Request( urlf, headers = headers )
+                f = urllib2.urlopen( req, timeout = 10 )
+            except urllib2.HTTPError, e:
+                raise ValidationError(
+                        _( u"Couldn't get URL %(url)s: %(error)s" ) % 
+                        { 'url': value, 'error': e} )
+            except urllib2.URLError, e:
+                raise ValidationError(
+                    "Couldn't connect to %s: %s" %
+                        _( u"Couldn't connect to %(url)s: %(error)s" ) % 
+                        { 'url': u[1], 'error':e.reason } )
+
 class URLFieldExtended(CharField): #{{{1
     """ like URLFiled but adding support for in-URL basic AUTH, see
         http://code.djangoproject.com/ticket/9791 """
@@ -65,30 +112,9 @@ class URLFieldExtended(CharField): #{{{1
             *args, **kwargs):
         super(URLFieldExtended, self).__init__(
                 max_length, min_length, *args, **kwargs )
-        self.validators.append( validators.URLValidator(
+        self.validators.append( URLValidatorExtended(
             verify_exists=verify_exists,
             validator_user_agent=validator_user_agent ) )
-    def to_python(self, value):
-        if value:
-            split_result = urlparse.urlsplit(value) # returns a SplitResult
-            url_fields = list( split_result )
-            if not url_fields[0]:
-                # If no URL scheme given, assume http://
-                url_fields[0] = 'http'
-            if not url_fields[1]:
-                # Assume that if no domain is provided, that the path segment
-                # contains the domain.
-                url_fields[1] = url_fields[2]
-                url_fields[2] = ''
-                # Rebuild the url_fields list, since the domain segment may now
-                # contain the path too.
-                value = urlparse.urlunsplit(url_fields)
-                url_fields = list(urlparse.urlsplit(value))
-            if not url_fields[2]:
-                # the path portion may need to be added before query params
-                url_fields[2] = '/'
-            value = urlparse.urlunsplit( url_fields )
-        return super( URLFieldExtended, self ).to_python( value )
 
 class DatesTimesField(Field): # {{{1
     """ processes one or two dates and optionally one or two times, returning a
@@ -302,6 +328,10 @@ class EventForm(ModelForm): # {{{1
                 self.instance.coordinates = Point(
                         float(coordinates['longitude']),
                         float(coordinates['latitude']) )
+            else:
+                self.instance.coordinates = None
+        else:
+            self.instance.coordinates = None
         return self.cleaned_data
 
 class SimplifiedEventForm( ModelForm ): # {{{1

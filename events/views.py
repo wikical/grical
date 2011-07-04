@@ -154,6 +154,8 @@ def event_edit( request, event_id = None ): # {{{1
                     formset_session.is_valid() & formset_deadline.is_valid() :
                 # FIXME: don't allow to save an event with missing basic data
                 # like a URL
+                if not event_form.cleaned_data.get( 'coordinates', False ):
+                    event.coordinates = None
                 event.save()
                 formset_url.save()
                 formset_session.save()
@@ -181,8 +183,11 @@ def event_edit( request, event_id = None ): # {{{1
     return render_to_response( 'event_edit.html', templates,
             context_instance = RequestContext( request ) )
 
-def event_new_raw( request ): # {{{1
-    """ View to create an event as text.
+def event_new_raw( request, template_event_id = None ): # {{{1
+    """ View to create an event as text
+    
+    If a ``template_event_id`` is given, the preliminary text is the text form
+    of the event with that id.
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -225,7 +230,13 @@ def event_new_raw( request ): # {{{1
                     "browser and try again.") )
             return main( request )
     else:
-        templates = { 'title': _( "edit event as text" ), }
+        try:
+            template_event = Event.objects.get( pk = template_event_id )
+            templates = {
+                    'title': _( "edit event as text" ),
+                    'template': smart_unicode( template_event.as_text() ) }
+        except Event.DoesNotExist:
+            templates = { 'title': _( "edit event as text" ), }
         return render_to_response( 'event_new_raw.html', templates,
                 context_instance = RequestContext( request ) )
 

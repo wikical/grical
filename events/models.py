@@ -1055,6 +1055,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         complex_list = Event.get_complex_fields()
         simple_dic = {}  # to be returned, see docstring of this method
         complex_dic = {} # to be returned, see docstring of this method
+        # used to know if a key appears more than one:
+        field_names = set( simple_list + complex_list )
+        # field names and synonyms as keys, field names as values:
         syns = Event.get_synonyms()
         current = None # current field being parsed
         lines = list() # lines belonging to current field
@@ -1062,6 +1065,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # group 1 is the name of the field, group 2 is the value
         empty_line_p = re.compile(r"^\s*$")
         line_counter = 0
+        assert filter( lambda x: x == 'description', complex_list)
         for line in text.splitlines():
             line_counter += 1
             if current and current == "description":
@@ -1093,9 +1097,20 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                 {'number': line_counter, 'line': line})
             if not syns.has_key(field_m.group(1).lower()):
                 raise ValidationError(_(u"wrong field name: ") + field_m.group(1))
+            # checks no duplicity
+            if not current:
+                if not syns[field_m.group(1).lower()] in field_names:
+                    raise ValidationError(
+                        _(u"field '%(field_name)s' is defined more than one") %
+                        {'field_name': syns[field_m.group(1).lower()],} ) #
+                        # TODO: show line number and line in errors
+                else:
+                    field_names.discard( syns[field_m.group(1)] )
+            # checks simple field
             if syns[field_m.group(1).lower()] in simple_list:
                 simple_dic[ syns[field_m.group(1).lower()] ] = field_m.group(2)
                 continue
+            # checks complex field
             if not syns[field_m.group(1).lower()] in complex_list:
                 raise RuntimeError("field %s was not in 'complex_list'" %
                         field_m.group(1))
@@ -2400,9 +2415,9 @@ class Filter( models.Model ): # {{{1
             #         Q(start__gte = date) | Q(end__gte = date) |
             #         Q(deadlines__deadline__gte = date) )
         # look for words
-        regex = re.compile('(\w+)', UNICODE)
-        for word in regex.findall(query):
-            word = word.strip()
+        regex = r = re.compile('\s', re.UNICODE)
+        for word in regex.split( query ):
+            if not word: continue
             if not broad:
                 queryset = queryset.filter(
                         Q(title__icontains = word) |

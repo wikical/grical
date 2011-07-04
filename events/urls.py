@@ -45,6 +45,9 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/new/raw/$',
         views.event_new_raw,            name='event_new_raw'),
 
+    url(r'^e/new/copyraw/(?P<template_event_id>\d*)/$',
+        views.event_new_raw,            name='event_new_copyraw'),
+
     url(r'^e/edit/(?P<event_id>\d*)/$',
         views.event_edit,               name='event_edit'),
 
