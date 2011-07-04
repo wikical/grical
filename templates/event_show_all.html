@@ -18,6 +18,8 @@
         <a href="{% url event_history event.id %}">{% trans "history" %}</a>
         &nbsp;|&nbsp;
         {% show_add_to_group %}
+        &nbsp;|&nbsp;
+        <a href="{% url event_new_copyraw event.id %}">{% trans "copy as text" %}</a>
         {% if user.is_authenticated %}
             &nbsp;|&nbsp;
             <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>

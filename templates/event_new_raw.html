@@ -11,7 +11,7 @@
             {% if event_textarea %}
                 <TEXTAREA Name="event_astext" rows="25" cols="80">{{ event_textarea }}</TEXTAREA>
             {% else %}
-                <TEXTAREA Name="event_astext" rows="25" cols="80"></TEXTAREA>
+                <TEXTAREA Name="event_astext" rows="25" cols="80">{{ template }}</TEXTAREA>
             {% endif %}
         <input type="submit" value={% trans "Save" %}>
         </table>
