@@ -147,6 +147,7 @@ INSTALLED_APPS = (
     'registration',
     'reversion',
     'django.contrib.markup', # used for rendering ReStructuredText
+    'contact_form',
  )
 if DEBUG:
     INSTALLED_APPS = ( 'debug_toolbar', ) + INSTALLED_APPS

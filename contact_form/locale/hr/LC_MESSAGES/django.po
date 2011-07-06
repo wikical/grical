@@ -1,0 +1,35 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-contact-form\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-12-01 14:26+0100\n"
+"PO-Revision-Date: 2010-12-01 14:51+0100\n"
+"Last-Translator: Enis Afgan <afgane@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Croatian\n"
+"X-Poedit-Country: CROATIA\n"
+
+#: forms.py:143
+msgid "Your name"
+msgstr "Vaše ime"
+
+#: forms.py:146
+msgid "Your email address"
+msgstr "Vaša e-mail adresa"
+
+#: forms.py:148
+msgid "Your message"
+msgstr "Poruka"
+
+#: forms.py:259
+msgid "Akismet thinks this message is spam"
+msgstr "Akismet misli da je ova poruka spam"
+

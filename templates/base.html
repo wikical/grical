@@ -55,6 +55,9 @@ permission of the original author -->
         {% block search_info %}
         {% endblock %}
     </div>
+    <div id="feedback">
+        <a href="{% url contact_form %}">{% trans "feedback" %}</a>
+    </div>
     <div id="flattr">
         <a href="http://flattr.com/thing/85499/GridCalendar-Community-Calendar">
             <img src="{{ MEDIA_URL }}flattr-badge-large.png" alt="Flattr this" title="Flattr this" style="vertical-align: middle" /></a>

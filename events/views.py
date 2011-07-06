@@ -691,7 +691,13 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     # search
     # TODO: limit the number of search results. Think of malicious users
     # getting millions of events from the past
-    search_result = Filter.matches(query, request.user, related)
+    try:
+        search_result = Filter.matches( query, request.user, related )
+    except ValueError as err: # TODO: catch other errors
+        messages.error( request, 
+                _( u"The search is malformed: %(error_message)s" ) %
+                {'error_message': err.args[0]} )
+        search_result = Event.objects.none()
     if limit:
         search_result = search_result[0:limit]
     # views

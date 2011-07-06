@@ -1,17 +1,9 @@
-show-stopping
--------------
-
-- bug: in text mode introduce one or more urls which are not called web
-- bug: event 557 search_engines
-- bug: search 2011-04-01 2011-04-31
-
 high priority
 -------------
 
 - accept search 2011-04
 - contact form, terminate with: 'Thanks for contacting us. We'll try our best to reply in a timely
   fashion.'
-- Don't use two columns (related events) in the result of a search with location
 - run the tests of django_tables
 - accept urls with no http:// and spaces 
 - SEO optimization: tags, titles, for each view, event, etc.

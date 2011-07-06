@@ -55,10 +55,11 @@ urlpatterns = patterns( '', # pylint: disable-msg=C0103
         'django.contrib.auth.views.logout', {'next_page': '/'} ),
  )
 
-# comments
+# comments / feedback
 # see http://docs.djangoproject.com/en/1.3/ref/contrib/comments/
 urlpatterns += patterns( '',
         (r'^c/comments/', include('django.contrib.comments.urls')),
+        (r'^c/feedback/', include('contact_form.urls')),
  )
 
 # h pattern for help and legal_notice {{{1

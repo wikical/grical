@@ -2256,6 +2256,9 @@ class Filter( models.Model ): # {{{1
         """ returns a queryset without touching the database, see
         :meth:`Filter.matches`
 
+        It can throw a ``ValueError`` if for instance a day is out of range for
+        a month in a date, e.g. 2011-04-31.
+
         If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
         ``query`` is None or an empty string.
 
@@ -2358,9 +2361,10 @@ class Filter( models.Model ): # {{{1
             date1 = sorted_dates[0] # first date
             date2 = sorted_dates[-1] # last date
             queryset = queryset.filter(
-                    Q( start__range = (date1, date2) )  |
-                    Q( end__range = (date1, date2) ) |
-                    Q(deadlines__deadline__range = (date1, date2) ) )
+                   Q( start__range = (date1, date2) )  |
+                   Q( end__range = (date1, date2) ) |
+                   Q(deadlines__deadline__range = (date1, date2) ) |
+                   Q( start__lt = date1, end__gt = date2 ) ) # range in-between
             # remove all dates (yyyy-mm-dd) from the query
             query = DATE_REGEX.sub("", query)
         elif not broad:

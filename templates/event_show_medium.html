@@ -14,9 +14,9 @@
     <br />
 
     <span class="dates">
-    {{ event.start }}
+    <a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a>
     {% if event.end and event.end != event.start %}
-        : {{ event.end }}
+        : <a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a>
         </span>
     {% else %}
         {% if event.starttime %}
@@ -51,8 +51,8 @@
     {% endif %}
     {% if event.upcoming != event.start and event.upcoming != event.end %}
       <br />
-      <span class="deadline">
-          {{ event.upcoming }}
+      <span class="deadlines">
+        <a href='{% urlsearch query=event.upcoming|date:"Y-m-d" %}'>{{ event.upcoming }}</a>
       </span>
       {{ event.next_deadline_names }}
     {% endif %}
