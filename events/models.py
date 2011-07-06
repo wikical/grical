@@ -3,7 +3,7 @@
 # vim: expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # GPL {{{1
 #############################################################################
-# Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
 #
@@ -52,6 +52,7 @@ from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.db import transaction
 from django.db.models.signals import pre_save, post_save, post_delete
+from django.forms import DateField
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str, smart_unicode
 from django.utils.translation import ugettext_lazy as _
@@ -346,7 +347,6 @@ sessions:
     2010-12-29    15:00-16:00    second presentation
     2010-12-30    15:00-16:00    third presentation
 description:
-
 GridCalendar will be presented"""
 
 # TODO: add alters_data=True to all functions that do that.
@@ -1038,7 +1038,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         u'calendar software open-source gridmind gridcalendar'
         >>> s[u'title']
         u'GridCalendar presentation'
-        >>> c[u'description'][2]
+        >>> c[u'description'][1]
         u'GridCalendar will be presented'
         >>> c[u'deadlines'][1].replace(' ','')
         u'2009-11-01visitortickets'
@@ -1057,6 +1057,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         complex_dic = {} # to be returned, see docstring of this method
         # used to know if a key appears more than one:
         field_names = set( simple_list + complex_list )
+        assert len( field_names ) == len( simple_list ) + len( complex_list )
         # field names and synonyms as keys, field names as values:
         syns = Event.get_synonyms()
         current = None # current field being parsed
@@ -1065,6 +1066,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # group 1 is the name of the field, group 2 is the value
         empty_line_p = re.compile(r"^\s*$")
         line_counter = 0
+        # we test that there is a field called 'description' because we are
+        # going to use it, i.e. it is hardcoded in the code below:
         assert filter( lambda x: x == 'description', complex_list)
         for line in text.splitlines():
             line_counter += 1
@@ -1115,7 +1118,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 raise RuntimeError("field %s was not in 'complex_list'" %
                         field_m.group(1))
             current = syns[field_m.group(1).lower()]
-            lines.append(line)
+            lines.append( line[ len(field_m.group(1))+1 : ].lstrip() )
         if current:
             complex_dic[current] = lines
         return simple_dic, complex_dic
@@ -1214,9 +1217,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             event_form = EventForm( simple_fields, instance = event )
         # processing description
         if complex_fields.has_key(u'description'):
-            description = u"\n".join(complex_fields[u'description'])
-            # remove the word 'description'
-            event_form.data['description'] = description[13:]
+            lines_d = complex_fields[u'description']
+            if len( lines_d ) > 0:
+                if lines_d[0].strip():
+                    event_form.data['description'] = u"\n".join( lines_d )
+                elif len( lines_d ) > 1:
+                    event_form.data['description'] = u"\n".join( lines_d[1:] )
             del complex_fields[u'description']
         # testing data
         if not event_form.is_valid():
@@ -1226,8 +1232,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         event.user = None
         # urls {{{5
         if complex_fields.has_key(u'urls'):
-            urls = EventUrl.get_urls(
-                    u'\n'.join(complex_fields[u'urls']) )
+            urls = EventUrl.get_urls( complex_fields[u'urls'] )
             event_urls = list() # stores EventURLs to be saved at the end
             for url_name, url in urls.items():
                 try:
@@ -1258,7 +1263,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # deadlines {{{5
         if complex_fields.has_key(u'deadlines'):
             deadlines = EventDeadline.get_deadlines(
-                    u'\n'.join(complex_fields[u'deadlines']))
+                    complex_fields[u'deadlines'] )
             event_deadlines = list() # stores EventDeadline instances to be saved
                                      # at the end
             for name, deadline in deadlines.items():
@@ -1290,8 +1295,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             del complex_fields[u'deadlines']
         # sessions {{{5
         if complex_fields.has_key(u'sessions'):
-            sessions = EventSession.get_sessions(
-                    u'\n'.join(complex_fields[u'sessions']) )
+            sessions = EventSession.get_sessions( complex_fields[u'sessions'] )
             event_sessions = list() # stores EventSessions to be saved at the end
             for session in sessions:
                 try:
@@ -1713,29 +1717,16 @@ class EventUrl( models.Model ): # {{{1
         return new
 
     @staticmethod # def get_urls( text ): {{{2
-    def get_urls( text ):
+    def get_urls( lines ):
         """ validates text lines containing EventUrl entries, raising
         ValidationErrors if there are errors, otherwise it returns a dictionary
         with names and urls (both unicode objects).
+
+        If ``line[0]`` is not empty it is the default url.
         """
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
-        lines = text.splitlines()
-        if (len(lines[0]) < 1):
-            raise ValidationError(_(u"text was empty") )
-        # test for default URL
-        field_m = field_p.match(lines[0])
-        if not field_m:
-            raise ValidationError(
-                    _(u"first line for urls is malformed: ") +
-                    lines[0])
-        syns = Event.get_synonyms()
-        if syns[field_m.group(1).lower()] != u'urls':
-            raise ValidationError(
-                    _(u"first line for urls doesn't contain a \
-                    synonym of 'urls' before the colon: ") + lines[0])
         urls = {} # keys are url-names, values are urls
-        if field_m.group(2) != u'':
-            urls['url'] = field_m.group(2) # default url
+        if lines[0].strip():
+            urls['url'] = lines[0].strip() # default url
         if len(lines) > 1:
             field_p = re.compile(r"^\s+(.*)\s+(.+?)\s*$")
             for line in lines[1:]:
@@ -1753,16 +1744,18 @@ class EventUrl( models.Model ): # {{{1
                             _('found more than one url with the same name: ' \
                                     u'%(name)s') % {'name': name} )
                 urls[name] = field_m.group(2)
-        # we now check each url using django.core.validators for the fields of
-        # this class
+        # we now check each url using the validators of this class and
+        # events.forms.URLValidatorExtended
         errors = []
         url_validators = EventUrl._meta.get_field_by_name('url')[0].validators
+        from gridcalendar.events.forms import URLValidatorExtended
+        url_validators.append( URLValidatorExtended() )
         url_name_validators = \
                 EventUrl._meta.get_field_by_name('url_name')[0].validators
         for url_name, url in urls.items():
             for val in url_name_validators:
                 try:
-                    val(url_name)
+                    val( url_name )
                 except ValidationError, e:
                     errors.append( _('Error in url name %(url_name)s') %
                             {'url_name': url_name,} )
@@ -1834,51 +1827,25 @@ class EventDeadline( models.Model ): # {{{1
         return new
 
     @staticmethod # def get_deadlines( text ): {{{2
-    def get_deadlines( text ):
+    def get_deadlines( lines ):
         """ validates text lines containing EventDeadline entries,
         raising ValidationErrors if there are errors, otherwise it returns a
         dictionary with names and dates. """
         # TODO: this code can be simplified using only the django validators
-        if not isinstance(text, unicode):
-            text = smart_unicode(text)
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*(.*?)\s*$")
-        lines = text.splitlines()
-        if (len(lines[0]) < 1):
-            raise ValidationError(
-                    _(u"text of first line for deadlines was empty"))
-        # test for default deadline
-        field_m = field_p.match(lines[0])
-        if not field_m:
-            raise ValidationError(
-                    _(u"first line for deadlines is malformed: ") +
-                    lines[0])
-        syns = Event.get_synonyms()
-        if syns[field_m.group(1).lower()] != u'deadlines':
-            raise ValidationError(
-                    _( ''.join(["first line for deadlines doesn't contain a ",
-                    "synonym of 'deadlines' before the colon: %(line)s"]) ) %
-                    {'line': lines[0],} )
         deadlines = {} # keys are names, values are dates
         errors = [] # we store here errors
-        if field_m.group(2) != u'':
-            date_p = re.compile(r"^(\d\d\d\d)-(\d\d)-(\d\d)$")
-            date_m = date_p.match(field_m.group(2))
-            if not date_m:
-                raise ValidationError(
-                        _(u"default deadline was not of the form " +
-                        u"nnnn-nn-nn. It was: ") + field_m.group(2))
-            # default deadline:
+        date_field = DateField()
+        # default deadline:
+        if lines[0].strip():
             try:
-                deadlines['deadline'] = datetime.date(
-                        int(date_m.group(1)), int(date_m.group(2)),
-                        int(date_m.group(3)))
-            except (TypeError, ValueError), e:
-                errors.append(
-                    _('The default deadline %(deadline)s is not correct') %
-                    {'deadline': date_m.group(1) + '-' + date_m.group(2) + '-'
-                        + date_m.group(3),} )
+                date = date_field.clean( lines[0].strip() )
+            except:
+                raise ValidationError(
+                        _(u"default deadline is not a valid date: %s") %
+                        lines[0].strip() )
+            deadlines[_('deadline')] = date
+        field_p = re.compile(r"^\s+(\d\d\d\d)-(\d?\d)-(\d?\d)\s+(.*?)\s*$")
         if len(lines) > 1:
-            field_p = re.compile(r"^\s+(\d\d\d\d)-(\d\d)-(\d\d)\s+(.*?)\s*$")
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
@@ -1980,7 +1947,7 @@ class EventSession( models.Model ): # {{{1
         return new
 
     @staticmethod # def get_sessions( text ): {{{2
-    def get_sessions( text ):
+    def get_sessions( lines ):
         """ validates text lines containing EventSession entries,
         raising ValidationErrors if there are errors, otherwise it returns a
         dictionary with session names as keys and Session instances as values.
@@ -1989,23 +1956,12 @@ class EventSession( models.Model ): # {{{1
         # The form  should include validation code that check for instance that
         # the start time is before the end time, etc. See
         # http://docs.djangoproject.com/en/1.2/ref/forms/api/#using-forms-to-validate-data
-        if not isinstance(text, unicode):
-            text = smart_unicode(text)
-        field_p = re.compile(r"(^[^\s:]+)\s*:\s*$", re.UNICODE)
-        lines = text.splitlines()
-        # test for first line
-        field_m = field_p.match(lines[0])
-        if not field_m:
-            raise ValidationError(
-                    _(u"first line for sessions is malformed"))
-        syns = Event.get_synonyms()
-        if syns[field_m.group(1).lower()] != u'sessions':
-            raise ValidationError(
-                    _(u"first line for sessions doesn't contain a " +
-                    "synonym of 'sessions' before the colon"))
+        if lines[0].strip():
+            raise ValidationError(_(u"first line for sessions was not empty"))
         if len ( lines ) < 2:
             raise ValidationError(
                     _(u"there is no sessions data") )
+        syns = Event.get_synonyms()
         # session's names as keys, Session instances as values
         sessions = dict()
         errors = list()
@@ -3072,8 +3028,7 @@ if settings.PIPE_TO_LOG_TO:
     # view.
     def _write_to_pipe( text ):
         with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
-            # TODO: make possible non ascii characters
-            text = smart_str( text, encoding='ascii', errors='ignore' )
+            text = smart_str( text, encoding='utf-8', errors='ignore' )
             lines = text.splitlines()
             pipe.write( lines[0] + '\n' )
             lines = map( lambda line: '    %s\n' % line, lines[1:] )

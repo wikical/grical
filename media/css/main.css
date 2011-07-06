@@ -22,11 +22,14 @@ body {
 }
 pre, code {
     margin: 1.5em 0;
-    white-space: pre;
-}
-pre, code {
     font: 1em 'andale mono', 'lucida console', monospace;
     line-height:1.5;
+    /* from http://labnol.blogspot.com/2006/10/html-css-trick-for-displaying-code.html */
+    white-space: pre-wrap; /* css-3 */
+    white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+    white-space: -pre-wrap; /* Opera 4-6 */
+    white-space: -o-pre-wrap; /* Opera 7 */
+    word-wrap: break-word; /* Internet Explorer 5.5+ */
 }
 a[href] {
     color: #436976;
