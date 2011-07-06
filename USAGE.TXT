@@ -93,37 +93,40 @@ Searches and filters
 - All given words must appear in at least one of the fields.
 - Search results contain also related events (with similar tags), unless one or more of the special
   search restrictions are used (like # for tags, see bellow)
-- One or more dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the
-  the oldest to the newest, or to one day if there is only one date.
+- More dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the the
+  oldest to the newest, including events with a deadline in the range and events taking place during
+  the range. If only one date is provided (instead of two or more) only events with the a matching
+  date (start, end or dateline) are shown. Example: `2011-01-01 2011-12-31`_
 - If there is no date in the query only future events are showed.
-- Tags ( ``#tag_name`` ) restricts the query to events with these tags.
-- Groups ( ``!group_name`` ) restricts the query to events of the group.
+- Tags ( ``#tag_name`` ) restricts the query to events with these tags. Example: `#linux`_
+- Groups ( ``!group_name`` ) restricts the query to events of the group. Example:`!ffii`_
 - The string `` | `` (space pipe space) can be used to concatenate results of different searches
-  (logical or). For example ``#linux | #foss`` will search for all future events with the tag
+  (logical or). For example `#linux | #foss`_ will search for all future events with the tag
   ``linux`` or ``foss`` or both.
-- Searches starting with `` * `` (space asterisk space) makes the search broader, including past events
+- Searches starting with `` * `` (asterisk space) makes the search broader, including past events
   (if no dates are specified), text in the description, urls (name and url), sessions (name) and
-  deadlines (name).
+  deadlines (name). Example: `* http://events.linuxfoundation.org/`__
 - Locations (``@location``) restricts the query to events within the given location. **Location terms
   must be added at the end of the query** (spaces in the name of locations are possible like
   ``@Los Angeles``). When given a distance, ``km`` (kilometers) and ``mi`` (miles) are allowed as
   units. There are **four possibilities**:
   
   - Giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``.
-  - Giving the name of a place and a distance. ``@london+100`` would look 100.
+    Example: `@berlin`_
+  - Giving the name of a place and a distance. `@london+100`_ would look 100
     kilometers around the center of the most relevant place with the name ``london`` (being it
-    London in Great Britain). The country can be specified with e.g. ``@london,ca`` (the most
+    London in Great Britain). The country can be specified with e.g. `@london,ca`_ (the most
     relevant city with the name London in Canada).
-  - Giving a coordinate and a distance ( ``@52.55247,13.40364+500km`` ).
+  - Giving a coordinate and a distance ( `@52.55247,13.40364+500km`_ ).
   - Giving four coordinates defining a rectangle: longitude_west,
-    longitude_east, latitude_north, latitude_south. Example: ``@13.324,13.463,52.5503,52.4701``.
+    longitude_east, latitude_north, latitude_south. Example: `@13.324,13.463,52.5503,52.4701`_.
 
 - The operator ``=`` restrict the search to one single event, the one having the number which
   follows the operator (example ``=123``). This can be used for e.g. sending a list of some events
-  as a URL and showing them on a map, example: ``grical.org/s/=123 | =456 | =789/map``
+  as a URL and showing them on a map, example: http://grical.org/s/?query=%3D123+%7C+%3D789&view=map
 
 - Any search can be saved as a filter by logged-in users. To be able to log-in
-  you need to register. A confirmation email will be sent in the process.
+  you need to register. An email will be sent in the process with a URL that you need to click.
 
 - You can select to get notified of new events matching one of your filters.
 
@@ -138,7 +141,16 @@ Searches and filters
 
 .. _RSS feed: http://en.wikipedia.org/wiki/Rss
 .. _iCalendar File: http://en.wikipedia.org/wiki/ICalendar
-
+.. _2011-01-01 2011-12-31: http://grical.org/s/?query=2011-01-01+2011-12-31
+.. _#linux: http://grical.org/s/?query=%23linux
+.. _!ffii: http://grical.org/s/?query=%21ffii
+.. _#linux | #foss: http://grical.org/s/?query=%23linux+%7C+%23foss
+__ http://grical.org/s/?query=*+http%3A%2F%2Fevents.linuxfoundation.org%2F
+.. _@berlin: http://grical.org/s/?query=%40berlin
+.. _@london+100: http://grical.org/s/?query=%40london%2B100
+.. _@london,ca: http://grical.org/s/?query=%40london%2Cca
+.. _@52.55247,13.40364+500km: http://grical.org/s/?query=%4052.55247%2C13.40364%2B500km
+.. _@13.324,13.463,52.5503,52.4701: http://grical.org/s/?query=%4013.324%2C13.463%2C52.5503%2C52.4701
 
 Event history and event deletions
 ---------------------------------

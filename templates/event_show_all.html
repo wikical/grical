@@ -27,14 +27,14 @@
     </div>
 
     <div class="dates">
-        {{ event.start }}
+        <a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a>
         {% if event.starttime %}
             <span class="times">
                 {{ event.starttime|time }}{% if event.endtime %}{% if not event.end or event.start == event.end %}-{{ event.endtime|time }}{% endif %}{% endif %}
             </span>
         {% endif %}
         {% if event.end and not event.start == event.end %}
-            : {{ event.end }}
+            : <a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a>
             {% if event.endtime %}
                 <span class="times">
                     {{ event.endtime|time }}
@@ -86,7 +86,10 @@
     {% if event.urls.all %}
         <ul class='urls'>
             {% for url in event.urls.all %}
-                <li><a href="{{ url.url }}">{{ url.url_name|escape }}</a></li>
+            <li>
+                <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
+                {# &emsp; <a href="{{ url.url }}"><span class="url">{{ url.url|escape }}</span></a> #}
+            </li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -106,7 +109,12 @@
         <table>
             {% for deadline in event.deadlines.all %}
                 <tr>
-                    <td>{{ deadline.deadline }}</td><td>{{ deadline.deadline_name|escape }}</td>
+                    <td>
+                        <span class="deadlines">
+                            <a href='{% urlsearch query=deadline.deadline|date:"Y-m-d" %}'>{{ deadline.deadline }}</a>
+                        </span>
+                        </td>
+                    <td>{{ deadline.deadline_name|escape }}</td>
                 </tr>
             {% endfor %}
         </table>
@@ -116,7 +124,7 @@
         <table>
             {% for session in event.sessions.all %}
                 <tr>
-                    <td>{{ session.session_date }}</td>
+                    <td><a href='{% urlsearch query=session.session_date|date:"Y-m-d" %}'>{{ session.session_date }}</a></td>
                     <td>{{ session.session_starttime|time:"H:i" }} - {{ session.session_endtime|time:"H:i" }}</td>
                     <td>{{ session.session_name|escape }}</td>
                 </tr>
