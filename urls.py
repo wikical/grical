@@ -3,7 +3,7 @@
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 # gpl {{{ 1
 #############################################################################
-# Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
 #

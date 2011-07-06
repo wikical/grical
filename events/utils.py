@@ -3,7 +3,7 @@
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # gpl {{{1
 #############################################################################
-# Copyright 2009, 2010 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
 # 
@@ -457,7 +457,8 @@ def html_diff(old_as_text, new_as_text):
     differences of the utf8 parameters """
     old_as_text = old_as_text.splitlines()
     new_as_text = new_as_text.splitlines()
-    return HtmlDiff( tabsize = 4 ).make_table( old_as_text, new_as_text )
+    table = HtmlDiff( tabsize = 4 ).make_table( old_as_text, new_as_text )
+    return table.replace( '&nbsp;', ' ' ).replace( ' nowrap="nowrap"', '' )
 
 def text_diff(old_as_text, new_as_text):
     """ returns a unicode string containing a diff text showing

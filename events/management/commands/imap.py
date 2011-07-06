@@ -3,7 +3,7 @@
 # GPL {{{1
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################
-# Copyright 2010 Adam Beret Manczuk <beret@hipisi.org.pl>,
+# Copyright 2010,2011 Adam Beret Manczuk <beret@hipisi.org.pl>,
 # Ivan Villanueva <iv@gridmind.org>
 #
 # This file is part of GridCalendar.
