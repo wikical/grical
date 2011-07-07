@@ -22,5 +22,19 @@
 {% endif %}
 </p>
 
+<div class="event_history">
+    {% if revisions_diffs %}
+        <h2>{% trans "History" %}</h2>
+        {% for revision, diff in revisions_diffs %}
+            {% if diff %}
+                <h2> {{ revision.date_created.isoformat }}</h2>
+                {{ diff|safe }} {# FIXME: when creating the html diff ensure escaping #}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p>{% trans "This event has no history so far" %}</p>
+    {% endif %}
+</div>
+
 {% endblock %}
 

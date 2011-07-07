@@ -2206,9 +2206,9 @@ class Filter( models.Model ): # {{{1
         # in the same location. Same applies for a time restriction
         constraint_query = u''
         if ( query.find('@') != -1 ):
-            regex = re.compile('@\w+', UNICODE)
+            regex = re.compile('@\w+', UNICODE) # FIXME: use everywhere the same regex
             constraint_query = u' '.join( regex.findall( query ) )
-        regex = re.compile(r'\b\d\d\d\d-\d\d-\d\d\b', UNICODE)
+        regex = re.compile(r'\b\d\d\d\d-\d?\d-\d\?d\b', UNICODE) # FIXME: use everywhere the same regex
         if regex.search( query ):
             dates = regex.findall( query )
             constraint_query += u' ' + u' '.join( dates )
@@ -2222,6 +2222,8 @@ class Filter( models.Model ): # {{{1
         used_tags = sorted( used_tags, key = lambda t: t.count )
         used_tags.reverse()
         related_events = set()
+        if len( used_tags ) == 0:
+            return related_events
         # takes the 5 more used tags and find related tags to them and its
         # events, then with 4, and so on until limit events are found
         today = datetime.date.today()
