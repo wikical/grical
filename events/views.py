@@ -449,20 +449,9 @@ def event_show_raw( request, event_id ): # {{{1
     return render_to_response( 'event_show_raw.html',
             templates, context_instance = RequestContext( request ) )
 
-def event_history( request, event_id ): # {{{1
-    """ show the history of an event """
-    # TODO: tests including one that checks that a revision has only one
-    # element in its revisioninfo_set
-    # TODO: undeleted events history is confusing, fix it
-    try:
-        event = Event.objects.get( pk = event_id )
-    except Event.DoesNotExist:
-        return event_does_not_exist( request, event_id, 'event_history' )
-    revisions = [ version.revision for version in
-            Version.objects.get_for_object( event ) ]
-    revisions.reverse()
-    # we create a list of tuples with a revision and a string which is a html
-    # diff to the previous revision (or None if it is not possible)
+def revisions_diffs( revisions ): # {{{1
+    """ from a list of revisions create a list of tuples with a revision and a
+    html text of the diff """
     revisions_diffs = []
     previous = None
     for revision in revisions:
@@ -480,11 +469,28 @@ def event_history( request, event_id ): # {{{1
         else:
             revisions_diffs.append( (revision, None) )
         previous = revision
+    return revisions_diffs
+
+def event_history( request, event_id ): # {{{1
+    """ show the history of an event """
+    # TODO: tests including one that checks that a revision has only one
+    # element in its revisioninfo_set
+    # TODO: undeleted events history is confusing, fix it
+    try:
+        event = Event.objects.get( pk = event_id )
+    except Event.DoesNotExist:
+        return event_does_not_exist( request, event_id, 'event_history' )
+    revisions = [ version.revision for version in
+            Version.objects.get_for_object( event ) ]
+    revisions.reverse()
+    # we create a list of tuples with a revision and a string which is a html
+    # diff to the previous revision (or None if it is not possible)
+    revs_diffs = revisions_diffs( revisions )
     templates = {
             'title': _( "History of event %(event_nr)s" ) % \
                     {'event_nr': str(event.id)},
             'event': event,
-            'revisions_diffs': revisions_diffs }
+            'revisions_diffs': revs_diffs }
     return render_to_response( 'event_history.html',
             templates, context_instance = RequestContext( request ) )
 
@@ -548,6 +554,11 @@ def event_deleted( request, event_id ): # {{{1
     # TODO check this constranint with a post_save signal in revisioninfo
     assert len( revisioninfos ) == 1
     revisioninfo = revisioninfos[0]
+    # we now get all revisions to show the history also
+    revisions = [ version.revision for version in
+            Version.objects.get_for_object_reference( Event, event_id ) ]
+    revisions.reverse()
+    revs_diffs = revisions_diffs( revisions )
     templates = {
             'title': _( "deleted event %(event_nr)s" ) % \
                     {'event_nr': deleted_version.object_id,},
@@ -555,7 +566,8 @@ def event_deleted( request, event_id ): # {{{1
             'revisioninfo': revisioninfo,
             'username': revision.user.username,
             'deleted_version': deleted_version,
-            'event_id': event_id }
+            'event_id': event_id,
+            'revisions_diffs': revs_diffs }
     return render_to_response( 'event_deleted.html',
             templates, context_instance = RequestContext( request ) )
 
