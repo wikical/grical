@@ -27,11 +27,6 @@
             {% endifequal %}
         {% endfor %}
         {# shows links to download or links to external services #}
-        <span id="calendar_view">
-            <a href='http://30boxes.com/external/widget?url=http://{{ DOMAIN }}{% urlsearch query=query view="ical" %}'>
-                {% trans "calendar" %}</a>
-            {# FIXME: the above URL doesn't work when # is in the search (maybe a bug in 30boxes #}
-        </span>
         <span id="ical_view">
             <a href='{% urlsearch query=query view="ical" %}'>iCalendar</a>
                 <!-- doesn't look nice in IE7 at least
@@ -51,10 +46,14 @@
         {% ifequal current_view "table" %}
             {% include "search_table.html" %}
         {% else %}
-            {% ifequal current_view "map" %}
-                {% include "search_map.html" %}
+            {% ifequal current_view "calendars" %}
+                {% include "search_calendars.html" %}
             {% else %}
-                {% include "search_boxes.html" %}
+                {% ifequal current_view "map" %}
+                    {% include "search_map.html" %}
+                {% else %}
+                    {% include "search_boxes.html" %}
+                {% endifequal %}
             {% endifequal %}
         {% endifequal %}
     {% endif %}

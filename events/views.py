@@ -25,6 +25,8 @@
 """ VIEWS """
 
 # imports {{{1
+import calendar
+from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 import datetime
 from docutils import core
 from docutils import ApplicationError
@@ -47,14 +49,17 @@ from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.db.models import Max, Min
+from django.db.models.query import QuerySet
 from django.forms.models import inlineformset_factory, ModelForm
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
 from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
 from django.template import RequestContext, Context, loader
-from django.utils.translation import ugettext as _
 from django.utils.encoding import smart_unicode
+from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext as _
 
 from tagging.models import Tag, TaggedItem
 from reversion import revision
@@ -71,7 +76,7 @@ from gridcalendar.events.tables import EventTable
 from gridcalendar.events.feeds import SearchEventsFeed
 
 # TODO: check if this works with i18n
-views = [_('table'), _('map'), _('boxes')]
+views = [_('table'), _('map'), _('boxes'), _('calendars'),]
 
 def help_page( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
@@ -766,6 +771,35 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                     Paginator, 50, page = page, orphans = 2 )
         context['events_table'] = search_result_table
         context['sort'] = sort
+    elif view == 'calendars':
+        # TODO: think what happens when there are two many events for the cal view.
+        if isinstance( search_result, QuerySet ):
+            first_year = search_result[0].upcoming.year
+            last_year = search_result.latest('upcoming').upcoming.year
+            # TODO: get the last date, see:
+            #last_year_start = search_result.latest('start').start
+            #last_year_end = search_result.latest('end').end
+            #events_lastest_deadline = \
+            #    search_result.annotate(
+            #        latest_deadline = Max('deadlines__deadline'))
+            #event_with_latest_deadline = \
+            #        events_latest_deadline.order_by('latest_deadline')[-1]
+            #last_year_deadline = \
+            #    event_with_latest_deadline.latest_deadline.deadline.year
+            #last_year = max(
+            #        last_year_start, last_year_end, last_year_deadline )
+        else:
+            # first year
+            first_year = search_result[0].upcoming.year
+            last_year = search_result[-1].upcoming.year
+        years_cals = []
+        events_cal = EventsCalendar( search_result )
+        for year in range( first_year, last_year + 1 ):
+            years_cals.append( (
+                year,
+                mark_safe( smart_unicode(
+                    events_cal.formatyear( year, width=1 ) ) ) ) )
+        context['years_cals'] = years_cals
     elif view == 'json':
         if 'jsonp' in request.GET and request.GET['jsonp']:
             jsonp = request.GET['jsonp']
@@ -1533,3 +1567,154 @@ def handler500( request ): #{{{1
             'been automatically informed and will fix it in no time, ' \
             'because we care' ) )
     return main( request, status_code = 500 )
+
+# from http://moinmo.in/MacroMarket/EventAggregator
+def getColour(s):
+    colour = [0, 0, 0]
+    digit = 0
+    for c in s:
+        colour[digit] += ord(c)
+        colour[digit] = colour[digit] % 256
+        digit += 1
+        digit = digit % 3
+    return tuple(colour)
+# from http://moinmo.in/MacroMarket/EventAggregator
+def getBlackOrWhite(colour):
+    if sum(colour) / 3.0 > 127:
+        return (0, 0, 0)
+    else:
+        return (255, 255, 255)
+
+class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
+
+    def __init__(self, events, *args, **kwargs):
+        super(EventsCalendar, self).__init__(*args, **kwargs)
+        self.events = events
+
+    def formatyear(self, theyear, *args, **kwargs):
+        months = []
+        for month in range(1, 13):
+            months.append( self.formatmonth( theyear, month, withyear=False ) )
+        return ''.join( months )
+
+    def formatday(self, day, weekday):
+        if day == 0:
+            return '<td class="noday">&nbsp;</td>' # day outside month
+        else:
+            today = datetime.date.today()
+            if ( day, self.month, self.year ) == \
+                    ( today.day, today.month, today.year ):
+                return '<td class="%s today">%d</td>' % \
+                        (self.cssclasses[weekday], day)
+            else:
+                return '<td class="%s">%d</td>' % \
+                        (self.cssclasses[weekday], day)
+
+    def formatmonth(self, year, month, *args, **kwargs):
+        # we save year and month for their use in formatweek
+        self.year, self.month = year, month
+        # we format month only if there are events in the month
+        date1 = datetime.date( year, month, 1 )
+        date2 = datetime.date( year, month,
+                calendar.monthrange( year, month )[1] )
+        today = datetime.date.today()
+        if isinstance( self.events, QuerySet ):
+            events = self.events.filter(
+                Q( start__range = (date1, date2) )  |
+                Q( end__range = (date1, date2) ) |
+                Q(deadlines__deadline__range = (date1, date2),
+                    deadlines__deadline__gte = today) |
+                Q( start__lt = date1, end__gt = date2 ) ) # range in-between
+            if events:
+                return super(EventsCalendar, self).formatmonth(
+                        year, month, *args, **kwargs )
+        else:
+            for eve in self.events:
+                if ( eve.start >= date1 and eve.start <= date2 ) or \
+                        ( eve.end and eve.end >= date1 and eve.end <= date2 ):
+                    return super(EventsCalendar, self).formatmonth(
+                            year, month, *args, **kwargs )
+                for deadline in eve.deadlines.iterator():
+                    if deadline.deadline >=date1 and \
+                            deadline.deadline <=date2 and \
+                            deadline.deadline >= today:
+                        return super(EventsCalendar, self).formatmonth(
+                                year, month, *args, **kwargs )
+        return ""
+
+    def formatweek( self, theweek, *args, **kwargs ):
+        # get all events with days in this week
+        days = [d for (d, wd) in theweek if d > 0] # d=0 -> not in month
+        date1 = datetime.date( self.year, self.month, min( days ) )
+        date2 = datetime.date( self.year, self.month, max( days ) )
+        today = datetime.date.today()
+        if isinstance( self.events, QuerySet ):
+            events = self.events.filter(
+                Q( start__range = (date1, date2) )  |
+                Q( end__range = (date1, date2) ) |
+                Q(deadlines__deadline__range = (date1, date2),
+                    deadlines__deadline__gte = today) |
+                Q( start__lt = date1, end__gt = date2 ) ) # range in-between
+        else:
+            events = []
+            for eve in self.events:
+                if ( eve.start >= date1 and eve.start <= date2 ) or \
+                        ( eve.end and eve.end >= date1 and eve.end <= date2 ):
+                    events.append( eve )
+                    continue
+                for deadline in eve.deadlines.iterator():
+                    # exclude deadlines in the past
+                    if deadline.deadline < datetime.date.today():
+                        continue
+                    if deadline.deadline >=date1 and deadline.deadline <=date2:
+                        events.append( eve )
+        text = u''
+        text += super(EventsCalendar, self).formatweek(
+                theweek, *args, **kwargs )
+        if not events:
+            text += '\n<tr class="empty-row">'
+            for day, weekday in theweek:
+                if day == 0:
+                    text += self.formatday( day, weekday )
+                else:
+                    text += '<td>&nbsp;</td>'
+            text += '</tr>\n'
+        for eve in events:
+            text += '\n<tr class="event-row">\n'
+            bg = getColour( eve.title )
+            fg = getBlackOrWhite(bg)
+            style = ' style="background-color: rgb(%d, %d, %d); ' \
+                    'color: rgb(%d, %d, %d);" ' % (bg + fg)
+            colspan = 0
+            for day, weekday in theweek:
+                if day == 0:
+                    if colspan == 0:
+                        text += self.formatday( day, weekday )
+                    else:
+                        # this happen if there is an event until the end of the
+                        # month and the week has some days belonging the next
+                        # month (nodays)
+                        text += u'<td class="event-rectangle" ' \
+                            '%s colspan="%d"><a href="%s">%s</a></td>' % \
+                            (style, colspan, eve.get_absolute_url(), eve.title)
+                        colspan = 0
+                        text += self.formatday( day, weekday )
+                    continue
+                date = datetime.date( self.year, self.month, day )
+                if eve.contains( date ): # TODO: is this hitting the DB too much?
+                    colspan += 1
+                else:
+                    if colspan > 0:
+                        text += u'<td class="event-rectangle" ' \
+                            '%s colspan="%d"><a href="%s">%s</a></td>' % \
+                            (style, colspan, eve.get_absolute_url(), eve.title)
+                    #text += self.formatday( date.day, date.weekday() )
+                    text += '<td class="%s">&nbsp;</td>' % \
+                                            self.cssclasses[ date.weekday() ]
+                    colspan = 0
+            if colspan > 0:
+                text += u'<td class="event-rectangle" ' \
+                        '%s colspan="%d"><a href="%s">%s</a></td>' % \
+                        (style, colspan, eve.get_absolute_url(), eve.title)
+            text += '\n</tr>\n'
+        return text
