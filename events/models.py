@@ -514,6 +514,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns the list of tags separated by commas as unicode string """
         return self.tags.replace(' ',',')
     
+    def contains( self, date ):
+        """ returns True if the event happens in ``date`` or ``date`` is a
+        deadline. """
+        if self.start == date:
+            return True
+        if self.start <= date and self.end and self.end >= date:
+            return True
+        return self.deadlines.filter(deadline = date).exists()
+
     def color_nr(self, #{{{3
             days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
         """ Returns a number according to

@@ -50,6 +50,9 @@ permission of the original author -->
         | <a href="{% url legal_notice %}">{% trans "legal notice" %}</a>
         <form action="{% url search %}">
             <div style="display:inline"><input maxlength="2048" size="40" name="query" value="{{ query }}" /></div>
+            {% if current_view %}
+                <div style="display:none"><input type="hidden" size="60" name="view" value="{{ current_view }}"></div>
+            {% endif %}
             <div style="display:inline"><input type="submit" value="{% trans "Search" %}" /></div>
         </form>
         {% block search_info %}
