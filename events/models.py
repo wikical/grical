@@ -2195,8 +2195,8 @@ class Filter( models.Model ): # {{{1
         if related and not ( GROUP_REGEX.findall(query) or
                 TAG_REGEX.findall(query) or EVENT_REGEX.findall( query ) ):
             return ( Filter.related_events( queryset, query ) |
-                queryset ).order_by( 'upcoming' )
-        return queryset.order_by('upcoming')
+                queryset ).order_by( 'upcoming' ).distinct()
+        return queryset.order_by('upcoming').distinct()
 
     @staticmethod # def related_events( queryset, user, query ): {{{2
     def related_events( queryset, query ):
