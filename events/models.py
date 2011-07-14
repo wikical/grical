@@ -2110,7 +2110,7 @@ class Filter( models.Model ): # {{{1
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next ``limit`` events matching ``self.query`` """
-        return Filter.matches( self.query, self.user, related = False )
+        return Filter.matches( self.query, related = False )
 
     def matches_event( self, event ): # {{{2
         """ return True if self.query matches the event, False otherwise.
@@ -2153,7 +2153,7 @@ class Filter( models.Model ): # {{{1
         >>> assert not fil.matches_event(event)
         """
         # body {{{3
-        qset = Filter.matches_queryset(query, event.user).filter(pk = event.id)
+        qset = Filter.matches_queryset( query ).filter(pk = event.id)
         if len( qset ) > 0:
             return True
         return False
@@ -2164,8 +2164,8 @@ class Filter( models.Model ): # {{{1
         # error-pround. We had such a long code here until charset
         # 336:e725aaa6a108
 
-    @staticmethod # def matches( query, user, related = True ): {{{2
-    def matches( query, user, related = True ):
+    @staticmethod # def matches( query, related = True ): {{{2
+    def matches( query, related = True ):
         """ returns a sorted (by :attr:`Event.upcoming`) list of
         events matching ``query`` adding related events if
         *related* is True.
@@ -2188,130 +2188,93 @@ class Filter( models.Model ): # {{{1
         """
         if not query:
             return Event.objects.none()
-        # TODO: return a queryset, not a list. See some ideas described in:
-        # http://stackoverflow.com/questions/431628/how-to-combine-2-or-more-querysets-in-a-django-view
-        queryset = Filter.matches_queryset(query, user).distinct()
+        queryset = Filter.matches_queryset( query )
         # creates a list of
         # related events with no more than the length of queryset and combines
         # both
         if related and not ( GROUP_REGEX.findall(query) or
                 TAG_REGEX.findall(query) or EVENT_REGEX.findall( query ) ):
-            related_events = Filter.related_events( queryset, user, query )
-            # chains both and sorts the result
-            return sorted(
-                    chain( queryset, related_events ),
-                    key = lambda event: event.upcoming )
+            return ( Filter.related_events( queryset, query ) |
+                queryset ).order_by( 'upcoming' )
         return queryset.order_by('upcoming')
 
     @staticmethod # def related_events( queryset, user, query ): {{{2
-    def related_events( queryset, user, query ):    
-        """ returns a list of related events to *queryset* as a result of
-        ``query``
-        """
-        limit = len ( queryset )
+    def related_events( queryset, query ):
+        """ add to ``queryset`` related events but no more than
+        ``len( queryset)`` and restricted by dates and locations if present in
+        ``query``. """
+        limit = queryset.count()
         if limit < 1:
             return Event.objects.none()
-        # if the query has a location restriction, we save only related events
-        # in the same location. Same applies for a time restriction
-        constraint_query = u''
-        if ( query.find('@') != -1 ):
-            regex = re.compile('@\w+', UNICODE) # FIXME: use everywhere the same regex
-            constraint_query = u' '.join( regex.findall( query ) )
-        regex = re.compile(r'\b\d\d\d\d-\d?\d-\d\?d\b', UNICODE) # FIXME: use everywhere the same regex
-        if regex.search( query ):
-            dates = regex.findall( query )
-            constraint_query += u' ' + u' '.join( dates )
-            has_date_constraint = True
+        restricted = \
+            Event.objects.select_related(depth=1).defer('description').all()
+        ######################
+        # restricting by dates
+        dates = DATE_REGEX.findall( query )
+        if dates:
+            dates = [ datetime.date( int(year), int(month), int(day) ) for \
+                    year, month, day in dates ]
+            sorted_dates = sorted( dates )
+            date1 = sorted_dates[0] # first date
+            date2 = sorted_dates[-1] # last date
+            restricted = restricted.filter( upcoming__range = ( date1, date2 ) )
+            # remove all dates (yyyy-mm-dd) from the query
+            query = DATE_REGEX.sub("", query)
         else:
-            has_date_constraint = False
+            if not query.startswith('* '):
+                restricted = restricted.filter(
+                        upcoming__gte = datetime.date.today() )
+        #########################
+        # restricting by location
+        restricted, query = Filter.restrict_by_location( restricted, query )
+        if not restricted.exists():
+            return Event.objects.none()
+        #############################
+        # restricting by related tags
         used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
-        # note that according to the django-tagging documentation, counts refer
-        # to all instances of the model Event, not only to the queryset
-        # instances. TODO: change it
+        if len( used_tags ) == 0:
+            return Event.objects.none()
+        # used_tags contains the count of all tags present in queryset,
+        # example:
+        # used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
+        # [<Tag: linux>, <Tag: floss>, <Tag: foss>, <Tag: free-software>, ...
+        # used_tags[0].count
+        # 69
         used_tags = sorted( used_tags, key = lambda t: t.count )
         used_tags.reverse()
-        related_events = set()
-        if len( used_tags ) == 0:
-            return related_events
-        # takes the 5 more used tags and find related tags to them and its
-        # events, then with 4, and so on until limit events are found
-        today = datetime.date.today()
-        # TODO: calculate at which number to start, 5 is just a guess
-        for nr_of_tags in [5,4,3,2,1]:
+        # Now we will use related_for_model. Examples:
+        # Tag.objects.related_for_model( used_tags[0:5], Event, counts=True )
+        # [<Tag: open-source>, <Tag: freedom>, <Tag: ubuntu> ...
+        # We will use the related tags to the 5 most used tags. TODO: 5 is best?
+        related_events = Event.objects.none()
+        for nr_of_tags in [6,5,4,3,2,1]:
             related_tags = Tag.objects.related_for_model(
                     used_tags[ 0 : nr_of_tags ], Event, counts = True )
+            if len( related_tags ) == 0:
+                continue
             related_tags = sorted( related_tags, key = lambda t: t.count )
             related_tags.reverse()
+            # we now find events with 1 of the
+            # tags, which are in related_events but not in queryset
+            # TODO: try to find first events with many related_tags
             for tag in related_tags:
-                events = TaggedItem.objects.get_by_model(Event, tag)
-                for event in events:
-                    if event not in queryset:
-                        if not has_date_constraint:
-                            if event.upcoming < today:
-                                continue
-                        if (not constraint_query) or \
-                                Filter.query_matches_event(
-                                    constraint_query, event ):
-                            related_events.add(event)
-                            if len ( related_events ) >= limit:
-                                return related_events
+                restricted_with_tag = restricted.filter( id__in =
+                        TaggedItem.objects.get_by_model( Event, tag ) )
+                not_in_queryset = restricted_with_tag.exclude( id__in = queryset )
+                related_events = related_events | not_in_queryset
+                if related_events.count() >= limit:
+                    return related_events
         return related_events
 
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
         *count* by :meth:`Filter.matches` """
-        return Filter.matches_queryset( self.query, self.user ).count()
+        return Filter.matches_queryset( self.query ).count()
 
-    @staticmethod # def matches_queryset( query, user ): {{{2
-    def matches_queryset( query, user ):
-        """ returns a queryset without touching the database, see
-        :meth:`Filter.matches`
-
-        It can throw a ``ValueError`` if for instance a day is out of range for
-        a month in a date, e.g. 2011-04-31.
-
-        If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
-        ``query`` is None or an empty string.
-
-        If ``query`` contains `` | `` strings (space, pipe, space), they are
-        consider as logical ``or``.
-
-        The returned ``queryset`` can contain repeated events.
-        """
-        if not query:
-            return Event.objects.none()
-        if user is None or isinstance(user, User):
-            pass
-        elif isinstance(user, AnonymousUser):
-            user = None
-        else:
-            try:
-                user = User.objects.get(id = int(user))
-            except User.DoesNotExist:
-                user = None
-        terms = query.split(' | ')
-        query = terms[0]
-        # TODO: use the cache system for queries
-        queryset = Event.objects.all()
-        # broad search check
-        broad_regex = re.compile(r'^\* +', UNICODE) # beginninig with * followed
-                                                    # by 1 ore more spaces
-        if broad_regex.match( query ):
-            broad = True
-            query = broad_regex.sub("", query)
-        else:
-            broad = False
-        # single events
-        for event_id in EVENT_REGEX.findall( query ):
-            queryset = queryset.filter( pk = event_id )
-            broad = True # '=' show past events too
-        query = EVENT_REGEX.sub("", query)
-        # groups
-        for group_name in GROUP_REGEX.findall(query):
-            queryset = queryset.filter(
-                    calendar__group__name__iexact = group_name)
-        query = GROUP_REGEX.sub("", query)
-        # locations
+    @staticmethod # restrict_by_location( queryset, query ): {{{2
+    def restrict_by_location( queryset, query ):
+        """ returns a tuple (a queryset an a string ) restricting ``queryset`` with
+        the locations of ``query`` and removing them from ``query`` """
         for loc in LOCATION_REGEX.findall(query):
             if loc[11]:
                 # name given, which can have a city, a comma and a country
@@ -2356,7 +2319,53 @@ class Filter( models.Model ): # {{{1
             else:
                 pass
                 # TODO: log error
-        query = LOCATION_REGEX.sub("", query)
+            query = LOCATION_REGEX.sub("", query)
+        return queryset, query
+
+    @staticmethod # def matches_queryset( query ): {{{2
+    def matches_queryset( query ):
+        """ returns a queryset without touching the database, see
+        :meth:`Filter.matches`
+
+        It can throw a ``ValueError`` if for instance a day is out of range for
+        a month in a date, e.g. 2011-04-31.
+
+        If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
+        ``query`` is None or an empty string.
+
+        If ``query`` contains `` | `` strings (space, pipe, space), they are
+        consider as logical ``or``.
+
+        The returned ``queryset`` can contain repeated events.
+        """
+        # TODO: use the cache system for queries
+        if not query:
+            return Event.objects.none()
+        terms = query.split(' | ')
+        query = terms[0]
+        # broad search check
+        broad_regex = re.compile(r'^\* +', UNICODE) # beginninig with * followed
+                                                    # by 1 ore more spaces
+        if broad_regex.match( query ):
+            broad = True
+            query = broad_regex.sub("", query)
+            queryset = Event.objects.select_related(depth=1).all()
+        else:
+            broad = False
+            queryset = \
+                Event.objects.select_related(depth=1).defer('description').all()
+        # single events
+        for event_id in EVENT_REGEX.findall( query ):
+            queryset = queryset.filter( pk = event_id )
+            broad = True # '=' show past events too
+        query = EVENT_REGEX.sub("", query)
+        # groups
+        for group_name in GROUP_REGEX.findall(query):
+            queryset = queryset.filter(
+                    calendar__group__name__iexact = group_name)
+        query = GROUP_REGEX.sub("", query)
+        # locations
+        queryset, query = Filter.restrict_by_location( queryset, query )
         # tags
         tags = TAG_REGEX.findall(query)
         if tags:
@@ -2378,13 +2387,10 @@ class Filter( models.Model ): # {{{1
                    Q( start__lt = date1, end__gt = date2 ) ) # range in-between
             # remove all dates (yyyy-mm-dd) from the query
             query = DATE_REGEX.sub("", query)
+            queryset = queryset.distinct() # needed because deadlines query
         elif not broad:
             today = datetime.date.today()
             queryset = queryset.filter( upcoming__gte = today )
-            # without using upcoming:
-            # queryset = queryset.filter(
-            #         Q(start__gte = date) | Q(end__gte = date) |
-            #         Q(deadlines__deadline__gte = date) )
         # look for words
         regex = r = re.compile('\s', re.UNICODE)
         for word in regex.split( query ):
@@ -2414,8 +2420,7 @@ class Filter( models.Model ): # {{{1
         # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
         # remove duplicates
         if len( terms ) > 1:
-            return queryset | Filter.matches_queryset(
-                    ' | '.join( terms[1:] ), user )
+            return queryset | Filter.matches_queryset( ' | '.join( terms[1:] ) )
         return queryset
 
     @staticmethod # def notify_users_when_wanted( event ): {{{2

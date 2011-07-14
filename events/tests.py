@@ -235,7 +235,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         response = self.client.get( reverse( 
                 'search_query',
                 kwargs = {'query': '1234',} ) )
-        self.assertTrue(event in response.context['events'].object_list)
+        self.assertTrue( event.title in [
+            e.title for e in response.context['events'].object_list ] )
         event.delete()
 
     def test_group_invitation(self): # {{{2

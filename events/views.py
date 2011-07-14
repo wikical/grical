@@ -651,6 +651,9 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> Client().get(reverse('search_query_view',
     ...         kwargs={'query': 'test', 'view': 'map'})).status_code
     200
+    >>> Client().get(reverse('search_query_view',
+    ...         kwargs={'query': 'test', 'view': 'calendars'})).status_code
+    200
  
     >>> Client().get(reverse('search'), {'query': '#berlin',}).status_code
     200
@@ -709,7 +712,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     # TODO: limit the number of search results. Think of malicious users
     # getting millions of events from the past
     try:
-        search_result = Filter.matches( query, request.user, related )
+        search_result = Filter.matches( query, related )
     except ValueError as err: # TODO: catch other errors
         messages.error( request, 
                 _( u"The search is malformed: %(error_message)s" ) %
@@ -771,27 +774,40 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                     Paginator, 50, page = page, orphans = 2 )
         context['events_table'] = search_result_table
         context['sort'] = sort
-    elif view == 'calendars':
+    elif view == 'calendars' and len( search_result ) > 0:
         # TODO: think what happens when there are two many events for the cal view.
         if isinstance( search_result, QuerySet ):
             first_year = search_result[0].upcoming.year
-            last_year = search_result.latest('upcoming').upcoming.year
-            # TODO: get the last date, see:
-            #last_year_start = search_result.latest('start').start
-            #last_year_end = search_result.latest('end').end
-            #events_lastest_deadline = \
-            #    search_result.annotate(
-            #        latest_deadline = Max('deadlines__deadline'))
-            #event_with_latest_deadline = \
-            #        events_latest_deadline.order_by('latest_deadline')[-1]
-            #last_year_deadline = \
-            #    event_with_latest_deadline.latest_deadline.deadline.year
-            #last_year = max(
-            #        last_year_start, last_year_end, last_year_deadline )
+            last_year_start = search_result.latest('start').start.year
+            last_year_end = search_result.filter( end__isnull = False )
+            if last_year_end:
+                last_year_end = last_year_end.latest('end').end.year
+            else:
+                last_year_end = 0
+            last_year_deadline = search_result.filter(
+                    deadlines__deadline__isnull = False)
+            if last_year_deadline:
+                last_year_deadline = \
+                        last_year_deadline.latest( 'deadlines__deadline' )
+                last_year_deadline =  \
+                    last_year_deadline.deadlines.all().latest(
+                        'deadline').deadline.year
+            else:
+                last_year_deadline = 0
+            last_year = max(
+                    last_year_start, last_year_end, last_year_deadline )
         else:
             # first year
             first_year = search_result[0].upcoming.year
-            last_year = search_result[-1].upcoming.year
+            last_year = first_year
+            for event in search_result:
+                if event.start.year > last_year:
+                    last_year = event.start.year
+                if event.end and event.end.year > last_year:
+                    last_year = event.end.year
+                for deadline in event.deadlines.iterator():
+                    if deadline.deadline > last_year:
+                        last_year = deadline.deadline
         years_cals = []
         events_cal = EventsCalendar( search_result )
         for year in range( first_year, last_year + 1 ):

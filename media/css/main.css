@@ -552,9 +552,9 @@ legend {
 .calendars td.today {
     color: red;
     font-weight: bold;
-    border-right: 1px solid red;
-    border-left: 1px solid red;
-    border-top: 1px solid red;
+    border-right: 2px solid red;
+    border-left: 2px solid red;
+    border-top: 2px solid red;
 }
 .calendars tr:not(.event-row) {
     display: table-row;
