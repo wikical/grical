@@ -674,14 +674,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     # query
     if 'query' in request.GET and request.GET['query']:
         query = request.GET['query']
-        #if query.find('/') != -1:
-        #    messages.error( request, 
-        #        _( u"A search with the character '/' was submitted, but it " \
-        #        "is not allowed" ) )
-        #    return main( request )
-        #    # the character / cannot be allowed because Django won't be able to
-        #    # create a URL for the ical result of the search. For a discussion,
-        #    # see http://stackoverflow.com/questions/3040659/how-can-i-receive-percent-encoded-slashes-with-django-on-app-engine
     # view
     if 'view' in request.GET and request.GET['view']:
         view = request.GET['view']
@@ -714,6 +706,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     try:
         search_result = Filter.matches( query, related )
     except ValueError as err: # TODO: catch other errors
+        # this can happen for instance when a date is malformed like 2011-01-32
         messages.error( request, 
                 _( u"The search is malformed: %(error_message)s" ) %
                 {'error_message': err.args[0]} )
@@ -721,31 +714,70 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if limit:
         search_result = search_result[0:limit]
     # views
-    if view != 'json':
-        # variables to be passed to the templates
-        context = dict()
-        context['views'] = views
-        context['current_view'] = view
-        context['title'] = \
-            _( "%(project_name)s - %(view)s search results for: %(query)s" ) \
-                % { 'project_name': Site.objects.get_current().name,
-                    'query': query,
-                    'view': view }
-        context['user_id'] = request.user.id
-        context['query'] = query
-        if len( search_result ) == 0:
-            context['no_results'] = True
-            context['heading'] = _( u"Search for: %(query)s" ) % \
-                    {'query': query}
-        elif len( search_result ) == 1:
-            context['heading'] = \
-                    _("One event found searching for: %(query)s") \
-                    % { 'query': query, }
+    if view == 'json':
+        if 'jsonp' in request.GET and request.GET['jsonp']:
+            jsonp = request.GET['jsonp']
         else:
-            context['heading'] = \
-                    _("%(number)d events found searching for: %(query)s") \
-                        % { 'number': len ( search_result ), 'query': query }
-    if view == 'boxes' or view == 'map':
+            jsonp = None
+        data = serializers.serialize(
+                'json',
+                search_result,
+                fields=('title', 'upcoming', 'start', 'tags', 'coordinates'),
+                indent = 2,
+                ensure_ascii=False )
+        if jsonp:
+            data = jsonp + '(' + data + ')'
+            mimetype = "application/javascript"
+        else:
+            mimetype = "application/json"
+        return HttpResponse( mimetype = mimetype, content = data )
+    if view in ('yaml', 'xml'):
+        data = serializers.serialize(
+                view,
+                search_result,
+                indent = 2,
+                fields=('title', 'upcoming', 'start', 'tags', 'coordinates') )
+        if view == 'xml':
+            mimetype = "application/xml"
+        else:
+            mimetype = "application/x-yaml"
+        return HttpResponse( mimetype = mimetype, content = data )
+    if view == 'rss':
+        return SearchEventsFeed()( request, query )
+    if view == 'ical':
+        return ICalForSearch( request, query )
+    # variables to be passed to the html templates
+    context = dict()
+    context['views'] = views
+    context['current_view'] = view
+    context['title'] = \
+        _( "%(project_name)s - %(view)s search results for: %(query)s" ) \
+            % { 'project_name': Site.objects.get_current().name,
+                'query': query,
+                'view': view }
+    context['user_id'] = request.user.id
+    context['query'] = query
+    if isinstance(search_result, QuerySet):
+        n_events = search_result.count()
+    else:
+        n_events = len( search_result )
+    context['number_of_events_found'] = n_events
+    if n_events == 0:
+        return render_to_response( 'search.html',
+                context,
+                context_instance = RequestContext( request ) )
+    if view == 'table':
+        sort = request.GET.get( 'sort', 'upcoming' )
+        page = int( request.GET.get( 'page', '1' ) )
+        # The next line was used in the past when using
+        # django_tables.MemoryTable. Now we use ModelTable.
+        #search_result = EventTable.convert( search_result )
+        search_result_table = EventTable( search_result, order_by = sort )
+        search_result_table.paginate(
+                Paginator, 50, page = page, orphans = 2 )
+        context['events_table'] = search_result_table
+        context['sort'] = sort
+    elif view == 'boxes' or view == 'map':
         if view == 'map':
             # map-view works only with maximum 10 events
             paginator = Paginator( search_result, 10)
@@ -761,21 +793,8 @@ def search( request, query = None, view = 'boxes' ): # {{{1
             context['events'] = paginator.page( page )
         except ( EmptyPage, InvalidPage ):
             context['events'] = paginator.page( paginator.num_pages )
-    elif view == 'table':
-        sort = request.GET.get( 'sort', 'upcoming' )
-        page = int( request.GET.get( 'page', '1' ) )
-        search_result = EventTable.convert( search_result )
-        search_result_table = EventTable( search_result, order_by = sort )
-        if settings.DEBUG:
-            search_result_table.paginate(
-                    Paginator, 10, page = page, orphans = 2 )
-        else:
-            search_result_table.paginate(
-                    Paginator, 50, page = page, orphans = 2 )
-        context['events_table'] = search_result_table
-        context['sort'] = sort
-    elif view == 'calendars' and len( search_result ) > 0:
-        # TODO: think what happens when there are two many events for the cal view.
+    elif view == 'calendars':
+        # TODO: use pagination
         if isinstance( search_result, QuerySet ):
             first_year = search_result[0].upcoming.year
             last_year_start = search_result.latest('start').start.year
@@ -816,38 +835,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                 mark_safe( smart_unicode(
                     events_cal.formatyear( year, width=1 ) ) ) ) )
         context['years_cals'] = years_cals
-    elif view == 'json':
-        if 'jsonp' in request.GET and request.GET['jsonp']:
-            jsonp = request.GET['jsonp']
-        else:
-            jsonp = None
-        data = serializers.serialize(
-                'json',
-                search_result,
-                fields=('title', 'upcoming', 'start', 'tags', 'coordinates'),
-                indent = 2,
-                ensure_ascii=False )
-        if jsonp:
-            data = jsonp + '(' + data + ')'
-            mimetype = "application/javascript"
-        else:
-            mimetype = "application/json"
-        return HttpResponse( mimetype = mimetype, content = data )
-    elif view in ('yaml', 'xml'):
-        data = serializers.serialize(
-                view,
-                search_result,
-                indent = 2,
-                fields=('title', 'upcoming', 'start', 'tags', 'coordinates') )
-        if view == 'xml':
-            mimetype = "application/xml"
-        else:
-            mimetype = "application/x-yaml"
-        return HttpResponse( mimetype = mimetype, content = data )
-    elif view == 'rss':
-        return SearchEventsFeed()( request, query )
-    elif view == 'ical':
-        return ICalForSearch( request, query )
     else:
         raise Http404
     return render_to_response( 'search.html',
