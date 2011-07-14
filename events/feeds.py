@@ -115,7 +115,7 @@ class SearchEventsFeed(EventsFeed): # {{{1
 
     def items(self, obj):
         """ items """
-        matches = Filter.matches( obj, None, FEED_SIZE )
+        matches = Filter.matches( obj, FEED_SIZE )
         return matches
 
 
