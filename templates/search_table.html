@@ -8,7 +8,7 @@
     <tr>
         {% for column in events_table.columns %}
             <th class="header_for_{{ column.name }}">
-                <a href="?sort={{ column.name_toggled }}">
+                <a href="?sort={{ column.name_toggled }}&query={{ query }}&view=table">
                    {{ column }}
                    {# TODO #}
                    {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
@@ -32,7 +32,7 @@
 <div id="pagination_bottom" class="pagination">
     {% if events_table.page.has_previous %}
         <span class="step_left">
-            <a href="?sort={{sort_param}}&page={{ events_table.page.previous_page_number }}">{% trans "previous" %}</a>
+            <a href="?query={{ query }}&view=table&sort={{sort_param}}&page={{ events_table.page.previous_page_number }}">{% trans "previous" %}</a>
         </span>
     {% endif %}
     <span class="current">
@@ -42,7 +42,7 @@
     </span>
     {% if events_table.page.has_next %}
         <span class="step_right">
-            <a href="?sort={{ sort }}&page={{ events_table.page.next_page_number }}">{% trans "next" %}</a>
+            <a href="?query={{ query }}&view=table&sort={{ sort }}&page={{ events_table.page.next_page_number }}">{% trans "next" %}</a>
         </span>
     {% endif %}
 </div>

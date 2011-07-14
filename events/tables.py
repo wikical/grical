@@ -28,10 +28,9 @@
 # imports {{{1
 from django.utils.translation import ugettext as _
 
-from django_tables import MemoryTable, Column
+from django_tables import ModelTable, Column
 
-# TODO: MemoryTable is not scalable, change it to a queryset table
-class EventTable(MemoryTable): # {{{1
+class EventTable(ModelTable): # {{{1
     upcoming = Column( verbose_name = _( u"upcoming") )
     start = Column( verbose_name = _( u"start date" ) )
     city = Column( verbose_name = _( u"city" ), default = '' )
@@ -41,24 +40,26 @@ class EventTable(MemoryTable): # {{{1
             verbose_name = _( "tags" ), sortable = False, default = '' )
     id = Column( sortable = False, visible = False )
 
-    @staticmethod
-    def convert(event_list): # {{{2
-        """ converts a list of events to a list of dictionaries.
+    # The next line was used in the past when using
+    # django_tables.MemoryTable. Now we use ModelTable.
+    #@staticmethod
+    #def convert(event_list): # {{{2
+    #    """ converts a list of events to a list of dictionaries.
 
-        See http://elsdoerfer.name/docs/django-tables/#indices-and-tables
-        """
-        lis = list()
-        for event in event_list:
-            dic = dict()
-            dic['upcoming'] = \
-                    event.upcoming
-            dic['start'] = event.start
-            if event.city:
-                dic['city'] = event.city
-            if event.country:
-                dic['country'] = event.country
-            dic['title'] = event.title
-            dic['tags'] = event.tags
-            dic['id'] = event.id
-            lis.append( dic )
-        return lis
+    #    See http://elsdoerfer.name/docs/django-tables/#indices-and-tables
+    #    """
+    #    lis = list()
+    #    for event in event_list:
+    #        dic = dict()
+    #        dic['upcoming'] = \
+    #                event.upcoming
+    #        dic['start'] = event.start
+    #        if event.city:
+    #            dic['city'] = event.city
+    #        if event.country:
+    #            dic['country'] = event.country
+    #        dic['title'] = event.title
+    #        dic['tags'] = event.tags
+    #        dic['id'] = event.id
+    #        lis.append( dic )
+    #    return lis

@@ -4,7 +4,17 @@
 
 {% block search_info %}
     <span id='search_info'>
-        {{ heading }}
+        {% if number_of_events_found > 0 %}
+            {% if number_of_events_found == 1 %}
+                {% blocktrans %}
+                    One event found searching for '{{ query }}'.
+                {% endblocktrans %}
+            {% else %}
+                {% blocktrans %}
+                    {{ number_of_events_found }} events found searching for '{{ query }}'.
+                {% endblocktrans %}
+            {% endif %}
+        {% endif %}
         {% if USER.is_authenticated %}
             <form style="display:inline" action="{% url filter_save %}" method="POST">{% csrf_token %}
                 <input type="hidden" size="60" name="q" value="{{ query }}">
@@ -40,7 +50,7 @@
                 -->
         </span>
     </div>
-    {% if no_results %}
+    {% if number_of_events_found == 0 %}
         <p> {% trans "There are no events for this search currently" %}. </p>
     {% else %}
         {% ifequal current_view "table" %}
