@@ -74,6 +74,7 @@ from gridcalendar.events.models import (
 from gridcalendar.events.utils import search_address, html_diff
 from gridcalendar.events.tables import EventTable
 from gridcalendar.events.feeds import SearchEventsFeed
+from gridcalendar.events.search import search_events
 
 # TODO: check if this works with i18n
 views = [_('table'), _('map'), _('boxes'), _('calendars'),]
@@ -704,7 +705,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     # TODO: limit the number of search results. Think of malicious users
     # getting millions of events from the past
     try:
-        search_result = Filter.matches( query, related )
+        search_result = search_events( query, related )
     except ValueError as err: # TODO: catch other errors
         # this can happen for instance when a date is malformed like 2011-01-32
         messages.error( request, 
@@ -1465,7 +1466,7 @@ def ICalForSearch( request, query ): # {{{2
     ...         kwargs={'query': 'berlin',})).status_code
     200
     """
-    elist = Filter.matches( query, request.user )
+    elist = search_events( query )
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForEvent( request, event_id ): # {{{2
@@ -1566,9 +1567,8 @@ def handler404(request): #{{{1
 def handler500( request ): #{{{1
     """ custom 500 handler """
     messages.error( request,
-            _( u'We are very sorry but an error has ocurred. We have ' \
-            'been automatically informed and will fix it in no time, ' \
-            'because we care' ) )
+            _( u'We are very sorry but an error has ocurred. We have been ' \
+            'automatically informed and will fix it as soon as possible. ' ) )
     return main( request, status_code = 500 )
 
 # from http://moinmo.in/MacroMarket/EventAggregator

@@ -26,6 +26,13 @@
 
 Some used ideas are from http://toastdriven.com/fresh/django-doctest-tips/ and 
 http://stackoverflow.com/questions/1615406/configure-django-to-find-all-doctests-in-all-modules
+
+Example of how to test tests in the shell::
+
+    from django.core.urlresolvers import reverse
+    from django.test import Client
+    c = Client()
+    response = c.get( reverse( 'search_query', kwargs = {'query': 'linux',} ) )
 """
 
 # imports {{{1
@@ -225,10 +232,30 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         user = self._create_user( throw_web = True)
         user = self._create_user( throw_web = False)
 
+    #def test_search_views( self ):
+    #    """ tests the search and views table, map, boxes, calendars """
+    #    Event.objects.get_or_create(
+    #            user = None, title = "tsv",
+    #            tags = "test", start=datetime.date.today() )
+    #    Event.objects.get_or_create(
+    #            user = None, title = "test", acronym = 'tsv',
+    #            tags = "test", start=datetime.date.today() )
+    #    Event.objects.get_or_create(
+    #            user = None, title = "test", city = 'DE',
+    #            tags = "test", start=datetime.date.today() )
+    #    Event.objects.get_or_create(
+    #            user = None, title = "test", country = 'DE',
+    #            tags = "test", start=datetime.date.today() )
+    #    for view in ['table', 'map', 'boxes', 'calendars']:
+    #        response = self.client.get( reverse( 
+    #            'search_query',
+    #            kwargs = {'query': '1234',} ) )
+    #    event.delete()
+
     def test_event_visibility_in_search(self): # {{{2
         """ visibility of events """
         user = self._create_user('tpev1')
-        event = Event.objects.create(
+        event, created = Event.objects.get_or_create(
                 user = user, title = "1234",
                 tags = "test", start=datetime.date.today() )
         self._login ( user )

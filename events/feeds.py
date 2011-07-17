@@ -37,6 +37,7 @@ from django.core.urlresolvers import reverse
 from gridcalendar.settings import FEED_SIZE, SITE_ID
 from gridcalendar.events.models import ( Event, Filter, Group,
         ExtendedUser )
+from gridcalendar.events.search import search_events
 
 SITE_DOMAIN = Site.objects.get(id = SITE_ID).domain
 
@@ -77,7 +78,7 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
         """ items """
         today = datetime.date.today()
         elist = Event.objects.filter(upcoming__gte=today ).order_by('upcoming')
-        return elist[:FEED_SIZE]
+        return elist[0:FEED_SIZE]
 
 class LastAddedEventsFeed(EventsFeed): # {{{1
     """ Feed with the last `settings.FEED_SIZE` added events """
@@ -91,7 +92,7 @@ class LastAddedEventsFeed(EventsFeed): # {{{1
     def items( self ):
         """ items """
         elist = Event.objects.all().order_by('-creation_time')
-        return elist[:FEED_SIZE]
+        return elist[0:FEED_SIZE]
 
 class SearchEventsFeed(EventsFeed): # {{{1
     """ feed for the result of a search """
@@ -115,9 +116,7 @@ class SearchEventsFeed(EventsFeed): # {{{1
 
     def items(self, obj):
         """ items """
-        matches = Filter.matches( obj, FEED_SIZE )
-        return matches
-
+        return search_events( obj )[0:FEED_SIZE]
 
 class GroupEventsFeed(EventsFeed): # {{{1
     """ feed with the events of a group """

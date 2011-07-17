@@ -66,6 +66,7 @@ from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from gridcalendar.events.utils import (
         validate_year, search_name, text_diff, validate_tags_chars )
+from gridcalendar.events.search import search_events
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -352,51 +353,6 @@ GridCalendar will be presented"""
 # TODO: add alters_data=True to all functions that do that.
 # see http://docs.djangoproject.com/en/1.2/ref/templates/api/
 
-# regexes {{{1
-DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', UNICODE )
-COORDINATES_REGEX = re.compile(
-        r'\s*([+-]?\s*\d+(?:\.\d*)?)\s*[,;:+| ]\s*([+-]?\s*\d+(?:\.\d*)?)' )
-# regex.findall('=1234 aa =234 =34')
-# ['1234', '234', '34']
-EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', UNICODE)
-GROUP_REGEX = re.compile(r'(?:^|\s)!([-\w]+)\b', UNICODE)
-TAG_REGEX = re.compile(r'(?:^|\s)#([-\w]+)\b', UNICODE)
-# the regex start with @ and has 4 alternatives, examples:
-# 52.1234,-0.1234+300km
-# 52.1234,-0.1234,53.1234,-0.2345
-# london+50mi
-# berlin
-LOCATION_REGEX = re.compile(r"""
-        @(?:                    # loc regex starts with @
-        (?:                     # four floats separated by ,
-            ([+-]?\d+           #   [0] one or more digits
-                (?:\.\d*)?)     #   optionally . or . and decimals
-            ,
-            ([+-]?\d+           #   [1] one or more digits
-                (?:\.\d*)?)     #   optionally . or . and decimals
-            ,
-            ([+-]?\d+           #   [2] one or more digits
-                (?:\.\d*)?)     #   optionally . or . and decimals
-            ,
-            ([+-]?\d+           #   [3] one or more digits
-                (?:\.\d*)?)     #   optionally . or . and decimals
-        )|(?:                   # or float,float+int and opt. a unit
-            ([+-]?\d+           #   [4] one or more digits
-                (?:\.\d*)?)     #   optionally . or . and decimals
-            ,\s*                #   spaces because some people copy/paste
-            ([+-]?\d+           #   [5] one or more digits
-                (?:\.\d*)?)     #   optionally . or . and decimals
-            \+(\d+)             #   [6] distance
-            (km|mi)?            #   [7] optional unit
-        )|(?:                   # or a name, +, distance and opt. unit
-            ([^+]+)             #   [8] name
-            \+(\d+)             #   [9] distance
-            (km|mi)?            #   [10] optional unit
-        )|(                     # or just a name
-            .+                  #   [11]
-        ))""", re.UNICODE | re.X )
-# city, country (optional)
-CITY_COUNTRY_RE = re.compile(r'\s*([^,]+)(?:,\s*(.+))?')
 
 class EventManager( models.GeoManager ): # {{{1
     """ manager for deserialization.
@@ -497,10 +453,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         verbose_name = _( u'Event' )
         verbose_name_plural = _( u'Events' )
         unique_together = (('title', 'start'),)
-        # get_latest_by = "start" #TODO: useful? see also # http://docs.djangoproject.com/en/1.3/ref/generic-views/#date-based-generic-views
         # needed for proper order of e.g. master_event.instances:
         ordering = ['upcoming'] # TODO: see sql queries because this may make
-                                # everything too slot
+                                # everything too slow
 
     # methods {{{2
     def natural_key(self): # {{{3
@@ -2110,7 +2065,7 @@ class Filter( models.Model ): # {{{1
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next ``limit`` events matching ``self.query`` """
-        return Filter.matches( self.query, related = False )
+        return search_events( self.query, related = False )
 
     def matches_event( self, event ): # {{{2
         """ return True if self.query matches the event, False otherwise.
@@ -2153,275 +2108,21 @@ class Filter( models.Model ): # {{{1
         >>> assert not fil.matches_event(event)
         """
         # body {{{3
-        qset = Filter.matches_queryset( query ).filter(pk = event.id)
-        if len( qset ) > 0:
+        qset = search_events( query, related = False ).filter(pk = event.id)
+        if qset.exists():
             return True
         return False
         # EFFICIENCY: a much more efficient way would be to check manually
         # everything here, but then every change in
-        # :meth:`Filter.matches_queryset` would cause changes here and
+        # :meth:`search.search` would cause changes here and
         # comparing and adapting both methods would be very time consuming and
-        # error-pround. We had such a long code here until charset
-        # 336:e725aaa6a108
+        # error-pround. We had a long code here until charset 336:e725aaa6a108
 
-    @staticmethod # def matches( query, related = True ): {{{2
-    def matches( query, related = True ):
-        """ returns a sorted (by :attr:`Event.upcoming`) list of
-        events matching ``query`` adding related events if
-        *related* is True.
-
-        If *related* is True it adds to the result events with related tags,
-        but no more that the number of results. I.e. if the result contains two
-        events, only a miximum of two more related events will be added. If the
-        query contains a location term (marked with ``@``), only related events
-        with the same location are added. If the query contains a time term
-        (``yyyy-mm-dd`` or ``yyyy-mm-dd yyyy-mm-dd``), only related events with the
-        same time are added.
-
-        If the query contains a group term (marked with ``!``), a tag term
-        (marked with ``#``), or an event term (marked with ``=``) no related
-        events are added.
-
-        If the query evaluates to False, an empty queryset (EmptyQuerySet) is
-        returned.
-
-        """
-        if not query:
-            return Event.objects.none()
-        queryset = Filter.matches_queryset( query )
-        # creates a list of
-        # related events with no more than the length of queryset and combines
-        # both
-        if related and not ( GROUP_REGEX.findall(query) or
-                TAG_REGEX.findall(query) or EVENT_REGEX.findall( query ) ):
-            return ( Filter.related_events( queryset, query ) |
-                queryset ).order_by( 'upcoming' ).distinct()
-        return queryset.order_by('upcoming').distinct()
-
-    @staticmethod # def related_events( queryset, user, query ): {{{2
-    def related_events( queryset, query ):
-        """ add to ``queryset`` related events but no more than
-        ``len( queryset)`` and restricted by dates and locations if present in
-        ``query``. """
-        limit = queryset.count()
-        if limit < 1:
-            return Event.objects.none()
-        restricted = \
-            Event.objects.select_related(depth=1).defer('description').all()
-        ######################
-        # restricting by dates
-        dates = DATE_REGEX.findall( query )
-        if dates:
-            dates = [ datetime.date( int(year), int(month), int(day) ) for \
-                    year, month, day in dates ]
-            sorted_dates = sorted( dates )
-            date1 = sorted_dates[0] # first date
-            date2 = sorted_dates[-1] # last date
-            restricted = restricted.filter( upcoming__range = ( date1, date2 ) )
-            # remove all dates (yyyy-mm-dd) from the query
-            query = DATE_REGEX.sub("", query)
-        else:
-            if not query.startswith('* '):
-                restricted = restricted.filter(
-                        upcoming__gte = datetime.date.today() )
-        #########################
-        # restricting by location
-        restricted, query = Filter.restrict_by_location( restricted, query )
-        if not restricted.exists():
-            return Event.objects.none()
-        #############################
-        # restricting by related tags
-        used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
-        if len( used_tags ) == 0:
-            return Event.objects.none()
-        # used_tags contains the count of all tags present in queryset,
-        # example:
-        # used_tags = Tag.objects.usage_for_queryset( queryset, counts=True )
-        # [<Tag: linux>, <Tag: floss>, <Tag: foss>, <Tag: free-software>, ...
-        # used_tags[0].count
-        # 69
-        used_tags = sorted( used_tags, key = lambda t: t.count )
-        used_tags.reverse()
-        # Now we will use related_for_model. Examples:
-        # Tag.objects.related_for_model( used_tags[0:5], Event, counts=True )
-        # [<Tag: open-source>, <Tag: freedom>, <Tag: ubuntu> ...
-        # We will use the related tags to the 5 most used tags. TODO: 5 is best?
-        related_events = Event.objects.none()
-        for nr_of_tags in [6,5,4,3,2,1]:
-            related_tags = Tag.objects.related_for_model(
-                    used_tags[ 0 : nr_of_tags ], Event, counts = True )
-            if len( related_tags ) == 0:
-                continue
-            related_tags = sorted( related_tags, key = lambda t: t.count )
-            related_tags.reverse()
-            # we now find events with 1 of the
-            # tags, which are in related_events but not in queryset
-            # TODO: try to find first events with many related_tags
-            for tag in related_tags:
-                restricted_with_tag = restricted.filter( id__in =
-                        TaggedItem.objects.get_by_model( Event, tag ) )
-                not_in_queryset = restricted_with_tag.exclude( id__in = queryset )
-                related_events = related_events | not_in_queryset
-                if related_events.count() >= limit:
-                    return related_events
-        return related_events
 
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
-        *count* by :meth:`Filter.matches` """
-        return Filter.matches_queryset( self.query ).count()
-
-    @staticmethod # restrict_by_location( queryset, query ): {{{2
-    def restrict_by_location( queryset, query ):
-        """ returns a tuple (a queryset an a string ) restricting ``queryset`` with
-        the locations of ``query`` and removing them from ``query`` """
-        for loc in LOCATION_REGEX.findall(query):
-            if loc[11]:
-                # name given, which can have a city, a comma and a country
-                city, country = CITY_COUNTRY_RE.findall( loc[11] )[0]
-                if not country:
-                    queryset = queryset.filter(
-                        Q( city__iexact = city ) | Q(
-                            country__iexact = city ) )
-                        # TODO: use also translations of locations and
-                        # alternative names
-                else:
-                    queryset = queryset.filter(
-                           city__iexact = city, country__iexact = country )
-            elif loc[8]:
-                point = search_name( loc[8] )
-                if loc[10]:
-                    distance = {loc[10]: loc[9],}
-                else:
-                    distance = { settings.DISTANCE_UNIT_DEFAULT: loc[9],}
-                # example: ...filter(coordinates__distance_lte=(pnt, D(km=7)))
-                queryset = queryset.filter( coordinates__distance_lte =
-                        ( point, D( **distance ) ) )
-            elif loc[4]:
-                # coordinates given
-                point = Point( float(loc[5]), float(loc[4]) )
-                if loc[7]:
-                    distance = {loc[7]: loc[6],}
-                else:
-                    distance = { settings.DISTANCE_UNIT_DEFAULT: loc[6],}
-                queryset = queryset.filter( coordinates__distance_lte =
-                        ( point, D( **distance ) ) )
-            elif loc[0]:
-                # We have 4 floats: longitude_west [0], longitude_east [1],
-                # latitude_north [2], latitude_south [3]
-                lng1 = float( loc[0] )
-                lat1 = float( loc[3] )
-                lng2 = float( loc[1] )
-                lat2 = float( loc[2] )
-                rectangle = Polygon( ((lng1, lat1), (lng2,lat1),
-                    (lng2,lat2), (lng1,lat2), (lng1, lat1)) )
-                queryset = queryset.filter( coordinates__within = rectangle )
-            else:
-                pass
-                # TODO: log error
-            query = LOCATION_REGEX.sub("", query)
-        return queryset, query
-
-    @staticmethod # def matches_queryset( query ): {{{2
-    def matches_queryset( query ):
-        """ returns a queryset without touching the database, see
-        :meth:`Filter.matches`
-
-        It can throw a ``ValueError`` if for instance a day is out of range for
-        a month in a date, e.g. 2011-04-31.
-
-        If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
-        ``query`` is None or an empty string.
-
-        If ``query`` contains `` | `` strings (space, pipe, space), they are
-        consider as logical ``or``.
-
-        The returned ``queryset`` can contain repeated events.
-        """
-        # TODO: use the cache system for queries
-        if not query:
-            return Event.objects.none()
-        terms = query.split(' | ')
-        query = terms[0]
-        # broad search check
-        broad_regex = re.compile(r'^\* +', UNICODE) # beginninig with * followed
-                                                    # by 1 ore more spaces
-        if broad_regex.match( query ):
-            broad = True
-            query = broad_regex.sub("", query)
-            queryset = Event.objects.select_related(depth=1).all()
-        else:
-            broad = False
-            queryset = \
-                Event.objects.select_related(depth=1).defer('description').all()
-        # single events
-        for event_id in EVENT_REGEX.findall( query ):
-            queryset = queryset.filter( pk = event_id )
-            broad = True # '=' show past events too
-        query = EVENT_REGEX.sub("", query)
-        # groups
-        for group_name in GROUP_REGEX.findall(query):
-            queryset = queryset.filter(
-                    calendar__group__name__iexact = group_name)
-        query = GROUP_REGEX.sub("", query)
-        # locations
-        queryset, query = Filter.restrict_by_location( queryset, query )
-        # tags
-        tags = TAG_REGEX.findall(query)
-        if tags:
-            queryset = TaggedItem.objects.get_intersection_by_model(
-                    queryset, tags )
-        query = TAG_REGEX.sub("", query)
-        # dates
-        dates = DATE_REGEX.findall( query )
-        if dates:
-            dates = [ datetime.date( int(year), int(month), int(day) ) for \
-                    year, month, day in dates ]
-            sorted_dates = sorted( dates )
-            date1 = sorted_dates[0] # first date
-            date2 = sorted_dates[-1] # last date
-            queryset = queryset.filter(
-                   Q( start__range = (date1, date2) )  |
-                   Q( end__range = (date1, date2) ) |
-                   Q(deadlines__deadline__range = (date1, date2) ) |
-                   Q( start__lt = date1, end__gt = date2 ) ) # range in-between
-            # remove all dates (yyyy-mm-dd) from the query
-            query = DATE_REGEX.sub("", query)
-            queryset = queryset.distinct() # needed because deadlines query
-        elif not broad:
-            today = datetime.date.today()
-            queryset = queryset.filter( upcoming__gte = today )
-        # look for words
-        regex = r = re.compile('\s', re.UNICODE)
-        for word in regex.split( query ):
-            if not word: continue
-            if not broad:
-                queryset = queryset.filter(
-                        Q(title__icontains = word) |
-                        Q(tags__icontains = word) |
-                        # e.g. 'washington' in 'Washington D.C.'
-                        Q(city__icontains = word) | # TODO in other languages
-                        Q(country__iexact = word) | # TODO in other languages
-                        Q(acronym__icontains = word) )
-            else: # broad search
-                queryset = queryset.filter(
-                        Q( title__icontains = word ) |
-                        Q( tags__icontains = word ) |
-                        Q( city__icontains = word ) |
-                        Q( country__icontains = word ) |
-                        Q( address__icontains = word ) |
-                        Q( acronym__icontains = word ) |
-                        Q( description__icontains = word ) |
-                        Q( urls__url_name__icontains = word ) |
-                        Q( urls__url__icontains = word ) |
-                        Q( deadlines__deadline_name__icontains = word ) |
-                        Q( sessions__session_name__icontains = word ) )
-        # TODO: add full indexing text on Event.description and comments. See
-        # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
-        # remove duplicates
-        if len( terms ) > 1:
-            return queryset | Filter.matches_queryset( ' | '.join( terms[1:] ) )
-        return queryset
+        *count* by :meth:`search.search` """
+        return search_events( self.query ).count()
 
     @staticmethod # def notify_users_when_wanted( event ): {{{2
     def notify_users_when_wanted( event ):
@@ -2653,34 +2354,6 @@ class Group( models.Model ): # {{{1
             return events
         else:
             return events[0:limit]
-
-    def get_coming_events(self, limit=5): # {{{2
-        """ Returns a list of maximal *limit* events with at least one
-        date in the future (start, end or deadline). If *limit* is -1 it
-        returns all
-        """
-        today = datetime.date.today()
-        events = Event.objects.filter(
-                Q(calendar__group = self) & Q(upcoming__gte=today) )
-        # the code without using upcoming would be:
-        #events = Event.objects.filter(
-        #        Q(calendar__group = self) & (
-        #            Q(start__gte=today) | Q(end__gte=today) |
-        #            Q(deadlines__deadline__gte=today) ))
-        events = events.distinct().order_by('upcoming') # TODO: needed?
-        if limit == -1:
-            return events
-        else:
-            return events[0:limit]
-
-    def has_coming_events(self): # {{{2
-        """ returns True if the group has coming events (with *start*, *end* or
-        a *deadline* of an event of the group in the future)
-        """
-        today = datetime.date.today()
-        return Event.objects.filter( Q(calendar__group = self) & (
-                    Q(start__gte=today) | Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today) )).count() > 0
 
     def has_coming_events(self): # {{{2
         """ returns True if the group has coming events (with *start*,

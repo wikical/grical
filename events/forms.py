@@ -39,7 +39,8 @@ from django.utils.translation import ugettext as _
 
 from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDeadline,
-        EventSession, Filter, Group, Membership, COORDINATES_REGEX)
+        EventSession, Filter, Group, Membership )
+from gridcalendar.events.search import COORDINATES_REGEX
 from gridcalendar.events.utils import validate_year, validate_event_exists
 
 def _date(string): # {{{1
