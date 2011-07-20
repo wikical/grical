@@ -171,7 +171,7 @@ def words_restriction( queryset, words, broad, search_in_tags ): #{{{1
         if search_in_tags:
             q_word_filters |= Q(tags__icontains = word)
         if broad:
-            q_word_filter |= \
+            q_word_filters |= \
                     Q( address__icontains = word ) | \
                     Q( description__icontains = word ) | \
                     Q( urls__url_name__icontains = word ) | \
