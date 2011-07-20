@@ -156,53 +156,33 @@ def dates_restriction( queryset, query, broad ): #{{{1
     return queryset, query
 
 def words_restriction( queryset, words, broad, search_in_tags ): #{{{1
+    q_filters = None
     for word in words:
-        if not word: continue
-        if not broad:
-            if search_in_tags:
-                queryset = queryset.filter(
-                    Q(tags__icontains = word) |
-                    Q(title__icontains = word) |
-                    # e.g. 'washington' in 'Washington D.C.'
-                    Q(city__icontains = word) | # TODO in other languages
-                    Q(country__iexact = word) | # TODO in other languages
-                    Q(acronym__icontains = word) )
-            else:
-                # same as before but without tags
-                queryset = queryset.filter(
-                    Q(title__icontains = word) |
-                    # e.g. 'washington' in 'Washington D.C.'
-                    Q(city__icontains = word) | # TODO in other languages
-                    Q(country__iexact = word) | # TODO in other languages
-                    Q(acronym__icontains = word) )
-        else: # broad search
-            if search_in_tags:
-                queryset = queryset.filter(
-                    Q( tags__icontains = word ) |
-                    Q( title__icontains = word ) |
-                    Q( city__icontains = word ) |
-                    Q( country__icontains = word ) |
-                    Q( address__icontains = word ) |
-                    Q( acronym__icontains = word ) |
-                    Q( description__icontains = word ) |
-                    Q( urls__url_name__icontains = word ) |
-                    Q( urls__url__icontains = word ) |
-                    Q( deadlines__deadline_name__icontains = word ) |
-                    Q( sessions__session_name__icontains = word ) )
-            else:
-                # same as before but without tags
-                queryset = queryset.filter(
-                    Q( title__icontains = word ) |
-                    Q( city__icontains = word ) |
-                    Q( country__icontains = word ) |
-                    Q( address__icontains = word ) |
-                    Q( acronym__icontains = word ) |
-                    Q( description__icontains = word ) |
-                    Q( urls__url_name__icontains = word ) |
-                    Q( urls__url__icontains = word ) |
-                    Q( deadlines__deadline_name__icontains = word ) |
-                    Q( sessions__session_name__icontains = word ) )
-    return queryset
+        if not word:
+            continue
+        # NOTE: city needs to be icontains to find e.g. 'washington' in
+        # 'Washington D.C.'
+        # TODO: search toponims in other languages
+        q_word_filters = \
+                Q(title__icontains = word) | \
+                Q(city__icontains = word) | \
+                Q(country__iexact = word) | \
+                Q(acronym__icontains = word)
+        if search_in_tags:
+            q_word_filters |= Q(tags__icontains = word)
+        if broad:
+            q_word_filter |= \
+                    Q( address__icontains = word ) | \
+                    Q( description__icontains = word ) | \
+                    Q( urls__url_name__icontains = word ) | \
+                    Q( urls__url__icontains = word ) | \
+                    Q( deadlines__deadline_name__icontains = word ) | \
+                    Q( sessions__session_name__icontains = word )
+        if not q_filters:
+            q_filters = q_word_filters
+        else:
+            q_filters &= q_word_filters # FIXME: events with partial words are matches, WTF
+    return queryset.filter( q_filters )
 
 def tags_restriction( queryset, query ): #{{{1
     tags = TAG_REGEX.findall(query)
