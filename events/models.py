@@ -45,7 +45,6 @@ from django.contrib.gis.db.models import Q
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
 from django.contrib.sites.models import Site
-from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.core.urlresolvers import reverse
@@ -609,7 +608,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             ical.add('PRODID').value = settings.PRODID
         vevent = ical.add('vevent')
         vevent.add('SUMMARY').value = self.title
-        vevent.add('URL').value = self.get_absolute_url()
+        vevent.add('URL').value = 'http://' + \
+            Site.objects.get_current().domain + self.get_absolute_url()
         if self.starttime:
             vevent.add('DTSTART').value = datetime.datetime.combine(
                     self.start, self.starttime )
