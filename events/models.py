@@ -609,6 +609,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             ical.add('PRODID').value = settings.PRODID
         vevent = ical.add('vevent')
         vevent.add('SUMMARY').value = self.title
+        vevent.add('URL').value = self.get_absolute_url()
         if self.starttime:
             vevent.add('DTSTART').value = datetime.datetime.combine(
                     self.start, self.starttime )
