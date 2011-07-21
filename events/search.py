@@ -30,6 +30,7 @@ import datetime
 
 from django.contrib.gis.db.models import Q
 from django.contrib.gis.measure import D # D is a shortcut for Distance
+from django.contrib.gis.geos import Point, Polygon
 
 from tagging.models import Tag, TaggedItem
 
