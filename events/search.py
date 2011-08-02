@@ -157,13 +157,15 @@ def dates_restriction( queryset, query, broad ): #{{{1
     return queryset, query
 
 def words_restriction( queryset, words, broad, search_in_tags ): #{{{1
+    if not words:
+        return queryset
     q_filters = None
     for word in words:
         if not word:
             continue
         # NOTE: city needs to be icontains to find e.g. 'washington' in
         # 'Washington D.C.'
-        # TODO: search toponims in other languages
+        # TODO: search toponyms in other languages
         q_word_filters = \
                 Q(title__icontains = word) | \
                 Q(city__icontains = word) | \
@@ -270,12 +272,11 @@ def search_events( query, related = True ): #{{{1
             result = result | queryset
             continue
         # remaining unique words
-        words_set = set( SPACE_REGEX.split( query ) )
+        words = SPACE_REGEX.split( query )
+        words_set = set( [ word for word in words if word[0] != '+' ] )
         queryset_with_words_restriction = words_restriction(
                 queryset, list( words_set ), broad, True )
-        if not related:
-            result = result | queryset_with_words_restriction
-        else:
+        if related and words_set:
             related_tags = set()
             for tag in list( words_set ):
                 try:
@@ -288,7 +289,13 @@ def search_events( query, related = True ): #{{{1
             related_events = TaggedItem.objects.get_union_by_model(
                         queryset, # NOTE we use all the restrictions here
                         [ tag.name for tag in related_tags ] )
-            result = result | related_events | queryset_with_words_restriction
+            partial_result = related_events | queryset_with_words_restriction
+        else:
+            partial_result = queryset_with_words_restriction
+        words_strict = set(
+            [ word[1:] for word in words if word[0] == '+' and len(word) > 1 ] )
+        result = result | words_restriction(
+                partial_result, words_strict, False, False )
     return result.order_by('upcoming').distinct()
 
 

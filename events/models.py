@@ -2107,6 +2107,8 @@ class Filter( models.Model ): # {{{1
         >>> assert fil.matches_event(event)
         >>> fil.query = 'abcdef'
         >>> assert not fil.matches_event(event)
+        >>> event.delete()
+        >>> group.delete()
         """
         # body {{{3
         qset = search_events( query, related = False ).filter(pk = event.id)

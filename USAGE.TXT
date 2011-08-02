@@ -93,13 +93,15 @@ Searches and filters
 - All given words must appear in at least one of the fields.
 - Search results contain also related events (with similar tags), unless one or more of the special
   search restrictions are used (like # for tags, see bellow)
-- More dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the the
+- Dates in isoformat ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the
   oldest to the newest, including events with a deadline in the range and events taking place during
-  the range. If only one date is provided (instead of two or more) only events with the a matching
-  date (start, end or dateline) are shown. Example: `2011-01-01 2011-12-31`_
-- If there is no date in the query only future events are showed.
+  the range. If only one date is provided (instead of two or more) only events with a matching
+  date (start, end or a dateline) are shown. Example: `2011-01-01 2011-12-31`_
+- If there is no date in the query and the broad operator is not used, only future events are showed.
 - Tags ( ``#tag_name`` ) restricts the query to events with these tags. Example: `#linux`_
 - Groups ( ``!group_name`` ) restricts the query to events of the group. Example:`!ffii`_
+- Words starting with a ``+`` restrict the query to events matching the word in the fields
+  ``title``, ``acronym``, ``city`` and ``country`` without related events. Example: `+software`_
 - The string `` | `` (space pipe space) can be used to concatenate results of different searches
   (logical or). For example `#linux | #foss`_ will search for all future events with the tag
   ``linux`` or ``foss`` or both.
@@ -151,6 +153,7 @@ __ http://grical.org/s/?query=*+http%3A%2F%2Fevents.linuxfoundation.org%2F
 .. _@london,ca: http://grical.org/s/?query=%40london%2Cca
 .. _@52.55247,13.40364+500km: http://grical.org/s/?query=%4052.55247%2C13.40364%2B500km
 .. _@13.324,13.463,52.5503,52.4701: http://grical.org/s/?query=%4013.324%2C13.463%2C52.5503%2C52.4701
+.. _+software:  http://grical.org/s/?query=%2Bsoftware
 
 Event history and event deletions
 ---------------------------------
