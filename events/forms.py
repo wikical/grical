@@ -286,7 +286,8 @@ class FilterForm(ModelForm): # {{{1
     #    return data
 
 class EventForm(ModelForm): # {{{1
-    """ ModelForm for all editable fields of Event """
+    """ ModelForm for all user editable fields of an Event, a custom coordinate
+    field and fields for all days of two years from now """
     coordinates = CoordinatesField( max_length = 26, required = False )
     # TODO: put this in the right position within the form, see
     # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
