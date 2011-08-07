@@ -217,7 +217,7 @@ def event_new_raw( request, template_event_id = None ): # {{{1
                     # {'url': [u'Enter a valid value.']}
                     for field_name, error_message in err.message_dict.items():
                         messages.error( request,
-                                field_name + ": " + error_message )
+                                field_name + ": " + ', '.join(error_message) )
                 elif hasattr( err, 'messages' ):
                     for message in err.messages:
                         messages.error( request, message )
