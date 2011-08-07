@@ -46,7 +46,7 @@ EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', re.UNICODE) #{{{2
 # ['1234', '234', '34']
 GROUP_REGEX = re.compile(r'(?:^|\s)!([-\w]+)\b', re.UNICODE) #{{{2
 TAG_REGEX = re.compile(r'(?:^|\s)#([-\w]+)\b', re.UNICODE) #{{{2
-SPACE_REGEX = r = re.compile('\s+', re.UNICODE) #{{{2
+SPACE_REGEX = re.compile(r'\s+', re.UNICODE) #{{{2
 # LOCATION_REGEX {{{2
 # the regex start with @ and has 4 alternatives, examples:
 # 52.1234,-0.1234+300km
@@ -273,7 +273,8 @@ def search_events( query, related = True ): #{{{1
             continue
         # remaining unique words
         words = SPACE_REGEX.split( query )
-        words_set = set( [ word for word in words if word[0] != '+' ] )
+        words_set = set(
+                [ word for word in words if word and word[0] != '+' ] )
         queryset_with_words_restriction = words_restriction(
                 queryset, list( words_set ), broad, True )
         if related and words_set:
@@ -293,7 +294,8 @@ def search_events( query, related = True ): #{{{1
         else:
             partial_result = queryset_with_words_restriction
         words_strict = set(
-            [ word[1:] for word in words if word[0] == '+' and len(word) > 1 ] )
+            [ word[1:] for word in words if word and word[0] == '+' and
+                len(word) > 1 ] )
         result = result | words_restriction(
                 partial_result, words_strict, False, False )
     return result.order_by('upcoming').distinct()
