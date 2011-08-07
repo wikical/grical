@@ -2,6 +2,16 @@ high priority
 -------------
 
 - accept search 2011-04
+- don't save anything when nothing changes from a previous version. At the moment coordinates are
+  saved::
+
+    "2011-08-02 13:24" < gricalrobot> http://grical.org/e/show/448/
+    "2011-08-02 13:24" < gricalrobot>     -coordinates: 47.156122, 11.729043
+    "2011-08-02 13:24" < gricalrobot>     +coordinates: 47.156322, 11.729043
+    "2011-08-02 13:24" < gricalrobot> http://grical.org/e/show/448/
+    "2011-08-02 13:24" < gricalrobot>     -coordinates: 47.156122, 11.729043
+    "2011-08-02 13:24" < gricalrobot>     +coordinates: 47.156322, 11.729043
+
 - contact form, terminate with: 'Thanks for contacting us. We'll try our best to reply in a timely
   fashion.'
 - run the tests of django_tables

@@ -1073,7 +1073,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         {'field_name': syns[field_m.group(1).lower()],} ) #
                         # TODO: show line number and line in errors
                 else:
-                    field_names.discard( syns[field_m.group(1)] )
+                    field_names.discard( syns[field_m.group(1).lower()] )
             # checks simple field
             if syns[field_m.group(1).lower()] in simple_list:
                 simple_dic[ syns[field_m.group(1).lower()] ] = field_m.group(2)
