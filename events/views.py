@@ -159,7 +159,7 @@ def event_edit( request, event_id = None ): # {{{1
             # a ValidationError with the message: 'ManagementForm data is
             # missing or has been tampered with'
         except ValidationError:
-            message.error( request, _('Internal data missing. No data ' \
+            messages.error( request, _('Internal data missing. No data ' \
                     'saved. If the error persists, please contact us.') )
         else:
             if event_form.is_valid():
