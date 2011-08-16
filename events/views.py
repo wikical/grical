@@ -161,6 +161,8 @@ def event_edit( request, event_id = None ): # {{{1
         except ValidationError:
             messages.error( request, _('Internal data missing. No data ' \
                     'saved. If the error persists, please contact us.') )
+            return HttpResponseRedirect( reverse( 'event_show_all',
+                    kwargs = {'event_id': event.id} ) )
         else:
             if event_form.is_valid():
                 event = event_form.save(commit = False)
