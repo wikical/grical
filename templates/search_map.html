@@ -1,6 +1,9 @@
 {% load i18n %}
 
+<br />
+<br />
 {% include "pagination.html" %}
+<br />
 
 <div id="map" class="smallmap"></div>
 <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
@@ -46,7 +49,7 @@
 
 </div>
 
-<div>
+<div class="map_legend">
     <ul>
         {% for event in events.object_list %}
             <li>
