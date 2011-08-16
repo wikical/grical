@@ -8,7 +8,7 @@
 
 {% block container %}
 
-    <div style='float: right; max-width: 35em; padding: 1em 0em;'>
+    <div id="simplified_container">
         <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
             <form action="" method="post">{% csrf_token %}
                 <fieldset>
@@ -25,16 +25,18 @@
                         <div class="field">{{ field.label_tag }} {{ field }}</div>
                         <div class="help_text">{{ field.help_text }}</div>
                     {% endfor %}
-                    <input type="submit" value="{% trans "Submit" %}" />
+                    <div id="simplified_submit">
+                        <input type="submit" value="{% trans "Submit" %}" />
+                    </div>
                 </fieldset>
             </form>
 
-            <p style="font-size: 0.75em">
+            <div id="alternatives">
                 {% trans "Alternatively:" %}
                 <a href="{% url event_new %}">{% trans "extended form" %}</a>, 
                 <a href="{% url event_new_raw %}">{% trans "textarea" %}</a>
                 <br />
-            </p>
+            </div>
 
         </div>
     </div>

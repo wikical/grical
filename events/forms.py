@@ -33,7 +33,7 @@ from django.contrib.gis.geos import Point
 from django.core import validators
 from django.forms import ( CharField, IntegerField, HiddenInput,
         ModelMultipleChoiceField, ModelForm, ValidationError,
-        TextInput, CheckboxSelectMultiple, Form, Field, DateField, TimeField )
+        Textarea, CheckboxSelectMultiple, Form, Field, DateField, TimeField )
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -306,18 +306,8 @@ class EventForm(ModelForm): # {{{1
                         str( instance.coordinates.x )
             if coordinates_value:
                 self.fields['coordinates'].initial = coordinates_value
-        #TODO: use css instead
-        self.fields['title'].widget.attrs["size"] = 70
-        self.fields['start'].widget.attrs["size"] = 10
-        self.fields['end'].widget.attrs["size"] = 10
-        self.fields['starttime'].widget.attrs["size"] = 5
         self.fields['starttime'].widget.format = '%H:%M'
-        self.fields['endtime'].widget.attrs["size"] = 5
         self.fields['endtime'].widget.format = '%H:%M'
-        self.fields['tags'].widget.attrs["size"] = 70
-        self.fields['address'].widget.attrs["size"] = 70
-        self.fields['description'].widget.attrs["rows"] = 20
-        self.fields['description'].widget.attrs["cols"] = 70
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         exclude = ('coordinates',) # excludes the model field 'coordinates'
@@ -339,14 +329,14 @@ class EventForm(ModelForm): # {{{1
 class SimplifiedEventForm( ModelForm ): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
     """
-    where = CharField( max_length = 100, required = False )
+    where = CharField( max_length = 100, required = False ) # TODO: take it from the model
     when = DatesTimesField()
     web = URLFieldExtended(verify_exists=True)
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'What')
-        self.fields['title'].widget.attrs["size"] = 70
-        self.fields['tags'].widget.attrs["size"] = 70
+        self.fields['title'].widget = Textarea()
+        self.fields['tags'].widget = Textarea()
         self.fields['where'].label = _(u'Where')
         self.fields['where'].help_text = \
                 _(u'Example: Malmöer Str. 6, Berlin, DE')
@@ -354,16 +344,13 @@ class SimplifiedEventForm( ModelForm ): # {{{1
         self.fields['when'].help_text = \
                 _(u"Examples: '25 Oct 2006', '2010-02-27', " \
                 "'2010-02-27 11:00', '2010-02-27 11:00-13:00'")
-        #self.fields['title'].widget.attrs["size"] = 42
-        #self.fields['tags'].widget.attrs["size"] = 42
-        #self.fields['web'].widget.attrs["size"] = 42
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags',)
     def clean( self ):
         """ checks that there is no other event with the same name and start
         date """
-        # see # http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
+        # see http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
         self.cleaned_data = super(SimplifiedEventForm, self).clean()
         title = self.cleaned_data.get("title", None)# neccesary field, no checks
         when = self.cleaned_data.get("when", None)
@@ -391,8 +378,6 @@ class DeleteEventForm(Form): # {{{1
     def __init__(self, *args, **kwargs):
         super(DeleteEventForm, self).__init__(*args, **kwargs)
         self.fields['redirect'].validators.append( validate_event_exists )
-        self.fields['reason'].widget.attrs["size"] = 50
-        self.fields['redirect'].widget.attrs["size"] = 5
 
 class NewGroupForm(ModelForm): # {{{1
     """ ModelForm for Group with only the fields `name` and `description` """

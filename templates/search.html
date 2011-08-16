@@ -2,6 +2,32 @@
 {% load i18n %}
 {% load urlsearch %}
 
+{% block views %}
+    <div id="views">
+        {# shows views bottons #}
+        {% for view in views %}
+            {% ifequal current_view view %}
+                <div id="{{ view }}_view" class="current_view">{{ view }}</div>
+            {% else %}
+                <div id="{{ view }}_view"><a href="{% urlsearch query=query view=view %}">{{ view }}</a></div>
+            {% endifequal %}
+        {% endfor %}
+        {# shows links to download or links to external services #}
+        <div id="ical_view">
+            <a href='{% urlsearch query=query view="ical" %}'>iCalendar</a>
+                <!-- doesn't look nice in IE7 at least
+                <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
+                -->
+        </div>
+        <div id="rss_view">
+            <a href='{% urlsearch query=query view="rss" %}'>RSS</a>
+                <!-- doesn't look nice in IE7 at least
+                <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
+                -->
+        </div>
+    </div>
+{% endblock %}
+
 {% block search_info %}
     <span id='search_info'>
         {% if number_of_events_found > 0 %}
@@ -27,29 +53,6 @@
 {% endblock %}
 
 {% block container %}
-    <div id="views">
-        {# shows views bottons #}
-        {% for view in views %}
-            {% ifequal current_view view %}
-                <span id="{{ view }}_view" style="border: 3px black solid;">{{ view }}</span>
-            {% else %}
-                <span id="{{ view }}_view"><a href="{% urlsearch query=query view=view %}">{{ view }}</a></span>
-            {% endifequal %}
-        {% endfor %}
-        {# shows links to download or links to external services #}
-        <span id="ical_view">
-            <a href='{% urlsearch query=query view="ical" %}'>iCalendar</a>
-                <!-- doesn't look nice in IE7 at least
-                <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
-                -->
-        </span>
-        <span id="rss_view">
-            <a href='{% urlsearch query=query view="rss" %}'>RSS</a>
-                <!-- doesn't look nice in IE7 at least
-                <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
-                -->
-        </span>
-    </div>
     {% if number_of_events_found == 0 %}
         <p> {% trans "There are no events for this search currently" %}. </p>
     {% else %}

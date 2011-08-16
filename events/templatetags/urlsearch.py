@@ -96,7 +96,8 @@ class UrlSearchNode( template.Node ):
                 del kwargs['country']
         # kwargs['query'] = enc( kwargs['query'].strip() )
         kwargs['query'] = kwargs['query'].strip()
-        url = reverse( 'search' ) + '?' + urlencode( kwargs )
+        url = reverse( 'search' ) + '?' + \
+                urlencode( kwargs).replace('&','&amp;')
         if self.asvar:
             context[self.asvar] = url
             return ''

@@ -403,13 +403,16 @@ def event_show_all( request, event_id ): # {{{1
                     **options )
             return [node], []
         roles.register_local_role('e', event_reference_role)
+        # workaround for Django bug https://code.djangoproject.com/ticket/6681
+        # 'title-reference' is the default in docutils
+        roles.DEFAULT_INTERPRETED_ROLE = 'title-reference'
         try:
             rst2html = core.publish_parts(
                 source = event.description,
                 writer = Writer(),
                 settings_overrides = {'input_encoding': 'unicode', 'output_encoding': 'unicode'},
                 )['html_body']
-        except ApplicationError as err:
+        except ( ApplicationError, AttributeError ) as err:
             # it happens when there is a severe RST syntax error. Text example
             # that produces such an error:
             # //////////////
