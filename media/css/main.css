@@ -494,45 +494,46 @@ legend {
 }
 
 /**
- * Event table
+ * search table view
  */
 .event_table {
     font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
     width:100%;
     border-collapse:collapse;
+    border:0;
+    margin: 1em 0;
 }
-.event_table td, .event_table th {
+.event_table td {
     font-size:1em;
     /*border:1px solid #55aacc;*/
     border:0px;
-    padding:3px 7px 2px 7px;
+    text-align: center;
+    padding: 0.2em 1em;
 }
 .event_table th {
     font-size:1.1em;
+    padding:3px 7px 2px 7px;
     text-align:left;
     padding-top:5px;
-    padding-bottom:4px;
-    background-color:#4291c9;
+    background-color:#2C516D;
     color:#ffffff;
+    border-radius: 0.5em 0.5em 0 0;
+    text-align: center;
 }
 .event_table th a {
     color:#fff;
 }
 .event_table tr.even td {
     color:#000;
-    background-color:#d3e8f2;
+    background-color:#9DBCD3;
 }
 .event_table .col_start {
-    width: 10em ;
 }
-.event_table .col_next_coming_date_or_start {
-    width: 10em ;
+.event_table .col_upcoming {
 }
 .event_table .col_city {
-    width: 10em ;
 }
 .event_table .col_country {
-    width: 2em ;
 }
 
 /**
@@ -574,21 +575,23 @@ legend {
 
 /* calendar view */
 .calendars table {
-    border: 1px solid #3176B9;
-    margin: 1em;
-    padding: 0.5em;
+    border: none;
     border-collapse: collapse;
+    margin-bottom: 5em;
+    width: 100%;
 }
 .calendars th {
-    background-color: #3176B9;
-    color: white;
+    background-color: black;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    color: #9DBCD3;
     font-weight: bold;
-    text-align: center;
     padding: 0.2em;
+    text-align: center;
 }
 .calendars td {
     border-left: 1px solid #DDDDDD;
     border-right: 1px solid #DDDDDD;
+    background-color: #9DBCD3;
 }
 .calendars td.today {
     color: red;
@@ -606,13 +609,11 @@ legend {
     height: 1em;
 }
 .calendars .event-rectangle {
-    border-radius: 0.5em;
-    -webkit-border-radius: 0.5em;
-    -moz-border-radius: 0.5em;
     padding: 0.2em;
+    border: medium none;
 }
 .calendars .noday {
-    background-color: #DDDDDD;
+    background-color: #AFC4D3;
 }
 .calendars a[href] {
     color: inherit;
@@ -620,6 +621,22 @@ legend {
 }
 .calendars a:hover {
     text-decoration: underline;
+}
+
+/** map view */
+.map_legend ul {
+    list-style: none;
+}
+.map_legend li:before {
+    content: none;
+}
+.map_legend li {
+    margin: 0.5em;
+}
+.map_legend img {
+    bottom: -4px;
+    position: relative;
+    vertical-align: text-bottom;
 }
 
 /**
