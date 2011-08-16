@@ -8,94 +8,116 @@
 {% block container %}
 <div class="event_full">
 
-    <div class="options">
+    <div class="header">
+        <div id="title">
+            <span class="ical_logo">
+              <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+            </span>
+            {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
+        </div>
+        <div class="options">
+            <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+            &nbsp;|&nbsp;
+            <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit&nbsp;as&nbsp;text" %}</span></a>
+            &nbsp;|&nbsp;
+            <a href="{% url event_history event.id %}">{% trans "history" %}</a>
+            &nbsp;|&nbsp;
+            {% show_add_to_group %}
+            &nbsp;|&nbsp;
+            <a href="{% url event_new_copyraw event.id %}">{% trans "copy&nbsp;as&nbsp;text" %}</a>
+            {% if user.is_authenticated %}
+                &nbsp;|&nbsp;
+                <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="item">
+        <!--
         <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
         &nbsp;|&nbsp;
-        <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
-        &nbsp;|&nbsp;
-        <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
-        &nbsp;|&nbsp;
-        <a href="{% url event_history event.id %}">{% trans "history" %}</a>
-        &nbsp;|&nbsp;
-        {% show_add_to_group %}
-        &nbsp;|&nbsp;
-        <a href="{% url event_new_copyraw event.id %}">{% trans "copy as text" %}</a>
-        {% if user.is_authenticated %}
-            &nbsp;|&nbsp;
-            <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
-        {% endif %}
-    </div>
-
-    <div class="dates">
-        <a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a>
-        {% if event.starttime %}
-            <span class="times">
-                {{ event.starttime|time }}{% if event.endtime %}{% if not event.end or event.start == event.end %}-{{ event.endtime|time }}{% endif %}{% endif %}
-            </span>
-        {% endif %}
-        {% if event.end and not event.start == event.end %}
-            : <a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a>
-            {% if event.endtime %}
-                <span class="times">
-                    {{ event.endtime|time }}
-                </span>
+        -->
+        <img class="icon" alt="ICAL" src="{{ MEDIA_URL }}dates-icon.png" />
+        <div class="data">
+            <span class="date"><a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a></span>
+            {% if event.starttime %}
+                <span class="time">
+                    {{ event.starttime|time }}
+                </span>{% if event.endtime %}
+                {% if not event.end or event.start == event.end %}
+                    -<span class="time">{{ event.endtime|time }}</span>{% endif %}{% endif %}</span>
+                {% endif %}
+            {% if event.end and not event.start == event.end %}
+                : <span class="date"><a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a></span>
+                {% if event.endtime %}
+                    <span class="time">
+                        {{ event.endtime|time }}
+                    </span>
+                {% endif %}
             {% endif %}
-        {% endif %}
-    </div>
-
-    <div class="title">
-        {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
+        </div>
     </div>
 
     {% if event.address or event.postcode or event.city or event.country or event.coordinates %}
-        <p>
-            {% if event.address %}
-                {{ event.address }}
-            {% endif %}
-            {% if event.postcode %}
-                &nbsp; &#8212; &nbsp;
-                {{ event.postcode }}
-            {% endif %}
-            {% if event.city %}
-                &nbsp; &#8212; &nbsp;
-                <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
-            {% endif %}
-            {% if event.country %}
-                &nbsp; &#8212; &nbsp;
-                <span class="field_country">
-                    <a href="{% urlsearch country=event.country %}">{{ event.country|capfirst }}</a>
-                </span>
-            {% endif %}
-            {% if event.coordinates %}
-                &nbsp; &#8212; &nbsp;
-                {{ event.coordinates.y }}, {{ event.coordinates.x }}
-                ( <a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
-                <a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a> )
-            {% endif %}
-        </p>
+        <div class="item">
+            <img class="icon" src="{{ MEDIA_URL }}venue-icon.png" alt="{% trans 'where' %}" />
+            <div class="data">
+                {% if event.address %}
+                    {{ event.address }}
+                {% endif %}
+                {% if event.postcode %}
+                    &nbsp; &#8212; &nbsp;
+                    {{ event.postcode }}
+                {% endif %}
+                {% if event.city %}
+                    &nbsp; &#8212; &nbsp;
+                    <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
+                {% endif %}
+                {% if event.country %}
+                    &nbsp; &#8212; &nbsp;
+                    <span class="field_country">
+                        <a href="{% urlsearch country=event.country %}">{{ event.country|capfirst }}</a>
+                    </span>
+                {% endif %}
+                {% if event.coordinates %}
+                    &nbsp; &#8212; &nbsp;
+                    {{ event.coordinates.y }}, {{ event.coordinates.x }}
+                    ( <a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
+                    <a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a> )
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
 
     {% if event.get_tags %}
-        <p class='tags'>
-            {% for tag in event.get_tags %}
-                <a href="{% urlsearch tag=tag %}">{{ tag }}</a>
-            {% endfor %}
-        </p>
+        <div class="item">
+            <img class="icon" src="{{ MEDIA_URL }}tags-icon.png" alt="{% trans 'tags' %}" />
+            <div class="tags data">
+                {% for tag in event.get_tags %}
+                    <a href="{% urlsearch tag=tag %}">{{ tag }}</a>
+                {% endfor %}
+            </div>
+        </div>
     {% endif %}
 
     {% if event.urls.all %}
-        <ul class='urls'>
-            {% for url in event.urls.all %}
-            <li>
-                <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
-                {# &emsp; <a href="{{ url.url }}"><span class="url">{{ url.url|escape }}</span></a> #}
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="item">
+            <img class="icon" src="{{ MEDIA_URL }}links-icon.png" alt="{% trans 'urls' %}" />
+            <div class="data">
+                <ul class="urls">
+                    {% for url in event.urls.all %}
+                        <li>
+                            <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
+                            {# &emsp; <a href="{{ url.url }}"><span class="url">{{ url.url|escape }}</span></a> #}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     {% endif %}
 
     {% if event.recurring %}{# is part of a serie as intermediate instance OR is master of a serie #}
-        <p>{% trans "Recurring events:" %}</p>
+        <h3>{% trans "Recurring dates" %}</h3>
         <ul>
             {% for recurrence in event.recurring.master.recurrences.all %}
                 {% with recurrence.event as event %}
@@ -106,18 +128,23 @@
     {% endif %}
 
     {% if event.deadlines.all %}
-        <table>
-            {% for deadline in event.deadlines.all %}
-                <tr>
-                    <td>
-                        <span class="deadlines">
-                            <a href='{% urlsearch query=deadline.deadline|date:"Y-m-d" %}'>{{ deadline.deadline }}</a>
-                        </span>
-                        </td>
-                    <td>{{ deadline.deadline_name|escape }}</td>
-                </tr>
-            {% endfor %}
-        </table>
+        <div class="item">
+            <img class="icon" src="{{ MEDIA_URL }}deadlines-icon.png" alt="{% trans 'urls' %}" />
+            <div class="data">
+                <table class='deadlines'>
+                    {% for deadline in event.deadlines.all %}
+                        <tr>
+                            <td>
+                                <span class="deadlines">
+                                    <a href='{% urlsearch query=deadline.deadline|date:"Y-m-d" %}'>{{ deadline.deadline }}</a>
+                                </span>
+                                </td>
+                            <td>{{ deadline.deadline_name|escape }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
     {% endif %}
             
     {% if event.sessions.all %}
@@ -144,6 +171,8 @@
     {% endif %}
 
     {% if event.coordinates %}
+        <br />
+        <br />
         {% comment %}FIXME: if the window of the browser is too small, the map breaks
         everything. Solution: check with JavaScript the size of the window and reduce the map
         accordingly. Note: the size is given in main.css currently {% endcomment %}
@@ -172,7 +201,6 @@
             } );
             map.addLayer( new OpenLayers.Layer.OSM() );
             var pois = new OpenLayers.Layer.Markers( "{% trans "Marker" %}" );
-            //These lines should be a list automatically generated by Django
             pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }}, "{{ MEDIA_URL }}marker_red.png" ) );
             map.addLayer( pois );
             mapArea = pois.getDataExtent().toArray();

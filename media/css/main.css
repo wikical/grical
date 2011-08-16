@@ -1,4 +1,5 @@
-/**
+/** 5E7C93  546878  2C516D  9DBCD3  AFC4D3  6D2E2C
+ *
  * CSS Reset
  * From Blueprint reset.css
  * http://blueprintcss.googlecode.com
@@ -32,11 +33,12 @@ pre, code {
     word-wrap: break-word; /* Internet Explorer 5.5+ */
 }
 a[href] {
-    color: #436976;
     background-color: transparent;
+    color: #546878;
+    text-decoration: none;
 }
 h1, h2, h3, h4, h5, h6 {
-    color: #003a6b;
+    color: #2C516D;
     background-color: transparent;
     font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
     margin: 0;
@@ -45,12 +47,12 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
     font-size: 130%;
     margin-bottom: 0.5em;
-    border-bottom: 1px solid #fcb100;
+    border-bottom: 1px solid #2C516D;
 }
 h2 {
     font-size: 120%;
     margin-bottom: 0.5em;
-    border-bottom: 1px solid #aaa;
+    border-bottom: 1px solid #5E7C93;
 }
 h3 {
     font-size: 110%;
@@ -70,86 +72,36 @@ h6 {
     font-weight: bold;
 }
 
-/** Description rst */
-#description {
-    font-size: 90%;
+/* header */
+#logo {
+    float: left;
 }
-
-.tags {
-    margin: 0.5em 0 0.2em 0;
-}
-.tags a {
-    padding: 0.1em 0.3em 0.1em 0.3em;
-    margin: 0.1em 0.3em 0.1em 0em;
-    border-radius: 0.5em;
-    -webkit-border-radius: 0.5em;
-    -moz-border-radius: 0.5em;
-    border: 1px #ccc solid;
-    /* background-color: #cde; */
-    background-color: transparent;
-    color: black;
-    text-decoration: none;
-}
-
-/**
- * Elements
- */
-
 #header {
-    background-color: #3176B9;
-    border-bottom: 1px solid #003A6B;
-    color: black;
-    min-height: 60px;
-    padding: 10px;
-    position: relative;
-    top: 0;
-    left: 0;
-}
-#header #logo {
-    float:left;
-    margin-top: 10px;
-    margin-left: 10px;
-}
-#header #description {
-    font-size: 0.75em;
-    position: absolute; /* relative to #header, which expends if needed */
-    left: 0px;
-    top: 0px;
-    text-align: center;
-    width: 225px;
-}
-#header #content {
-    margin-left: 225px;
-}
-#header #flattr {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
+    background-repeat:repeat-y;
+    background-color: black;
+    border-bottom: 2px solid #546878;
+    min-height: 90px;
+    line-height: 2em;
+    margin: 0;
+    padding: 0.5em;
+    text-align: right;
+    border-radius: 0 0 0.9em 0;
+    padding: 0.5em ;
+    color: #546878;
+    font-weight: bold;
 }
 #header a {
-    color: black;
-}
-
-#feedback a[href] {
-    position: fixed;
-    right: 0.5em;
-    top: 0.5em;
-    border: 1px solid #3176B9;
-    border-radius: 0.5em 0.5em 0.5em 0.5em;
-    padding: 0.25em;
-    font-weight: bold;
-    color: white;
-    background-color: #3176B9;
-    z-index: 1;
+    color: #AFC4D3;
     text-decoration: none ;
-    opacity: 0.6; /* Opera / CSS3 */
-    filter:alpha(opacity=60); /* IE */
-    -moz-opacity: 0.60; /* Mozilla */
 }
-#feedback a:hover {
-    opacity: 1; /* Opera / CSS3 */
-    filter:alpha(opacity=100); /* IE */
-    -moz-opacity: 1; /* Mozilla */
+#header img {
+    vertical-align: middle;
+}
+#header form {
+    display: inline;
+}
+#feedback {
+    display: inline;
 }
 
 .container {
@@ -158,13 +110,18 @@ h6 {
 
 /* footer */
 #footer {
-    background-color: #3176b9;
+    background-color: #2C516D;
     color: white;
     padding: 1.2em 0.8em ;
     margin-top: 2em;
     clear: both;
     font-size: 0.8em;
     line-height: 2;
+    border: 5px solid black;
+    border-radius: 0.9em 0.9em 0 0;
+}
+#footer img {
+    vertical-align: middle;
 }
 #footer a[href] {
     color: #8fc9ff;
@@ -185,29 +142,16 @@ h6 {
     margin-left:8em;
 }
 
-/* two columns */
-.rightcolumn50 {
-    float:right;
-    max-width: 30em;
-}
-.rightcolumn50 p {
-    font-size: 90%;
-}
-.leftcolumn50  {
-    margin-right:31em;
-    min-width: 25em;
-}
-
 /* TODO: simplify this file: there are some repeated directives like for
 general forms and for event_form */
 
 /* general form directives */
 form .helptext {
-    color: gray;
+    color: #9DBCD3;
     font-size: 0.8em;
 }
 form label {
-    color: #003A6B;
+    color: #2C516D;
     font-weight: bold;
 }
 input[type="text"], textarea, input[type="checkbox"] {
@@ -221,49 +165,75 @@ form li {
     padding: 1em 0em 1em 0em ;
 }
 
-
-.dayboxsearch {
-    float:left;
-    margin: 0.5em;
-}
 .daytitle {
-    font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
-    color: #003a6b;
+    border-bottom: 0 none;
     clear: left;
-    font-size: 130%;
+    color: #5E7C93;
+    font: italic 1.2em 'Lucida Grande',Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif;
     margin-bottom: 0.5em;
-    border-bottom: 1px solid #fcb100;
     max-width: 10em;
+    padding-top: 1em;
+}
+
+.tags {
+    margin: 0.5em 0 0.2em 0;
+    line-height: 2em;
+}
+.tags a {
+    padding: 0.1em 0.3em 0.1em 0.3em;
+    margin: 0.1em 0.3em 0.1em 0em;
+    border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    border: 1px #ccc solid;
+    /* background-color: #cde; */
+    background-color: transparent;
+    color: black;
+    text-decoration: none;
 }
 
 /*
  * event medium format (used in main page and box-search-results)
  */
-.options img {
-    vertical-align: middle;
-}
 .event_medium {
     float:left;
     margin: 0.5em;
 }
+.event_medium .title {
+    font-size: 1.1em;
+    background: black;
+    color: #546878;
+    padding: 0.2em;
+    border-radius: 0.5em 0.5em 0 0;
+}
+.event_medium .title a[href] {
+    color: #AFC4D3;
+}
 .event_medium .content {
-    border: 1px solid #3176b9;
+    border: 1px solid #2C516D;
     padding: 0.5em;
+    border-radius: 0 0 0.5em 0.5em;
 }
 .event_medium .options {
-    font-size: 0.7em;
+    font-size: 0.8em;
     text-align: right;
-}
-.event_medium .title {
-    font-weight: bold;
 }
 .event_medium .tags {
     font-size: 0.8em;
+    line-height: 2em;
 }
 
 .deadlines, .deadlines a[href]  {
-    color: #aa3100;
+    color: #6D2E2C;
     text-decoration: none ;
+}
+
+#search_form {
+    display: inline;
+}
+.dayboxsearch {
+    float: left;
+    margin: 0.5em;
 }
 
 /*
@@ -293,30 +263,70 @@ td {
     padding: 0.1em 5em 0 0;
 }
 
-.dates, .dates a[href] {
-    color: #cc6100;
+.date, .date a[href] {
+    color: #546878;
     display: inline ;
-    margin-right: 0.5em ;
     text-decoration: none ;
 }
 
-.times {
-    color: #fcb100;
+.time {
+    color: #5E7C93;
     display: inline ;
-    margin-right: 0.5em ;
 }
 
-.event_full .title {
-    font-weight: bold;
-    font-size: 1.2em;
-    display: inline ;
+.city, .city a[href] {
+    color: black;
+}
+
+.country, .country a[href] {
+    color: black;
 }
 
 /** event full **/
+.icon {
+    vertical-align: middle;
+    width: 1.5em;
+}
+.ical_logo {
+    margin: 0;
+    vertical-align: middle;
+}
+.event_full #title {
+    display: inline-block;
+    padding: 0.2em 0.5em;
+}
+.data {
+    display: inline-block;
+    margin-left: 1em;
+}
+.event_full .header {
+    background: none repeat scroll 0 0 black;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    color: #9DBCD3;
+    display: inline-block;
+    font-size: 1.1em;
+    margin-bottom: 1em;
+    padding: 0;
+    width: 100%;
+}
+.event_full {
+    margin-top: 1.5em;
+}
 .event_full .options {
-    font-size: 0.8em;
-    text-align: right;
+    background-color: transparent;
+    border: 3px solid white;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    color: #5E7C93;
+    display: inline-block;
     float: right;
+    font-size: 0.8em;
+    margin: 0;
+    padding: 0.3em 0.5em;
+    text-align: right;
+}
+.event_full .options a {
+    text-decoration: none;
+    color: white;
 }
 .urls, .urls ul, .urls li {
     display: inline ;
@@ -331,7 +341,12 @@ td {
     padding:0.5em;
 }
 .event_full table {
-    margin: 1em 0;
+    display: inline;
+    margin-top: 1em;
+    vertical-align: top;
+}
+#description {
+    font-size: 90%;
 }
 
 /* errors produces by wrong entries in forms */
@@ -385,32 +400,51 @@ input[type="text"], textarea, input[type="checkbox"] {
 }
 
 fieldset {
-  padding: 0.5em;
-  border:1px solid #fcb100;
-  margin: 1em 0 1em 0;
+    padding: 0.5em;
+    border:1px solid #2C516D;
+    margin: 1em 0 1em 0;
+    background: none repeat scroll 0 0 #9DBCD3;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
 }
-
 legend {
-  padding: 0.2em 0.5em;
-  border:1px solid #fcb100;
-  color:#003a6b;
-  text-align:right;
+    background: none repeat scroll 0 0 black;
+    border: 1px solid #2C516D;
+    color: #AFC4D3;
+    font-weight: bold;
+    padding: 0.2em 0.5em;
+    text-align: center;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
 }
 
+#simplified_container {
+    float: right;
+    width: 400px;
+    padding: 1em 0em;
+}
 #simplified_event_form label {
     float:left;
     position: absolute;
 }
 #simplified_event_form input[type="text"] {
-    width: 87%;
-    margin-left:12%;
+    margin-left:70px;
+    width: 300px;
 }
 #simplified_event_form input[type="checkbox"] {
-    margin-left:12%;
+    margin-left:70px;
 }
 #simplified_event_form .help_text {
     font-size:0.8em;
-    color: gray;
+    margin-left:70px;
+}
+#simplified_event_form textarea {
+    height: 4em;
+    margin-left:70px;
+    width: 300px;
+}
+#simplified_submit {
+    margin-right: 10px;
+    margin-top: 0.5em;
+    text-align: right;
 }
 
 /* complete event form */
@@ -505,8 +539,10 @@ legend {
  * search results
  */
 #views {
-   text-align: center;
-   margin: 1em;
+    display: inline-block;
+    font-size: 0.9em;
+    margin: 1em 0 0.2em;
+    text-align: right;
 }
 #views img {
     vertical-align:middle;
@@ -516,13 +552,18 @@ legend {
     text-decoration:none;
     color: #333;
 }
-#views span[id$="_view"] {
+.current_view {
+    margin-bottom: 1em;
+    border: 3px #5E7C93 solid;
+}
+#views div[id$="_view"] {
     padding: 0.5em;
-    margin: 0 1em 0 1em;
     border-radius: 0.5em;
     -webkit-border-radius: 0.5em;
     -moz-border-radius: 0.5em;
-    border: 1px black solid;
+    display: inline;
+    margin: 0 0.2em;
+    padding: 0.4em;
 }
 #views #table_view { background: #aaa; }
 #views #map_view { background: #e8cfe6; }
@@ -585,9 +626,9 @@ legend {
  * Map Specific
  */
 .smallmap {
-    width: 768px;
+    width: 100%;
     height: 512px;
-    border: 1px solid #ccc;
+    border: 3px solid black;
 }
 #tags {
     display: none;

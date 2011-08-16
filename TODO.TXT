@@ -70,7 +70,6 @@ high priority
 - add new group
 - group view
 - add change password and delete account. Already implemented in the registration
-- bug: after logout the form at home is not rendered
 - add 'term of service' at registration and at adding a new event, etc.
 - add 'help page'
 - add 'add group' and 'add tag' to an event

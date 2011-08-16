@@ -3,40 +3,44 @@
 {% load urlsearch %}
 
 <div class="event_medium">
-  <div class="content">
+
+  <div class="title">
     <span class="ical_logo">
       <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
     </span>
-    &nbsp;&nbsp;
-    <span class="title">
-        <a href="{% url event_show_all event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
-    </span>
-    <br />
+    <a href="{% url event_show_all event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
+  </div>
 
-    <span class="dates">
-    <a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a>
+  <div class="content">
+
+    <span class="date">
+      <a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a>
+    </span>
     {% if event.end and event.end != event.start %}
-        : <a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a>
-        </span>
-    {% else %}
-        {% if event.starttime %}
-            </span>
-            {% if event.endtime and event.endtime != event.starttime %}
-                <span class="times">{{ event.starttime|time:"H:i" }}-{{ event.endtime|time:"H:i" }}</span>
-            {% else %}
-                <span class="times">{{ event.starttime|time:"H:i" }}</span>
-            {% endif %}
-        {% else %}
-            </span>
-        {% endif %}
+      :
+      <span class="date">
+        <a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a>
+      </span>
+    {% endif %}
+    {% if event.starttime %}
+      &nbsp;&nbsp;&nbsp;
+      {% if event.endtime and event.endtime != event.starttime %}
+          <span class="time">{{ event.starttime|time:"H:i" }}</span>
+          -
+          <span class="time">{{ event.endtime|time:"H:i" }}</span>
+      {% else %}
+          <span class="time">{{ event.starttime|time:"H:i" }}</span>
+      {% endif %}
     {% endif %}
 
+    {% if event.city or event.country %}
+      &nbsp;&nbsp;&nbsp;
+    {% endif %}
     {% if event.city %}
         {% if event.country %}
             <span class="city">
-                <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
-                (<a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)
-            </span>
+                {# it must be all in one line to avoid breaking the line #}
+                <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>&nbsp;(<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)</span>
         {% else %}
             <span class="city">
                 <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
@@ -49,6 +53,7 @@
             </span>
         {% endif %}
     {% endif %}
+
     {% if event.upcoming != event.start and event.upcoming != event.end %}
       <br />
       <span class="deadlines">
@@ -65,7 +70,9 @@
           {% endfor %}
       </div>
     {% endif %}
+
   </div>
+
   <div class="options">
     <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
     &nbsp;|&nbsp;
@@ -77,4 +84,5 @@
         <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
     {% endif %}
   </div>
+
 </div>
