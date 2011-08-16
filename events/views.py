@@ -147,29 +147,37 @@ def event_edit( request, event_id = None ): # {{{1
             Event, EventSession, extra = 4, can_delete = can_delete, )
     if request.method == 'POST':
         # revision.user = request.user # done by the reversion middleware
-        event_form = EventForm( request.POST, instance = event )
-        formset_url = event_urls_factory(
-                request.POST, instance = event )
-        formset_deadline = event_deadlines_factory(
-                request.POST, instance = event )
-        formset_session = event_sessions_factory(
-                request.POST, instance = event )
-        if event_form.is_valid():
-            event = event_form.save(commit = False) # ! not saved in DB yet
-            if formset_url.is_valid() & \
-                    formset_session.is_valid() & formset_deadline.is_valid() :
-                # FIXME: don't allow to save an event with missing basic data
-                # like a URL
-                if not event_form.cleaned_data.get( 'coordinates', False ):
-                    event.coordinates = None
-                event.save()
-                formset_url.save()
-                formset_session.save()
-                formset_deadline.save()
-                revision.add_meta( RevisionInfo,
-                        as_text = smart_unicode( event.as_text() ) )
-                return HttpResponseRedirect( 
-                    reverse('event_show_all', kwargs = {'event_id': event.id}))
+        try:
+            event_form = EventForm( request.POST, instance = event )
+            formset_url = event_urls_factory(
+                    request.POST, instance = event )
+            formset_deadline = event_deadlines_factory(
+                    request.POST, instance = event )
+            formset_session = event_sessions_factory(
+                    request.POST, instance = event )
+            # some spammers modify ManagementForm data in formsets which raises
+            # a ValidationError with the message: 'ManagementForm data is
+            # missing or has been tampered with'
+        except ValidationError:
+            message.error( request, _('Internal data missing. No data ' \
+                    'saved. If the error persists, please contact us.') )
+        else:
+            if event_form.is_valid():
+                event = event_form.save(commit = False)
+                if formset_url.is_valid() & formset_session.is_valid() & \
+                        formset_deadline.is_valid() :
+                    # FIXME: don't allow to save an event with missing basic
+                    # data like a URL
+                    if not event_form.cleaned_data.get( 'coordinates', False ):
+                        event.coordinates = None
+                    event.save()
+                    formset_url.save()
+                    formset_session.save()
+                    formset_deadline.save()
+                    revision.add_meta( RevisionInfo,
+                            as_text = smart_unicode( event.as_text() ) )
+                    return HttpResponseRedirect( reverse( 'event_show_all',
+                            kwargs = {'event_id': event.id} ) )
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
@@ -557,6 +565,12 @@ def event_deleted( request, event_id ): # {{{1
                 object_id = event_id )
     except Version.DoesNotExist:
         raise Http404
+    # checking if the event is realy deleted
+    if Event.objects.filter( pk = event_id ).exists():
+        messages.info( request, _('You have tried to access a deleted event' \
+                ' which is not deleted. See below.') )
+        return HttpResponseRedirect( reverse(
+            'event_history', kwargs = {'event_id': event_id} ) )
     revision = deleted_version.revision
     revisioninfos = revision.revisioninfo_set.all()
     # a revision should have only one revisioninfo (design constraint)
