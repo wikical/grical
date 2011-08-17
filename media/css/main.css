@@ -639,6 +639,12 @@ legend {
     vertical-align: text-bottom;
 }
 
+
+/** admin interface /a/admin */
+#branding {
+    background-color: black;
+}
+
 /**
  * Map Specific
  */
@@ -654,7 +660,6 @@ legend {
 #docs p {
     margin-bottom: 0.5em;
 }
-
 /**
  * osm map view specific ( from http://openlayers.org/dev/examples/xhtml.html )
  */
