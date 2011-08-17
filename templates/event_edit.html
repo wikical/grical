@@ -3,7 +3,7 @@
 
 {% block container %}
 
-<h1>{% trans "Event form" %}:</h1>
+<h1>{% trans "Edit event:"</h1>
 {% if form.errors or form.non_field_errors or formset_url.errors or formset_url.non_form_errors or formset_session.errors or formset_session.non_form_errors or formset_deadline.errors or formset_deadline.non_form_errors %}
     <p class="errorlist">
         {% trans "The operation could not be performed because one or more error(s) occurred. Please resubmit the form after making the necessary changes. See the red remarks." %}
