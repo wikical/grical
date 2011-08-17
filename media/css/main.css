@@ -397,6 +397,7 @@ td {
 /* for all forms */
 input[type="text"], textarea, input[type="checkbox"] {
     border: solid 1px #3176b9;
+    width: 100%;
 }
 
 fieldset {
