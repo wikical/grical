@@ -1,0 +1,36 @@
+syntax: glob
+*.sqlite
+*.pyc
+.*.swp
+*.bak
+settings_local.py
+
+syntax: regexp
+/\.svn$
+^\.svn$
+
+syntax: regexp
+settings_local.py
+apache/django.wsgi
+gridcalendar.sqlite
+.project
+.pydevproject
+
+syntax: regexp
+(.*/)?\#[^/]*\#$
+.*\~
+
+syntax: regexp
+^fixtures$
+
+syntax: regexp
+^gridcalendar$
+
+syntax: regexp
+^data\.json$
+
+syntax: regexp
+^gridcalendar_org$
+
+syntax: regexp
+^myTODO\.txt$

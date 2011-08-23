@@ -1,0 +1,9 @@
+{% load i18n %}{% blocktrans %}{{ site }} feedback{% endblocktrans %}
+
+{% trans "Name:" %} {{ name }}
+
+{% trans "Email:" %} {{ email }}
+
+{% trans "Message:" %}
+
+{{ body }}

@@ -1,0 +1,21 @@
+{% load i18n %}
+
+<div class="pagination">
+    {% if events.has_previous %}
+        <span class="step_links">
+            <a href="?page={{ events.previous_page_number }}&query={{ query }}&view={{ current_view }}">{% trans "previous" %}</a>
+        </span>
+    {% endif %}
+
+    <span class="current">
+        {% blocktrans with events.number as number and events.paginator.num_pages as num_pages %}
+            Page {{ number }} of {{ num_pages }}.
+        {% endblocktrans %}
+    </span>
+
+    {% if events.has_next %}
+        <span class="step_right">
+            <a href="?page={{ events.next_page_number }}&query={{ query }}&view={{ current_view }}">{% trans "next" %}</a>
+        </span>
+    {% endif %}
+</div>
