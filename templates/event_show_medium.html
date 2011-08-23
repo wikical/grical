@@ -1,0 +1,88 @@
+{% load i18n %}
+{% load event_tags %}
+{% load urlsearch %}
+
+<div class="event_medium">
+
+  <div class="title">
+    <span class="ical_logo">
+      <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+    </span>
+    <a href="{% url event_show_all event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
+  </div>
+
+  <div class="content">
+
+    <span class="date">
+      <a href='{% urlsearch query=event.start|date:"Y-m-d" %}'>{{ event.start }}</a>
+    </span>
+    {% if event.end and event.end != event.start %}
+      :
+      <span class="date">
+        <a href='{% urlsearch query=event.end|date:"Y-m-d" %}'>{{ event.end }}</a>
+      </span>
+    {% endif %}
+    {% if event.starttime %}
+      &nbsp;&nbsp;&nbsp;
+      {% if event.endtime and event.endtime != event.starttime %}
+          <span class="time">{{ event.starttime|time:"H:i" }}</span>
+          -
+          <span class="time">{{ event.endtime|time:"H:i" }}</span>
+      {% else %}
+          <span class="time">{{ event.starttime|time:"H:i" }}</span>
+      {% endif %}
+    {% endif %}
+
+    {% if event.city or event.country %}
+      &nbsp;&nbsp;&nbsp;
+    {% endif %}
+    {% if event.city %}
+        {% if event.country %}
+            <span class="city">
+                {# it must be all in one line to avoid breaking the line #}
+                <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>&nbsp;(<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)</span>
+        {% else %}
+            <span class="city">
+                <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
+            </span>
+        {% endif %}
+    {% else %}
+        {% if event.country %}
+            <span class="country">
+                (<a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)
+            </span>
+        {% endif %}
+    {% endif %}
+
+    {% if event.upcoming != event.start and event.upcoming != event.end %}
+      <br />
+      <span class="deadlines">
+        <a href='{% urlsearch query=event.upcoming|date:"Y-m-d" %}'>{{ event.upcoming }}</a>
+      </span>
+      {{ event.next_deadline_names }}
+    {% endif %}
+    {% if event.get_tags %}
+      <div class="tags">
+          {% for tag in event.get_tags|slice:":100" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
+              <span class="tag">
+                  <a href='{% urlsearch tag=tag %}'>{{ tag }}</a>&nbsp;
+              </span>
+          {% endfor %}
+      </div>
+    {% endif %}
+
+  </div>
+
+  <div class="options">
+    <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+    &nbsp;|&nbsp;
+    <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
+    &nbsp;|&nbsp;
+    {% show_add_to_group %}
+    {% if user.is_authenticated %}
+        &nbsp;|&nbsp;
+        <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+    {% endif %}
+  </div>
+
+</div>
