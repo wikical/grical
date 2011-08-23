@@ -493,6 +493,24 @@ legend {
 #session_table th {
     padding: 0 1em ;
 }
+#also_recurrences {
+    font-size: 1em;
+    font-weight:bold;
+    background: #AFC4D3;
+    padding: 0; /* otherwise horizontal scroll appears */
+    display: inline-block;
+    margin: 1em 0;
+    width: 100%;
+}
+#also_recurrences ul {
+    display: inline ;
+}
+#also_recurrences li {
+    padding: 0;
+}
+#also_recurrences label {
+    min-width: 0;
+}
 
 /**
  * search table view

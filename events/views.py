@@ -51,6 +51,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.db.models import Max, Min
 from django.db.models.query import QuerySet
+from django.db import transaction
 from django.forms.models import inlineformset_factory, ModelForm
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
@@ -66,7 +67,7 @@ from reversion import revision
 from reversion.models import Version, Revision
 
 from gridcalendar.events.forms import ( 
-    SimplifiedEventForm, EventForm, FilterForm,
+    SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
      NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDeadline, Filter, Group,
@@ -135,6 +136,10 @@ def event_edit( request, event_id = None ): # {{{1
     else:
         event = Event()
         can_delete = False
+    if event.recurring:
+        event_recurring = True
+    else:
+        event_recurring = False
     # TODO: when removing all fields of a row the expected behaviour is to
     # delete the entry, but the inlineformset shows an error telling that the
     # fields are required, change it. Notice that the user can delete with the
@@ -146,7 +151,6 @@ def event_edit( request, event_id = None ): # {{{1
     event_sessions_factory = inlineformset_factory( 
             Event, EventSession, extra = 4, can_delete = can_delete, )
     if request.method == 'POST':
-        # revision.user = request.user # done by the reversion middleware
         try:
             event_form = EventForm( request.POST, instance = event )
             formset_url = event_urls_factory(
@@ -155,6 +159,10 @@ def event_edit( request, event_id = None ): # {{{1
                     request.POST, instance = event )
             formset_session = event_sessions_factory(
                     request.POST, instance = event )
+            if event_recurring:
+                also_recurrences_form = AlsoRecurrencesForm( request.POST )
+            else:
+                also_recurrences_form = None
             # some spammers modify ManagementForm data in formsets which raises
             # a ValidationError with the message: 'ManagementForm data is
             # missing or has been tampered with'
@@ -163,7 +171,11 @@ def event_edit( request, event_id = None ): # {{{1
                     'saved. If the error persists, please contact us.') )
             raise Http404
         else:
-            if event_form.is_valid():
+            if event_recurring:
+                event_recurring_valid = also_recurrences_form.is_valid()
+            else:
+                event_recurring_valid = True
+            if event_form.is_valid() and event_recurring_valid:
                 event = event_form.save(commit = False)
                 if formset_url.is_valid() & formset_session.is_valid() & \
                         formset_deadline.is_valid() :
@@ -171,12 +183,41 @@ def event_edit( request, event_id = None ): # {{{1
                     # data like a URL
                     if not event_form.cleaned_data.get( 'coordinates', False ):
                         event.coordinates = None
-                    event.save()
-                    formset_url.save()
-                    formset_session.save()
-                    formset_deadline.save()
-                    revision.add_meta( RevisionInfo,
-                            as_text = smart_unicode( event.as_text() ) )
+                    with revision:
+                        if request.user.is_authenticated():
+                            revision.user = request.user
+                        event.save()
+                        formset_url.save()
+                        formset_session.save()
+                        formset_deadline.save()
+                        revision.add_meta( RevisionInfo,
+                                as_text = smart_unicode( event.as_text() ) )
+                    # change recurrences if appropiate
+                    if event_recurring:
+                        # TODO: think and test what happens if a title is
+                        # different on the same day and it is changed to the
+                        # same title.
+                        # TODO: think what happens if there are two in same day
+                        # (with or without the same title)
+                        master = event.recurring.master
+                        choice = also_recurrences_form.cleaned_data['choices']
+                        if choice == 'this':
+                            events = None
+                        elif choice == 'past':
+                            events = Event.objects.filter(
+                                    _recurring__master = master,
+                                    start__lt = event.start )
+                        elif choice == 'future':
+                            events = Event.objects.filter(
+                                    _recurring__master = master,
+                                    start__gt = event.start )
+                        elif choice == 'all':
+                            events = Event.objects.filter(
+                                    _recurring__master = master)
+                            events = events.exclude( pk = event.pk )
+                        else:
+                            raise RuntimeError()
+                        _change_recurrences( request.user, event, events )
                     return HttpResponseRedirect( reverse( 'event_show_all',
                             kwargs = {'event_id': event.id} ) )
     else:
@@ -184,12 +225,17 @@ def event_edit( request, event_id = None ): # {{{1
         formset_url = event_urls_factory( instance = event )
         formset_deadline = event_deadlines_factory( instance = event )
         formset_session = event_sessions_factory( instance = event )
+        if event_recurring:
+            also_recurrences_form = AlsoRecurrencesForm()
+        else:
+            also_recurrences_form = None
     templates = {
             'title': 'edit event',
             'form': event_form,
             'formset_url': formset_url,
             'formset_session': formset_session,
             'formset_deadline': formset_deadline,
+            'also_recurrences_form': also_recurrences_form,
             'event_id': event_id }
     # add a warning message if the start date is in the past, which is probably
     # a mistake
@@ -197,6 +243,47 @@ def event_edit( request, event_id = None ): # {{{1
         messages.warning(request, _('warning: the start date is in the past'))
     return render_to_response( 'event_edit.html', templates,
             context_instance = RequestContext( request ) )
+
+# private because it doesn't deal with transactions
+def _change_recurrences( user, event, events ):
+    """ modifies the events in ``events`` with the data of ``event`` except for
+    ``start`` and ``end``, and including urls changes also. """
+    for rec in events:
+        assert rec.recurring.master == event.recurring.master
+        with revision:
+            if not isinstance( user, AnonymousUser ):
+                revision.user = user
+            for field in Event.get_simple_fields():
+                if field in ['start', 'end']:
+                    continue
+                if getattr(rec, field) != getattr(event, field):
+                    setattr( rec, field, getattr( event, field ) )
+            if rec.description != event.description:
+                rec.description = event.description
+            rec.save()
+            rec_urls = rec.urls.all()
+            event_urls = event.urls.all()
+            for i in range( max( len(rec_urls), len(event_urls) ) ):
+                if i < len( rec_urls ) and i < len( event_urls ):
+                    changed = False
+                    if rec_urls[i].url_name != event_urls[i].url_name:
+                        rec_urls[i].url_name = event_urls[i].url_name
+                        changed = True
+                    if rec_urls[i].url != event_urls[i].url:
+                        rec_urls[i].url = event_urls[i].url
+                        changed = True
+                    if changed:
+                        rec_urls[i].save()
+                elif i >= len( events_urls ):
+                    rec_urls[i].delete()
+                else:
+                    assert i > len( rec_urls )
+                    EventUrl.objects.create(
+                            event    = rec,
+                            url_name = event_urls[i].url_name,
+                            url      = event_urls[i].url )
+            revision.add_meta( RevisionInfo,
+                    as_text = smart_unicode( rec.as_text() ) )
 
 def event_new_raw( request, template_event_id = None ): # {{{1
     """ View to create an event as text
@@ -209,42 +296,7 @@ def event_new_raw( request, template_event_id = None ): # {{{1
     >>> Client().get(reverse('event_new_raw')).status_code
     200
     """
-    if request.method == 'POST':
-        # revision.user = request.user # done by the reversion middleware
-        if 'event_astext' in request.POST:
-            event_textarea = request.POST['event_astext']
-            try:
-                event = Event.parse_text(event_textarea, None, request.user.id)
-                messages.success( request, _( u'event saved' ) )
-                revision.add_meta( RevisionInfo,
-                        as_text = smart_unicode( event.as_text() ) )
-                return HttpResponseRedirect( 
-                    reverse( 'event_show_all', kwargs={'event_id': event.id} ))
-            except ValidationError as err:
-                if hasattr( err, 'message_dict' ):
-                    # if hasattr(err, 'message_dict'), it looks like:
-                    # {'url': [u'Enter a valid value.']}
-                    for field_name, error_message in err.message_dict.items():
-                        messages.error( request,
-                                field_name + ": " + ', '.join(error_message) )
-                elif hasattr( err, 'messages' ):
-                    for message in err.messages:
-                        messages.error( request, message )
-                elif hasattr( err, 'message' ):
-                    messages.error( request, err.message )
-                templates = {
-                        'title': _( "edit event as text" ),
-                        'event_textarea': event_textarea, }
-                return render_to_response(
-                        'event_new_raw.html',
-                        templates,
-                        context_instance = RequestContext( request ) )
-        else:
-            messages.error( request, _(u"You submitted an empty form, " \
-                    "nothing has been saved. Click the back button in your " \
-                    "browser and try again.") )
-            return main( request )
-    else:
+    if not request.method == 'POST':
         try:
             template_event = Event.objects.get( pk = template_event_id )
             templates = {
@@ -253,6 +305,47 @@ def event_new_raw( request, template_event_id = None ): # {{{1
         except Event.DoesNotExist:
             templates = { 'title': _( "edit event as text" ), }
         return render_to_response( 'event_new_raw.html', templates,
+                context_instance = RequestContext( request ) )
+    if not 'event_astext' in request.POST:
+        messages.error( request, _(u"You submitted an empty form, " \
+                "nothing has been saved. Click the back button in your " \
+                "browser and try again.") )
+        return main( request )
+    event_textarea = request.POST['event_astext']
+    sid = transaction.savepoint()
+    revision.start()
+    try:
+        if request.user.is_authenticated():
+            revision.user = request.user
+        event = Event.parse_text(event_textarea, None, request.user.id)
+        messages.success( request, _( u'event saved' ) )
+        revision.add_meta( RevisionInfo,
+                as_text = smart_unicode( event.as_text() ) )
+        revision.end()
+        transaction.savepoint_commit(sid)
+        return HttpResponseRedirect( 
+            reverse( 'event_show_all', kwargs={'event_id': event.id} ))
+    except ValidationError as err:
+        revision.invalidate()
+        transaction.savepoint_rollback(sid)
+        # TODO: test that revision works here including invalidation
+        if hasattr( err, 'message_dict' ):
+            # if hasattr(err, 'message_dict'), it looks like:
+            # {'url': [u'Enter a valid value.']}
+            for field_name, error_message in err.message_dict.items():
+                messages.error( request,
+                        field_name + ": " + ', '.join(error_message) )
+        elif hasattr( err, 'messages' ):
+            for message in err.messages:
+                messages.error( request, message )
+        elif hasattr( err, 'message' ):
+            messages.error( request, err.message )
+        templates = {
+                'title': _( "edit event as text" ),
+                'event_textarea': event_textarea, }
+        return render_to_response(
+                'event_new_raw.html',
+                templates,
                 context_instance = RequestContext( request ) )
 
 def event_edit_raw( request, event_id ): # {{{1
@@ -265,66 +358,112 @@ def event_edit_raw( request, event_id ): # {{{1
     >>> e = Event.objects.create(
     ...         title = 'eer_test', tags = 'berlin',
     ...         start = datetime.date.today() )
+    >>> transaction.commit()
     >>> Client().get(reverse('event_edit_raw',
     ...         kwargs={'event_id': e.id,})).status_code
     200
+    >>> e.delete()
     """
     if isinstance( event_id, str ) or isinstance( event_id, unicode ):
         event_id = int( event_id )
     # checks if the event exists
     event = get_object_or_404( Event, pk = event_id )
-    if request.method == 'POST':
-        # revision.user = request.user # done by the reversion middleware
-        if 'event_astext' in request.POST:
-            event_textarea = request.POST['event_astext']
-            try:
-                event = event.parse_text(
-                            event_textarea, event_id, request.user.id )
-            except ValidationError as err:
-                # found a validation error with one or more errors
-                if hasattr( err, 'message_dict' ):
-                    # if hasattr(err, 'message_dict'), it looks like:
-                    # {'url': [u'Enter a valid value.']}
-                    for field_name, error_message in err.message_dict.items():
-                        if isinstance(error_message, list):
-                            error_message = " ; ".join(error_message)
-                        messages.error( request,
-                                field_name + ": " + error_message )
-                elif hasattr( err, 'messages' ):
-                    for message in err.messages:
-                        messages.error( request, message )
-                elif hasattr( err, 'message' ):
-                    messages.error( request, err.message )
-                templates = {
-                        'title': _( "edit event as text" ),
-                        'event_textarea': event_textarea,
-                        'event_id': event_id,
-                        'example': Event.example() }
-                return render_to_response( 'event_edit_raw.html', templates,
-                        context_instance = RequestContext( request ) )
-            if isinstance(event, Event):
-                messages.success( request, _( u'event modifed' ) )
-                revision.add_meta( RevisionInfo,
-                        as_text = smart_unicode( event.as_text() ) )
-                return HttpResponseRedirect( 
-                    reverse('event_show_all', kwargs = {'event_id': event_id}))
-            else:
-                messages.error( request, event )
-                return main( request )
-        else:
-            messages.error( request, 
-                    _(u'You submitted an empty form, nothing was saved. ' \
-                    'Click the back button in your browser and try again.') )
-            return main( request )
+    if event.recurring:
+        event_recurring = True
     else:
+        event_recurring = False
+    if not request.method == 'POST':
         event_textarea = event.as_text()
+        if event_recurring:
+            also_recurrences_form = AlsoRecurrencesForm()
+        else:
+            also_recurrences_form = None
         templates = {
                 'title': _( "edit event as text" ),
                 'event_textarea': event_textarea,
+                'also_recurrences_form': also_recurrences_form,
                 'event_id': event_id,
                 'example': Event.example() }
         return render_to_response( 'event_edit_raw.html', templates,
                 context_instance = RequestContext( request ) )
+    # request.method is POST
+    if event_recurring:
+        also_recurrences_form = AlsoRecurrencesForm( request.POST )
+    else:
+        also_recurrences_form = None
+    if not 'event_astext' in request.POST:
+        messages.error( request, 
+                _(u'You submitted an empty form, nothing was saved. ' \
+                'Click the back button in your browser and try again.') )
+        return main( request )
+    sid = transaction.savepoint()
+    revision.start()
+    if request.user.is_authenticated():
+        revision.user = request.user
+    event_textarea = request.POST['event_astext']
+    try:
+        if event_recurring and not also_recurrences_form.is_valid():
+            raise ValidationError(_(u'Please select to which ' \
+                    'recurring events changes should be applied'))
+        event = event.parse_text(
+                    event_textarea, event_id, request.user.id )
+        choice = also_recurrences_form.cleaned_data['choices']
+        if choice == 'this':
+            events = None
+        elif choice == 'past':
+            events = Event.objects.filter(
+                    _recurring__master = master,
+                    start__lt = event.start )
+        elif choice == 'future':
+            events = Event.objects.filter(
+                    _recurring__master = master,
+                    start__gt = event.start )
+        elif choice == 'all':
+            events = Event.objects.filter(
+                    _recurring__master = master)
+            events = events.exclude( pk = event.pk )
+        else:
+            raise RuntimeError()
+        _change_recurrences( request.user, event, events )
+    except ValidationError as err:
+        revision.invalidate()
+        transaction.savepoint_rollback(sid)
+        # found a validation error with one or more errors
+        if hasattr( err, 'message_dict' ):
+            # if hasattr(err, 'message_dict'), it looks like:
+            # {'url': [u'Enter a valid value.']}
+            for field_name, error_message in err.message_dict.items():
+                if isinstance(error_message, list):
+                    error_message = " ; ".join(error_message)
+                messages.error( request,
+                        field_name + ": " + error_message )
+        elif hasattr( err, 'messages' ):
+            for message in err.messages:
+                messages.error( request, message )
+        elif hasattr( err, 'message' ):
+            messages.error( request, err.message )
+        templates = {
+                'title': _( "edit event as text" ),
+                'event_textarea': event_textarea,
+                'also_recurrences_form': also_recurrences_form,
+                'event_id': event_id,
+                'example': Event.example() }
+        return render_to_response( 'event_edit_raw.html', templates,
+                context_instance = RequestContext( request ) )
+    if isinstance(event, Event):
+        # TODO: change messages to "eventS modified" if more than one was modified
+        messages.success( request, _( u'event modifed' ) )
+        revision.add_meta( RevisionInfo,
+                as_text = smart_unicode( event.as_text() ) )
+        revision.end()
+        transaction.savepoint_commit(sid)
+        return HttpResponseRedirect( 
+            reverse('event_show_all', kwargs = {'event_id': event_id}))
+    else:
+        revision.invalidate()
+        transaction.savepoint_rollback(sid)
+        messages.error( request, event )
+        return main( request )
 
 def event_does_not_exist( request, event_id, redirect_url ): # {{{1
     """ if event_id was deleted it shows event redirection or deleted page,
@@ -533,17 +672,19 @@ def event_delete( request, event_id ):
     if request.method == "POST":
         form = DeleteEventForm( data = request.POST )
         if form.is_valid():
-            # revision.user = user # done by the reversion middleware
-            info_dict = {}
-            reason = form.cleaned_data['reason']
-            if reason:
-                info_dict['reason'] = reason
-            redirect = form.cleaned_data['redirect']
-            if redirect:
-                info_dict['redirect'] = redirect
-            info_dict['as_text'] = smart_unicode( event.as_text() )
-            revision.add_meta( RevisionInfo, **info_dict )
-            event.delete()
+            with revision:
+                if request.user.is_authenticated():
+                    revision.user = user
+                info_dict = {}
+                reason = form.cleaned_data['reason']
+                if reason:
+                    info_dict['reason'] = reason
+                redirect = form.cleaned_data['redirect']
+                if redirect:
+                    info_dict['redirect'] = redirect
+                info_dict['as_text'] = smart_unicode( event.as_text() )
+                revision.add_meta( RevisionInfo, **info_dict )
+                event.delete()
             messages.success( request, _('Event %(event_id)s deleted.') % \
                     {'event_id': event_id,} )
             return HttpResponseRedirect( reverse('main') )
@@ -596,7 +737,10 @@ def event_deleted( request, event_id ): # {{{1
             templates, context_instance = RequestContext( request ) )
 
 @login_required
+@revision.create_on_success
 def event_undelete( request, event_id ): # {{{1
+    if request.user.is_authenticated():
+        revision.user = request.user
     try:
         deleted_version = Version.objects.get_deleted_object( Event,
                 object_id = event_id )
@@ -1086,6 +1230,7 @@ def list_events_my( request ): # {{{1
             {'title': _( "my events" ), 'events': events},
             context_instance = RequestContext( request ) )
 
+@revision.create_on_success
 def main( request, status_code=200 ):# {{{1
     """ main view
     
@@ -1099,9 +1244,10 @@ def main( request, status_code=200 ):# {{{1
     # request can contain POST data coming from another form
     if (not status_code == 404) and (not status_code == 500) and \
             request.method == 'POST':
-        # revision.user = request.user # done by the reversion middleware
         event_form = SimplifiedEventForm( request.POST )
         if event_form.is_valid():
+            if request.user.is_authenticated():
+                revision.user = request.user
             cleaned_data = event_form.cleaned_data
             # create a new entry and saves the data
             event = Event( user_id = request.user.id,

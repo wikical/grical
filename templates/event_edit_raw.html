@@ -5,22 +5,23 @@
 
 <p>{% trans "Edit the event" %}:</p>
 <div id="event_textarea_form">
-
     <form action="" method="post">{% csrf_token %}
         <table>
             <TEXTAREA Name="event_astext" rows="25" cols="80">{{ event_textarea }}</TEXTAREA>
-        <input type="submit" value={% trans "Save" %} />
         </table>
+        {% include "also_recurrences_form.html" %}
+        <input type="submit" value={% trans "Save" %} />
     </form>
-
 </div>
 
+{% comment %}
 <div>
         <a href="{% url event_edit event_id %}"><span class="field_title">{% trans "edit this event with a form" %}</span></a>
         <br />{% trans "Warning: clicking this link will make you lose any data changes done in the box above" %}
 </div>
+{% endcomment %}
 
-<p> {% trans "Example:" %} </p>
+<h3> {% trans "Example:" %} </h3>
 <pre>
 {{ example }}
 </pre>

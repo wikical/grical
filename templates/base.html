@@ -1,11 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
 {% load i18n %}
 {% load tagging_tags %}
 {% load urlsearch %}
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
-<!-- This template is based on a template at http://matthewjamestaylor.com/ and is used with
-permission of the original author -->
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta http-equiv="Content-Language" content="{{ LANGUAGE_CODE }}" />
@@ -18,7 +15,7 @@ permission of the original author -->
         <meta name="keywords" content="{{ event.tags_separated_by_comma }}" />
     {% endif %}
     <title>{{ title }}</title>
-    <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" media="screen, projection" />
+    <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" />
     <!--
     <link href="{{ MEDIA_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
     -->
@@ -78,6 +75,29 @@ permission of the original author -->
 </div>
 
 <div id="footer">
+    <div class="title">{% trans "Social" %}</div>
+    <div class="info">
+      <ul>
+        <li>
+            <!-- AddToAny BEGIN -->
+            {# TODO: Cache it. Provider allows to Cache it for 24 hours automatically. See provider's FAQ #}
+            <a class="a2a_dd" href="{{ PROTOCOL }}://www.addtoany.com/share_save"><img src="{{ PROTOCOL }}://static.addtoany.com/buttons/share_save_171_16.png" width="171" height="16" alt="Share" /></a>
+            <script type="text/javascript">
+            var a2a_config = a2a_config || {};
+            a2a_config.linkname = "GriCal";
+            a2a_config.onclick = 1;
+            a2a_config.color_main = "9DBCD3";
+            a2a_config.color_border = "2C516D";
+            a2a_config.color_link_text = "AFC4D3";
+            a2a_config.color_link_text_hover = "333333";
+            a2a_config.color_bg = "000000";
+            a2a_config.color_arrow = "fff";
+            </script>
+            <script type="text/javascript" src="{{ PROTOCOL }}://static.addtoany.com/menu/page.js"></script>
+            <!-- AddToAny END -->
+        </li>
+      </ul>
+    </div>
     <div class="title">{% trans "Openness" %}</div>
     <div class="info">
       <ul>

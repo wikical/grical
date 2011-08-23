@@ -31,8 +31,8 @@ import urlparse
 
 from django.contrib.gis.geos import Point
 from django.core import validators
-from django.forms import ( CharField, IntegerField, HiddenInput,
-        ModelMultipleChoiceField, ModelForm, ValidationError,
+from django.forms import ( CharField, IntegerField, HiddenInput, RadioSelect,
+        ModelMultipleChoiceField, ModelForm, ValidationError, ChoiceField,
         Textarea, CheckboxSelectMultiple, Form, Field, DateField, TimeField )
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
@@ -364,6 +364,15 @@ class SimplifiedEventForm( ModelForm ): # {{{1
                         'a differentiated toponym in the title).' ) )
         return self.cleaned_data
 
+class AlsoRecurrencesForm( Form ):
+    """ show options when editing an event which belongs to a recurrence """
+    choices = ChoiceField( label = _('Apply changes to'), choices = [
+        ( 'this', _(u'only this event') ),
+        ( 'past',   _(u'this and all past events') ),
+        ( 'future', _(u'this and all future events') ),
+        ( 'all', _(u'all events') ) ],
+        widget = RadioSelect )
+
 class DeleteEventForm(Form): # {{{1
     reason = CharField( required = True, max_length = 100,
             label = _(u'Reason for the deletion'),
@@ -387,7 +396,7 @@ class NewGroupForm(ModelForm): # {{{1
 
 class AddEventToGroupForm(Form): # {{{1
     """ Form with a overriden constructor that takes an user and an event and
-    provides selectable group names in which the user is a member of and the
+    rovides selectable group names in which the user is a member of and the
     event is not already in the group. """
     grouplist = ModelMultipleChoiceField(
             queryset=Group.objects.none(), widget=CheckboxSelectMultiple())

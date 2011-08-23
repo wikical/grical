@@ -798,15 +798,32 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         "get URL of an event"
         return ( 'event_show_all', (), {'event_id': self.id,} )
 
+    @transaction.commit_on_success # see http://docs.djangoproject.com/en/1.3/topics/db/transactions/#controlling-transaction-management-in-views
     def save( self, *args, **kwargs ): #{{{3
-        """ Marks an event as new or not (for :meth:`Event.post_save) and call
-        the real 'save' function after updating :attr:`Event.upcoming`."""
+        """ Marks an event as new or not (for :meth:`Event.post_save`), call
+        the real 'save' function after updating :attr:`Event.upcoming`, and
+        update the master of a recurrence if appropiate."""
         try:
             Event.objects.get( id = self.id )
             self.not_new = True # Event.post_save uses this
         except Event.DoesNotExist:
             pass
         self.upcoming = self.next_coming_date_or_start()
+        if self.recurring:
+            master = self.recurring.master
+            if self.start < master.start:
+                # self is going to be the new master of the serie. The master
+                # is by convention the first event of a serie.
+                self.recurring.master = self
+                self.recurring.save()
+                for recurrence in master.recurrences.all():
+                    recurrence.master = self
+                    recurrence.save()
+                # equivalent:
+                # recurrences = Recurrence.objects.filter( master = master )
+                # for recurrence in recurrences:
+                #     recurrence.master = self
+                #     recurrence.save()
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
@@ -1474,7 +1491,7 @@ class Recurrence( models.Model ): #{{{1
 
         if e.recurring
 
-    If we have an event ``e`` with a master (.e. ``e`` is a recurrence of a
+    If we have an event ``e`` with a master ``m`` (``e`` is a recurrence of a
     serie with ``m`` as master), we can get its master with::
 
         e.recurring.master
@@ -1482,6 +1499,10 @@ class Recurrence( models.Model ): #{{{1
     For a master of a serie::
 
         e.recurring.master == e
+
+    To get all events of a serie with ``m`` as master::
+
+        Event.objects.filter( _recurring__master = m )
 
     To get all recurrences of an event (``m``) which is a master::
 
@@ -1499,10 +1520,17 @@ class Recurrence( models.Model ): #{{{1
 
         m.recurrences.create(event = e)
 
+    To change a master::
+
+        event.recurring.master = new_master
+        event.recurring.save()
+
     >>> import datetime
-    >>> e1 = Event.objects.create(title="Re1", start=datetime.date.today())
-    >>> e2 = Event.objects.create(title="Re2", start=datetime.date.today())
-    >>> e3 = Event.objects.create(title="Re3", start=datetime.date.today())
+    >>> from datetime import timedelta
+    >>> today = datetime.date.today()
+    >>> e1 = Event.objects.create(title="Re1", start=today)
+    >>> e2 = Event.objects.create(title="Re2", start=today)
+    >>> e3 = Event.objects.create(title="Re3", start=today)
     >>> assert e1.recurring == None
     >>> assert e2.recurring == None
     >>> assert e3.recurring == None
@@ -1519,6 +1547,20 @@ class Recurrence( models.Model ): #{{{1
     >>> assert e2 in event_list
     >>> assert e3 in event_list
     >>> e1.recurrences.count()
+    3
+    >>> # we now put e2 start in the past and check that master is updated
+    >>> e2.start = timedelta(days=-1)+today
+    >>> e2.save()
+    >>> e1 = Event.objects.get( title="Re1" )
+    >>> e3 = Event.objects.get( title="Re3" )
+    >>> assert e1.recurring.master == e2
+    >>> assert e2.recurring.master == e2
+    >>> assert e3.recurring.master == e2
+    >>> event_list = [r.event for r in e2.recurrences.all()]
+    >>> assert e1 in event_list
+    >>> assert e2 in event_list
+    >>> assert e3 in event_list
+    >>> e2.recurrences.count()
     3
     >>> e3.delete() ; e2.delete() ; e1.delete()
     """

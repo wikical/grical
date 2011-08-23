@@ -173,14 +173,13 @@
     {% if event.coordinates %}
         <br />
         <br />
-        {% comment %}FIXME: if the window of the browser is too small, the map breaks
-        everything. Solution: check with JavaScript the size of the window and reduce the map
-        accordingly. Note: the size is given in main.css currently {% endcomment %}
         <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
         <div id="map" class="smallmap"></div>
         <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
         <!-- <script type="text/javascript" src="{{ MEDIA_URL }}js/OpenLayers.js"></script> -->
         <script defer="defer" type="text/javascript">
+        //<![CDATA[
+
             function marker( lon, lat, image ) {
                 return new OpenLayers.Marker(
                     new OpenLayers.LonLat( lon, lat ).transform(
@@ -209,6 +208,8 @@
                 new OpenLayers.LonLat( ( mapArea[0] + mapArea[2]) /2, ( mapArea[1] + mapArea[3] ) /2 ),
                 map.getZoomForExtent( pois.getDataExtent(), true ) -1
             );
+
+        //]]>
         </script>
     {% endif %}
 

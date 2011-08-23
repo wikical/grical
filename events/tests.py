@@ -106,13 +106,11 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
         event_form['web'] = 'http://example.com'
         # submitt and get extended form
         response = event_form.submit().follow()
-        self.assertEqual(
-                Event.objects.filter(title = title).count(),
-                1 )
+        event = Event.objects.get(title = title)
         event_form = response.forms[1]
         # TODO add one url
         # TODO delete one url
-
+        event.delete()
 
 class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     """TestCase for the 'events' application"""

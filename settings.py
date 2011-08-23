@@ -161,8 +161,14 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    # NOTE: everything below the TransactionMiddleware is managed by it ,with
+    # the exception of CacheMiddleware, UpdateCacheMiddleware, and
+    # FetchFromCacheMiddleware; as explained in the Dajngo documentation:
+    # https://docs.djangoproject.com/en/1.3/topics/db/transactions/
     'django.middleware.transaction.TransactionMiddleware',
-    'reversion.middleware.RevisionMiddleware',
+    # Not used because in events.views.edit_event (among other places)
+    # sometimes we create many revisions
+    # 'reversion.middleware.RevisionMiddleware',
  )
 if DEBUG:
     MIDDLEWARE_CLASSES += (
