@@ -1,4 +1,23 @@
 {% load i18n %}
+
+<div class="pagination">
+    {% if events_table.page.has_previous %}
+        <span class="step_left">
+            <a href="?query={{ query|urlencode:"" }}&view=table&sort={{sort_param}}&page={{ events_table.page.previous_page_number }}">{% trans "previous" %}</a>
+        </span>
+    {% endif %}
+    <span class="current">
+        {% blocktrans with events_table.page.number as number and events_table.paginator.num_pages as num_pages %}
+            Page {{ number }} of {{ num_pages }}.
+        {% endblocktrans %}
+    </span>
+    {% if events_table.page.has_next %}
+        <span class="step_right">
+            <a href="?query={{ query|urlencode:"" }}&view=table&sort={{ sort }}&page={{ events_table.page.next_page_number }}">{% trans "next" %}</a>
+        </span>
+    {% endif %}
+</div>
+
 <table class="event_table">
     <colgroup> {# see http://www.w3.org/TR/html4/struct/tables.html#h-11.2.4 #}
         {% for column in events_table.columns %}
@@ -28,21 +47,3 @@
         </tr>
     {% endfor %}
 </table>
-
-<div id="pagination_bottom" class="pagination">
-    {% if events_table.page.has_previous %}
-        <span class="step_left">
-            <a href="?query={{ query }}&view=table&sort={{sort_param}}&page={{ events_table.page.previous_page_number }}">{% trans "previous" %}</a>
-        </span>
-    {% endif %}
-    <span class="current">
-        {% blocktrans with events_table.page.number as number and events_table.paginator.num_pages as num_pages %}
-            Page {{ number }} of {{ num_pages }}.
-        {% endblocktrans %}
-    </span>
-    {% if events_table.page.has_next %}
-        <span class="step_right">
-            <a href="?query={{ query }}&view=table&sort={{ sort }}&page={{ events_table.page.next_page_number }}">{% trans "next" %}</a>
-        </span>
-    {% endif %}
-</div>
