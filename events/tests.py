@@ -104,12 +104,69 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
         event_form['when'] = datetime.date.today().isoformat()
         event_form['tags'] = 'submission test'
         event_form['web'] = 'http://example.com'
-        # submitt and get extended form
+        # submit and get extended form
         response = event_form.submit().follow()
         event = Event.objects.get(title = title)
         event_form = response.forms[1]
         # TODO add one url
         # TODO delete one url
+        event.delete()
+
+    def recurring( self ): # {{{2
+        dat = datetime.date.today()
+        today = dat.date.today().isoformat()
+        tomorrow = ( timedelta( days = +1 ) + dat ).isoformat()
+        tomorrow = ( timedelta( days = +1 ) + dat ).isoformat()
+        week1 = ( timedelta( days = +7 ) + dat ).isoformat()
+        week2 = ( timedelta( days = +14 ) + dat ).isoformat()
+        week3 = ( timedelta( days = +21 ) + dat ).isoformat()
+        text = """
+title: testing recurring
+start: %(start)s
+end: %(end)s
+tags: test recurring
+urls:
+    com http://example.com
+    org http://example.org
+deadlines:
+    %(dl1)s deadline 1
+    %(dl2)s deadline 2
+sessions:
+    %(s1start)s 10:00 11:00 session1
+    %(s2start)s 10:00 11:00 session2
+dates:
+    %(recurrence1)s
+    %(recurrence2)s
+    %(recurrence3)s
+"""             % {'start': today,
+                   'end': tomorrow,
+                   'dl1': week1,
+                   'dl2': week2,
+                   's1start': today,
+                   's2start': today,
+                   'recurrence1': week1,
+                   'recurrence2': week2,
+                   'recurrence3': week3 }
+        event = Event.parse_text( text )
+        recurrences = Event.objects.filter(
+                _recurring__master = event ).order_by('start')
+        assert len( recurrences ) == 4
+        # we modify all events at one:
+        edit_page = self.app.get(
+                reverse('event_edit'), kwargs={'event_id': event.id,} )
+        form = edit_page.forms[1]
+        form['tags'] = 'recurring2'
+        form['choices'] = 'all'
+        recurrences = Event.objects.filter(
+                _recurring__master = event ).order_by('start')
+        form.submit()
+        # we check the modification and history on all
+        for recurrence in Event.objects.filter( _recurring__master = event ):
+            assert recurrence.tags == 'recurring2'
+            revisions = [ version.revision for version in
+                    Version.objects.get_for_object( event ) ]
+            assert len( revisions ) == 2
+        # TODO: test more things
         event.delete()
 
 class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904

@@ -40,7 +40,7 @@ a[href] {
 h1, h2, h3, h4, h5, h6 {
     color: #2C516D;
     background-color: transparent;
-    font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+    font: italic 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
     margin: 0;
     padding-top: 0.5em;
 }
@@ -145,6 +145,10 @@ h6 {
 /* TODO: simplify this file: there are some repeated directives like for
 general forms and for event_form */
 
+.pagination {
+    clear: both;
+}
+
 /* general form directives */
 form .helptext {
     color: #9DBCD3;
@@ -231,7 +235,7 @@ form li {
 #search_form {
     display: inline;
 }
-.dayboxsearch {
+.daybox {
     float: left;
     margin: 0.5em;
 }
@@ -418,34 +422,34 @@ legend {
 }
 
 #simplified_container {
-    float: right;
-    width: 400px;
+    float: left;
     padding: 1em 0em;
 }
+#simplified_event_form {
+    display: inline-block;
+}
+#simplified_event_form .field {
+    float: left;
+    width: 18em;
+    margin: 5px
+}
 #simplified_event_form label {
-    float:left;
-    position: absolute;
+    position: relative;
 }
 #simplified_event_form input[type="text"] {
-    margin-left:70px;
-    width: 300px;
 }
 #simplified_event_form input[type="checkbox"] {
-    margin-left:70px;
 }
 #simplified_event_form .help_text {
     font-size:0.8em;
-    margin-left:70px;
 }
 #simplified_event_form textarea {
     height: 4em;
-    margin-left:70px;
-    width: 300px;
 }
 #simplified_submit {
-    margin-right: 10px;
-    margin-top: 0.5em;
-    text-align: right;
+    text-align: left;
+    clear: both;
+    margin: 5px
 }
 
 /* complete event form */

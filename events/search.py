@@ -202,7 +202,8 @@ def search_events( query, related = True ): #{{{1
     *related* is True.
 
     It can throw a ``ValueError`` if for instance a day is out of range for
-    a month in a date, e.g. 2011-04-31.
+    a month in a date, e.g. 2011-04-31. Also if for instance the location API
+    didn't work.
 
     If ``query`` evaluates to False, returns an empty QuerySet. E.g. when
     ``query`` is None or an empty string.

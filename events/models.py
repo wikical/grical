@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vim: expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # GPL {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -50,7 +50,8 @@ from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.db import transaction
-from django.db.models.signals import pre_save, post_save, post_delete
+from django.db.models.signals import \
+        pre_save, post_save, pre_delete, post_delete
 from django.forms import DateField
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str, smart_unicode
@@ -393,13 +394,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     endtime = models.TimeField( 
             _( u'End time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
-    tags = TagField( _( u'Tags' ), blank = True, null = True,
-        help_text = 
-            _( u''.join( [u"Tags are case insensitive. Only letters ",
-            u"(these can be international, like: αöł), digits and hyphens (-)",
-            u"are allowed. Tags are separated with spaces. Example: ",
-            u"demonstration software-patents"] ) ),
-        validators = [validate_tags_chars] )
+    tags = TagField(
+            _( u'Tags' ), blank = True, null = True,
+            help_text = 
+                _( "Only letters, digits and hyphens (-) " \
+                "are allowed. Separated with spaces. Example: " \
+                "demonstration software-patents" ),
+            validators = [validate_tags_chars] )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
             max_length = 2, choices = COUNTRIES )
     city = models.CharField( 
@@ -666,6 +667,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         self._recurring = value
     recurring = property( _get_recurring, _set_recurring )
 
+    @transaction.commit_on_success
     def clone( self, user, except_models = [], recurrence=True, **kwargs ):#{{{3
         """ Makes, saves and return a deep clone of the event as an 
         event of the user ``user``, and stores from which event the clone was
@@ -723,7 +725,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             if key == 'user':
                 continue
             setattr( clone, key, value )
-        clone.save() # we need the id # TODO: ask in the ML if there is other option
+        clone.save() # we need the id
         if recurrence:
             if self.recurring:
                 # self is a recurrence of a serie
@@ -736,49 +738,42 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             else:
                 self.recurrences.create( event = clone )
         related_models = [EventDeadline, EventSession, EventUrl] # TODO: get the list automatically
-        try: # because we need to delete the clone if something goes wrong
-            new_objs = [] # list of new related objects
-            # we now traverse all related models and its objects
-            for model in ( related_models ):
-                if model == Event or model in except_models:
-                    continue
-                # next line is not the proper thing to do hear because for
-                # instance urls from clones of clone are also returned
-                # for pk, obj in collected_objs[ model ].sub_objs.iteritems():
-                assert hasattr( model, 'event' )
-                for obj in model.objects.filter( event = self ):
-                    # Notice that in order for the next line to work, we expect
-                    # all models with a reference to Event have a method called
-                    # ``clone`` with two parameters: an event (to reference to)
-                    # and a user
-                    new_obj =  obj.clone( clone, user ) 
-                    if new_obj: # some clone methods return None,thus the check
-                        new_objs.append( new_obj )
-            # TODO: if DEBUG is False when running the tests, this code is not
-            # executed. Make that this code is always executed when running the
-            # tests
-            if settings.DEBUG:
-                # we check that there are no references to the old objects in
-                # the new objects.
-                field_keys = []
-                for model in [mod.__class__ for mod in new_objs]:
-                    for field in model._meta.fields: # pylint: disable-msg=W0212
-                        if isinstance( field, models.ForeignKey ) and \
-                                field.rel.to in related_models:
-                            field_keys.append( field )
-                for obj in new_objs:
-                    for field_key in field_keys:
-                        if hasattr( ojb, "%s_id" % field_key.name ):
-                            field_key_value = getattr( obj, "%s_id" % field_key.name )
-                            if field_key_value in collected_objs[field_key.rel.to]:
-                                raise RuntimeError( str(field_key_value) + " " +
-                                        str(field_key) )
-        except:
-            # something went wrong, we delete the objects
+        new_objs = [] # list of new related objects
+        # we now traverse all related models and its objects
+        for model in ( related_models ):
+            if model == Event or model in except_models:
+                continue
+            # next line is not the proper thing to do hear because for
+            # instance urls from clones of clone are also returned
+            # for pk, obj in collected_objs[ model ].sub_objs.iteritems():
+            assert hasattr( model, 'event' )
+            for obj in model.objects.filter( event = self ):
+                # Notice that in order for the next line to work, we expect
+                # all models with a reference to Event have a method called
+                # ``clone`` with two parameters: an event (to reference to)
+                # and a user
+                new_obj =  obj.clone( clone, user ) 
+                if new_obj: # some clone methods return None,thus the check
+                    new_objs.append( new_obj )
+        # TODO: if DEBUG is False when running the tests, this code is not
+        # executed. Make that this code is always executed when running the
+        # tests
+        if settings.DEBUG:
+            # we check that there are no references to the old objects in
+            # the new objects.
+            field_keys = []
+            for model in [mod.__class__ for mod in new_objs]:
+                for field in model._meta.fields: # pylint: disable-msg=W0212
+                    if isinstance( field, models.ForeignKey ) and \
+                            field.rel.to in related_models:
+                        field_keys.append( field )
             for obj in new_objs:
-                obj.delete()
-            clone.delete() # this deletes also the entries in Recurrence
-            raise
+                for field_key in field_keys:
+                    if hasattr( ojb, "%s_id" % field_key.name ):
+                        field_key_value = getattr( obj, "%s_id" % field_key.name )
+                        if field_key_value in collected_objs[field_key.rel.to]:
+                            raise RuntimeError( str(field_key_value) + " " +
+                                    str(field_key) )
         return clone
 
     def set_tags( self, tags ): #{{{3
@@ -798,7 +793,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         "get URL of an event"
         return ( 'event_show_all', (), {'event_id': self.id,} )
 
-    @transaction.commit_on_success # see http://docs.djangoproject.com/en/1.3/topics/db/transactions/#controlling-transaction-management-in-views
+    @transaction.commit_on_success
+    def delete( self, *args, **kwargs ): #{{{3
+        """ it tests that ``self`` is not the master of a recurrence fixing it
+        if it is. """
+        if self.recurring and self == self.recurring.master:
+            events = Event.objects.filter( _recurring__master = self)
+            try:
+                first = events.exclude( pk = self.pk ).order_by( 'start' )[0]
+                recurrences = Recurrence.objects.filter( master = self )
+                recurrences.update( master = first )
+            except IndexError:
+                pass
+        # Call the "real" delete() method:
+        super( Event, self ).delete( *args, **kwargs )
+
+    @transaction.commit_on_success
     def save( self, *args, **kwargs ): #{{{3
         """ Marks an event as new or not (for :meth:`Event.post_save`), call
         the real 'save' function after updating :attr:`Event.upcoming`, and
@@ -814,16 +824,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             if self.start < master.start:
                 # self is going to be the new master of the serie. The master
                 # is by convention the first event of a serie.
-                self.recurring.master = self
-                self.recurring.save()
-                for recurrence in master.recurrences.all():
-                    recurrence.master = self
-                    recurrence.save()
-                # equivalent:
-                # recurrences = Recurrence.objects.filter( master = master )
-                # for recurrence in recurrences:
-                #     recurrence.master = self
-                #     recurrence.save()
+                master.recurrences.all().update( master = self )
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
 
@@ -858,18 +859,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns an example of an event as unicode
         
         >>> from django.utils.encoding import smart_str
-        >>> events = Event.objects.filter( title='GridCalendar presentation',
-        ...     start='2010-12-29' )
-        >>> if events: events.delete()
         >>> example = Event.example()
         >>> event = Event.parse_text(example)
         >>> assert (smart_str(example) == event.as_text())
-        >>> text = example.replace(u'DE', u'Germany')
         >>> event.delete()
+        >>> text = example.replace(u'DE', u'Germany')
         >>> event = Event.parse_text(text)
         >>> assert (smart_str(example) == event.as_text())
-        >>> text = text.replace(u'Germany', u'de')
         >>> event.delete()
+        >>> text = text.replace(u'Germany', u'de')
         >>> event = Event.parse_text(text)
         >>> assert (smart_str(example) == event.as_text())
         >>> event.delete()
@@ -1528,9 +1526,11 @@ class Recurrence( models.Model ): #{{{1
     >>> import datetime
     >>> from datetime import timedelta
     >>> today = datetime.date.today()
+    >>> tomorrow = timedelta(days=1) + today
+    >>> after_tomorrow = timedelta(days=2) + today
     >>> e1 = Event.objects.create(title="Re1", start=today)
-    >>> e2 = Event.objects.create(title="Re2", start=today)
-    >>> e3 = Event.objects.create(title="Re3", start=today)
+    >>> e2 = Event.objects.create(title="Re2", start=tomorrow)
+    >>> e3 = Event.objects.create(title="Re3", start=after_tomorrow)
     >>> assert e1.recurring == None
     >>> assert e2.recurring == None
     >>> assert e3.recurring == None
@@ -1552,6 +1552,7 @@ class Recurrence( models.Model ): #{{{1
     >>> e2.start = timedelta(days=-1)+today
     >>> e2.save()
     >>> e1 = Event.objects.get( title="Re1" )
+    >>> e2 = Event.objects.get( title="Re2" )
     >>> e3 = Event.objects.get( title="Re3" )
     >>> assert e1.recurring.master == e2
     >>> assert e2.recurring.master == e2
@@ -1562,9 +1563,16 @@ class Recurrence( models.Model ): #{{{1
     >>> assert e3 in event_list
     >>> e2.recurrences.count()
     3
-    >>> e3.delete() ; e2.delete() ; e1.delete()
+    >>> # we now check that master is updated when master is deleted
+    >>> e2.delete()
+    >>> e1 = Event.objects.get( title="Re1" )
+    >>> e3 = Event.objects.get( title="Re3" )
+    >>> assert e1.recurring.master == e1
+    >>> assert e3.recurring.master == e1
+    >>> e3.delete()
+    >>> e1.delete()
     """
-    # note that it would be possible to just have an attribute ``master`` in
+    # NOTE that it would be possible to just have an attribute ``master`` in
     # the class Event, but that would make impossible to use natural keys with
     # events, because natural keys don't work with self references. TODO:
     # discuss self referenced natural keys with the Django developers: it

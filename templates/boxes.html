@@ -1,16 +1,14 @@
 {% load i18n %}
 {% load humanize %}
 
-{% include "pagination.html" %}
-
 <div>
     {% for event in events.object_list %}
         {% ifchanged event.upcoming %}
             {% if forloop.first %}
-                <div class="dayboxsearch">
+                <div class="daybox">
             {% else %}
                 </div>
-                <div class="dayboxsearch">
+                <div class="daybox">
             {% endif %}
             <h1>{{ event.upcoming|naturalday }}</h1>
         {% endifchanged %}

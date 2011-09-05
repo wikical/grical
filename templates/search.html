@@ -65,7 +65,8 @@
                 {% ifequal current_view "map" %}
                     {% include "search_map.html" %}
                 {% else %}
-                    {% include "search_boxes.html" %}
+                    {% include "boxes.html" %}
+                    {% include "pagination.html" %}
                 {% endifequal %}
             {% endifequal %}
         {% endifequal %}
