@@ -24,12 +24,14 @@
 http://docs.djangoproject.com/en/dev/ref/contrib/admin/#working-with-many-to-many-intermediary-models
 """
 
-from tagging.models import Tag
-
-from gridcalendar.events.models import ( Event, Group, EventUrl, EventSession,
-        Membership, Calendar, EventDeadline )
+# NOTE: allowing to edit events (including deadlines, urls and sessions) is not
+# possible at the moment in the admin because:
+# - revisions would be very tricky to keep
+# - the admin performs bulk updates which circunvent the delete and save
+#   methods of the models
 
 from django.contrib import admin
+from gridcalendar.events.models import Group, Membership, Calendar
 
 class MembershipInline(admin.TabularInline):
     """ Membership """
@@ -41,45 +43,8 @@ class CalendarInline(admin.TabularInline):
     model = Calendar
     extra = 1
 
-class UrlInline(admin.StackedInline):
-    """ EventUrl """
-    model = EventUrl
-    extra = 1
-
-class SessionInline(admin.StackedInline):
-    """ EventSession """
-    model = EventSession
-    extra = 1
-
-class DeadlineInline(admin.StackedInline):
-    """ EventDeadline """
-    model = EventDeadline
-    extra = 1
-
-class EventAdmin(admin.ModelAdmin): # pylint: disable-msg=R0904
-    """ ModelAdmin for Events """
-    def save_model(self, request, obj, form, change):
-        """Saves the user logged-in as user (owner) of the event when adding a
-        new Event"""
-        if not change:
-            obj.user = request.user
-        obj.save()
-    list_display = ('title', 'start', 'city', 'country')
-    list_filters = ['start', 'country']
-    search_fields = ['title', 'tags', 'country', 'city']
-    date_hierarchy = 'start'
-    inlines = [UrlInline, SessionInline, DeadlineInline, CalendarInline]
-
 class GroupAdmin(admin.ModelAdmin): # pylint: disable-msg=R0904
     """ ModelAdmin for Groups """
-    # FIXME: add the logged-in user in the group when saving a new group. See
-    # save_model in EventAdmin
     inlines = (MembershipInline, CalendarInline,)
 
-admin.site.register(Event, EventAdmin)
 admin.site.register(Group, GroupAdmin)
-admin.site.register(EventUrl)
-admin.site.register(EventSession)
-admin.site.register(EventDeadline)
-# admin.site.register(Tag)
-

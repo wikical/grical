@@ -34,6 +34,7 @@ from docutils.parsers.rst import roles, nodes
 from docutils.parsers.rst.roles import set_classes
 from docutils.writers.html4css1 import Writer
 import re
+import sys
 import vobject
 import unicodedata
 
@@ -48,10 +49,9 @@ from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.db.models import Max, Min
 from django.db.models.query import QuerySet
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.forms.models import inlineformset_factory, ModelForm
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
@@ -170,56 +170,55 @@ def event_edit( request, event_id = None ): # {{{1
             messages.error( request, _('Internal data missing. No data ' \
                     'saved. If the error persists, please contact us.') )
             raise Http404
+        if event_recurring:
+            event_recurring_valid = also_recurrences_form.is_valid()
         else:
-            if event_recurring:
-                event_recurring_valid = also_recurrences_form.is_valid()
-            else:
-                event_recurring_valid = True
-            if event_form.is_valid() and event_recurring_valid:
-                event = event_form.save(commit = False)
-                if formset_url.is_valid() & formset_session.is_valid() & \
-                        formset_deadline.is_valid() :
-                    # FIXME: don't allow to save an event with missing basic
-                    # data like a URL
-                    if not event_form.cleaned_data.get( 'coordinates', False ):
-                        event.coordinates = None
-                    with revision:
-                        if request.user.is_authenticated():
-                            revision.user = request.user
-                        event.save()
-                        formset_url.save()
-                        formset_session.save()
-                        formset_deadline.save()
-                        revision.add_meta( RevisionInfo,
-                                as_text = smart_unicode( event.as_text() ) )
-                    # change recurrences if appropiate
-                    if event_recurring:
-                        # TODO: think and test what happens if a title is
-                        # different on the same day and it is changed to the
-                        # same title.
-                        # TODO: think what happens if there are two in same day
-                        # (with or without the same title)
-                        master = event.recurring.master
-                        choice = also_recurrences_form.cleaned_data['choices']
-                        if choice == 'this':
-                            events = None
-                        elif choice == 'past':
-                            events = Event.objects.filter(
-                                    _recurring__master = master,
-                                    start__lt = event.start )
-                        elif choice == 'future':
-                            events = Event.objects.filter(
-                                    _recurring__master = master,
-                                    start__gt = event.start )
-                        elif choice == 'all':
-                            events = Event.objects.filter(
-                                    _recurring__master = master)
-                            events = events.exclude( pk = event.pk )
-                        else:
-                            raise RuntimeError()
-                        _change_recurrences( request.user, event, events )
-                    return HttpResponseRedirect( reverse( 'event_show_all',
-                            kwargs = {'event_id': event.id} ) )
+            event_recurring_valid = True
+        if event_form.is_valid() and event_recurring_valid:
+            event = event_form.save(commit = False)
+            if formset_url.is_valid() & formset_session.is_valid() & \
+                    formset_deadline.is_valid() :
+                # FIXME: don't allow to save an event with missing basic
+                # data like a URL
+                if not event_form.cleaned_data.get( 'coordinates', False ):
+                    event.coordinates = None
+                with revision:
+                    if request.user.is_authenticated():
+                        revision.user = request.user
+                    event.save()
+                    formset_url.save()
+                    formset_session.save()
+                    formset_deadline.save()
+                    revision.add_meta( RevisionInfo,
+                            as_text = smart_unicode( event.as_text() ) )
+                # change recurrences if appropiate
+                if event_recurring:
+                    # TODO: think and test what happens if a title is
+                    # different on the same day and it is changed to the
+                    # same title.
+                    # TODO: think what happens if there are two in same day
+                    # (with or without the same title)
+                    master = event.recurring.master
+                    choice = also_recurrences_form.cleaned_data['choices']
+                    if choice == 'this':
+                        events = None
+                    elif choice == 'past':
+                        events = Event.objects.filter(
+                                _recurring__master = master,
+                                start__lt = event.start )
+                    elif choice == 'future':
+                        events = Event.objects.filter(
+                                _recurring__master = master,
+                                start__gt = event.start )
+                    elif choice == 'all':
+                        events = Event.objects.filter(
+                                _recurring__master = master)
+                        events = events.exclude( pk = event.pk )
+                    else:
+                        raise RuntimeError()
+                    _change_recurrences( request.user, event, events )
+                return HttpResponseRedirect( reverse( 'event_show_all',
+                        kwargs = {'event_id': event.id} ) )
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
@@ -248,6 +247,8 @@ def event_edit( request, event_id = None ): # {{{1
 def _change_recurrences( user, event, events ):
     """ modifies the events in ``events`` with the data of ``event`` except for
     ``start`` and ``end``, and including urls changes also. """
+    if not events:
+        return
     for rec in events:
         assert rec.recurring.master == event.recurring.master
         with revision:
@@ -347,6 +348,10 @@ def event_new_raw( request, template_event_id = None ): # {{{1
                 'event_new_raw.html',
                 templates,
                 context_instance = RequestContext( request ) )
+    except:
+        revision.invalidate()
+        transaction.savepoint_rollback(sid)
+        raise
 
 def event_edit_raw( request, event_id ): # {{{1
     """ View to edit an event as text.
@@ -407,41 +412,54 @@ def event_edit_raw( request, event_id ): # {{{1
                     'recurring events changes should be applied'))
         event = event.parse_text(
                     event_textarea, event_id, request.user.id )
-        choice = also_recurrences_form.cleaned_data['choices']
-        if choice == 'this':
+        if not event_recurring:
             events = None
-        elif choice == 'past':
-            events = Event.objects.filter(
-                    _recurring__master = master,
-                    start__lt = event.start )
-        elif choice == 'future':
-            events = Event.objects.filter(
-                    _recurring__master = master,
-                    start__gt = event.start )
-        elif choice == 'all':
-            events = Event.objects.filter(
-                    _recurring__master = master)
-            events = events.exclude( pk = event.pk )
         else:
-            raise RuntimeError()
-        _change_recurrences( request.user, event, events )
-    except ValidationError as err:
+            choice = also_recurrences_form.cleaned_data['choices']
+            master = event.recurring.master
+            if choice == 'this':
+                events = None
+            elif choice == 'past':
+                events = Event.objects.filter(
+                        _recurring__master = master,
+                        start__lt = event.start )
+            elif choice == 'future':
+                events = Event.objects.filter(
+                        _recurring__master = master,
+                        start__gt = event.start )
+            elif choice == 'all':
+                events = Event.objects.filter(
+                        _recurring__master = master)
+                events = events.exclude( pk = event.pk )
+            else:
+                raise ValidationError( _(u'Unexpected value in recurring form') )
+            _change_recurrences( request.user, event, events )
+    except (ValidationError, IntegrityError) as err:
         revision.invalidate()
         transaction.savepoint_rollback(sid)
-        # found a validation error with one or more errors
-        if hasattr( err, 'message_dict' ):
-            # if hasattr(err, 'message_dict'), it looks like:
-            # {'url': [u'Enter a valid value.']}
-            for field_name, error_message in err.message_dict.items():
-                if isinstance(error_message, list):
-                    error_message = " ; ".join(error_message)
-                messages.error( request,
-                        field_name + ": " + error_message )
-        elif hasattr( err, 'messages' ):
-            for message in err.messages:
-                messages.error( request, message )
-        elif hasattr( err, 'message' ):
-            messages.error( request, err.message )
+        if isinstance(err, ValidationError):
+            # found a validation error with one or more errors
+            if hasattr( err, 'message_dict' ):
+                # if hasattr(err, 'message_dict'), it looks like:
+                # {'url': [u'Enter a valid value.']}
+                for field_name, error_message in err.message_dict.items():
+                    if isinstance(error_message, list):
+                        error_message = " ; ".join(error_message)
+                    messages.error( request,
+                            field_name + ": " + error_message )
+            elif hasattr( err, 'messages' ):
+                for message in err.messages:
+                    messages.error( request, message )
+            elif hasattr( err, 'message' ):
+                messages.error( request, err.message )
+        elif isinstance(err, IntegrityError):
+            # at least one date already exists
+            # TODO: write a better error code
+            messages.error( request, _(u'Changes not saved! It is not ' \
+                    'possible to have more than one event in the database ' \
+                    'with the same title and start date.') )
+        else:
+            raise
         templates = {
                 'title': _( "edit event as text" ),
                 'event_textarea': event_textarea,
@@ -450,6 +468,10 @@ def event_edit_raw( request, event_id ): # {{{1
                 'example': Event.example() }
         return render_to_response( 'event_edit_raw.html', templates,
                 context_instance = RequestContext( request ) )
+    except:
+        revision.invalidate()
+        transaction.savepoint_rollback(sid)
+        raise
     if isinstance(event, Event):
         # TODO: change messages to "eventS modified" if more than one was modified
         messages.success( request, _( u'event modifed' ) )
@@ -462,8 +484,7 @@ def event_edit_raw( request, event_id ): # {{{1
     else:
         revision.invalidate()
         transaction.savepoint_rollback(sid)
-        messages.error( request, event )
-        return main( request )
+        raise RuntimeError()
 
 def event_does_not_exist( request, event_id, redirect_url ): # {{{1
     """ if event_id was deleted it shows event redirection or deleted page,
@@ -669,33 +690,66 @@ def event_revert( request, revision_id, event_id ): # {{{1
 def event_delete( request, event_id ):
     event = get_object_or_404( Event, pk = event_id )
     user = request.user
-    if request.method == "POST":
+    if event.recurring:
+        event_recurring = True
+    else:
+        event_recurring = False
+    if not request.method == "POST":
+        form = DeleteEventForm()
+        if event_recurring:
+            also_recurrences_form = AlsoRecurrencesForm()
+        else:
+            also_recurrences_form = None
+    else:
         form = DeleteEventForm( data = request.POST )
-        if form.is_valid():
-            with revision:
-                if request.user.is_authenticated():
-                    revision.user = user
-                info_dict = {}
-                reason = form.cleaned_data['reason']
-                if reason:
-                    info_dict['reason'] = reason
-                redirect = form.cleaned_data['redirect']
-                if redirect:
-                    info_dict['redirect'] = redirect
-                info_dict['as_text'] = smart_unicode( event.as_text() )
-                revision.add_meta( RevisionInfo, **info_dict )
-                event.delete()
+        if event_recurring:
+            also_recurrences_form = AlsoRecurrencesForm( request.POST )
+        else:
+            also_recurrences_form = None
+        if form.is_valid() and (
+                (not event_recurring) or also_recurrences_form.is_valid() ):
+            if not event_recurring:
+                events = [event,]
+            else:
+                choice = also_recurrences_form.cleaned_data['choices']
+                if choice == 'this':
+                    events = [event,]
+                elif choice == 'past':
+                    events = Event.objects.filter(
+                            _recurring__master = master,
+                            start__lte = event.start )
+                elif choice == 'future':
+                    events = Event.objects.filter(
+                            _recurring__master = master,
+                            start__gte = event.start )
+                elif choice == 'all':
+                    events = Event.objects.filter(
+                            _recurring__master = master)
+                    events = events.exclude( pk = event.pk )
+                else:
+                    raise RuntimeError()
+            for dele in events:
+                with revision:
+                    if request.user.is_authenticated():
+                        revision.user = user
+                    info_dict = {}
+                    reason = form.cleaned_data['reason']
+                    if reason:
+                        info_dict['reason'] = reason
+                    redirect = form.cleaned_data['redirect']
+                    if redirect:
+                        info_dict['redirect'] = redirect
+                    info_dict['as_text'] = smart_unicode( dele.as_text() )
+                    revision.add_meta( RevisionInfo, **info_dict )
+                    dele.delete()
             messages.success( request, _('Event %(event_id)s deleted.') % \
                     {'event_id': event_id,} )
             return HttpResponseRedirect( reverse('main') )
-    else:
-        # TODO: if event is part of a serie, ask to delete only this event,
-        # also all futures events, also all past events or all
-        form = DeleteEventForm()
     context = dict()
     context['form'] = form
     context['event'] = event
     return render_to_response('event_delete.html',
+            {'also_recurrences_form': also_recurrences_form,},
             context_instance = RequestContext( request, context) )
 
 def event_deleted( request, event_id ): # {{{1
@@ -957,39 +1011,26 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         except ( EmptyPage, InvalidPage ):
             context['events'] = paginator.page( paginator.num_pages )
     elif view == 'calendars':
-        # TODO: use pagination
+        # FIXME: use pagination and optimize queries
         if isinstance( search_result, QuerySet ):
-            first_year = search_result[0].upcoming.year
-            last_year_start = search_result.latest('start').start.year
-            last_year_end = search_result.filter( end__isnull = False )
-            if last_year_end:
-                last_year_end = last_year_end.latest('end').end.year
-            else:
-                last_year_end = 0
-            last_year_deadline = search_result.filter(
-                    deadlines__deadline__isnull = False)
-            if last_year_deadline:
-                last_year_deadline = \
-                        last_year_deadline.latest( 'deadlines__deadline' )
-                last_year_deadline =  \
-                    last_year_deadline.deadlines.all().latest(
-                        'deadline').deadline.year
-            else:
-                last_year_deadline = 0
-            last_year = max(
-                    last_year_start, last_year_end, last_year_deadline )
+            extremes = search_result.aggregate(
+                    Min('deadlines__deadline'), Max('deadlines__deadline'),
+                    Min('start'), Max('start'),
+                    Min('end'),Max('end'))
+            # removing Nones
+            extremes = [date for date in extremes.values() if date]
+            # calculating max and min
+            last_year = max( extremes ).year
+            first_year =  min( extremes ).year
         else:
-            # first year
-            first_year = search_result[0].upcoming.year
-            last_year = first_year
+            # TODO: test this (search_result is an event list, not a queryset)
+            years = [eve.start for eve in search_result] + \
+                    [eve.end for eve in search_result if even.end]
             for event in search_result:
-                if event.start.year > last_year:
-                    last_year = event.start.year
-                if event.end and event.end.year > last_year:
-                    last_year = event.end.year
-                for deadline in event.deadlines.iterator():
-                    if deadline.deadline > last_year:
-                        last_year = deadline.deadline
+                years += [ deadline['deadline'] for deadline in 
+                        event.deadlines.values('deadline') ]
+            first_year = min( years )
+            last_year = max( years )
         years_cals = []
         events_cal = EventsCalendar( search_result )
         for year in range( first_year, last_year + 1 ):
@@ -1296,7 +1337,18 @@ def main( request, status_code=200 ):# {{{1
     elist = Event.objects.filter( upcoming__gte = today )
     # TODO: a lot of queries are issued for getting the tags of each event. Can
     # it be optimized?
-    elist = elist[0:settings.MAX_EVENTS_ON_ROOT_PAGE]
+    paginator = Paginator( elist, settings.MAX_EVENTS_ON_ROOT_PAGE,
+            allow_empty_first_page = False )
+    # Make sure page request is an int. If not, deliver first page.
+    try:
+        page = int(request.GET.get('page', '1'))
+    except ValueError:
+        page = 1
+    # If page request (9999) is out of range, deliver last page of results.
+    try:
+        events = paginator.page( page )
+    except ( EmptyPage, InvalidPage ):
+        events = paginator.page( paginator.num_pages )
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     # Generate the response with a custom status code. Rationale: our custom
     # handler404 and 500 returns the main page with a custom error message and
@@ -1306,7 +1358,7 @@ def main( request, status_code=200 ):# {{{1
             {
                 'title': Site.objects.get_current().name,
                 'form': event_form,
-                'events': elist,
+                'events': events,
                 'about_text': about_text,
             } )
     return HttpResponse(
@@ -1630,7 +1682,11 @@ def ICalForSearch( request, query ): # {{{2
     ...         kwargs={'query': 'berlin',})).status_code
     200
     """
-    elist = search_events( query )
+    try:
+        elist = search_events( query )
+    except ValueError:
+        # this can happen for instance when a date is malformed like 2011-01-32
+        elist = Event.objects.none()
     return _ical_http_response_from_event_list( elist, query )
 
 def ICalForEvent( request, event_id ): # {{{2

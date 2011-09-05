@@ -82,8 +82,7 @@
                 {% if event.coordinates %}
                     &nbsp; &#8212; &nbsp;
                     {{ event.coordinates.y }}, {{ event.coordinates.x }}
-                    ( <a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,
-                    <a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a> )
+                    (&nbsp;<a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,&nbsp;<a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a>&nbsp;)
                 {% endif %}
             </div>
         </div>

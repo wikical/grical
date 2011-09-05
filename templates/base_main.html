@@ -22,8 +22,11 @@
                             {% endfor %}
                         {% endif %}
                         {{ field.errors }}
-                        <div class="field">{{ field.label_tag }} {{ field }}</div>
-                        <div class="help_text">{{ field.help_text }}</div>
+                        <div class="field">
+                            {{ field.label_tag }}<br />
+                            {{ field }}<br />
+                            <div class="help_text">{{ field.help_text }}</div>
+                        </div>
                     {% endfor %}
                     <div id="simplified_submit">
                         <input type="submit" value="{% trans "Submit" %}" />
@@ -41,13 +44,8 @@
         </div>
     </div>
 
-    {% if events %}
-        {% for event in events %}
-            {% ifchanged event.upcoming %}
-                <div class="daytitle">{{ event.upcoming|naturalday }}</div>
-            {% endifchanged %}
-            {% include "event_show_medium.html" %}
-        {% endfor %}
-    {% endif %}
+    {% include "boxes.html" %}
+
+    {% include "pagination.html" %}
 
 {% endblock %}
