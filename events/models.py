@@ -340,7 +340,7 @@ postcode: 10439
 city: Berlin
 country: DE
 coordinates: 52.55247, 13.40364
-deadlines:
+dates:
     2009-11-01    visitor tickets
     2010-10-01    call for papers
 sessions:
@@ -353,20 +353,9 @@ GridCalendar will be presented"""
 # TODO: add alters_data=True to all functions that do that.
 # see http://docs.djangoproject.com/en/1.2/ref/templates/api/
 
-
-class EventManager( models.GeoManager ): # {{{1
-    """ manager for deserialization.
-
-    See http://docs.djangoproject.com/en/1.3/topics/serialization/#deserialization-of-natural-keys
-    """
-    def get_by_natural_key(self, title, start):
-        """ returns an event with a given ``title`` and ``start`` """
-        return self.get( title = title, start = start )
-
 class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     """ Event model """ # doc {{{2
     # fields {{{2
-    objects = EventManager()
     user = models.ForeignKey( User, editable = False, related_name = "owner",
             blank = True, null = True, verbose_name = _( u'User' ) )
     """The user who created the event or null if AnonymousUser""" # pyling: disable-msg=W0105
@@ -380,20 +369,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             null = True, help_text = _( u'Example: 26C3' ) )
     title = models.CharField( _( u'Title' ), max_length = 200, blank = False,
             help_text = _( u'Example: Demonstration against software patents' ) )
-    start = models.DateField( _( u'Start date' ), blank = False,
-            help_text = _( u"Example: 2010-08-25"),
-            validators = [validate_year] )
-    end = models.DateField( _( u'End date' ), null = True, blank = True,
-            help_text = _( u"Example: 2010-08-26"),
-            validators = [validate_year] )
-    upcoming = models.DateField( _( u'Upcoming deadline or start' ),
-            editable = False, db_index = True )
     starttime = models.TimeField( 
             _( u'Start time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
     endtime = models.TimeField( 
             _( u'End time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
+    #upcoming = models.DateField(
+    #        _( u'Upcoming date, or start if all in the past' ),
+    #        editable = False, db_index = True )
     tags = TagField(
             _( u'Tags' ), blank = True, null = True,
             help_text = 
@@ -420,17 +404,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 'sourceforge.net/docs/user/rst/quickref.html">' \
                 'ReStructuredText</a> syntax. Events can be referenced with' \
                 ' for instance :e:`123`' ) )
-    # old code before switching to postgis with the new geo field coordiantes
-    # latitude = models.FloatField( _( u'Latitude' ), blank = True, null = True,
-    #         help_text = _( u'In decimal degrees, not ' \
-    #         u'degrees/minutes/seconds. Prefix with "-" for South, no sign ' \
-    #         u'for North' ) )
-    # longitude = models.FloatField( _( u'Longitude' ), blank = True, null = True,
-    #         help_text = _( u'In decimal degrees, not ' \
-    #             u'degrees/minutes/seconds. Prefix with "-" for West, no ' \
-    #             u'sign for East' ) )
 
-    # convienent properties {{{2
+    # convenient properties {{{2
+
+    # latitude, longitude {{{3
     # custom latitude and longitude properties which raise an error when
     # setting them when self.coordinates is not initialized
     # Custom latitude property
@@ -446,15 +423,63 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return self.coordinates.x
         return None
     def _set_longitude(self, value): self.coordinates.x = value
-    longitude = property(_get_longitude,_set_longitude)
+    longitude = property(_get_longitude, _set_longitude)
+
+    # start, end {{{3
+    def _get_start(self):
+        try:
+            eventdate = self.dates.get(eventdate_name='start')
+        except EventDate.DoesNotExist:
+            return None
+        return eventdate.eventdate_date
+    def _set_start(self, value):
+        try:
+            eventdate = self.dates.get(eventdate_name='start')
+        except EventDate.DoesNotExist:
+            self.dates.create(
+                    eventdate_name='start', 
+                    eventdate_date=value )
+            return
+        eventdate.eventdate_date = value
+        eventdate.save()
+    start = property(_get_start, _set_start)
+    def _get_end(self):
+        try:
+            eventdate = self.dates.get(eventdate_name='end')
+        except EventDate.DoesNotExist:
+            return None
+        return eventdate.eventdate_date
+    def _set_end(self, value):
+        try:
+            eventdate = self.dates.get(eventdate_name='end')
+        except EventDate.DoesNotExist:
+            self.dates.create(
+                    eventdate_name='end', 
+                    eventdate_date=value )
+            return
+        eventdate.eventdate_date = value
+        eventdate.save()
+    end = property(_get_end, _set_end)
+
+    # read only upcoming {{{3
+    @property
+    def upcoming(self):
+        """ get the next upcoming date, or start if all are in the past. """
+        today = datetime.date.today()
+        future_dates = EventDate.objects.filter(
+                event = self, eventdate_date__gte = today )
+        if future_dates:
+            # not necessary because EventDate has a default ordering:
+            # future_dates = future_dates.order_by('dates__eventdate_date')
+            return future_dates[0].eventdate_date
+        return self.dates.get( eventdate_name == 'start' )
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         verbose_name = _( u'Event' )
         verbose_name_plural = _( u'Events' )
-        unique_together = (('title', 'start'),)
         # needed for proper order of e.g. master_event.instances:
-        ordering = ['upcoming'] # TODO: see sql queries because this may make
+        # ordering = ['upcoming'] # TODO: see sql queries because this may make
                                 # everything too slow
 
     # methods {{{2
@@ -470,13 +495,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return self.tags.replace(' ',',')
     
     def contains( self, date ):
-        """ returns True if the event happens in ``date`` or ``date`` is a
-        deadline. """
+        """ returns True if the event happens in ``date`` or ``date`` is an
+        event date. """
         if self.start == date:
             return True
         if self.start <= date and self.end and self.end >= date:
             return True
-        return self.deadlines.filter(deadline = date).exists()
+        return self.dates.filter(dates = date).exists()
 
     def color_nr(self, #{{{3
             days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
@@ -522,8 +547,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def next_coming_date_or_start(self): #{{{3
         """ returns the next most proximate date of an event to today, which
-        can be the start date, the end date or one of the deadlines; otherwise
-        it returns the start date if all are in the past
+        can be the start date, the end date, one of the dates, or today (if
+        the event has started but not finished); otherwise
+        it returns the start date if all are in the past.
         
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -545,10 +571,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event1 = Event(title="test 1 for n_c_d " + today.isoformat(),
         ...     start=timedelta(days=2)+today, tags="test")
         >>> event1.save()
-        >>> event1_deadline = EventDeadline(
-        ...         event = event1, deadline_name = "test1",
-        ...         deadline = today)
-        >>> event1_deadline.save()
+        >>> event1_date = EventDate(
+        ...         event = event1, eventdate_name = "test1",
+        ...         eventdate_date = today)
+        >>> event1_date.save()
         >>> list_events = [event3, event2, event1]
         >>> sorted_list = sorted(list_events, key=Event.next_coming_date_or_start)
         >>> assert sorted_list[0] == event1
@@ -559,16 +585,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event2.delete()
         >>> event3.delete()
         """
-        # creates a list with all dates of the event (self)
-        dates = []
-        dates.append(self.start)
-        if self.end:
-            dates.append(self.end)
-        deadlines = EventDeadline.objects.filter(event=self)
-        if deadlines:
-            for deadline in deadlines:
-                dates.append(deadline.deadline)
         today = datetime.date.today()
+        if self.start <= today and self.end >= today:
+            return today
+        # creates a list with all dates of the event (self)
+        dates = EventDate.objects.values_list(
+                'eventdate_date', flat=True ).filter( event=self )
         # creates a list of deltas of the dates to today
         deltas = map(lambda d: d - today, dates)
         # removes negative deltas from the past
@@ -578,17 +600,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return today + ( sorted(deltas)[0] )
         else:
             return self.start
-
-    def next_deadline_names( self ): #{{{3
-        """ return the name of the next deadline or None """
-        date = self.next_coming_date_or_start()
-        if date == self.start:
-            return None
-        deadlines = EventDeadline.objects.filter(
-                event = self, deadline = date )
-        if not deadlines:
-            return None
-        return ", ".join( [ d.deadline_name for d in deadlines ] )
 
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
@@ -649,7 +660,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if self.coordinates:
             vevent.add('GEO').value = \
                 unicode(self.coordinates.y) +u";"+ unicode(self.coordinates.x)
-        # TODO: add deadlines. As VALARMs or there is something better in
+        # TODO: add eventdates. As VALARMs or there is something better in
         # rfc5545 ?
         # TODO: think of options for decentralization commented on
         # http://linuxwiki.de/Zentralkalender
@@ -737,7 +748,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     self.recurring.master.recurrences.create( event = clone )
             else:
                 self.recurrences.create( event = clone )
-        related_models = [EventDeadline, EventSession, EventUrl] # TODO: get the list automatically
+        related_models = [EventDate, EventSession, EventUrl] # TODO: get the list automatically
         new_objs = [] # list of new related objects
         # we now traverse all related models and its objects
         for model in ( related_models ):
@@ -942,18 +953,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     for url in urls:
                         to_return += u''.join( [
                                 u"    ", url.url_name, u' ', url.url, u"\n"] )
-            elif keyword == u'deadlines':
-                deadlines = EventDeadline.objects.filter( event = self.id )
-                if deadlines and len( deadlines ) > 0:
-                    to_return += u"deadlines:\n"
-                    for deadline in deadlines:
-                        to_return += u"".join( [
-                            u"    ",
-                            unicode(deadline.deadline.strftime("%Y-%m-%d")),
-                            u'    ',
-                            deadline.deadline_name,
-                            u"\n",
-                            ] )
+            elif keyword == u'dates':
+                eventdates = EventDate.objects.filter( event = self.id )
+                if eventdates and len( eventdates ) > 0:
+                    to_return += u"dates:\n"
+                    for eventdate in eventdates:
+                        to_return += u"    " + \
+                            eventdate.eventdate_date.strftime("%Y-%m-%d") + \
+                            '    ' + eventdate.eventdate_name + "\n"
             elif keyword == u'sessions':
                 sessions = EventSession.objects.filter( event = self.id )
                 if sessions and len( sessions ) > 0:
@@ -1020,11 +1027,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         u'GridCalendar presentation'
         >>> c[u'description'][1]
         u'GridCalendar will be presented'
-        >>> c[u'deadlines'][1].replace(' ','')
+        >>> c[u'dates'][1].replace(' ','')
         u'2009-11-01visitortickets'
-        >>> c[u'deadlines'][2].replace(' ','')
+        >>> c[u'dates'][2].replace(' ','')
         u'2010-10-01callforpapers'
-        >>> c['deadlines'][3]
+        >>> c['dates'][3]
         Traceback (most recent call last):
             ...
         IndexError: list index out of range
@@ -1138,15 +1145,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         The idented lines are optional. If web_url is present, it will be saved
         with the url_name 'url'
 
-        The text for the field 'deadlines' is of the form::
+        The text for the field 'dates' is of the form::
 
-            deadlines: deadline_date
-                deadline1_date deadline1_name 
-                deadline2_date deadline2_name 
+            dates: deadline_date
+                date_1 name_1
+                date_2 name_2
                 ...
 
-        The idented lines are optional. If deadline_date is present, it will be
-        saved with the deadline_name 'deadline'
+        The idented lines are optional when deadline_date is present, which
+        will be saved with the eventdate_name 'deadline'
 
         The text for the field 'sessions' is of the form::
 
@@ -1240,39 +1247,39 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 if not urls.has_key(event_url.url_name):
                     event_url.delete()
             del complex_fields[u'urls']
-        # deadlines {{{5
-        if complex_fields.has_key(u'deadlines'):
-            deadlines = EventDeadline.get_deadlines(
-                    complex_fields[u'deadlines'] )
-            event_deadlines = list() # stores EventDeadline instances to be saved
+        # dates {{{5
+        if complex_fields.has_key(u'dates'):
+            eventdates = EventDate.get_eventdates(
+                    complex_fields[u'dates'] )
+            eventdates_final = list() # stores EventDate instances to be saved
                                      # at the end
-            for name, deadline in deadlines.items():
+            for name, date in eventdates.items():
                 try:
-                    previous_event_deadline = EventDeadline.objects.get(
-                            event=event, deadline_name=name)
-                except EventDeadline.DoesNotExist:
-                    event_deadline = EventDeadline(event=event, deadline_name=name,
-                            deadline=deadline)
+                    previous_eventdate = EventDate.objects.get(
+                            event=event, eventdate_name=name)
+                except EventDate.DoesNotExist:
+                    eventdate = EventDate(event=event, eventdate_name=name,
+                            eventdate_date=date)
                     # see
                     # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
-                    event_deadline.full_clean()
-                    event_deadlines.append(event_deadline)
+                    eventdate.full_clean()
+                    eventdates_final.append(eventdate)
                 else:
-                    previous_event_deadline.deadline = deadline
-                    assert(previous_event_deadline.deadline_name == name)
-                    assert(previous_event_deadline.event == event)
-                    previous_event_deadline.full_clean()
-                    event_deadlines.append(previous_event_deadline)
-            assert(len(event_deadlines) == len(deadlines))
+                    previous_eventdate.eventdate_date = date
+                    assert(previous_eventdate.eventdate_name == name)
+                    assert(previous_eventdate.event == event)
+                    previous_eventdate.full_clean()
+                    eventdates_final.append(previous_eventdate)
+            assert(len(eventdates_final) == len(eventdates))
             # save all
-            for event_deadline in event_deadlines:
-                event_deadline.save()
-            # delete old deadlines of the event which are not in ``text`` parameter
-            event_deadlines = EventDeadline.objects.filter(event=event)
-            for event_deadline in event_deadlines:
-                if not deadlines.has_key(event_deadline.deadline_name):
-                    event_deadline.delete()
-            del complex_fields[u'deadlines']
+            for eventdate in eventdates_final:
+                eventdate.save()
+            # delete old eventdates of the event which are not in ``text`` parameter
+            all_eventdates = EventDate.objects.filter(event=event)
+            for eventdate in all_eventdates:
+                if not eventdates.has_key(eventdate.eventdate_name):
+                    eventdate.delete()
+            del complex_fields[u'dates']
         # sessions {{{5
         if complex_fields.has_key(u'sessions'):
             sessions = EventSession.get_sessions( complex_fields[u'sessions'] )
@@ -1312,11 +1319,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 if not found:
                     event_session.delete()
             del complex_fields[u'sessions']
-        # recurring {{{5
+        # recurrences {{{5
         from forms import DatesTimesField
-        if complex_fields.has_key(u'recurring'):
+        if complex_fields.has_key(u'recurrences'):
             dates = list()
-            for text_date in complex_fields[u'recurring'][1:]:
+            for text_date in complex_fields[u'recurrences'][1:]:
                 dates_times_field = DatesTimesField()
                 try:
                     dates_times = dates_times_field.clean( text_date )
@@ -1328,13 +1335,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     raise ValidationError( _(
                         u'a repeating date cannot have an end date: (date)s') % \
                                 {'date': text_date} )
-                # we do not clone deadlines nor sessions, as they 
+                # we do not clone dates nor sessions, as they 
                 # refer to the main event and not to the recurring events.
                 # TODO: inform the user
                 event.clone( user = user,
-                        except_models = [EventDeadline, EventSession],
+                        except_models = [EventDate, EventSession],
                         **dates_times )
-            del complex_fields[u'recurring']
+            del complex_fields[u'recurrences']
         # test and return event {{{5
         assert(len(complex_fields) == 0)
         revision.add_meta( RevisionInfo,
@@ -1346,7 +1353,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns a tuple of names of user-editable fields (of events) which
         can contain many lines in the input text representation of an Event.
         """
-        return ("urls", "deadlines", "sessions", "recurring", "description",)
+        return ("urls", "dates", "sessions", "recurrences", "description",)
 
     @staticmethod # def get_simple_fields(): {{{3
     def get_simple_fields():
@@ -1374,7 +1381,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         should appear when showing an event as a text, i.e. in the output text
         representation of an Event.
         
-        Notice that 'recurring' can be present in the input text
+        Notice that 'recurrences' can be present in the input text
         representation, but it is not present in the output text
         representation.
  
@@ -1388,21 +1395,21 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return (u"acronym", u"title", u"start", u"starttime", u"end",
                 u"endtime", u"tags", u"urls", u"address",
                 u"postcode", u"city", u"country", u"coordinates",
-                u"deadlines", u"sessions", u"description")
+                u"dates", u"sessions", u"description")
  
     @staticmethod # def get_synonyms(): {{{3
     def get_synonyms():
         """Returns a dictionay with names (strings) and the fields (strings)
         they refer.
 
-        All values of the returned dictionary (except recurring, urls,
-        sessions and deadlines) are names of fields of the Event class.
+        All values of the returned dictionary (except recurrences, urls,
+        sessions, dates, start and end) are names of fields of the Event class.
 
         >>> synonyms_values_set = set(Event.get_synonyms().values())
         >>> assert ('urls' in synonyms_values_set)
         >>> synonyms_values_set.remove('urls')
-        >>> assert ('deadlines' in synonyms_values_set)
-        >>> synonyms_values_set.remove('deadlines')
+        >>> assert ('dates' in synonyms_values_set)
+        >>> synonyms_values_set.remove('dates')
         >>> assert ('sessions' in synonyms_values_set)
         >>> synonyms_values_set.remove('sessions')
         >>> assert ('recurring' in synonyms_values_set)
@@ -1454,7 +1461,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
 if not reversion.is_registered( Event ): # {{{1
     reversion.register( Event, format = "yaml", # TODO: use custom serializer
-            follow=[ "urls_set", "sessions_set", "deadlines_set" ] )
+            follow=[ "urls_set", "sessions_set", "dates_set" ] )
 
 class RevisionInfo( models.Model ): # {{{1
     """ used to store additional info in revisions """
@@ -1684,7 +1691,7 @@ class ExtendedUser(User): # {{{1
 
     def has_groups_with_coming_events( self ): # {{{2
         """ returns True if at least one group of the user has a coming event
-        (start, end or a deadline in the future)
+        (start, end or a date in the future)
         """
         for group in self.get_groups():
             if group.has_coming_events():
@@ -1790,127 +1797,118 @@ if not reversion.is_registered( EventUrl ): # {{{1
     reversion.register(EventUrl, format = "yaml" )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
-class EventDeadlineManager( models.Manager ): # {{{1
-    def get_by_natural_key(self, deadline_name, event):
+class EventDateManager( models.Manager ): # {{{1
+    def get_by_natural_key(self, eventdate_name, event):
         return self.get(
-                deadline_name = deadline_name,
+                eventdate_name = eventdate_name,
                 event = Event.objects.get_by_natural_key( *event ) )
 
-class EventDeadline( models.Model ): # {{{1
-    """ stores deadlines for events """
-    event = models.ForeignKey( Event, related_name = 'deadlines' )
-    deadline_name = models.CharField( 
-            _( u'Deadline name' ), blank = False, null = False,
+class EventDate( models.Model ): # {{{1
+    """ stores dates for events """
+    event = models.ForeignKey( Event, related_name = 'dates' )
+    eventdate_name = models.CharField( 
+            _( u'Name' ), blank = False, null = False,
             max_length = 80, help_text = _( 
-            "Example: call for papers deadline" ) )
-    deadline = models.DateField( _( u'Deadline' ), blank = False, null = False,
-            validators = [validate_year] )
+            "Example: call for papers" ) )
+    eventdate_date = models.DateField( _( u'Date' ), blank = False,
+            null = False, validators = [validate_year] )
 
-    objects = EventDeadlineManager()
+    objects = EventDateManager()
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['deadline', 'deadline_name']
-        unique_together = ( "event", "deadline_name" )
+        ordering = ['eventdate_date', 'eventdate_name']
+        unique_together = ( "event", "eventdate_name" )
 
     def natural_key( self ):
-        return ( self.deadline_name, self.event.natural_key() )
+        return ( self.eventdate_name, self.event.natural_key() )
     natural_key.dependencies = ['events.event']
     
-    def save( self, *args, **kwargs ): #{{{2
-        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` if
-        necessary"""
-        # Call the "real" save() method:
-        super( EventDeadline, self ).save( *args, **kwargs )
-        if self.event.upcoming != self.event.next_coming_date_or_start():
-            self.event.save() # needed to update Event.upcoming in the DB
-
-    def delete( self, *args, **kwargs ): #{{{2
-        """ calls :meth:`Event.save` to update :attr:`Event.upcoming` if
-        necessary """
-        super( EventDeadline, self ).delete( *args, **kwargs )
-        if self.event.upcoming != self.event.next_coming_date_or_start():
-            self.event.save() # needed to update Event.upcoming in the DB
-
     def __unicode__( self ): # {{{2
-        return unicode( self.deadline ) + u'    ' + self.deadline_name
+        return unicode( self.eventdate_date ) + u'    ' + self.eventdate_name
 
     def clone( self, event, user ): # {{{2
         """ creates a copy of itself related to ``event`` """
-        new = EventDeadline( event = event, deadline_name = self.deadline_name,
-                deadline = self.deadline )
+        new = EventDate( event = event, eventdate_name = self.eventdate_name,
+                eventdate_date = self.eventdate_date )
         new.save()
         return new
 
-    @staticmethod # def get_deadlines( text ): {{{2
-    def get_deadlines( lines ):
-        """ validates text lines containing EventDeadline entries,
+    @staticmethod # def get_eventdates( text ): {{{2
+    def get_eventdates( lines ):
+        """ validates text lines containing EventDate entries,
         raising ValidationErrors if there are errors, otherwise it returns a
         dictionary with names and dates. """
         # TODO: this code can be simplified using only the django validators
-        deadlines = {} # keys are names, values are dates
+        names_dates = {} # keys are names, values are dates
         errors = [] # we store here errors
         date_field = DateField()
-        # default deadline:
+        # default date (deadline):
         if lines[0].strip():
             try:
                 date = date_field.clean( lines[0].strip() )
             except:
                 raise ValidationError(
-                        _(u"default deadline is not a valid date: %s") %
+                        _(u"default date (deadline) is not a valid date: %s") %
                         lines[0].strip() )
-            deadlines[_('deadline')] = date
+            names_dates['deadline'] = date
         field_p = re.compile(r"^\s+(\d\d\d\d)-(\d?\d)-(\d?\d)\s+(.*?)\s*$")
         if len(lines) > 1:
             for line in lines[1:]:
                 field_m = field_p.match(line)
                 if not field_m:
                     raise ValidationError(
-                        _(u"the following line for a deadline is malformed: ")
+                        _(u"the following line for a date is malformed: ")
                         + line)
                 name = field_m.group(4)
-                if deadlines.has_key( name ):
-                    errors.append( _(u'the following deadline name appers ' \
+                if names_dates.has_key( name ):
+                    errors.append( _(u'the following date name appers ' \
                             u'more than one: %(name)s') % {'name': name} )
+                elif name.lower() == 'start':
+                    errors.append( _(u"the name 'start' is not allowed") )
+                elif name.lower() == 'end':
+                    errors.append( _(u"the name 'end' is not allowed") )
+                elif name.lower() == 'ongoing':
+                    errors.append( _(u"the name 'ongoing' is not allowed") )
                 else:
                     try:
-                        deadlines[ field_m.group(4) ] = datetime.date(
+                        names_dates[ field_m.group(4) ] = datetime.date(
                                 int(field_m.group(1)), int(field_m.group(2)),
                                 int(field_m.group(3)))
                     except (TypeError, ValueError), e:
                         errors.append(
-                            _(u"The deadline '%(deadline_name)s' is not " \
-                                    u"correct") % {'deadline_name':
+                            _(u"The date '%(eventdate_name)s' is not " \
+                                    u"correct") % {'eventdate_name':
                                         field_m.group(4),} )
         if errors:
             raise ValidationError( errors )
-        # we now check each deadline using django.core.validators for the
+        # we now check each date using django.core.validators for the
         # fields of this class
-        deadline_validators = EventDeadline._meta.get_field_by_name(
-                'deadline')[0].validators
-        deadline_name_validators = EventDeadline._meta.get_field_by_name(
-                'deadline_name')[0].validators
-        for deadline_name, deadline in deadlines.items():
-            for val in deadline_name_validators:
+        eventdate_date_validators = EventDate._meta.get_field_by_name(
+                'eventdate_date')[0].validators
+        eventdate_name_validators = EventDate._meta.get_field_by_name(
+                'eventdate_name')[0].validators
+        for eventdate_name, eventdate_date in names_dates.items():
+            for val in eventdate_name_validators:
                 try:
-                    val(deadline_name)
+                    val(eventdate_name)
                 except ValidationError, e:
                     errors.append(
-                            _('Error in deadline name %(deadline_name)s') %
-                            {'deadline_name': deadline_name,} )
+                            _('Error in date name %(eventdate_name)s') %
+                            {'eventdate_name': eventdate_name,} )
                     errors.extend( e.messages )
-            for val in deadline_validators:
+            for val in eventdate_date_validators:
                 try:
-                    val(deadline)
+                    val(eventdate_date)
                 except ValidationError, e:
-                    errors.append( _('Error in deadline %(deadline)s') %
-                            {'deadline': deadline,} )
+                    errors.append( _('Error in date %(date)s') %
+                            {'date': eventdate_date,} )
                     errors.extend( e.messages )
         if errors:
             raise ValidationError( errors )
-        return deadlines
+        return names_dates
 
-if not reversion.is_registered( EventDeadline ): # {{{1
-    reversion.register( EventDeadline, format = 'yaml' )
+if not reversion.is_registered( EventDate ): # {{{1
+    reversion.register( EventDate, format = 'yaml' )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 class EventSessionManager( models.Manager ): # {{{1
@@ -2137,10 +2135,10 @@ class Filter( models.Model ): # {{{1
         >>> group = Group.objects.create(name="matchesevent" + time)
         >>> event = Event.objects.create(title="test for events " + now,
         ...     start=timedelta(days=-1)+today, tags="test")
-        >>> event_deadline = EventDeadline(
-        ...         event = event, deadline_name = "test",
-        ...         deadline = today)
-        >>> event_deadline.save()
+        >>> eventdate = EventDate(
+        ...         event = event, eventdate_name = "test",
+        ...         eventdate_date = today)
+        >>> eventdate.save()
         >>> calendar = Calendar.objects.create( group = group,
         ...     event = event )
         >>> calendar.save()
@@ -2238,10 +2236,10 @@ class Group( models.Model ): # {{{1
     >>> event = Event(title="test for events " + now,
     ...     start=timedelta(days=-1)+today, tags="test")
     >>> event.save()
-    >>> event_deadline = EventDeadline(
-    ...         event = event, deadline_name = "test",
-    ...         deadline = today)
-    >>> event_deadline.save()
+    >>> eventdate = EventDate(
+    ...         event = event, eventdate_name = "test",
+    ...         eventdate_date = today)
+    >>> eventdate.save()
     >>> calendar = Calendar.objects.create( group = group,
     ...     event = event )
     >>> assert ( len(group.get_coming_events()) == 1 )
@@ -2393,33 +2391,29 @@ class Group( models.Model ): # {{{1
         return list(Group.objects.filter(membership__user=user))
 
     def get_coming_events(self, limit=5): # {{{2
-        """ Returns a list of maximal *limit* events with at least one date
-        in the future (start, end or deadline). If *limit* is -1 it
-        returns all
+        """ Returns a list of maximal ``limit`` events with at least one date
+        in the future. If ``limit`` is -1 it returns all.
 
         """
         today = datetime.date.today()
         events = Event.objects.filter( Q(calendar__group = self) & (
-                    Q(start__gte=today) | Q(end__gte=today) |
-                    Q(deadlines__deadline__gte=today) ))
-        events = events.distinct().order_by('upcoming')
+                    Q(eventdates__eventdate_date__gte=today) ))
+        # NOTE: next line can (despite 'distinct') return non-distinct events:
+        # https://docs.djangoproject.com/en/1.3/ref/models/querysets/#django.db.models.query.QuerySet.distinct
+        events = events.order_by('dates__eventdate_date').distinct()
         if limit == -1:
             return events
         else:
             return events[0:limit]
 
     def has_coming_events(self): # {{{2
-        """ returns True if the group has coming events (with *start*,
-        *end* or a *deadline* of an event of the group in the future)
+        """ returns True if the group has coming events (with a date
+        of an event of the group in the future)
         """
         today = datetime.date.today()
-        return Event.objects.filter( Q(calendar__group = self) &
-                Q(upcoming__gte=today) ).count() > 0
-        # the code without using upcoming would be:
-        # return Event.objects.filter(
-        #         Q( calendar__group = self ) & (
-        #             Q(start__gte=today) | Q(end__gte=today) |
-        #             Q(deadlines__deadline__gte=today) )).count() > 0
+        return Event.objects.filter(
+                Q( calendar__group = self ) &
+                Q( dates__eventdate_date__gte = today) ).exists()
 
     @staticmethod # def events_in_groups(groups, limit=5): {{{2
     def events_in_groups(groups, limit=5):

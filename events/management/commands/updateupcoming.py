@@ -36,7 +36,7 @@ class Command( NoArgsCommand ): # {{{1
     """ management command """
     # tests are in events.tests
 
-    help = "Parses mails from settings.IMAP_SERVER"
+    help = "update upcoming field of events"
 
     def handle_noargs( self, **options ): # {{{2
         """ Executes the action. """

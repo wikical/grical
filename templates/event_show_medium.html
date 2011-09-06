@@ -55,11 +55,15 @@
     {% endif %}
 
     {% if event.upcoming != event.start and event.upcoming != event.end %}
-      <br />
-      <span class="deadlines">
-        <a href='{% urlsearch query=event.upcoming|date:"Y-m-d" %}'>{{ event.upcoming }}</a>
-      </span>
-      {{ event.next_deadline_names }}
+        {% with event.next_deadline_names as deadline_name %}
+            {% if deadline_name %}
+                <br />
+                <span class="deadlines">
+                  <a href='{% urlsearch query=event.upcoming|date:"Y-m-d" %}'>{{ event.upcoming }}</a>
+                </span>
+                {{ event.next_deadline_names }}
+            {% endif %}
+        {% endwith %}
     {% endif %}
     {% if event.get_tags %}
       <div class="tags">

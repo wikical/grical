@@ -70,7 +70,7 @@ from gridcalendar.events.forms import (
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
      NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
-    Event, EventUrl, EventSession, EventDeadline, Filter, Group,
+    Event, EventUrl, EventSession, EventDate, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo )
 from gridcalendar.events.utils import search_address, html_diff
 from gridcalendar.events.tables import EventTable
@@ -147,7 +147,7 @@ def event_edit( request, event_id = None ): # {{{1
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4, can_delete = can_delete, )
     event_deadlines_factory = inlineformset_factory( 
-            Event, EventDeadline, extra = 4, can_delete = can_delete, )
+            Event, EventDate, extra = 4, can_delete = can_delete, )
     event_sessions_factory = inlineformset_factory( 
             Event, EventSession, extra = 4, can_delete = can_delete, )
     if request.method == 'POST':
@@ -1334,7 +1334,8 @@ def main( request, status_code=200 ):# {{{1
         event_form = SimplifiedEventForm()
     # calculates events to show
     today = datetime.date.today()
-    elist = Event.objects.filter( upcoming__gte = today )
+    elist = Event.objects.filter( dates__eventdate_date__gte = today
+            ).order_by( 'dates__eventdate_date' )
     # TODO: a lot of queries are issued for getting the tags of each event. Can
     # it be optimized?
     paginator = Paginator( elist, settings.MAX_EVENTS_ON_ROOT_PAGE,
