@@ -1,0 +1,51 @@
+high priority
+-------------
+
+
+medium priority
+---------------
+
+
+low priority
+------------
+
+- **Karma**::
+
+    "2011-03-01 14:53" < netAction> Die Veranstalter können Vandalen ja nicht selber blocken.
+    "2011-03-01 14:53" < ogai> aber aenderungen mit einem klick zurueckrollen
+    "2011-03-01 14:54" < ogai> alternative (wenn noetig): nur eintragender koennen ihren Events editieren, sonst nur kommentare sind erlaubt fuer alle
+    "2011-03-01 14:55" < netAction> Dann wiederum haste den Spaß, dass du Events nur dem Typen und der Gruppe zum Schreiben freigeben willst.
+    "2011-03-01 14:55" < ogai> aber dann hat man das problem von verlassenen events, die keiner pflegen kann (deswegen ist es z.Z. nicht so)
+    "2011-03-01 14:55" < netAction> Genau.
+    "2011-03-01 14:55" < ogai> :) genau
+    "2011-03-01 14:55" < netAction> Du hast das Problem von Dupletten, weil das Original keiner ändern kann.
+    "2011-03-01 14:56" < ogai> ja, und dann brauchst du wieder admins dafuer
+    "2011-03-01 14:57" < netAction> Also eine mafiöse Struktur von Moderatoren, die sich selbst begünstigen und zulassen.
+    "2011-03-01 14:57" < netAction> So läuft es auf model-kartei.de. Jede Sedcard wird geprüft.
+    "2011-03-01 14:57" < ogai> ja, keine schoene vorstellung
+    "2011-03-01 14:58" < ogai> man koennte aber etwas demokratischer machen: events konnen als fehlerhaft markiert werden
+    "2011-03-01 14:58" < netAction> Karmaprinzip, Änderungen werden erstmal nur dem Inhaber vorgeschlagen, bis sich der User genug Karma zum Selberbearbeiten erwirtschaftet hat.
+    "2011-03-01 14:58" < ogai> wenn viele das machen, ist der event vom inhaber befreit
+    "2011-03-01 14:58" < ogai> auch eine gute idee
+    "2011-03-01 14:59" < netAction> Dann haste gerade die großen Events in der Anarchie. Genau das, was du nicht willst.
+    "2011-03-01 14:59" < ogai> nur wenn viele ueser events als fehlerhaft markieren
+    "2011-03-01 15:00" < ogai> die nicht fehlerhaft sind
+    "2011-03-01 15:00" < netAction> Wer ein Event reinstellen will und neu ist, muss geprüft werden. Plausibilitätscheck über die Webseite des Events.
+    "2011-03-01 15:00" < ogai> die annahme, dass die meisten users keine trolls sind ist richtig IMHO
+    "2011-03-01 15:00" < netAction> Ja
+    "2011-03-01 15:01" < netAction> Ich finde handmoderierte Systeme ziemlich ansprechend, wenn sie transparent sind.
+    "2011-03-01 15:01" < netAction> So ist es btw bei Wikipedia.
+    "2011-03-01 15:01" < netAction> Du kannst als normaler User kaum noch was editieren, ohne dass es geprüft wird.
+    "2011-03-01 15:03" < netAction> Zum Setzen von Links in fremden Artikeln ist mehr Karma nötig, zum Löschen noch mehr und so weiter.
+    "2011-03-01 15:03" < ogai> karma ist gut, finger gewaelte admins wie bei der wikipedia ist nicht schoen
+    "2011-03-01 15:04" < ogai> aber wie bekommt man karma?
+    "2011-03-01 15:04" < netAction> Mit jeder Aktivität.
+    "2011-03-01 15:04" < ogai> auch mit schlechte?
+    "2011-03-01 15:04" < netAction> Da wird Karma abgezogen
+    "2011-03-01 15:04" < netAction> Nach Prüfung.
+    "2011-03-01 15:05" < netAction> Durch das Konzept hast du immer noch Trolle, aber du hast ein großes System, das die Trolle bekämpft.
+    "2011-03-01 15:05" < ogai> veranstalter, die nur ein mal im jahr etwas eintragen haetten kein Karma
+    "2011-03-01 15:06" < netAction> Wenig
+    "2011-03-01 15:07" < netAction> Ist doch kein Ding. Dann reichen sie das Event ein, es wird freigeschaltet, alles tutti.
+    "2011-03-01 15:09" < netAction> Es ist doch gerade das Schöne an einem freien Projekt, dass die Community hilft.
+    "2011-03-01 15:09" < ogai> es ist aber schoen (und motivierend), sofort den event online zu sehen

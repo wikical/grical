@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<p>{% trans "Create a new event" %}:</p>
+<div id="event_textarea_form">
+
+    <form action="" method="post">{% csrf_token %}
+        <table>
+            {% if event_textarea %}
+                <TEXTAREA Name="event_astext" rows="25" cols="80">{{ event_textarea }}</TEXTAREA>
+            {% else %}
+                <TEXTAREA Name="event_astext" rows="25" cols="80">{{ template }}</TEXTAREA>
+            {% endif %}
+        <input type="submit" value={% trans "Save" %}>
+        </table>
+    </form>
+</div>
+
+<br />
+
+<h3>{% trans "Example with minimal information:" %}</h3>
+<pre>
+title: This is the title of the test event
+start: 2010-04-27
+web: http://www.example.com/
+tags: tag
+</pre>
+
+<h3>{% trans "Example with all possible information:" %}</h3>
+<pre>
+acronym: GriCal
+title: GridCalendar presentation
+start: 2010-12-29
+starttime: 10:00
+end: 2010-12-30
+endtime: 18:00
+tags: calendar software open-source gridmind gridcalendar
+urls:
+    code    http://example.com
+    web    http://example.com
+address: Gleimstr. 6
+postcode: 10439
+city: Berlin
+country: DE
+coordinates: 52.55247, 13.40364
+deadlines:
+    2009-11-01    visitor tickets
+    2010-10-01    call for papers
+sessions:
+    2010-12-29    10:00-11:00    first presentation
+    2010-12-29    15:00-16:00    second presentation
+    2010-12-30    15:00-16:00    third presentation
+description:
+
+GridCalendar will be presented
+</pre>
+
+<h3>{% trans "Example with recurring dates:" %}</h3>
+<pre>
+title: test
+start: 2011-05-05
+web: http://example.com
+tags: linux test
+recurring:
+    2011-06-05
+    2011-07-05
+</pre>
+
+{% endblock %}

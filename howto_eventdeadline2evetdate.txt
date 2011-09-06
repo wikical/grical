@@ -1,0 +1,27 @@
+- check that there is no deadlines with the names 'start' or 'end' and rename them.
+    - EventDeadline.objects.filter(deadline_name__iexact='start')
+    - EventDeadline.objects.filter(deadline_name__iexact='end')
+- shut down apache vhost
+- shut down cron jobs
+- check that there is no deadlines with the names 'start' or 'end'
+    - EventDeadline.objects.filter(deadline_name__iexact='start')
+    - EventDeadline.objects.filter(deadline_name__iexact='end')
+- add a deadline 'start' for each event, and a deadline 'end' if present
+    for e in Event.objects.all():
+        e.deadlines.create(deadline_name='start', deadline=e.start)
+        if e.end:
+            e.deadlines.create(deadline_name='end', deadline=e.end)
+        print e.id
+- remove the colums 'start', 'end', 'upcoming'
+    - ALTER TABLE events_event DROP COLUMN upcoming;
+    - ALTER TABLE events_event DROP COLUMN start;
+    - ALTER TABLE events_event DROP COLUMN end;
+- rename db items:
+    - ALTER TABLE events_eventdeadline RENAME COLUMN deadline_name TO eventdate_name;
+    - ALTER TABLE events_eventdeadline RENAME COLUMN deadline TO eventdate_date;
+    - ALTER SEQUENCE events_eventdeadline_id_seq RENAME TO events_eventdate_id_seq;
+    - ALTER TABLE events_eventdeadline RENAME TO events_eventdate;
+- change the source code
+    - rename in code eventdealine to eventdate, EventDeadlineManager to EventDateManager, etc.
+- start cronjobs
+- start apache vhost
