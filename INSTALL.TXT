@@ -24,6 +24,10 @@ Installation instructions for Debian based systems
 
     easy_install django-tables
 
+#. Install blist_::
+
+    easy_install blist
+
 #. Install the `proper version of django-reversion`__ for the installed Django version.
 
 __ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
@@ -211,3 +215,4 @@ future. This is necessary for performance and scalability reasons. Add to your c
 
 .. _#6362: http://code.djangoproject.com/ticket/6362
 .. _snippet 656: http://www.djangosnippets.org/snippets/956/
+.. _blist: http://pypi.python.org/pypi/blist/

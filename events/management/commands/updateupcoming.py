@@ -33,10 +33,11 @@ from django.core.management.base import NoArgsCommand
 from gridcalendar.events.models import Event, EventDeadline
 
 class Command( NoArgsCommand ): # {{{1
-    """ management command """
+    """ management command to update :attr:`events.models.Event.upcoming`,
+    which has to be run at the biginning of every new day, i.e. at 00:00 """
     # tests are in events.tests
 
-    help = "Parses mails from settings.IMAP_SERVER"
+    help = "update event.upcoming field"
 
     def handle_noargs( self, **options ): # {{{2
         """ Executes the action. """

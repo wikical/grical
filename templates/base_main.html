@@ -9,7 +9,7 @@
 {% block container %}
 
     <div id="simplified_container">
-        <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
+        <div id="simplified_event_form">
             <form action="" method="post">{% csrf_token %}
                 <fieldset>
                     <legend>{% trans "Submit an event" %}</legend>
@@ -46,6 +46,13 @@
 
     {% include "boxes.html" %}
 
-    {% include "pagination.html" %}
+    <div class="pagination">
+        {% if previous_page > 0 %}
+            <a href="?page={{ previous_page }}">Previous</a> - {{ page }} - <a href="?page={{ next_page }}">Next</a>
+        {% else %}
+            {{ page }} - <a href="?page={{ next_page }}">Next</a>
+        {% endif %}
+    </div>
+    {# {% include "pagination.html" %} #}
 
 {% endblock %}
