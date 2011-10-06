@@ -3,9 +3,10 @@
     - EventDeadline.objects.filter(deadline_name__iexact='end')
 - shut down apache vhost
 - shut down cron jobs
-- check that there is no deadlines with the names 'start' or 'end'
+- check that there is no deadlines with the names 'start', 'end' or 'ongoing'
     - EventDeadline.objects.filter(deadline_name__iexact='start')
     - EventDeadline.objects.filter(deadline_name__iexact='end')
+    - EventDeadline.objects.filter(deadline_name__iexact='ongoing')
 - add a deadline 'start' for each event, and a deadline 'end' if present
     for e in Event.objects.all():
         e.deadlines.create(deadline_name='start', deadline=e.start)
@@ -21,7 +22,30 @@
     - ALTER TABLE events_eventdeadline RENAME COLUMN deadline TO eventdate_date;
     - ALTER SEQUENCE events_eventdeadline_id_seq RENAME TO events_eventdate_id_seq;
     - ALTER TABLE events_eventdeadline RENAME TO events_eventdate;
+- add a column:
+    - ALTER TABLE events_event ADD COLUMN version smallint CHECK ("version" >= 0) NOT NULL DEFAULT 1;
+- table events_eventdate needs some modifications:
+    - ALTER TABLE events_eventdate DROP CONSTRAINT events_eventdeadline_event_id_key;
+    - ALTER TABLE events_eventdate ADD CONSTRAINT events_eventdate_event_name_date UNIQUE (event_id, eventdate_name, eventdate_date);
+    - CREATE index events_eventdate_eventdate_date on events_eventdate (eventdate_date);
 - change the source code
-    - rename in code eventdealine to eventdate, EventDeadlineManager to EventDateManager, etc.
+- celery creates some tables: python manage.py syncdb
+- check start/end consistency::
+
+    es = Event.objects.filter(dates__eventdate_name = 'end')
+    for e in es:
+        if e.start > e.end:
+            print('correct ' + str(e.id))
+
+- Create ongoing dates::
+
+    es = Event.objects.filter(dates__eventdate_name = 'end')
+    for e in es:
+        if e.end + datetime.timedelta(days=1) > e.start:
+            dates = [ e.start + datetime.timedelta(days=x) for x in range(1, (e.end-e.start).days) ]
+            for date in dates:
+                e.dates.create( eventdate_name = 'ongoing', eventdate_date = date )
+
+- remove update upcoming cron job
 - start cronjobs
 - start apache vhost

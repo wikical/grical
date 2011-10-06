@@ -3,6 +3,7 @@
 {% load i18n %}
 {% load tagging_tags %}
 {% load urlsearch %}
+{% load cache %}
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta http-equiv="Content-Language" content="{{ LANGUAGE_CODE }}" />
@@ -169,15 +170,17 @@
             <li> <a href="{% url lastadded_events_rss %}">{% trans "last added RSS feed" %}</a></li>
         </ul>
     </div>
-    <div class="title">{% trans "Tags cloud" %}</div>
-    <div class="info">
-        {% comment %}TODO: generate this is views.py {% endcomment %}
-        {% tag_cloud_for_model events.Event as tags with steps=10 min_count=6 distribution=log %}
-        {% for tag in tags %}
-            <span class="tag_{{ tag.font_size }}"><a href="{% urlsearch tag=tag.name|slugify %}">
-                {{ tag.name }}</a></span>
-        {% endfor %}
-    </div>
+    {% cache 3600 tags_cloud %}
+        <div class="title">{% trans "Tags cloud" %}</div>
+        <div class="info">
+            {% comment %}TODO: generate this is views.py {% endcomment %}
+            {% tag_cloud_for_model events.Event as tags with steps=10 min_count=10 distribution=log %}
+            {% for tag in tags %}
+                <span class="tag_{{ tag.font_size }}"><a href="{% urlsearch tag=tag.name|slugify %}">
+                    {{ tag.name }}</a></span>
+            {% endfor %}
+        </div>
+    {% endcache %}
 </div>
 
 </body>

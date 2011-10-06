@@ -6,7 +6,7 @@
 <h1>{% trans "Delete event" %}</h1>
 <p>
     {% trans "The following event will be deleted:" %}
-    <a href="{{ event.get_absolute_url }}">{{ event.start }} : {{ event.title }}</a>
+    <a href="{{ event.get_absolute_url }}">{{ event.startdate }} : {{ event.title }}</a>
 </p>
 
 <form action="" method="post">{% csrf_token %}

@@ -2,15 +2,15 @@
 {% load humanize %}
 
 <div>
-    {% for event in events.object_list %}
-        {% ifchanged event.upcoming %}
+    {% for eventdate in eventdates %}
+        {% ifchanged eventdate.eventdate_date %}
             {% if forloop.first %}
                 <div class="daybox">
             {% else %}
                 </div>
                 <div class="daybox">
             {% endif %}
-            <h1>{{ event.upcoming|naturalday }}</h1>
+            <h1>{{ eventdate.eventdate_date|naturalday }}</h1>
         {% endifchanged %}
         {% include "event_show_medium.html" %}
         {% if forloop.last %}

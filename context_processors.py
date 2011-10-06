@@ -30,31 +30,39 @@
 from django.contrib.sites.models import Site
 from django.conf import settings
 from django.contrib.auth.models import User
-from gridcalendar.events.models import Event, Group
+from django.core.cache import cache
 
-from events.models import ExtendedUser
+from gridcalendar.events.models import Event, Group
+from gridcalendar.events.models import ExtendedUser
 
 def global_template_vars(request):
     """ Adds variables to all templates. """
-    current_site = Site.objects.get_current()
+    def get_user():
+        if request.user.is_authenticated():
+            return ExtendedUser.objects.get( id = request.user.id )
+        else:
+            return None
+    vars_funcs = {
+            'CURRENT_SITE': lambda: Site.objects.get_current(),
+            'USER':         get_user,
+            'USERS_NR':     lambda: User.objects.count(),
+            'EVENTS_NR':    lambda: Event.objects.count(),
+            'GROUPS_NR':    lambda: Group.objects.count(), }
+            # protocol  (computed below)
+    vars_dic = cache.get_many( vars_funcs.keys() )
+    if not vars_dic:
+        vars_dic = {}
+        # we get the values
+        for key, func in vars_funcs.items():
+            vars_dic[ key ] = func()
+        # we put the values in the cache
+        cache.set_many( vars_dic )
+    # we add protocol
     if request.is_secure():
-        protocol = "https"
+        vars_dic['PROTOCOL'] = "https"
     else:
-        protocol = "http"
-    if request.user.is_authenticated():
-        user = ExtendedUser.objects.get( id = request.user.id )
-    else:
-        user = None
-    users_nr = User.objects.count()
-    events_nr = Event.objects.count()
-    groups_nr = Group.objects.count()
-    return {
-            'PROTOCOL': protocol,
-            'DOMAIN': current_site.domain,
-            'MEDIA_URL': settings.MEDIA_URL,
-            'USER': user,
-            'VERSION': settings.VERSION,
-            'USERS_NR': users_nr,
-            'EVENTS_NR': events_nr,
-            'GROUPS_NR': groups_nr,
-            }
+        vars_dic['PROTOCOL'] = "http"
+    vars_dic['VERSION'] = settings.VERSION
+    vars_dic['MEDIA_URL'] = settings.MEDIA_URL
+    # return
+    return vars_dic

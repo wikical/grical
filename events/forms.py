@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4:shiftwidth=4:textwidth=79:fdm=marker
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # GPL {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -29,6 +29,7 @@ import datetime
 import urllib2
 import urlparse
 
+from django.db import models
 from django.contrib.gis.geos import Point
 from django.core import validators
 from django.forms import ( CharField, IntegerField, HiddenInput, RadioSelect,
@@ -117,9 +118,13 @@ class URLFieldExtended(CharField): #{{{1
             verify_exists=verify_exists,
             validator_user_agent=validator_user_agent ) )
 
+    def to_python(self, value):
+        value = value.strip()
+        return super( URLFieldExtended, self ).to_python( value )
+
 class DatesTimesField(Field): # {{{1
     """ processes one or two dates and optionally one or two times, returning a
-    dictionary with possible keys: start, end, starttime, endtime
+    dictionary with possible keys: startdate, enddate, starttime, endtime
 
     Valid formats:
 
@@ -159,7 +164,7 @@ class DatesTimesField(Field): # {{{1
     >>> d = dt.to_python('25 October, 2006')
     """
     def to_python(self, value):
-        """ returns a dictionary with four values: start, end,
+        """ returns a dictionary with four values: startdate, enddate,
         starttime, endtime """
         re_d = \
             re.compile( r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s*$', re.UNICODE )
@@ -190,24 +195,24 @@ class DatesTimesField(Field): # {{{1
         try:
             matcher = re_d.match( value )
             if matcher:
-                return {'start': _date(matcher.group(1)),}
+                return {'startdate': _date(matcher.group(1)),}
             matcher = re_d_d.match( value )
             if matcher:
-                return {'start': _date(matcher.group(1)),
-                        'end': _date(matcher.group(2))}
+                return {'startdate': _date(matcher.group(1)),
+                        'enddate': _date(matcher.group(2))}
             matcher = re_d_t.match(value)
             if matcher:
-                return {'start': _date(matcher.group(1)),
+                return {'startdate': _date(matcher.group(1)),
                         'starttime': _time(matcher.group(2))}
             matcher = re_d_t_d_t.match(value)
             if matcher:
-                return {'start': _date(matcher.group(1)),
+                return {'startdate': _date(matcher.group(1)),
                         'starttime': _time(matcher.group(2)),
-                        'end': _date(matcher.group(3)),
+                        'enddate': _date(matcher.group(3)),
                         'endtime': _time(matcher.group(4))}
             matcher = re_d_t_t.match(value)
             if matcher:
-                return {'start': _date(matcher.group(1)),
+                return {'startdate': _date(matcher.group(1)),
                         'starttime': _time(matcher.group(2)),
                         'endtime': _time(matcher.group(3))}
         except (TypeError, ValueError), e:
@@ -217,12 +222,13 @@ class DatesTimesField(Field): # {{{1
             # message is translated
             raise e
         # No matches. We try now DateField
-        return { 'start': DateField().clean( value ) }
+        return { 'startdate': DateField().clean( value ) }
 
     def validate(self, value):
-        """ checks that dates and times are in order, i.e. start before end """
-        if value.has_key('end'):
-            if value['start'] > value['end']:
+        """ checks that dates and times are in order, i.e. startdate before
+        enddate """
+        if value.has_key('enddate'):
+            if value['startdate'] > value['enddate']:
                 raise ValidationError( _('end date is before start date') )
         if value.has_key('endtime'):
             if value['starttime'] > value['endtime']:
@@ -288,11 +294,17 @@ class FilterForm(ModelForm): # {{{1
 class EventForm(ModelForm): # {{{1
     """ ModelForm for all user editable fields of an Event, a custom coordinate
     field and fields for all days of two years from now """
+    startdate = DateField()
+    enddate = DateField( required = False )
     coordinates = CoordinatesField( max_length = 26, required = False )
-    # TODO: put this in the right position within the form, see
-    # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
+        # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
+        self.fields.keyOrder = ['acronym', 'title', 'startdate', 'starttime',
+            'enddate', 'endtime', 'tags', 'country', 'city', 'postcode',
+            'address', 'coordinates', 'description']
+        self.fields['startdate'].label = _(u'Start date')
+        self.fields['enddate'].label = _(u'End date')
         if kwargs.has_key('instance'):
             # not a new event
             # We use a custom field called 'coordinates' for
@@ -306,13 +318,20 @@ class EventForm(ModelForm): # {{{1
                         str( instance.coordinates.x )
             if coordinates_value:
                 self.fields['coordinates'].initial = coordinates_value
+            # we also populate start and end dates:
+            self.fields['startdate'].initial = instance.startdate
+            self.fields['enddate'].initial = instance.enddate
         self.fields['starttime'].widget.format = '%H:%M'
         self.fields['endtime'].widget.format = '%H:%M'
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         exclude = ('coordinates',) # excludes the model field 'coordinates'
     def clean( self ):
-        """ it adds the value of coordinates to the Event instance """
+        """ it adds the value of coordinates to the Event instance, and
+        checks that there is no other event with the same name and start
+        date """
+        # see http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
+        # coordinates
         self.cleaned_data = super(EventForm, self).clean()
         if self.cleaned_data.has_key('coordinates'):
             coordinates = self.cleaned_data['coordinates']
@@ -324,26 +343,52 @@ class EventForm(ModelForm): # {{{1
                 self.instance.coordinates = None
         else:
             self.instance.coordinates = None
+        # checks uniqueness of title and startdate
+        title = self.cleaned_data.get("title", None)
+        startdate = self.cleaned_data.get("startdate", None)
+        if title and startdate:
+            if Event.objects.filter(
+                    title = title,
+                    dates__eventdate_name = 'start',
+                    dates__eventdate_date = startdate ).exists():
+                raise same_title_day_validation_error
         return self.cleaned_data
+
+same_title_day_validation_error = ValidationError(
+        _('There is already an event with the same title and start date ' \
+            '(for events taking place in different locations at the same ' \
+            'day, create different events with a differentiated toponym in ' \
+            ' the title).' ) )
+
+def get_field_attr( field_name, field_attr ):
+    """ returns the value of the attribute ``field_attr`` of the Event model
+    field ``field_name`` """
+    # from
+    # http://stackoverflow.com/questions/2384436/how-to-introspect-django-model-fields
+    field = models.get_model('events', 'Event')._meta.get_field_by_name(
+            field_name )[0]
+    return getattr( field, field_attr )
 
 class SimplifiedEventForm( ModelForm ): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
     """
-    where = CharField( max_length = 100, required = False ) # TODO: take it from the model
+    where = CharField(
+            max_length = get_field_attr( 'address', 'max_length'),
+            required = False )
     when = DatesTimesField()
     web = URLFieldExtended(verify_exists=True)
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'What')
-        self.fields['title'].widget = Textarea()
-        self.fields['tags'].widget = Textarea()
+        #self.fields['title'].widget = Textarea()
         self.fields['where'].label = _(u'Where')
-        self.fields['where'].help_text = \
-                _(u'Example: Malmöer Str. 6, Berlin, DE')
         self.fields['when'].label = _(u'When')
-        self.fields['when'].help_text = \
-                _(u"Examples: '25 Oct 2006', '2010-02-27', " \
-                "'2010-02-27 11:00', '2010-02-27 11:00-13:00'")
+        self.fields['tags'].label = _(u'Tags or Topics')
+        #self.fields['where'].help_text = \
+        #        _(u'Example: Malmöer Str. 6, Berlin, DE')
+        #self.fields['when'].help_text = \
+        #        _(u"Examples: '25 Oct 2006', '2010-02-27', " \
+        #        "'2010-02-27 11:00', '2010-02-27 11:00-13:00'")
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags',)
@@ -355,13 +400,12 @@ class SimplifiedEventForm( ModelForm ): # {{{1
         title = self.cleaned_data.get("title", None)# neccesary field, no checks
         when = self.cleaned_data.get("when", None)
         if title and when:
-            start = when['start']   # neccesary field, no checks
-            if Event.objects.filter( title = title, start = start ).exists():
-                raise ValidationError( _('There is already an event with the ' \
-                        'same title and start date ' \
-                        '(for events taking place in different locations ' \
-                        'at the same day, create different events with ' \
-                        'a differentiated toponym in the title).' ) )
+            startdate = when['startdate']   # neccesary field, no checks
+            if Event.objects.filter(
+                    title = title,
+                    dates__eventdate_name = 'start',
+                    dates__eventdate_date = startdate ).exists():
+                raise same_title_day_validation_error
         return self.cleaned_data
 
 class AlsoRecurrencesForm( Form ):

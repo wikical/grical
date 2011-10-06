@@ -381,7 +381,11 @@ def search_address_osm( data ): # {{{1
     response = conn.getresponse()
     response_text = response.read()
     # FIXME: use a thread
-    doc = fromstring( response_text )
+    try:
+        # can throw a ExpatError
+        doc = fromstring( response_text )
+    except ExpatError:
+        return None
     # a dictionary with a display_name as unicode keys and values as
     # dictionaries of field names and values
     result = dict()
@@ -428,7 +432,8 @@ def validate_tags_chars( value ):
     and hyphen """
     if re.search("[^ \-\w]|_", value, re.UNICODE):
         raise ValidationError(_(u"Punctuation marks are not allowed, " \
-                "only letters and hyphens (-)"))
+                "tags are separated by spaces and can contain only " \
+                "letters and hyphens (-)"))
 
 def validate_year( value ):
     """ it validates ``value.year`` newer than 1900 and less than 2 years from

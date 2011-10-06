@@ -1,5 +1,6 @@
 {% load i18n %}
 
+{% comment %}
 <div class="pagination">
     {% if events_table.page.has_previous %}
         <span class="step_left">
@@ -17,6 +18,7 @@
         </span>
     {% endif %}
 </div>
+{% endcomment %}
 
 <table class="event_table">
     <colgroup> {# see http://www.w3.org/TR/html4/struct/tables.html#h-11.2.4 #}
@@ -27,19 +29,22 @@
     <tr>
         {% for column in events_table.columns %}
             <th class="header_for_{{ column.name }}">
-                <a href="?sort={{ column.name_toggled }}&query={{ query }}&view=table">
-                   {{ column }}
-                   {# TODO #}
-                   {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
-                   {# {% if column.is_ordered_reverse %}<img src="/media/img/down.gif" />{% endif %} #}
-                </a>
+                {% if column.sortable %}
+                     <a href="?sort={{ column.name_toggled }}&query={{ query|urlencode:"" }}&view=table"> {{ column }} </a>
+                     {# TODO #}
+                     {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
+                     {# {% if column.is_ordered_reverse %}<img src="/media/img/down.gif" />{% endif %} #}
+                 {% else %}
+                    {{ column }}
+                 {% endif %}
             </th>
         {% endfor %}
     </tr>
-    {% for event in events_table.rows.page %}
+    {% for event in events_table.rows %}
         <tr class="{% cycle 'odd' 'even' %}">
             <td>{{ event.upcoming }}</td>
             <td>{{ event.start }}</td>
+            <td>{{ event.end }}</td>
             <td>{% if event.city %}{{ event.city }}{% endif %}</td>
             <td>{% if event.country %}{{ event.country }}{% endif %}</td>
             <td><a href="{% url event_show_all event.id %}">{{ event.title }}</a></td>

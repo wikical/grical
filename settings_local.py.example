@@ -86,6 +86,8 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+USERNAMES_TO_MAIL_WHEN_DEBUGGING = ('ivan',)
+
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to
 REPLY_TO = 'None'

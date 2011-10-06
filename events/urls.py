@@ -184,7 +184,8 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
      url(r'^r/lastadded/$',
          LastAddedEventsFeed(), name='lastadded_events_rss'), )
 
+# TODO: stream it
 # ^o output urls {{{1
-urlpatterns += patterns('',                     # pylint: disable-msg=C0103
-     url(r'^o/all/text/$',
-         views.all_events_text, name='all_events_text'), )
+# urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+#      url(r'^o/all/text/$',
+#          views.all_events_text, name='all_events_text'), )
