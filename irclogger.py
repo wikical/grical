@@ -40,10 +40,10 @@ setup_environ( settings )
 # code {{{1
 
 # creates the pipe and set appropiate permissions
-if not os.path.exists( settings.PIPE_TO_LOG_TO ):
-    os.mkfifo( settings.PIPE_TO_LOG_TO )
-os.chmod( settings.PIPE_TO_LOG_TO, 0660 )
-os.chown( settings.PIPE_TO_LOG_TO, os.geteuid(), settings.PIPE_TO_LOG_TO_GID )
+if not os.path.exists( settings.LOG_PIPE ):
+    os.mkfifo( settings.LOG_PIPE )
+os.chmod( settings.LOG_PIPE, 0660 )
+os.chown( settings.LOG_PIPE, os.geteuid(), settings.LOG_PIPE_GID )
 # Create an IRC object
 # irclib.DEBUG = settings.DEBUG
 irclib.DEBUG = True
@@ -57,7 +57,7 @@ server.join( settings.IRC_CHANNEL )
 # Jump into an infinite loop in a separate thread
 thread.start_new_thread( irc.process_forever, tuple() )
 # loop reading pipe
-with open( settings.PIPE_TO_LOG_TO, 'r' ) as pipe:
+with open( settings.LOG_PIPE, 'r' ) as pipe:
     while True:
         for line in pipe.readlines():
             if line and line.strip():

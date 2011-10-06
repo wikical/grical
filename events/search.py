@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker ft=python
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -34,8 +34,9 @@ from django.contrib.gis.geos import Point, Polygon
 
 from tagging.models import Tag, TaggedItem
 
-from gridcalendar.events.utils import search_name
 from gridcalendar import settings
+from gridcalendar.events.models import Event, EventDate
+from gridcalendar.events.utils import search_name
 
 # regexes {{{1
 DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', re.UNICODE ) #{{{2
@@ -93,14 +94,23 @@ def location_restriction( queryset, query ): #{{{1
             # name given, which can have a city, a comma and a country
             city, country = CITY_COUNTRY_RE.findall( loc[11] )[0]
             if not country:
-                queryset = queryset.filter(
-                    Q( city__iexact = city ) | Q(
-                        country__iexact = city ) )
-                    # TODO: use also translations of locations and
-                    # alternative names
+                if queryset.model == Event:
+                    queryset = queryset.filter(
+                        Q( city__iexact = city ) | Q(
+                            country__iexact = city ) )
+                        # TODO: use also translations of locations and
+                        # alternative names
+                else:
+                    queryset = queryset.filter(
+                        Q( event__city__iexact = city ) | Q(
+                            event__country__iexact = city ) )
             else:
-                queryset = queryset.filter(
+                if queryset.model == Event:
+                    queryset = queryset.filter(
                        city__iexact = city, country__iexact = country )
+                else:
+                    queryset = queryset.filter(
+                       event__city__iexact = city, country__iexact = country )
         elif loc[8]:
             point = search_name( loc[8] )
             if loc[10]:
@@ -108,8 +118,15 @@ def location_restriction( queryset, query ): #{{{1
             else:
                 distance = { settings.DISTANCE_UNIT_DEFAULT: loc[9],}
             # example: ...filter(coordinates__distance_lte=(pnt, D(km=7)))
-            queryset = queryset.filter( coordinates__distance_lte =
-                    ( point, D( **distance ) ) )
+            if queryset.model == Event:
+                #assert False, unicode(point) + " " + unicode(distance)
+                queryset = queryset.filter(
+                        coordinates__distance_lte =
+                            ( point, D( **distance ) ) )
+            else:
+                queryset = queryset.filter(
+                        event__coordinates__distance_lte =
+                            ( point, D( **distance ) ) )
         elif loc[4]:
             # coordinates given
             point = Point( float(loc[5]), float(loc[4]) )
@@ -117,8 +134,14 @@ def location_restriction( queryset, query ): #{{{1
                 distance = {loc[7]: loc[6],}
             else:
                 distance = { settings.DISTANCE_UNIT_DEFAULT: loc[6],}
-            queryset = queryset.filter( coordinates__distance_lte =
-                    ( point, D( **distance ) ) )
+            if queryset.model == Event:
+                queryset = queryset.filter(
+                        coordinates__distance_lte =
+                            ( point, D( **distance ) ) )
+            else:
+                queryset = queryset.filter(
+                        event__coordinates__distance_lte =
+                            ( point, D( **distance ) ) )
         elif loc[0]:
             # We have 4 floats: longitude_west [0], longitude_east [1],
             # latitude_north [2], latitude_south [3]
@@ -128,7 +151,12 @@ def location_restriction( queryset, query ): #{{{1
             lat2 = float( loc[2] )
             rectangle = Polygon( ((lng1, lat1), (lng2,lat1),
                 (lng2,lat2), (lng1,lat2), (lng1, lat1)) )
-            queryset = queryset.filter( coordinates__within = rectangle )
+            if queryset.model == Event:
+                queryset = queryset.filter(
+                        coordinates__within = rectangle )
+            else:
+                queryset = queryset.filter(
+                        event__coordinates__within = rectangle )
         else:
             pass
             # TODO: log error
@@ -143,17 +171,20 @@ def dates_restriction( queryset, query, broad ): #{{{1
         sorted_dates = sorted( dates )
         date1 = sorted_dates[0] # first date
         date2 = sorted_dates[-1] # last date
-        queryset = queryset.filter(
-               Q( start__range = (date1, date2) )  |
-               Q( end__range = (date1, date2) ) |
-               Q(deadlines__deadline__range = (date1, date2) ) |
-               Q( start__lt = date1, end__gt = date2 ) ) # range in-between
+        if queryset.model == Event:
+            queryset = queryset.filter(
+                    dates__eventdate_date__range = (date1, date2) )
+        else:
+            queryset = queryset.filter(
+                    eventdate_date__range = (date1, date2) )
         # remove all dates (yyyy-mm-dd) from the query
         query = DATE_REGEX.sub("", query)
-        queryset = queryset.distinct() # needed because deadlines query
     elif not broad:
         today = datetime.date.today()
-        queryset = queryset.filter( upcoming__gte = today )
+        if queryset.model == Event:
+            queryset = queryset.filter( dates__eventdate_date__gte = today )
+        else:
+            queryset = queryset.filter( eventdate_date__gte = today )
     return queryset, query
 
 def words_restriction( queryset, words, broad, search_in_tags ): #{{{1
@@ -166,21 +197,40 @@ def words_restriction( queryset, words, broad, search_in_tags ): #{{{1
         # NOTE: city needs to be icontains to find e.g. 'washington' in
         # 'Washington D.C.'
         # TODO: search toponyms in other languages
-        q_word_filters = \
-                Q(title__icontains = word) | \
-                Q(city__icontains = word) | \
-                Q(country__iexact = word) | \
-                Q(acronym__icontains = word)
+        if queryset.model == Event:
+            q_word_filters = \
+                    Q(title__icontains = word) | \
+                    Q(city__icontains = word) | \
+                    Q(country__iexact = word) | \
+                    Q(acronym__icontains = word)
+        else:
+            q_word_filters = \
+                    Q(event__title__icontains = word) | \
+                    Q(event__city__icontains = word) | \
+                    Q(event__country__iexact = word) | \
+                    Q(event__acronym__icontains = word)
         if search_in_tags:
-            q_word_filters |= Q(tags__icontains = word)
+            if queryset.model == Event:
+                q_word_filters |= Q(tags__icontains = word)
+            else:
+                q_word_filters |= Q(event__tags__icontains = word)
         if broad:
-            q_word_filters |= \
-                    Q( address__icontains = word ) | \
-                    Q( description__icontains = word ) | \
-                    Q( urls__url_name__icontains = word ) | \
-                    Q( urls__url__icontains = word ) | \
-                    Q( deadlines__deadline_name__icontains = word ) | \
-                    Q( sessions__session_name__icontains = word )
+            if queryset.model == Event:
+                q_word_filters |= \
+                        Q( address__icontains = word ) | \
+                        Q( description__icontains = word ) | \
+                        Q( urls__url_name__icontains = word ) | \
+                        Q( urls__url__icontains = word ) | \
+                        Q( dates__eventdate_name__icontains = word ) | \
+                        Q( sessions__session_name__icontains = word )
+            else:
+                q_word_filters |= \
+                        Q( event__address__icontains = word ) | \
+                        Q( event__description__icontains = word ) | \
+                        Q( event__urls__url_name__icontains = word ) | \
+                        Q( event__urls__url__icontains = word ) | \
+                        Q( event__dates__eventdate_name__icontains = word ) | \
+                        Q( event__sessions__session_name__icontains = word )
         if not q_filters:
             q_filters = q_word_filters
         else:
@@ -190,12 +240,17 @@ def words_restriction( queryset, words, broad, search_in_tags ): #{{{1
 def tags_restriction( queryset, query ): #{{{1
     tags = TAG_REGEX.findall(query)
     if tags:
-        queryset = TaggedItem.objects.get_intersection_by_model(
-                queryset, tags )
+        if queryset.model == Event:
+            queryset = TaggedItem.objects.get_intersection_by_model(
+                    queryset, tags )
+        else:
+            # TODO: inefficient, improve:
+            for tag in tags:
+                queryset &= queryset.filter( event__tags__icontains = tag )
         query = TAG_REGEX.sub("", query)
     return queryset, query
 
-def search_events( query, related = True ): #{{{1
+def search_events( query, related = True, model = Event ): #{{{1
     # doc {{{2
     """ returns a sorted (by :attr:`models.Event.upcoming`) list of
     distinct events matching ``query`` adding related events if
@@ -226,12 +281,11 @@ def search_events( query, related = True ): #{{{1
     ``=``).
     """
     # body {{{2
-    # TODO: use .select_related in combination with .only to improve
     # TODO: add full indexing text on Event.description and comments. See
     # http://wiki.postgresql.org/wiki/Full_Text_Indexing_with_PostgreSQL
     # performance.
-    from gridcalendar.events.models import Event
-    result = Event.objects.none()
+    assert ( model == Event ) | ( model == EventDate )
+    result = model.objects.none()
     if not query:
         return result
     terms = query.split(' | ')
@@ -252,16 +306,29 @@ def search_events( query, related = True ): #{{{1
             query = broad_regex.sub("", query)
         else:
             broad = False
-        queryset = Event.objects.all()
+        if model == EventDate:
+            queryset = EventDate.objects.select_related( depth=1 ).defer(
+                'event__description', 'event__coordinates',
+                'event__creation_time', 'event__modification_time',
+                'event__postcode', 'event__address')
+        else:
+            queryset = Event.objects.all()
         # single events
         for event_id in events_match:
-            queryset = queryset.filter( pk = event_id )
+            if model == Event:
+                queryset = queryset.filter( pk = event_id )
+            else: # model is EventDate
+                queryset = queryset.filter( event_id = event_id )
             broad = True # '=' show past events too
         query = EVENT_REGEX.sub("", query)
         # groups
         for group_name in GROUP_REGEX.findall( query ):
-            queryset = queryset.filter(
-                    calendar__group__name__iexact = group_name)
+            if model == Event:
+                queryset = queryset.filter(
+                        calendar__group__name__iexact = group_name)
+            else: # model is EventDate
+                queryset = queryset.filter(
+                        event__calendar__group__name__iexact = group_name)
         query = GROUP_REGEX.sub("", query)
         # locations
         queryset, query = location_restriction( queryset, query )
@@ -278,7 +345,8 @@ def search_events( query, related = True ): #{{{1
                 [ word for word in words if word and word[0] != '+' ] )
         queryset_with_words_restriction = words_restriction(
                 queryset, list( words_set ), broad, True )
-        if related and words_set:
+        if related and words_set and model == Event:
+            # FIXME: make it also work for: model = EventDate
             related_tags = set()
             for tag in list( words_set ):
                 try:
@@ -299,7 +367,7 @@ def search_events( query, related = True ): #{{{1
                 len(word) > 1 ] )
         result = result | words_restriction(
                 partial_result, words_strict, False, False )
-    return result.order_by('upcoming').distinct()
+    return result
 
 
 # better old related algorithm but too slow {{{1

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Django configuration file """
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
 #
@@ -21,13 +20,17 @@
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+""" Django configuration file """
+
+# imports {{{1
 import os
+import djcelery
 
 # See how settings_local.py should look like at the end of this file
 try:
     from settings_local import * # pylint: disable-msg=W0401,W0614
 except ImportError:
-    pass # FIXME: check that the whole thing is runable without settings_local
+    pass # TODO: check that the whole thing is runable without settings_local
 
 try:
     DEBUG
@@ -35,11 +38,17 @@ except NameError:
     DEBUG = False
 
 # =============================================================================
-# specific GridCalendar settings
+# specific GridCalendar settings {{{1
 # =============================================================================
 
+# limits for number of events/dates
+DEFAULT_LIMIT = 50
+VIEWS_MAX_LIMITS = {
+    'map': 10,
+    'calendars': 100,
+}
 # for RSS feeds
-FEED_SIZE = 50
+FEED_SIZE = DEFAULT_LIMIT
 
 # dates thereafter from now are not allowed
 MAX_DAYS_IN_FUTURE = 1095 # 3 years: 365 * 3
@@ -58,26 +67,26 @@ MAX_EVENTS_ON_ROOT_PAGE = 20
 PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
 
 # =============================================================================
-# GeoIP settings, see
-# http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
+# GeoIP settings {{{1
 # =============================================================================
+# see # http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
 
 GEOIP_PATH = '/usr/share/GeoIP'
 
 # =============================================================================
-# test settings
+# test settings {{{1
 # =============================================================================
 
 TEST_CHARSET = 'utf-8'
 
 # =============================================================================
-# charset settings
+# charset settings {{{1
 # =============================================================================
 
 DEFAULT_CHARSET = 'utf-8'
 
 # =============================================================================
-# auth settings
+# auth settings {{{1
 # =============================================================================
 
 LOGIN_REDIRECT_URL = '/'
@@ -85,7 +94,7 @@ LOGIN_URL = '/a/accounts/login/'
 LOGOUT_URL = '/a/accounts/logout/'
 
 # =============================================================================
-# localization settings
+# localization settings {{{1
 # =============================================================================
 
 try:
@@ -106,32 +115,32 @@ except NameError:
     DATE_FORMAT = 'Y-m-d D'
 
 # =============================================================================
-# for the tagging application
+# for the tagging application {{{1
 # =============================================================================
 # see http://django-tagging.googlecode.com/svn/trunk/docs/overview.txt
 
 FORCE_LOWERCASE_TAGS = True
 
 # =============================================================================
-# for the registration application
+# for the registration application {{{1
 # =============================================================================
 
 ACCOUNT_ACTIVATION_DAYS = 10
 
 # =============================================================================
-# reporting
+# reporting {{{1
 # =============================================================================
 
 # see http://docs.djangoproject.com/en/dev/howto/error-reporting/
 SEND_BROKEN_LINK_EMAILS = True
 
 # =============================================================================
-# application and middleware settings
+# application and middleware settings {{{1
 # =============================================================================
 
 # at the end additional applications are conditionaly added
 INSTALLED_APPS = (
-    'gridcalendar.events',
+    'events',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.messages',
@@ -148,6 +157,7 @@ INSTALLED_APPS = (
     'reversion',
     'django.contrib.markup', # used for rendering ReStructuredText
     'contact_form',
+    'djcelery',
  )
 if DEBUG:
     INSTALLED_APPS = ( 'debug_toolbar', ) + INSTALLED_APPS
@@ -246,7 +256,42 @@ else:
     )
 
 # =============================================================================
-# i18n and url settings
+# CACHE {{{1
+# =============================================================================
+
+CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': '127.0.0.1:11211',
+            'TIMEOUT': 300, # 5 minutes
+        } #TODO: use also the hot spare server
+}
+if DEBUG:
+    CACHES['default']['KEY_PREFIX'] = 'debug'
+else:
+    CACHES['default']['KEY_PREFIX'] = 'production'
+
+# =============================================================================
+# celery
+# =============================================================================
+
+# http://django-celery.readthedocs.org/en/latest/getting-started/first-steps-with-django.html
+# TODO: create a proper user for production
+djcelery.setup_loader()
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "guest"
+BROKER_PASSWORD = "guest"
+BROKER_VHOST = "/"
+# TODO: documentation says that a Django DB can be used instead of RabbitMQ as
+# message-broker[1], but although tables are created for django-celery after
+# syncdb command, the connection-error [2] is fixed after installing RabiitMQ.
+# Ask in the ml or irc
+# [1] http://django-celery.readthedocs.org/en/latest/introduction.html
+# [2] http://stackoverflow.com/questions/7483728/django-celery-consumer-connection-error-111-when-running-python-manage-py-cel
+
+# =============================================================================
+# i18n and url settings {{{1
 # =============================================================================
 
 # see http://docs.djangoproject.com/en/1.2/ref/settings/#append-slash
@@ -320,22 +365,23 @@ try:
 except NameError:
     REPLY_TO = None
 
-# field names and synonyms/translations
+# field names and synonyms/translations {{{1
 SYNONYMS = (
     ( u'title', u'title' ),             # title `
     ( u'`', u'title' ),
     ( u'ti', u'title' ),
     ( u'titl', u'title' ),
-    ( u'start', u'start' ),             # start [
-    ( u'[', u'start' ),
-    ( u'st', u'start' ),
-    ( u'starts', u'start' ),
-    ( u'date', u'start' ),
-    ( u'da', u'start' ),
-    ( u'start date', u'start' ),
-    ( u'start-date', u'start' ),
-    ( u'start_date', u'start' ),
-    ( u'sd', u'start' ),
+    ( u'start', u'startdate' ),             # startdate [
+    ( u'startdate', u'startdate' ),
+    ( u'[', u'startdate' ),
+    ( u'st', u'startdate' ),
+    ( u'starts', u'startdate' ),
+    ( u'date', u'startdate' ),
+    ( u'da', u'startdate' ),
+    ( u'start date', u'startdate' ),
+    ( u'start-date', u'startdate' ),
+    ( u'start_date', u'startdate' ),
+    ( u'sd', u'startdate' ),
     ( u'starttime', u'starttime' ),     # starttime {
     ( u'{', u'starttime' ),
     ( u'time', u'starttime' ),
@@ -354,19 +400,19 @@ SYNONYMS = (
     ( u'subject', u'tags' ),
     ( u'su', u'tags' ),
     ( u'subj', u'tags' ),
-    ( u'end', u'end' ),                 # end ]
-    ( u']', u'end' ),
-    ( u'en', u'end' ),
-    ( u'ends', u'end' ),
-    ( u'finish', u'end' ),
-    ( u'finishes', u'end' ),
-    ( u'fi', u'end' ),
-    ( u'enddate', u'end' ),
-    ( u'end date', u'end' ),
-    ( u'end-date', u'end' ),
-    ( u'end_date', u'end' ),
-    ( u'ed', u'end' ),
-    ( u'endd', u'end' ),
+    ( u'end', u'enddate' ),                 # enddate ]
+    ( u']', u'enddate' ),
+    ( u'en', u'enddate' ),
+    ( u'ends', u'enddate' ),
+    ( u'finish', u'enddate' ),
+    ( u'finishes', u'enddate' ),
+    ( u'fi', u'enddate' ),
+    ( u'enddate', u'enddate' ),
+    ( u'end date', u'enddate' ),
+    ( u'end-date', u'enddate' ),
+    ( u'end_date', u'enddate' ),
+    ( u'ed', u'enddate' ),
+    ( u'endd', u'enddate' ),
     ( u'acronym', u'acronym' ),         # acronym ^
     ( u'^', u'acronym' ),
     ( u'ac', u'acronym' ),
@@ -417,21 +463,23 @@ SYNONYMS = (
     ( u'web', u'urls' ),
     ( u'webs', u'urls' ),
     ( u'we', u'urls' ),
-    ( u'deadlines', u'deadlines' ),     # deadlines ; (*)
-    ( u';', u'deadlines' ),
-    ( u'deadline', u'deadlines' ),
-    ( u'dl', u'deadlines' ),
+    ( u'dates', u'dates' ),             # dates ; (*)
+    ( u'deadlines', u'dates' ),
+    ( u';', u'dates' ),
+    ( u'deadline', u'dates' ),
+    ( u'dl', u'dates' ),
+    ( u'ds', u'dates' ),
     ( u'sessions', u'sessions' ),       # sessions ? (*),
     ( u'?', u'sessions' ),
     ( u'se', u'sessions' ),
     ( u'session', u'sessions' ),
-    ( u'recurring', u'recurring' ),     # recurring : (*),
-    ( u':', u'recurring' ),
-    ( u'clone', u'recurring' ),
-    ( u'clones', u'recurring' ),
-    ( u'dates', u'recurring' ),
-    ( u'recurrings', u'recurring' ),
-    ( u'repetition', u'recurring' ),
-    ( u'repetitions', u'recurring' ),
+    ( u'recurrences', u'recurrences' ),     # recurrences : (*),
+    ( u':', u'recurrences' ),
+    ( u'recurring', u'recurrences' ),
+    ( u'recurrings', u'recurrences' ),
+    ( u'clone', u'recurrences' ),
+    ( u'clones', u'recurrences' ),
+    ( u'repetition', u'recurrences' ),
+    ( u'repetitions', u'recurrences' ),
 )
 # (*) can have multi-lines and are not simple text fields

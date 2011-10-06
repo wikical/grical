@@ -75,9 +75,8 @@ class UrlSearchNode( template.Node ):
             kwargs[ smart_str(k, 'ascii') ] = real_value
         if not kwargs.has_key('query'):
             kwargs['query'] = ''
-        if kwargs.has_key('tag'):
-            if kwargs['tag']:
-                kwargs['query'] += ' #' + unicode( kwargs['tag'] )
+        if kwargs.get('tag', False):
+            kwargs['query'] += ' #' + unicode( kwargs['tag'] )
             del kwargs['tag']
         if kwargs.has_key('city'):
             if kwargs['city']:
@@ -85,19 +84,20 @@ class UrlSearchNode( template.Node ):
                     if kwargs['country']:
                         kwargs['query'] += \
                                 ' @' + kwargs['city'] + ',' + kwargs['country']
+                    else:
+                        kwargs['query'] += ' @' + kwargs['city']
                     del kwargs['country']
                 else:
                     kwargs['query'] += ' @' + kwargs['city']
             del kwargs['city']
-        else:
-            if kwargs.has_key('country'):
-                if kwargs['country']:
-                    kwargs['query'] += ' @' + kwargs['country']
-                del kwargs['country']
+        if kwargs.has_key('country'):
+            if kwargs['country']:
+                kwargs['query'] += ' @' + kwargs['country']
+            del kwargs['country']
         # kwargs['query'] = enc( kwargs['query'].strip() )
         kwargs['query'] = kwargs['query'].strip()
         url = reverse( 'search' ) + '?' + \
-                urlencode( kwargs).replace('&','&amp;')
+                urlencode( kwargs ).replace('&','&amp;')
         if self.asvar:
             context[self.asvar] = url
             return ''

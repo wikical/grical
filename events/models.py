@@ -28,7 +28,6 @@ import random
 import re
 from re import UNICODE
 import hashlib
-import threading
 import datetime
 from smtplib import SMTPConnectError
 from itertools import chain
@@ -50,10 +49,12 @@ from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.db import transaction
+from django.db.models import Min
 from django.db.models.signals import \
         pre_save, post_save, pre_delete, post_delete
 from django.forms import DateField
 from django.template.loader import render_to_string
+from django.utils import translation
 from django.utils.encoding import smart_str, smart_unicode
 from django.utils.translation import ugettext_lazy as _
 # FIXME from gridcalendar.events.decorators import autoconnect
@@ -66,7 +67,8 @@ from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from gridcalendar.events.utils import (
         validate_year, search_name, text_diff, validate_tags_chars )
-from gridcalendar.events.search import search_events
+from gridcalendar.events.tasks import (
+        log_using_celery, notify_users_when_wanted )
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -365,25 +367,18 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     modification_time = models.DateTimeField( _( u'Modification time' ),
             editable = False, auto_now = True )
     """Time stamp for event modification""" # pyling: disable-msg=W0105
+    version = models.PositiveSmallIntegerField(
+            _('version'), editable = False, default = 1 )
     acronym = models.CharField( _( u'Acronym' ), max_length = 20, blank = True,
             null = True, help_text = _( u'Example: 26C3' ) )
-    title = models.CharField( _( u'Title' ), max_length = 200, blank = False,
-            help_text = _( u'Example: Demonstration against software patents' ) )
+    title = models.CharField( _( u'Title' ), max_length = 200, blank = False )
     starttime = models.TimeField( 
             _( u'Start time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
     endtime = models.TimeField( 
             _( u'End time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
-    #upcoming = models.DateField(
-    #        _( u'Upcoming date, or start if all in the past' ),
-    #        editable = False, db_index = True )
-    tags = TagField(
-            _( u'Tags' ), blank = True, null = True,
-            help_text = 
-                _( "Only letters, digits and hyphens (-) " \
-                "are allowed. Separated with spaces. Example: " \
-                "demonstration software-patents" ),
+    tags = TagField( _( u'Tags' ), blank = True, null = True,
             validators = [validate_tags_chars] )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
             max_length = 2, choices = COUNTRIES )
@@ -405,6 +400,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 'ReStructuredText</a> syntax. Events can be referenced with' \
                 ' for instance :e:`123`' ) )
 
+    objects = models.GeoManager() # {{{2
+
     # convenient properties {{{2
 
     # latitude, longitude {{{3
@@ -425,54 +422,77 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def _set_longitude(self, value): self.coordinates.x = value
     longitude = property(_get_longitude, _set_longitude)
 
-    # start, end {{{3
-    def _get_start(self):
+    # startdate, enddate {{{3
+    # NOTE: we use (and create if needed) instance properties as a kind of
+    # cache, otherwise e.g. sorting a list of events by startdate or enddate
+    # would be very expensive
+    def _get_startdate(self):
+        if hasattr(self, 'startdate_cache') and self.startdate_cache:
+            return self.startdate_cache
         try:
             eventdate = self.dates.get(eventdate_name='start')
         except EventDate.DoesNotExist:
             return None
-        return eventdate.eventdate_date
-    def _set_start(self, value):
+        self.startdate_cache = eventdate.eventdate_date
+        return self.startdate_cache
+    def _set_startdate(self, value):
         try:
             eventdate = self.dates.get(eventdate_name='start')
         except EventDate.DoesNotExist:
-            self.dates.create(
-                    eventdate_name='start', 
-                    eventdate_date=value )
-            return
-        eventdate.eventdate_date = value
-        eventdate.save()
-    start = property(_get_start, _set_start)
-    def _get_end(self):
+            if value:
+                self.dates.create(
+                        eventdate_name='start', 
+                        eventdate_date=value )
+        else:
+            if value:
+                eventdate.eventdate_date = value
+                eventdate.save()
+            else:
+                eventdate.delete()
+        self.startdate_cache = value
+    startdate = property(_get_startdate, _set_startdate)
+    def _get_enddate(self):
+        if hasattr(self, 'enddate_cache') and self.enddate_cache:
+            return self.enddate_cache
         try:
             eventdate = self.dates.get(eventdate_name='end')
         except EventDate.DoesNotExist:
             return None
+        self.enddate_cache = eventdate.eventdate_date
         return eventdate.eventdate_date
-    def _set_end(self, value):
+    def _set_enddate(self, value):
         try:
             eventdate = self.dates.get(eventdate_name='end')
         except EventDate.DoesNotExist:
-            self.dates.create(
-                    eventdate_name='end', 
-                    eventdate_date=value )
-            return
-        eventdate.eventdate_date = value
-        eventdate.save()
-    end = property(_get_end, _set_end)
+            if value:
+                self.dates.create(
+                        eventdate_name='end', 
+                        eventdate_date=value )
+        else:
+            if value:
+                eventdate.eventdate_date = value
+                eventdate.save()
+            else:
+                eventdate.delete()
+        self.enddate_cache = value
+    enddate = property(_get_enddate, _set_enddate)
 
-    # read only upcoming {{{3
+    # read only upcomingdate property {{{3
     @property
-    def upcoming(self):
+    def upcomingdate(self):
         """ get the next upcoming date, or start if all are in the past. """
+        if hasattr( self, 'upcomingdate_cache' ) and self.upcomingdate_cache:
+            return self.upcomingdate_cache
         today = datetime.date.today()
         future_dates = EventDate.objects.filter(
                 event = self, eventdate_date__gte = today )
         if future_dates:
             # not necessary because EventDate has a default ordering:
             # future_dates = future_dates.order_by('dates__eventdate_date')
-            return future_dates[0].eventdate_date
-        return self.dates.get( eventdate_name == 'start' )
+            self.upcomingdate_cache = future_dates[0].eventdate_date
+            return self.upcomingdate_cache
+        self.upcomingdate_cache = self.startdate
+        return self.startdate
 
     # Meta {{{2
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
@@ -483,12 +503,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                 # everything too slow
 
     # methods {{{2
-    def natural_key(self): # {{{3
-        """ used for serialization.
-
-        See http://docs.djangoproject.com/en/1.3/topics/serialization/#serialization-of-natural-keys
-        """
-        return ( self.title, self.start )
+    def custom_dates(self):
+        """ returns a queryset with custom EventDates (not reserved, see
+        :meth:`EventDate.reserved_names` ) """
+        return EventDate.objects.filter( event = self ).exclude(
+                eventdate_name__in = EventDate.reserved_names() )
 
     def tags_separated_by_comma(self): #{{{3
         """ returns the list of tags separated by commas as unicode string """
@@ -497,11 +516,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def contains( self, date ):
         """ returns True if the event happens in ``date`` or ``date`` is an
         event date. """
-        if self.start == date:
-            return True
-        if self.start <= date and self.end and self.end >= date:
-            return True
-        return self.dates.filter(dates = date).exists()
+        return self.dates.filter(eventdate_date = date).exists()
+
+    def fg_color(self):
+        from gridcalendar.events.views import bg_color, fg_color
+        return "rgb(%d, %d, %d)" % fg_color( bg_color( self.title ) )
+    
+    def bg_color(self):
+        from gridcalendar.events.views import bg_color, fg_color
+        return "rgb(%d, %d, %d)" % bg_color( self.title )
+    
 
     def color_nr(self, #{{{3
             days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
@@ -534,7 +558,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
         """
         today = datetime.date.today()
-        upcoming = self.upcoming
+        upcoming = self.upcomingdate
         keys = days_colors.keys()
         keys.sort()
         keys.reverse()
@@ -545,67 +569,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # FIXME: include a different color-palette for past events:
         return 0
 
-    def next_coming_date_or_start(self): #{{{3
-        """ returns the next most proximate date of an event to today, which
-        can be the start date, the end date, one of the dates, or today (if
-        the event has started but not finished); otherwise
-        it returns the start date if all are in the past.
-        
-        >>> from datetime import timedelta
-        >>> today = datetime.date.today()
-        >>> event = Event(title="test for n_c_d " + today.isoformat(),
-        ...     start=timedelta(days=1)+today,
-        ...     end=timedelta(days=2)+today,
-        ...     tags="test")
-        >>> event.save()
-        >>> assert today + timedelta(days=1) == event.next_coming_date_or_start()
-        >>> today = datetime.date.today()
-        >>> event3 = Event(title="test 3 for n_c_d " + today.isoformat(),
-        ...     start=timedelta(days=3)+today, tags="test")
-        >>> event3.save()
-        >>> event2 = Event(title="test 2 for n_c_d " + today.isoformat(),
-        ...     start=timedelta(days = -1)+today,
-        ...     end=timedelta(days=2)+today,
-        ...     tags="test")
-        >>> event2.save()
-        >>> event1 = Event(title="test 1 for n_c_d " + today.isoformat(),
-        ...     start=timedelta(days=2)+today, tags="test")
-        >>> event1.save()
-        >>> event1_date = EventDate(
-        ...         event = event1, eventdate_name = "test1",
-        ...         eventdate_date = today)
-        >>> event1_date.save()
-        >>> list_events = [event3, event2, event1]
-        >>> sorted_list = sorted(list_events, key=Event.next_coming_date_or_start)
-        >>> assert sorted_list[0] == event1
-        >>> assert sorted_list[1] == event2
-        >>> assert sorted_list[2] == event3
-        >>> event.delete()
-        >>> event1.delete()
-        >>> event2.delete()
-        >>> event3.delete()
-        """
-        today = datetime.date.today()
-        if self.start <= today and self.end >= today:
-            return today
-        # creates a list with all dates of the event (self)
-        dates = EventDate.objects.values_list(
-                'eventdate_date', flat=True ).filter( event=self )
-        # creates a list of deltas of the dates to today
-        deltas = map(lambda d: d - today, dates)
-        # removes negative deltas from the past
-        deltas = filter(lambda n: n.days >= 0, deltas)
-        if len(deltas) > 0:
-            # returns the smallest date
-            return today + ( sorted(deltas)[0] )
-        else:
-            return self.start
-
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
 
         >>> events = Event.objects.filter( title='GridCalendar presentation',
-        ...     start='2010-12-29' )
+        ...     dates__eventdate_name = 'start',
+        ...     dates__eventdate_date = '2010-12-29' )
         >>> if events: events.delete()
         >>> event = Event.parse_text(EXAMPLE)
         >>> ical = event.icalendar()
@@ -624,10 +593,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             Site.objects.get_current().domain + self.get_absolute_url()
         if self.starttime:
             vevent.add('DTSTART').value = datetime.datetime.combine(
-                    self.start, self.starttime )
+                    self.startdate, self.starttime )
             # TODO: get tzinfo from city and country
         else:
-            vevent.add('DTSTART').value = self.start
+            vevent.add('DTSTART').value = self.startdate
         if self.tags:
             vevent.add('CATEGORIES').value = self.tags.split(u' ')
         location = ""
@@ -646,13 +615,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
                 + unicode(self.id) + u'@' + \
                 Site.objects.get_current().domain
-        if self.end:
+        if self.enddate:
             if self.endtime:
                 vevent.add('DTEND').value = datetime.datetime.combine(
-                        self.end, self.endtime )
+                        self.enddate, self.endtime )
                 # TODO: get tzinfo from city and country
             else:
-                vevent.add('DTEND').value = self.end
+                vevent.add('DTEND').value = self.enddate
         if self.description: vevent.add('DESCRIPTION').value = self.description
         # see rfc5545 3.8.7.2. Date-Time Stamp
         vevent.add('DTSTAMP').value = self.modification_time
@@ -678,7 +647,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         self._recurring = value
     recurring = property( _get_recurring, _set_recurring )
 
-    @transaction.commit_on_success
     def clone( self, user, except_models = [], recurrence=True, **kwargs ):#{{{3
         """ Makes, saves and return a deep clone of the event as an 
         event of the user ``user``, and stores from which event the clone was
@@ -697,7 +665,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         which are ignored.
 
         ``kwargs`` can contain field names and values to replace in the clone
-        the original of ``self``, e.g. ``{"start": today()}``
+        the original of ``self``, e.g. ``{"startdate": a_date}``
 
         >>> from events.models import Event
         >>> from django.utils.encoding import smart_str
@@ -705,38 +673,45 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> now_t = datetime.datetime.now().isoformat()
         >>> today = datetime.date.today()
         >>> today_t = today.isoformat()
-        >>> user = User.objects.create( username = unicode(now_t) )
-        >>> events = Event.objects.filter( title='GridCalendar presentation',
-        ...     start='2010-12-29' )
+        >>> user, c = User.objects.get_or_create( username = unicode(now_t) )
+        >>> events = Event.objects.filter( title='GridCalendar presentation' )
         >>> if events: events.delete()
         >>> event = Event.parse_text(EXAMPLE)
-        >>> clone = event.clone( user, start = today )
+        >>> event.enddate = None
+        >>> clone = event.clone( user, startdate = today )
         >>> clone_text = clone.as_text()
         >>> clone_text = clone_text.replace(
-        ...     today_t, event.start.isoformat(), 1 )
+        ...     today_t, event.startdate.isoformat(), 1 )
         >>> assert ( event.as_text() == clone_text )
         >>> event.delete()
         >>> clone.delete()
         """
         clone = Event()
-        for field in self.get_simple_fields():
+        assert 'startdate' in self.get_simple_fields()
+        assert 'enddate' in self.get_simple_fields()
+        simple_fields_in_Event = [ f for f in self.get_simple_fields() if \
+                f not in ('startdate', 'enddate') ]
+        for field in simple_fields_in_Event:
             if kwargs.has_key( field ):
                 setattr( clone, field, kwargs[field] )
             else: 
                 setattr( clone, field, getattr(self, field) )
         # Dealing now with :attr:`Event.description` which is not returned by
-        # :meth:`Event.get_simple_fields` (see above)
+        # :meth:`Event.get_simple_fields`
         assert u'description' in [unicode(f.name) for f in Event._meta.fields]
         if kwargs.has_key( 'description' ):
             clone.description = kwargs['description']
         else:
             clone.description = self.description
         clone.user = user
-        for key, value in kwargs.items():
-            if key == 'user':
-                continue
-            setattr( clone, key, value )
-        clone.save() # we need the id
+        clone.save() # we need the id to be able to save related objects
+        # we deal now with startdate and enddate
+        for field in ('startdate', 'enddate'):
+            if kwargs.has_key( field ):
+                setattr( clone, field, kwargs[field] )
+            else: 
+                setattr( clone, field, getattr(self, field) )
+        # dealing with recurrence
         if recurrence:
             if self.recurring:
                 # self is a recurrence of a serie
@@ -754,15 +729,20 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         for model in ( related_models ):
             if model == Event or model in except_models:
                 continue
-            # next line is not the proper thing to do hear because for
+            # next line is not the proper thing to do hier because for
             # instance urls from clones of clone are also returned
             # for pk, obj in collected_objs[ model ].sub_objs.iteritems():
             assert hasattr( model, 'event' )
             for obj in model.objects.filter( event = self ):
+                # for recurrences, we don't clone startdate, enddate and
+                # ongoing in EventDate
+                if recurrence and model == EventDate and \
+                        obj.eventdate_name in ('start', 'end', 'ongoing'):
+                    continue
                 # Notice that in order for the next line to work, we expect
-                # all models with a reference to Event have a method called
-                # ``clone`` with two parameters: an event (to reference to)
-                # and a user
+                # all models with a reference to Event to have a method called
+                # ``clone`` with two parameters: an event (to reference to) and
+                # a user
                 new_obj =  obj.clone( clone, user ) 
                 if new_obj: # some clone methods return None,thus the check
                     new_objs.append( new_obj )
@@ -795,23 +775,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         "get tags"
         return Tag.objects.get_for_object( self )
 
-
     def __unicode__( self ): #{{{3
-        return self.start.isoformat() + u" : " + self.title
+        return unicode(self.pk) + " " + self.title
 
     @models.permalink
     def get_absolute_url( self ): #{{{3
         "get URL of an event"
         return ( 'event_show_all', (), {'event_id': self.id,} )
 
-    @transaction.commit_on_success
     def delete( self, *args, **kwargs ): #{{{3
         """ it tests that ``self`` is not the master of a recurrence fixing it
         if it is. """
         if self.recurring and self == self.recurring.master:
             events = Event.objects.filter( _recurring__master = self)
             try:
-                first = events.exclude( pk = self.pk ).order_by( 'start' )[0]
+                first = add_start(events.exclude( pk = self.pk )).order_by(
+                        'start' )[0]
                 recurrences = Recurrence.objects.filter( master = self )
                 recurrences.update( master = first )
             except IndexError:
@@ -819,51 +798,44 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # Call the "real" delete() method:
         super( Event, self ).delete( *args, **kwargs )
 
-    @transaction.commit_on_success
     def save( self, *args, **kwargs ): #{{{3
-        """ Marks an event as new or not (for :meth:`Event.post_save`), call
-        the real 'save' function after updating :attr:`Event.upcoming`, and
-        update the master of a recurrence if appropiate."""
+        """ Marks an event as new or not (for :meth:`Event.post_save`),
+        and update the master of a recurrence if appropiate."""
+        # FIXME: increase version field of all events in the recurring serie
         try:
             Event.objects.get( id = self.id )
             self.not_new = True # Event.post_save uses this
         except Event.DoesNotExist:
             pass
-        self.upcoming = self.next_coming_date_or_start()
         if self.recurring:
             master = self.recurring.master
-            if self.start < master.start:
+            if self.startdate < master.startdate:
                 # self is going to be the new master of the serie. The master
                 # is by convention the first event of a serie.
                 master.recurrences.all().update( master = self )
+        self.version = self.version + 1
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
+        # deletes caches
+        if hasattr( self, 'startdate_cache'):
+            delattr( self, 'startdate_cache')
+        if hasattr( self, 'enddate_cache'):
+            delattr( self, 'enddate_cache')
+        if hasattr( self, 'upcomingdate_cache'):
+            delattr( self, 'upcomingdate_cache')
 
     @staticmethod # def post_save( sender, **kwargs ): {{{3
     def post_save( sender, **kwargs ):
         """ notify users if a filter of a user matches an event but only for
         new events.
         """
-        # TODO: don't notify the user submitting the change
         event = kwargs['instance']
         if event.recurring:
             # this event is an instance of a serie of recurring events
             return
-        # TODO: users might also want to be informed of changes
-        # not_new is set by Event.save
         if hasattr(event, "not_new") and event.not_new:
             return
-        # FIXME: implement a Queue, see comments on 
-        # http://www.artfulcode.net/articles/threading-django/
-        # see also
-        # http://ask.github.com/celery/getting-started/introduction.html
-        # Thing also that getting an Exception here shouldn't propagate to the
-        # view.
-        thread = threading.Thread(
-                target = Filter.notify_users_when_wanted( event ),
-                args = [ event, ] )
-        thread.setDaemon(True)
-        thread.start()
+        notify_users_when_wanted.delay( event = event )
 
     @staticmethod # def example(): {{{3
     def example():
@@ -872,7 +844,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> from django.utils.encoding import smart_str
         >>> example = Event.example()
         >>> event = Event.parse_text(example)
-        >>> assert (smart_str(example) == event.as_text())
+        >>> assert (smart_str(example) == event.as_text()), smart_str(example)
+        ...     + "\n" event.as_text()
         >>> event.delete()
         >>> text = example.replace(u'DE', u'Germany')
         >>> event = Event.parse_text(text)
@@ -902,30 +875,25 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         to_return = u""
         for keyword in Event.get_priority_list():
             if keyword == u'title':
-                to_return += keyword + u": " + self.title + u"\n"
-            elif keyword == u'start':
-                to_return += u''.join( [
-                    keyword, u": ",
-                    unicode(self.start.strftime( "%Y-%m-%d" )), u"\n"] )
+                to_return += keyword + ": " + self.title + "\n"
+            elif keyword == u'startdate':
+                to_return += keyword + ": " + \
+                    unicode(self.startdate.strftime( "%Y-%m-%d" )) + "\n"
             elif keyword == u'starttime':
                 if self.starttime:
-                    to_return += u''.join( [
-                        keyword, u": ",
-                        unicode(self.starttime.strftime( "%H:%M" )), u"\n"] )
-            elif keyword == u'end':
-                if self.end:
-                    to_return += u''.join( [
-                        keyword, u": ",
-                        unicode(self.end.strftime( "%Y-%m-%d")),
-                        u"\n"] )
+                    to_return += keyword + ": " + \
+                        unicode(self.starttime.strftime( "%H:%M" )) + "\n"
+            elif keyword == u'enddate':
+                if self.enddate:
+                    to_return += keyword + ": " + \
+                        unicode(self.enddate.strftime( "%Y-%m-%d")) + "\n"
             elif keyword == u'endtime':
                 if self.endtime:
-                    to_return += u''.join( [
-                        keyword, u": ",
-                        unicode(self.endtime.strftime( "%H:%M" )), u"\n"] )
+                    to_return += keyword + ": " + \
+                        unicode(self.endtime.strftime( "%H:%M" )) + "\n"
             elif keyword == u'country':
                 if self.country:
-                    to_return += keyword + u": " + self.country + u"\n"
+                    to_return += keyword + ": " + self.country + "\n"
             elif keyword == u'coordinates':
                 if self.coordinates:
                     to_return += u"coordinates: %s, %s\n" % (
@@ -933,10 +901,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                             unicode( self.coordinates.x ) )
             elif keyword == u'acronym':
                 if self.acronym:
-                    to_return += keyword + u": " + self.acronym + u"\n"
+                    to_return += keyword + u": " + self.acronym + "\n"
             elif keyword == u'tags':
                 if self.tags:
-                    to_return += keyword + u": " + self.tags + u"\n"
+                    to_return += keyword + u": " + self.tags + "\n"
             elif keyword == u'address':
                 if self.address:
                     to_return += keyword + u": " + self.address + u"\n"
@@ -954,7 +922,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         to_return += u''.join( [
                                 u"    ", url.url_name, u' ', url.url, u"\n"] )
             elif keyword == u'dates':
-                eventdates = EventDate.objects.filter( event = self.id )
+                eventdates = EventDate.objects.filter(
+                        Q( event = self.id ) &
+                        ~Q( eventdate_name__in = EventDate.reserved_names() ) )
                 if eventdates and len( eventdates ) > 0:
                     to_return += u"dates:\n"
                     for eventdate in eventdates:
@@ -1112,8 +1082,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     # parse_text {{{3
     @staticmethod
-    @transaction.commit_on_success # see http://docs.djangoproject.com/en/1.3/topics/db/transactions/#controlling-transaction-management-in-views
-    @revision.create_on_success # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
     def parse_text( input_text_in, event_id = None, user_id = None ):
         # doc {{{4
         """It parses a text and saves it as a single event in the data base and
@@ -1178,11 +1146,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                         _(u"The following necessary field is not present: ") +
                         smart_unicode(field))
         if user_id is not None:
-            # the following line can raise a User.DoesNotExist
+            # NOTE: the following line can raise a User.DoesNotExist
             user = User.objects.get(id = user_id)
         else:
             user = None
-        revision.user = user
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
         # languages but taking care of colisions
@@ -1215,8 +1182,21 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
         # save the event from the form
-        event = event_form.save()
-        event.user = None
+        event = event_form.save(commit = False)
+        if user and not event_id:
+            # event.user is the user who created the event, we add her/him if
+            # the user is present and the event is new (event_id = None)
+            event.user = user
+        event.save()
+        # save startdate (and enddate if present)
+        startdate = event_form.cleaned_data.get('startdate', None)
+        if startdate:
+            EventDate.objects.get_or_create( event = event,
+                    eventdate_name = 'start', eventdate_date = startdate )
+        enddate = event_form.cleaned_data.get('enddate', None)
+        if enddate:
+            EventDate.objects.get_or_create( event = event,
+                    eventdate_name = 'end', eventdate_date = enddate )
         # urls {{{5
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls( complex_fields[u'urls'] )
@@ -1265,11 +1245,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     eventdate.full_clean()
                     eventdates_final.append(eventdate)
                 else:
-                    previous_eventdate.eventdate_date = date
                     assert(previous_eventdate.eventdate_name == name)
                     assert(previous_eventdate.event == event)
-                    previous_eventdate.full_clean()
-                    eventdates_final.append(previous_eventdate)
+                    if previous_eventdate.date != date:
+                        previous_eventdate.eventdate_date = date
+                        previous_eventdate.full_clean()
+                        eventdates_final.append( previous_eventdate )
             assert(len(eventdates_final) == len(eventdates))
             # save all
             for eventdate in eventdates_final:
@@ -1277,7 +1258,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             # delete old eventdates of the event which are not in ``text`` parameter
             all_eventdates = EventDate.objects.filter(event=event)
             for eventdate in all_eventdates:
-                if not eventdates.has_key(eventdate.eventdate_name):
+                name = eventdate.eventdate_name
+                if ( not eventdates.has_key( name ) ) and \
+                        name not in EventDate.reserved_names():
                     eventdate.delete()
             del complex_fields[u'dates']
         # sessions {{{5
@@ -1331,7 +1314,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     raise ValidationError( _(
                         u'date not in iso format (yyyy-mm-dd): %(date)s') % \
                                 {'date': text_date} )
-                if dates_times.has_key('end'):
+                if dates_times.has_key('enddate'):
                     raise ValidationError( _(
                         u'a repeating date cannot have an end date: (date)s') % \
                                 {'date': text_date} )
@@ -1344,8 +1327,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             del complex_fields[u'recurrences']
         # test and return event {{{5
         assert(len(complex_fields) == 0)
-        revision.add_meta( RevisionInfo,
-                as_text = smart_unicode( event.as_text() ) )
+        # startdate_cache avoids to query the DB, see
+        # :meth:`Event._get_startdate`
+        event.startdate_cache = startdate
+        # enddate_cache avoids to query the DB, see
+        # :meth:`Event._get_enddate`
+        event.enddate_cache = enddate
         return event
 
     @staticmethod # def get_complex_fields(): {{{3
@@ -1361,19 +1348,20 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         have only one line in the input text representation of an Event.
         """ 
         field_names = [unicode(f.name) for f in Event._meta.fields]
+        field_names.append(u'startdate')
+        field_names.append(u'enddate')
         field_names.remove(u"id")
         field_names.remove(u"user")
         field_names.remove(u"creation_time")
         field_names.remove(u"modification_time")
         field_names.remove(u"description")
-        field_names.remove(u"upcoming")
         return tuple(field_names)
  
     @staticmethod # def get_necessary_fields(): {{{3
     def get_necessary_fields():
         """ returns a tuple of names of the necessary filed fields of an event.
         """
-        return (u"title", u"start", u"tags", u"urls")
+        return (u"title", u"startdate", u"tags", u"urls")
 
     @staticmethod # def get_priority_list(): #{{{3
     def get_priority_list():
@@ -1392,10 +1380,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> synonyms_values_set = set(Event.get_synonyms().values())
         >>> assert(gpl_len + 1  == len(synonyms_values_set))
         """
-        return (u"acronym", u"title", u"start", u"starttime", u"end",
-                u"endtime", u"tags", u"urls", u"address",
-                u"postcode", u"city", u"country", u"coordinates",
-                u"dates", u"sessions", u"description")
+        return (u"acronym", u"title", u"startdate", u"starttime", u"enddate",
+                u"endtime", u"tags", u"urls", u"address", u"postcode", u"city",
+                u"country", u"coordinates", u"dates", u"sessions",
+                u"description")
  
     @staticmethod # def get_synonyms(): {{{3
     def get_synonyms():
@@ -1422,7 +1410,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             # ensure you don't override a key
             def add( dictionary, key, value ):
                 """ assert that the key is not already there """
-                assert( not dictionary.has_key( key ) )
+                assert not dictionary.has_key( key ), key
                 dictionary[key] = value
         else:
             def add( dictionary, key, value ):
@@ -1476,9 +1464,9 @@ class RevisionInfo( models.Model ): # {{{1
 # see http://docs.djangoproject.com/en/1.2/topics/signals/
 post_save.connect( Event.post_save, sender = Event, dispatch_uid="Event.post_save" )
 
-class RecurrenceManager( models.Manager ): #{{{1
-    def get_by_natural_key(self, event):
-        return self.get( event = Event.get_by_natural_key( *event ) )
+#class RecurrenceManager( models.Manager ): #{{{1
+#    def get_by_natural_key(self, event):
+#        return self.get( event = Event.get_by_natural_key( *event ) )
 
 class Recurrence( models.Model ): #{{{1
     # doc {{{2
@@ -1535,9 +1523,12 @@ class Recurrence( models.Model ): #{{{1
     >>> today = datetime.date.today()
     >>> tomorrow = timedelta(days=1) + today
     >>> after_tomorrow = timedelta(days=2) + today
-    >>> e1 = Event.objects.create(title="Re1", start=today)
-    >>> e2 = Event.objects.create(title="Re2", start=tomorrow)
-    >>> e3 = Event.objects.create(title="Re3", start=after_tomorrow)
+    >>> e1 = Event.objects.create(title="Re1" )
+    >>> e1.startdate = today
+    >>> e2 = Event.objects.create(title="Re2" )
+    >>> e2.startdate = tomorrow
+    >>> e3 = Event.objects.create(title="Re3" )
+    >>> e3.startdate = after_tomorrow
     >>> assert e1.recurring == None
     >>> assert e2.recurring == None
     >>> assert e3.recurring == None
@@ -1556,7 +1547,7 @@ class Recurrence( models.Model ): #{{{1
     >>> e1.recurrences.count()
     3
     >>> # we now put e2 start in the past and check that master is updated
-    >>> e2.start = timedelta(days=-1)+today
+    >>> e2.startdate = timedelta(days=-1)+today
     >>> e2.save()
     >>> e1 = Event.objects.get( title="Re1" )
     >>> e2 = Event.objects.get( title="Re2" )
@@ -1596,7 +1587,7 @@ class Recurrence( models.Model ): #{{{1
             related_name = 'recurrences',
             verbose_name = _('master'), )
 
-    objects = RecurrenceManager()
+    #objects = RecurrenceManager()
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         verbose_name = _( u'Recurrence' )
@@ -1604,9 +1595,9 @@ class Recurrence( models.Model ): #{{{1
         # see http://docs.djangoproject.com/en/1.3/ref/models/options/#order-with-respect-to
         # order_with_respect_to = 'master'
 
-    def natural_key( self ):
-        return self.event.natural_key()
-    natural_key.dependencies = ['events.event']
+    #def natural_key( self ):
+    #    return self.event.natural_key()
+    #natural_key.dependencies = ['events.event']
 
     def save( self, *args, **kwargs ):
         """ Call the real 'save' function after checking that the master
@@ -1638,6 +1629,9 @@ class Recurrence( models.Model ): #{{{1
                     master = self.master,
                     event = self.master )
             super( Recurrence, self_reference ).save( *args, **kwargs )
+        # we call Event.save to update Event.version and to update masters if
+        # necessary
+        self.event.save()
 
 class ExtendedUser(User): # {{{1
     """ Some aditional funtions to users
@@ -1662,8 +1656,8 @@ class ExtendedUser(User): # {{{1
     >>> f2 = Filter.objects.create(user = user, name = "f2", query = "query")
     >>> assert ( len( euser.get_filters() ) == 2)
     >>> assert euser.has_filters()
-    >>> event = Event(title="test for ExtendedUser " + now,
-    ...         start=datetime.date.today(), tags="test")
+    >>> event = Event(title="test for ExtendedUser " + now, tags = "test" )
+    >>> event.startdate = datetime.date.today()
     >>> event.save()
     >>> calendar = Calendar.objects.create(event = event, group = group2)
     >>> assert euser.has_groups_with_coming_events()
@@ -1698,11 +1692,11 @@ class ExtendedUser(User): # {{{1
                 return True
         return False
 
-class EventUrlManager( models.Manager ): # {{{1
-    def get_by_natural_key(self, url_name, event):
-        return self.get(
-                url_name = url_name,
-                event = Event.objects.get_by_natural_key( *event ) )
+#class EventUrlManager( models.Manager ): # {{{1
+#    def get_by_natural_key(self, url_name, event):
+#        return self.get(
+#                url_name = url_name,
+#                event = Event.objects.get_by_natural_key( *event ) )
 
 class EventUrl( models.Model ): # {{{1
     """ stores urls of events
@@ -1719,15 +1713,20 @@ class EventUrl( models.Model ): # {{{1
             u"Example: information about accomodation" ) )
     url = models.URLField( _( u'URL' ), blank = False, null = False )
 
-    objects = EventUrlManager()
+    #objects = EventUrlManager()
 
     class Meta: # pylint: disable-msg=C0111
         ordering = ['url_name']
         unique_together = ( "event", "url_name" )
 
-    def natural_key( self ):
-        return ( self.url_name, self.event.natural_key() )
-    natural_key.dependencies = ['events.event']
+    #def natural_key( self ):
+    #    return ( self.url_name, self.event.natural_key() )
+    #natural_key.dependencies = ['events.event']
+
+    def save( self, *args, **kwargs ):
+        super( EventUrl, self ).save( *args, **kwargs )
+        # we call Event.save to update Event.version
+        self.event.save()
 
     def __unicode__( self ): # {{{2
         return self.url
@@ -1797,31 +1796,96 @@ if not reversion.is_registered( EventUrl ): # {{{1
     reversion.register(EventUrl, format = "yaml" )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
-class EventDateManager( models.Manager ): # {{{1
-    def get_by_natural_key(self, eventdate_name, event):
-        return self.get(
-                eventdate_name = eventdate_name,
-                event = Event.objects.get_by_natural_key( *event ) )
+#class EventDateManager( models.Manager ): # {{{1
+#    def get_by_natural_key(self, eventdate_name, event):
+#        return self.get(
+#                eventdate_name = eventdate_name,
+#                event = Event.objects.get_by_natural_key( *event ) )
 
 class EventDate( models.Model ): # {{{1
     """ stores dates for events """
-    event = models.ForeignKey( Event, related_name = 'dates' )
+    eventdate_date = models.DateField( _( u'Date' ), blank = False,
+            null = False, db_index = True, validators = [validate_year] )
     eventdate_name = models.CharField( 
             _( u'Name' ), blank = False, null = False,
             max_length = 80, help_text = _( 
             "Example: call for papers" ) )
-    eventdate_date = models.DateField( _( u'Date' ), blank = False,
-            null = False, validators = [validate_year] )
+    event = models.ForeignKey( Event, related_name = 'dates' )
 
-    objects = EventDateManager()
+    objects = models.GeoManager()
+#    objects = EventDateManager()
 
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
-        ordering = ['eventdate_date', 'eventdate_name']
-        unique_together = ( "event", "eventdate_name" )
+        ordering = ['eventdate_date']
+        unique_together = ( "event", "eventdate_name", "eventdate_date" )
 
-    def natural_key( self ):
-        return ( self.eventdate_name, self.event.natural_key() )
-    natural_key.dependencies = ['events.event']
+    def save( self, *args, **kwargs ): #{{{3
+        assert 'start' in self.reserved_names()
+        assert 'end' in self.reserved_names()
+        assert 'ongoing' in self.reserved_names()
+        # checkings {{{4
+        if self.eventdate_name == 'start':
+            # we check that, if there is an end, it is after the start
+            try:
+                end = EventDate.objects.get(
+                        event = self.event,
+                        eventdate_name = 'end' )
+                if end.eventdate_date <= self.eventdate_date:
+                    raise RuntimeError( unicode(self.event) +
+                            " was going to have an end not after start" )
+            except EventDate.DoesNotExist:
+                pass
+        elif self.eventdate_name == 'end':
+            # we check that, if there is a start, it is before the end
+            try:
+                start = EventDate.objects.get(
+                        event = self.event,
+                        eventdate_name = 'start' )
+                if start.eventdate_date >= self.eventdate_date:
+                    raise RuntimeError( unicode(self.event) +
+                            " was going to have a start not before end" )
+            except EventDate.DoesNotExist:
+                pass
+        elif self.eventdate_name == 'ongoing':
+            # we check that 'ongoing' is after start
+            start = event.startdate
+            if not start:
+                raise RuntimeError( unicode(self.event) +
+                        " was going to have an ongoing without a start" )
+            if start >= self.eventdate_date:
+                raise RuntimeError( unicode(self.event) +
+                        " was going to have an ongoing before start" )
+            # we check that 'ongoing' is before end
+            end = event.enddate
+            if not end:
+                raise RuntimeError( unicode(self.event) +
+                        " was going to have an ongoing without an end" )
+            if end <= self.eventdate_date:
+                raise RuntimeError( unicode(self.event) +
+                        " was going to have an ongoing after end" )
+        super( EventDate, self ).save( *args, **kwargs ) # {{{4
+        # adding missing ongoing dates {{{4
+        # if it is and end-date, we add missing ongoing-dates:
+        if self.eventdate_name == 'end':
+            end = self.eventdate_date
+            start = self.event.startdate
+            ongoings = EventDate.objects.filter(
+                    event = self.event, eventdate_name = 'ongoing' )
+            dates = [ start + datetime.timedelta(days=x) for x in
+                    range( 1, (end - start).days) ]
+            for date in dates:
+                EventDate.objects.get_or_create(
+                        event = self.event,
+                        eventdate_name = 'ongoing',
+                        eventdate_date = date )
+                # TODO: the above can be done more efficiently, see
+                # http://stackoverflow.com/questions/2252530/efficent-way-to-bulk-insert-with-get-or-create-in-django-sql-python-django
+        # we call Event.save to update Event.version {{{4
+        self.event.save()
+
+    #def natural_key( self ):
+    #    return ( self.eventdate_name, self.event.natural_key() )
+    #natural_key.dependencies = ['events.event']
     
     def __unicode__( self ): # {{{2
         return unicode( self.eventdate_date ) + u'    ' + self.eventdate_name
@@ -1832,6 +1896,12 @@ class EventDate( models.Model ): # {{{1
                 eventdate_date = self.eventdate_date )
         new.save()
         return new
+
+    @staticmethod # def reserved_names: {{{2
+    def reserved_names():
+        """ tuple with the names of reserved eventdate_names (start,
+        end, ongoing) """
+        return ('start', 'end', 'ongoing')
 
     @staticmethod # def get_eventdates( text ): {{{2
     def get_eventdates( lines ):
@@ -1863,12 +1933,9 @@ class EventDate( models.Model ): # {{{1
                 if names_dates.has_key( name ):
                     errors.append( _(u'the following date name appers ' \
                             u'more than one: %(name)s') % {'name': name} )
-                elif name.lower() == 'start':
-                    errors.append( _(u"the name 'start' is not allowed") )
-                elif name.lower() == 'end':
-                    errors.append( _(u"the name 'end' is not allowed") )
-                elif name.lower() == 'ongoing':
-                    errors.append( _(u"the name 'ongoing' is not allowed") )
+                elif name.lower() in EventDate.reserved_names():
+                    errors.append( _(u"the name '%(name)s' is not allowed") %
+                            {'name': name,} )
                 else:
                     try:
                         names_dates[ field_m.group(4) ] = datetime.date(
@@ -1911,11 +1978,11 @@ if not reversion.is_registered( EventDate ): # {{{1
     reversion.register( EventDate, format = 'yaml' )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
-class EventSessionManager( models.Manager ): # {{{1
-    def get_by_natural_key(self, session_name, event):
-        return self.get(
-                session_name = session_name,
-                event = Event.objects.get_by_natural_key( *event ) )
+#class EventSessionManager( models.Manager ): # {{{1
+#    def get_by_natural_key(self, session_name, event):
+#        return self.get(
+#                session_name = session_name,
+#                event = Event.objects.get_by_natural_key( *event ) )
 
 class EventSession( models.Model ): # {{{1
     """ stores sessions for events """
@@ -1933,17 +2000,21 @@ class EventSession( models.Model ): # {{{1
     session_endtime = models.TimeField( 
             _( u'Session end time' ), blank = False, null = False )
 
-    objects = EventSessionManager()
+    #objects = EventSessionManager()
 
-    def natural_key( self ):
-        return ( self.session_name, self.event.natural_key() )
-    natural_key.dependencies = ['events.event']
+    #def natural_key( self ):
+    #    return ( self.session_name, self.event.natural_key() )
+    #natural_key.dependencies = ['events.event']
 
     class Meta: # {{{2 pylint: disable-msg=C0111,W0232,R0903
         ordering = ['session_date', 'session_starttime']
         unique_together = ( "event", "session_name" )
         verbose_name = _( u'Session' )
         verbose_name_plural = _( u'Sessions' )
+
+    def save( self, *args, **kwargs ): #{{{3
+        super( EventSession, self ).save( *args, **kwargs )
+        self.event.save() # to update version
 
     def __unicode__( self ): # {{{2
         return unicode( self.session_date ) + u'    ' + \
@@ -2114,6 +2185,7 @@ class Filter( models.Model ): # {{{1
 
     def upcoming_events( self, limit = 5 ): # {{{2
         """ return the next ``limit`` events matching ``self.query`` """
+        from gridcalendar.events.search import search_events
         return search_events( self.query, related = False )
 
     def matches_event( self, event ): # {{{2
@@ -2134,7 +2206,8 @@ class Filter( models.Model ): # {{{1
         >>> today = datetime.date.today()
         >>> group = Group.objects.create(name="matchesevent" + time)
         >>> event = Event.objects.create(title="test for events " + now,
-        ...     start=timedelta(days=-1)+today, tags="test")
+        ...     tags = "test" )
+        >>> event.startdate = timedelta(days=-1)+today
         >>> eventdate = EventDate(
         ...         event = event, eventdate_name = "test",
         ...         eventdate_date = today)
@@ -2159,6 +2232,7 @@ class Filter( models.Model ): # {{{1
         >>> group.delete()
         """
         # body {{{3
+        from gridcalendar.events.search import search_events
         qset = search_events( query, related = False ).filter(pk = event.id)
         if qset.exists():
             return True
@@ -2173,52 +2247,8 @@ class Filter( models.Model ): # {{{1
     def matches_count( self ): # {{{2
         """ returns the number of events which would be returned without
         *count* by :meth:`search.search` """
+        from gridcalendar.events.search import search_events
         return search_events( self.query ).count()
-
-    @staticmethod # def notify_users_when_wanted( event ): {{{2
-    def notify_users_when_wanted( event ):
-        """ notifies users if *event* matches a filter of a user and the
-        user wants to be notified for the matching filter and the user can see
-        the event """
-        if isinstance(event, Event):
-            pass
-        elif isinstance(event, int) or isinstance(event, long):
-            event = Event.objects.get(pk = event)
-        else:
-            event = Event.objects.get(pk = int(event))
-        # TODO: the next code iterate throw all users but this is not workable
-        # for a big number of users: implement a special data structure which
-        # saves filters and can look up fast filters matching an event
-        # TODO: show a diff of the changes
-        users = User.objects.all()
-        for user in users:
-            user_filters = Filter.objects.filter( user = user ).filter(
-                    email = True)
-            for fil in user_filters:
-                if fil.matches_event(event):
-                    context = {
-                        'username': user.username,
-                        'event': event,
-                        'filter': fil,
-                        'site_name': Site.objects.get_current().name,
-                        'site_domain': Site.objects.get_current().domain, }
-                    # TODO: create the subject from a text template
-                    subject = _(u'filter match: ') + event.title
-                    # TODO: use a preferred language setting for users to send
-                    # emails to them in this language
-                    message = render_to_string(
-                            'mail/event_notice.txt', context )
-                    from_email = settings.DEFAULT_FROM_EMAIL
-                    if subject and message and from_email and user.email:
-                        try:
-                            send_mail( subject, message, from_email,
-                                    [user.email,], fail_silently = False )
-                        except (BadHeaderError, SMTPConnectError):
-                            # FIXME: do something meaningfull, e.g. error log
-                            pass
-                    else:
-                        # FIXME: do something meaningfull, e.g. error log
-                        pass
 
 class GroupManager( models.Manager ): # {{{1
     def get_by_natural_key(self, name):
@@ -2234,7 +2264,8 @@ class Group( models.Model ): # {{{1
     >>> today = datetime.date.today()
     >>> group = Group.objects.create(name="group " + now)
     >>> event = Event(title="test for events " + now,
-    ...     start=timedelta(days=-1)+today, tags="test")
+    ...     tags = "test" )
+    >>> event.startdate = timedelta(days=-1)+today
     >>> event.save()
     >>> eventdate = EventDate(
     ...         event = event, eventdate_name = "test",
@@ -2397,10 +2428,8 @@ class Group( models.Model ): # {{{1
         """
         today = datetime.date.today()
         events = Event.objects.filter( Q(calendar__group = self) & (
-                    Q(eventdates__eventdate_date__gte=today) ))
-        # NOTE: next line can (despite 'distinct') return non-distinct events:
-        # https://docs.djangoproject.com/en/1.3/ref/models/querysets/#django.db.models.query.QuerySet.distinct
-        events = events.order_by('dates__eventdate_date').distinct()
+                    Q(dates__eventdate_date__gte = today) )).distinct()
+        events = add_upcoming( events ).order_by('upcoming')
         if limit == -1:
             return events
         else:
@@ -2745,6 +2774,46 @@ class GroupInvitation( models.Model ): # {{{1
     # TODO: find out and explain here what this means:
     activation_key_expired.boolean = True
 
+def add_start( queryset ): #{{{1
+    """ returns a new queryset adding a join query to ``queryset``
+    (Event or EventDate as model) which include the ``start`` date
+    of each event """
+    if queryset.model == EventDate:
+        return queryset.extra(select={'start':
+            "SELECT T2.eventdate_date FROM events_eventdate T2 WHERE " \
+            "T2.event_id = events_eventdate.event_id and " \
+            "T2.eventdate_name = 'start'"})
+    elif queryset.model == Event:
+        return queryset.extra(select={'start':
+            "SELECT eventdate_date FROM events_eventdate WHERE " \
+            "events_event.id = events_eventdate.event_id and " \
+            "eventdate_name = 'start'"})
+    else:
+        raise RuntimeError('queryset.model was either EventDate nor Event')
+
+def add_end( queryset ): #{{{1
+    """ returns a new queryset adding a join query to ``queryset``
+    (Event or EventDate as model) which include the ``end`` date
+    of each event """
+    if queryset.model == EventDate:
+        return queryset.extra(select={'end':
+            "SELECT T2.eventdate_date FROM events_eventdate T2 WHERE " \
+            "T2.event_id = events_eventdate.event_id and " \
+            "T2.eventdate_name = 'end'"})
+    elif queryset.model == Event:
+        return queryset.extra(select={'end':
+            "SELECT eventdate_date FROM events_eventdate WHERE " \
+            "events_event.id = events_eventdate.event_id and " \
+            "eventdate_name = 'end'"})
+    else:
+        raise RuntimeError('queryset.model was either EventDate nor Event')
+
+def add_upcoming( queryset ): #{{{1
+    if queryset.model == Event:
+        return queryset.annotate( upcoming = Min('dates__eventdate_date') )
+    else:
+        raise RuntimeError('queryset.model was not Event')
+
 class Session: #{{{1
     def __init__(self, date=None, start=None, end=None, name=None):
         self.date = date
@@ -2760,29 +2829,14 @@ class Session: #{{{1
 # LOG to a pipe {{{1
 # it is recommended in the Django documentation to connect to signals in
 # models.py. That is why this code is here.
-if settings.PIPE_TO_LOG_TO:
-    # FIXME: implement a Queue, see comments on
-    # http://www.artfulcode.net/articles/threading-django/ see also
-    # http://ask.github.com/celery/getting-started/introduction.html
-    # Thing also that getting an Exception here shouldn't propagate to the
-    # view.
-    def _write_to_pipe( text ):
-        with open(settings.PIPE_TO_LOG_TO, 'a') as pipe:
-            text = smart_str( text, encoding='utf-8', errors='ignore' )
-            lines = text.splitlines()
-            pipe.write( lines[0] + '\n' )
-            lines = map( lambda line: '    %s\n' % line, lines[1:] )
-            pipe.write( ''.join( lines ) )
-    def _start_thread( text ):
-        thread = threading.Thread( target = _write_to_pipe, args = [ text, ] )
-        thread.setDaemon(True)
-        thread.start()
+if settings.LOG_PIPE:
     def write_to_pipe( **kwargs ): # {{{2
+        from gridcalendar.events.models import Event, RevisionInfo
         site = Site.objects.get_current().domain
         # comment {{{3
         if kwargs['sender'] == Comment:
             comment = kwargs['comment']
-            _start_thread( u'http://%(site)s%(comment_url)s\n' \
+            log_using_celery.delay( u'http://%(site)s%(comment_url)s\n' \
                 '*** %(comment)s ***\n' % {
                     'site': site,
                     'comment_url': comment.get_absolute_url(),
@@ -2817,13 +2871,13 @@ if settings.PIPE_TO_LOG_TO:
                     text += diff
                 else:
                     text += smart_unicode( event.as_text() )
-            _start_thread( text )
+            log_using_celery.delay( text )
         # event deleted {{{3
         elif kwargs['sender'] == Event:
             event = kwargs['instance']
             deleted_url = reverse( 'event_deleted',
                     kwargs={'event_id': event.id,} )
-            _start_thread( u'http://%(site)s%(deleted_url)s\n' % {
+            log_using_celery.delay( u'http://%(site)s%(deleted_url)s\n' % {
                 'site': site, 'deleted_url': deleted_url, } )
         #  Revision, used to log undeletions {{{3
         elif kwargs['sender'] == Version:
@@ -2847,17 +2901,25 @@ if settings.PIPE_TO_LOG_TO:
                     if ver.type == VERSION_DELETE:
                         history_url = reverse( 'event_history',
                             kwargs={'event_id': version.object_id,} )
-                        _start_thread( u'http://%(site)s%(history_url)s\n' % {
+                        log_using_celery.delay(
+                            u'http://%(site)s%(history_url)s\n' % {
                             'site': site, 'history_url': history_url, } )
                     return
                 previous = revision
-
-    # signals connects {{{2
-    post_save.connect( write_to_pipe , sender = RevisionInfo,
-        weak = False, dispatch_uid = 'pipe_logger_revisioninfo' )
-    comment_was_posted.connect( write_to_pipe, sender = Comment,
-        weak = False, dispatch_uid = 'pipe_logger_comment' )
-    post_delete.connect( write_to_pipe, sender = Event,
-        weak = False, dispatch_uid = 'pipe_logger_event_deleted' )
-    post_save.connect( write_to_pipe, sender = Version,
-        weak = False, dispatch_uid = 'pipe_logger_undeleted' )
+    # connecting to signals {{{2
+    post_save.connect( write_to_pipe,
+            sender = RevisionInfo,
+            #weak = False,
+            dispatch_uid = 'pipe_logger_revisioninfo' )
+    comment_was_posted.connect( write_to_pipe,
+            sender = Comment,
+            #weak = False,
+            dispatch_uid = 'pipe_logger_comment' )
+    post_delete.connect( write_to_pipe,
+            sender = Event,
+            #weak = False,
+            dispatch_uid = 'pipe_logger_event_deleted' )
+    post_save.connect( write_to_pipe,
+            sender = Version,
+            #weak = False,
+            dispatch_uid = 'pipe_logger_undeleted' )

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker ft=python
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -43,13 +43,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models import Max, Q
+from django.contrib.gis.db.models import Q
 from django.contrib.sites.models import Site
 from django.core import serializers
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.core.exceptions import ValidationError
-from django.db.models import Max, Min
 from django.db.models.query import QuerySet
 from django.db import transaction, IntegrityError
 from django.forms.models import inlineformset_factory, ModelForm
@@ -61,6 +61,7 @@ from django.template import RequestContext, Context, loader
 from django.utils.encoding import smart_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
+from django.views.decorators.cache import cache_page
 
 from tagging.models import Tag, TaggedItem
 from reversion import revision
@@ -71,7 +72,8 @@ from gridcalendar.events.forms import (
      NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDate, Filter, Group,
-    Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo )
+    Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo,
+    add_start, add_end, add_upcoming )
 from gridcalendar.events.utils import search_address, html_diff
 from gridcalendar.events.tables import EventTable
 from gridcalendar.events.feeds import SearchEventsFeed
@@ -80,6 +82,7 @@ from gridcalendar.events.search import search_events
 # TODO: check if this works with i18n
 views = [_('table'), _('map'), _('boxes'), _('calendars'),]
 
+@cache_page(60 * 15)
 def help_page( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
     USAGE.TXT
@@ -97,6 +100,7 @@ def help_page( request ): # {{{1
             'about_text': about_text,
             }, context_instance = RequestContext( request ) )
 
+@cache_page(60 * 15)
 def legal_notice( request ): # {{{1
     """Just returns the legal notice page.
 
@@ -117,9 +121,8 @@ def event_edit( request, event_id = None ): # {{{1
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> import datetime
-    >>> e = Event.objects.create(
-    ...         title = 'ee_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
+    >>> e = Event.objects.create( title = 'ee_test', tags = 'berlin' )
+    >>> e.startdate = datetime.date.today()
     >>> Client().get(reverse('event_edit',
     ...         kwargs={'event_id': e.id,})).status_code
     200
@@ -186,6 +189,17 @@ def event_edit( request, event_id = None ): # {{{1
                     if request.user.is_authenticated():
                         revision.user = request.user
                     event.save()
+                    event.startdate = event_form.cleaned_data['startdate']
+                    if not event_form.cleaned_data.get( 'enddate', False ):
+                        try:
+                            end = EventDate.objects.get(event = event,
+                                    eventdate_name = 'end')
+                        except EventDate.DoesNotExist:
+                            pass
+                        else:
+                            end.delete()
+                    else:
+                        event.enddate = event_form.cleaned_data['enddate']
                     formset_url.save()
                     formset_session.save()
                     formset_deadline.save()
@@ -193,11 +207,6 @@ def event_edit( request, event_id = None ): # {{{1
                             as_text = smart_unicode( event.as_text() ) )
                 # change recurrences if appropiate
                 if event_recurring:
-                    # TODO: think and test what happens if a title is
-                    # different on the same day and it is changed to the
-                    # same title.
-                    # TODO: think what happens if there are two in same day
-                    # (with or without the same title)
                     master = event.recurring.master
                     choice = also_recurrences_form.cleaned_data['choices']
                     if choice == 'this':
@@ -205,11 +214,11 @@ def event_edit( request, event_id = None ): # {{{1
                     elif choice == 'past':
                         events = Event.objects.filter(
                                 _recurring__master = master,
-                                start__lt = event.start )
+                                start__lt = event.startdate )
                     elif choice == 'future':
                         events = Event.objects.filter(
                                 _recurring__master = master,
-                                start__gt = event.start )
+                                start__gt = event.startdate )
                     elif choice == 'all':
                         events = Event.objects.filter(
                                 _recurring__master = master)
@@ -222,7 +231,9 @@ def event_edit( request, event_id = None ): # {{{1
     else:
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
-        formset_deadline = event_deadlines_factory( instance = event )
+        formset_deadline = event_deadlines_factory( instance = event,
+                queryset = EventDate.objects.filter(event = event).exclude(
+                    eventdate_name__in = EventDate.reserved_names() ) )
         formset_session = event_sessions_factory( instance = event )
         if event_recurring:
             also_recurrences_form = AlsoRecurrencesForm()
@@ -238,13 +249,13 @@ def event_edit( request, event_id = None ): # {{{1
             'event_id': event_id }
     # add a warning message if the start date is in the past, which is probably
     # a mistake
-    if event_id and event.start < datetime.date.today():
+    if event_id and event.startdate < datetime.date.today():
         messages.warning(request, _('warning: the start date is in the past'))
     return render_to_response( 'event_edit.html', templates,
             context_instance = RequestContext( request ) )
 
 # private because it doesn't deal with transactions
-def _change_recurrences( user, event, events ):
+def _change_recurrences( user, event, events ): # {{{1
     """ modifies the events in ``events`` with the data of ``event`` except for
     ``start`` and ``end``, and including urls changes also. """
     if not events:
@@ -255,7 +266,7 @@ def _change_recurrences( user, event, events ):
             if not isinstance( user, AnonymousUser ):
                 revision.user = user
             for field in Event.get_simple_fields():
-                if field in ['start', 'end']:
+                if field in ['startdate', 'enddate']:
                     continue
                 if getattr(rec, field) != getattr(event, field):
                     setattr( rec, field, getattr( event, field ) )
@@ -313,45 +324,42 @@ def event_new_raw( request, template_event_id = None ): # {{{1
                 "browser and try again.") )
         return main( request )
     event_textarea = request.POST['event_astext']
-    sid = transaction.savepoint()
-    revision.start()
-    try:
-        if request.user.is_authenticated():
-            revision.user = request.user
-        event = Event.parse_text(event_textarea, None, request.user.id)
-        messages.success( request, _( u'event saved' ) )
-        revision.add_meta( RevisionInfo,
-                as_text = smart_unicode( event.as_text() ) )
-        revision.end()
-        transaction.savepoint_commit(sid)
-        return HttpResponseRedirect( 
-            reverse( 'event_show_all', kwargs={'event_id': event.id} ))
-    except ValidationError as err:
-        revision.invalidate()
-        transaction.savepoint_rollback(sid)
-        # TODO: test that revision works here including invalidation
-        if hasattr( err, 'message_dict' ):
-            # if hasattr(err, 'message_dict'), it looks like:
-            # {'url': [u'Enter a valid value.']}
-            for field_name, error_message in err.message_dict.items():
-                messages.error( request,
-                        field_name + ": " + ', '.join(error_message) )
-        elif hasattr( err, 'messages' ):
-            for message in err.messages:
-                messages.error( request, message )
-        elif hasattr( err, 'message' ):
-            messages.error( request, err.message )
-        templates = {
-                'title': _( "edit event as text" ),
-                'event_textarea': event_textarea, }
-        return render_to_response(
-                'event_new_raw.html',
-                templates,
-                context_instance = RequestContext( request ) )
-    except:
-        revision.invalidate()
-        transaction.savepoint_rollback(sid)
-        raise
+    with transaction.commit_manually():
+        try:
+            with revision:
+                if request.user.is_authenticated():
+                    revision.user = request.user
+                event = Event.parse_text(event_textarea, None, request.user.id)
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( event.as_text() ) )
+            transaction.commit()
+            messages.success( request, _( u'event saved' ) )
+            return HttpResponseRedirect( 
+                reverse( 'event_show_all', kwargs={'event_id': event.id} ))
+        except ValidationError as err:
+            transaction.rollback()
+            # TODO: test that revision works here including invalidation
+            if hasattr( err, 'message_dict' ):
+                # if hasattr(err, 'message_dict'), it looks like:
+                # {'url': [u'Enter a valid value.']}
+                for field_name, error_message in err.message_dict.items():
+                    messages.error( request,
+                            field_name + ": " + ', '.join(error_message) )
+            elif hasattr( err, 'messages' ):
+                for message in err.messages:
+                    messages.error( request, message )
+            elif hasattr( err, 'message' ):
+                messages.error( request, err.message )
+            templates = {
+                    'title': _( "edit event as text" ),
+                    'event_textarea': event_textarea, }
+            return render_to_response(
+                    'event_new_raw.html',
+                    templates,
+                    context_instance = RequestContext( request ) )
+        except:
+            transaction.rollback()
+            raise
 
 def event_edit_raw( request, event_id ): # {{{1
     """ View to edit an event as text.
@@ -360,9 +368,8 @@ def event_edit_raw( request, event_id ): # {{{1
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> import datetime
-    >>> e = Event.objects.create(
-    ...         title = 'eer_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
+    >>> e = Event.objects.create( title = 'eer_test', tags = 'berlin' )
+    >>> e.startdate = datetime.date.today()
     >>> transaction.commit()
     >>> Client().get(reverse('event_edit_raw',
     ...         kwargs={'event_id': e.id,})).status_code
@@ -422,11 +429,11 @@ def event_edit_raw( request, event_id ): # {{{1
             elif choice == 'past':
                 events = Event.objects.filter(
                         _recurring__master = master,
-                        start__lt = event.start )
+                        start__lt = event.startdate )
             elif choice == 'future':
                 events = Event.objects.filter(
                         _recurring__master = master,
-                        start__gt = event.start )
+                        start__gt = event.startdate )
             elif choice == 'all':
                 events = Event.objects.filter(
                         _recurring__master = master)
@@ -519,9 +526,8 @@ def event_show_all( request, event_id ): # {{{1
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> import datetime
-    >>> e = Event.objects.create(
-    ...         title = 'es_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
+    >>> e = Event.objects.create( title = 'es_test', tags = 'berlin' )
+    >>> e.startdate = datetime.date.today()
     >>> Client().get(reverse('event_show_all',
     ...         kwargs={'event_id': e.id,})).status_code
     200
@@ -538,18 +544,32 @@ def event_show_all( request, event_id ): # {{{1
     except Event.DoesNotExist:
         return event_does_not_exist( request, event_id, 'event_show_all' )
     # about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
-    title = unicode(event.upcoming)
+    title = ""
     if event.city:
-        title += " " + event.city
+        title += event.city
     if event.country:
         title += " (" + event.country + ")"
-    title += " - " + event.title + " | " + Site.objects.get_current().name
+    # we put it in the cache in context_processors.py:
+    current_site = cache.get( 'CURRENT_SITE', Site.objects.get_current().name )
+    title += " - " + event.title + " | " + unicode(current_site)
     rst2html = None
-    if event.description:
+    # recurring {{{2
+    rec = event.recurring
+    if rec:
+        # doesn't work. TODO: why? maybe because using a relation ?
+        #recurrences = Event.objects.defer('description', 'creation_time',
+        #        'modification_time', 'starttime', 'endtime', 'tags', 'postcode',
+        #        'address', 'coordinates')
+        #recurrences = recurrences.filter( _recurring__master = rec.master)
+        recurrences = Event.objects.filter( _recurring__master = rec.master)
+        recurrences = add_start( recurrences ).order_by('start')
+    else:
+        recurrences = None
+    if event.description: #{{{2
         # we try to parse the description as ReStructuredText with one
         # additional role to get event urls, e.g.: :e:`123`
         # we create a new RST role to interpret
-        def event_reference_role( # {{{2
+        def event_reference_role(
                 role, rawtext, text, lineno, inliner, options={}, content=[] ):
             # hacked using the example at
             # http://docutils.sourceforge.net/docs/howto/rst-roles.html
@@ -597,7 +617,9 @@ def event_show_all( request, event_id ): # {{{1
         #    # TODO: inform the user that the description couldn't be
         #    # rendered as rst and provide a link that shows the errors/warnings
         #    rst2html = None
-    templates = { 'title': title, 'event': event, 'rst2html': rst2html }
+    # templates {{{2
+    templates = { 'title': title, 'event': event, 'recurrences': recurrences,
+            'rst2html': rst2html }
     return render_to_response( 'event_show_all.html', templates,
             context_instance = RequestContext( request ) )
 
@@ -608,9 +630,8 @@ def event_show_raw( request, event_id ): # {{{1
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
     >>> import datetime
-    >>> e = Event.objects.create(
-    ...         title = 'esr_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
+    >>> e = Event.objects.create( title = 'esr_test', tags = 'berlin' )
+    >>> e.startdate = datetime.date.today()
     >>> Client().get(reverse('event_show_raw',
     ...         kwargs={'event_id': e.id,})).status_code
     200
@@ -658,12 +679,16 @@ def event_history( request, event_id ): # {{{1
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
         return event_does_not_exist( request, event_id, 'event_history' )
-    revisions = [ version.revision for version in
-            Version.objects.get_for_object( event ) ]
-    revisions.reverse()
-    # we create a list of tuples with a revision and a string which is a html
-    # diff to the previous revision (or None if it is not possible)
-    revs_diffs = revisions_diffs( revisions )
+    key = 'revs_diffs_of_%d_v%d' % (event.id, event.version)
+    revs_diffs = cache.get( key )
+    if not revs_diffs:
+        revisions = [ version.revision for version in
+                Version.objects.get_for_object( event ) ]
+        revisions.reverse()
+        # we create a list of tuples with a revision and a string which is a html
+        # diff to the previous revision (or None if it is not possible)
+        revs_diffs = revisions_diffs( revisions )
+        cache.set( key, revs_diffs, 2592000 )
     templates = {
             'title': _( "History of event %(event_nr)s" ) % \
                     {'event_nr': str(event.id)},
@@ -717,11 +742,11 @@ def event_delete( request, event_id ):
                 elif choice == 'past':
                     events = Event.objects.filter(
                             _recurring__master = master,
-                            start__lte = event.start )
+                            start__lte = event.startdate )
                 elif choice == 'future':
                     events = Event.objects.filter(
                             _recurring__master = master,
-                            start__gte = event.start )
+                            start__gte = event.startdate )
                 elif choice == 'all':
                     events = Event.objects.filter(
                             _recurring__master = master)
@@ -814,7 +839,8 @@ def event_undelete( request, event_id ): # {{{1
     title = simple_fields['title']
     start = simple_fields['start']
     try:
-        equal = Event.objects.get( title = title, start = start )
+        equal = Event.objects.get( title = title,
+                dates__eventdate_name = start )
     except Event.DoesNotExist:
         deleted_revision.revert()
         revision.add_meta( RevisionInfo, as_text = as_text )
@@ -854,11 +880,11 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> e1 = Event.objects.create(
-    ...         title = 's1_test', tags = 'berlin', city = 'prag',
-    ...         start = datetime.date.today())
+    ...         title = 's1_test', tags = 'berlin', city = 'prag' )
+    >>> e1.startdate = datetime.date.today()
     >>> e2 = Event.objects.create(
-    ...         title = 's2_test', tags = 'berlin', city = 'madrid',
-    ...         start = datetime.date.today())
+    ...         title = 's2_test', tags = 'berlin', city = 'madrid' )
+    >>> e2.startdate = datetime.date.today()
     >>> Client().get(reverse('search_query',
     ...         kwargs={'query': 'test',})).status_code
     200
@@ -889,11 +915,9 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     """
     # function body {{{2
     # query
-    if 'query' in request.GET and request.GET['query']:
-        query = request.GET['query']
+    query = request.GET.get('query', None)
     # view
-    if 'view' in request.GET and request.GET['view']:
-        view = request.GET['view']
+    view = request.GET.get('view', 'boxes')
     # shows the homepage with a message if no query, except when view=json
     # because client expect json
     if (not query) and (view != 'json'):
@@ -902,36 +926,73 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         messages.error( request, 
             _( u"A search was submitted without a query string" ) )
         return main( request )
-    # limit
-    if 'limit' in request.GET and request.GET['limit']:
-        try:
-            limit = int( request.GET['limit'] )
-            if limit <= 0:
-                limit = None
-        except ValueError:
-            limit = None
-    else:
-        limit = None
-    # related
+    if view == 'rss': # {{{3
+        return SearchEventsFeed()( request, query )
+    if view == 'ical': # {{{3
+        return ICalForSearch( request, query )
+    # related {{{3
     try:
         related = bool(request.GET.get('related', True))
     except ValueError:
         related = True
-    # search
-    # TODO: limit the number of search results. Think of malicious users
-    # getting millions of events from the past
+    # search {{{3
     try:
-        search_result = search_events( query, related )
+        if view == 'boxes' or view == 'calendars':
+            # for the view boxes and calendars we use EventDate model to get
+            # each date of each event
+            search_result = search_events( query, related, model = EventDate )
+            search_result = search_result.distinct()
+        else:
+            search_result = search_events( query, related, model = Event )
+            search_result = search_result.distinct()
+            search_result = add_upcoming( search_result )
+        search_result = add_start( search_result )
+        search_result = add_end( search_result )
     except ValueError as err: # TODO: catch other errors
         # this can happen for instance when a date is malformed like 2011-01-32
         messages.error( request, 
                 _( u"The search is malformed: %(error_message)s" ) %
                 {'error_message': err.args[0]} )
-        search_result = Event.objects.none()
-    if limit:
+        if view == 'boxes' or view == 'calendars':
+            search_result = EventDate.objects.none()
+        else:
+            search_result = Event.objects.none()
+    # order {{{3
+    if view == 'boxes' or view == 'calendars':
+        pass
+    elif view == 'table':
+        sort = request.GET.get( 'sort', 'upcoming' )
+        # sanity check
+        if sort not in ('upcoming', 'title', 'city', 'country',
+                'start', 'end'):
+            raise Http404
+            # TODO: allow to sort on startdate and enddate
+            # see http://stackoverflow.com/questions/807096/about-annotate-django
+            # and experiment with something like
+            # select * from event join (select date where name = 'start') on
+            # (event.id = date.event_id) ...
+        search_result = search_result.order_by( sort )
+    else:
+        search_result = search_result.order_by( 'upcoming' )
+    # limit {{{3
+    # views can have a max limit, which is stored in the dictionary
+    # settings.views_max_limits
+    # however, the user/api can specify a smaller limit
+    limit = request.GET.get( 'limit', settings.DEFAULT_LIMIT )
+    try:
+        limit = int( limit )
+        if limit <= 0 or limit > settings.DEFAULT_LIMIT:
+            limit = settings.DEFAULT_LIMIT
+    except ValueError:
+        limit = settings.DEFAULT_LIMIT
+    max_limit = settings.VIEWS_MAX_LIMITS.get( view, settings.DEFAULT_LIMIT )
+    if limit > max_limit:
+        limit = max_limit
+    if view not in ('table', 'map', 'boxes', 'calendars'):
         search_result = search_result[0:limit]
+        # for the others we use a paginator later on
     # views
-    if view == 'json':
+    if view == 'json': # {{{3
         if 'jsonp' in request.GET and request.GET['jsonp']:
             jsonp = request.GET['jsonp']
         else:
@@ -948,7 +1009,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         else:
             mimetype = "application/json"
         return HttpResponse( mimetype = mimetype, content = data )
-    if view in ('yaml', 'xml'):
+    if view in ('yaml', 'xml'): # {{{3
         data = serializers.serialize(
                 view,
                 search_result,
@@ -959,10 +1020,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         else:
             mimetype = "application/x-yaml"
         return HttpResponse( mimetype = mimetype, content = data )
-    if view == 'rss':
-        return SearchEventsFeed()( request, query )
-    if view == 'ical':
-        return ICalForSearch( request, query )
+    # views table, map, boxes or calendars {{{3
     # variables to be passed to the html templates
     context = dict()
     context['views'] = views
@@ -983,62 +1041,28 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         return render_to_response( 'search.html',
                 context,
                 context_instance = RequestContext( request ) )
-    if view == 'table':
-        sort = request.GET.get( 'sort', 'upcoming' )
-        page = int( request.GET.get( 'page', '1' ) )
-        # The next line was used in the past when using
-        # django_tables.MemoryTable. Now we use ModelTable.
-        #search_result = EventTable.convert( search_result )
-        search_result_table = EventTable( search_result, order_by = sort )
-        search_result_table.paginate(
-                Paginator, 50, page = page, orphans = 2 )
-        context['events_table'] = search_result_table
-        context['sort'] = sort
-    elif view == 'boxes' or view == 'map':
-        if view == 'map':
-            # map-view works only with maximum 10 events
-            paginator = Paginator( search_result, 10)
-        else:
-            paginator = Paginator( search_result, 100)
+    if view in ( 'boxes', 'map', 'calendars', 'table' ):
         # Make sure page request is an int. If not, deliver first page.
         try:
-            page = int(request.GET.get('page', '1'))
+            page_nr = int(request.GET.get('page', '1'))
         except ValueError:
-            page = 1
-        # If page request (9999) is out of range, deliver last page of results.
+            page_nr = 1
+        paginator = Paginator( search_result, limit)
         try:
-            context['events'] = paginator.page( page )
+            page = paginator.page( page_nr )
         except ( EmptyPage, InvalidPage ):
-            context['events'] = paginator.page( paginator.num_pages )
-    elif view == 'calendars':
-        # FIXME: use pagination and optimize queries
-        if isinstance( search_result, QuerySet ):
-            extremes = search_result.aggregate(
-                    Min('deadlines__deadline'), Max('deadlines__deadline'),
-                    Min('start'), Max('start'),
-                    Min('end'),Max('end'))
-            # removing Nones
-            extremes = [date for date in extremes.values() if date]
-            # calculating max and min
-            last_year = max( extremes ).year
-            first_year =  min( extremes ).year
-        else:
-            # TODO: test this (search_result is an event list, not a queryset)
-            years = [eve.start for eve in search_result] + \
-                    [eve.end for eve in search_result if even.end]
-            for event in search_result:
-                years += [ deadline['deadline'] for deadline in 
-                        event.deadlines.values('deadline') ]
-            first_year = min( years )
-            last_year = max( years )
-        years_cals = []
-        events_cal = EventsCalendar( search_result )
-        for year in range( first_year, last_year + 1 ):
-            years_cals.append( (
-                year,
-                mark_safe( smart_unicode(
-                    events_cal.formatyear( year, width=1 ) ) ) ) )
-        context['years_cals'] = years_cals
+            page = paginator.page( paginator.num_pages )
+        context['page'] = page
+        if view == 'table':
+            context['events_table'] = EventTable(
+                    EventTable.convert( page.object_list ) )
+            context['sort'] = sort
+            # we use the Django paginator now. In the past for this view:
+            #search_result_table.paginate(
+            #        Paginator, limit, page = page_nr, orphans = 2 )
+        if view == 'calendars':
+            context['years_cals'] = \
+                    EventsCalendar( page.object_list).years_cals()
     else:
         raise Http404
     return render_to_response( 'search.html',
@@ -1257,9 +1281,8 @@ def list_events_my( request ): # {{{1
     >>> from django.core.urlresolvers import reverse
     >>> from django.contrib.auth.models import User
     >>> u = User.objects.create_user('l_e_m', '0@example.com', 'p')
-    >>> e = Event.objects.create(
-    ...         title = 'lem_test', tags = 'berlin',
-    ...         start = datetime.date.today(), user = u )
+    >>> e = Event.objects.create( title='lem_test', tags='berlin', user=u )
+    >>> e.startdate = datetime.date.today()
     >>> client = Client()
     >>> client.login(username = u.username, password = 'p')
     True
@@ -1271,7 +1294,6 @@ def list_events_my( request ): # {{{1
             {'title': _( "my events" ), 'events': events},
             context_instance = RequestContext( request ) )
 
-@revision.create_on_success
 def main( request, status_code=200 ):# {{{1
     """ main view
     
@@ -1285,98 +1307,105 @@ def main( request, status_code=200 ):# {{{1
     # request can contain POST data coming from another form
     if (not status_code == 404) and (not status_code == 500) and \
             request.method == 'POST':
+        # {{{2
         event_form = SimplifiedEventForm( request.POST )
         if event_form.is_valid():
-            if request.user.is_authenticated():
-                revision.user = request.user
-            cleaned_data = event_form.cleaned_data
-            # create a new entry and saves the data
-            event = Event( user_id = request.user.id,
-                      title = cleaned_data['title'],
-                      start = cleaned_data['when']['start'],
-                      tags = cleaned_data['tags'], )
-            if cleaned_data['when'].has_key('end'):
-                event.end = cleaned_data['when']['end']
-            if cleaned_data['when'].has_key('starttime'):
-                event.starttime = cleaned_data['when']['starttime']
-            if cleaned_data['when'].has_key('endtime'):
-                event.endtime = cleaned_data['when']['endtime']
-            addresses = search_address( cleaned_data['where'] )
-            if addresses and len( addresses ) == 1:
-                address = addresses.values()[0]
-                event.address = addresses.keys()[0]
-                if address.has_key( 'longitude' ) and \
-                        address.has_key( 'latitude' ):
-                    event.coordinates = Point(
-                            float( address['longitude'] ),
-                            float( address['latitude'] ) )
-                if address.has_key( 'country' ):
-                    event.country = address['country']
-                if address.has_key( 'postcode' ):
-                    event.postcode = address['postcode']
-                if address.has_key( 'city' ):
-                    event.city = address['city']
-            else:
-                #FIXME: deal with more than one address, none or general
-                # coordinates like e.g. pointing to the center of city/country
-                event.address = cleaned_data['where']
-            event.save()
-            # create the url data
-            event.urls.create( url_name = "web", url = cleaned_data['web'] )
-            revision.add_meta( RevisionInfo,
-                    as_text = smart_unicode( event.as_text() ) )
-            messages.info( request, _( u'Event successfully saved. ' \
-                    'Optionally you can add more information about the ' \
-                    'event now.' ) )
-            return HttpResponseRedirect( reverse( 'event_edit',
-                    kwargs = {'event_id': str( event.id )} ) )
-    else:
+            with transaction.commit_manually():
+                cleaned_data = event_form.cleaned_data
+                # create a new entry and saves the data
+                try:
+                    event = Event(
+                            user_id = request.user.id,
+                            title = cleaned_data['title'],
+                            tags = cleaned_data['tags'], )
+                    if cleaned_data['when'].has_key('starttime'):
+                        event.starttime = cleaned_data['when']['starttime']
+                    if cleaned_data['when'].has_key('endtime'):
+                        event.endtime = cleaned_data['when']['endtime']
+                    addresses = search_address( cleaned_data['where'] )
+                    if addresses and len( addresses ) == 1:
+                        address = addresses.values()[0]
+                        event.address = addresses.keys()[0]
+                        if address.has_key( 'longitude' ) and \
+                                address.has_key( 'latitude' ):
+                            event.coordinates = Point(
+                                    float( address['longitude'] ),
+                                    float( address['latitude'] ) )
+                        if address.has_key( 'country' ):
+                            event.country = address['country']
+                        if address.has_key( 'postcode' ):
+                            event.postcode = address['postcode']
+                        if address.has_key( 'city' ):
+                            event.city = address['city']
+                    else:
+                        #FIXME: deal with more than one address, none or general
+                        # coordinates like e.g. pointing to the center of
+                        # city/country
+                        event.address = cleaned_data['where']
+                    with revision:
+                        event.save()
+                        event.startdate = cleaned_data['when']['startdate']
+                        if cleaned_data['when'].has_key('enddate'):
+                            event.enddate = cleaned_data['when']['enddate']
+                        # create the url data
+                        event.urls.create( url_name = "web",
+                                url = cleaned_data['web'] )
+                        if request.user.is_authenticated():
+                            revision.user = request.user
+                        revision.add_meta( RevisionInfo,
+                                as_text = smart_unicode( event.as_text() ) )
+                except:
+                    transaction.rollback()
+                    raise
+                else:
+                    transaction.commit()
+                    messages.info( request, _( u'Event successfully saved. ' \
+                            'Optionally you can add more information about the ' \
+                            'event now.' ) )
+                    # TODO: is redirect the proper way? or better submit to another
+                    # view?
+                    return HttpResponseRedirect( reverse( 'event_edit',
+                            kwargs = {'event_id': str( event.id )} ) )
+    else: # {{{2
         event_form = SimplifiedEventForm()
-    # calculates events to show
+    # calculates events to show {{{2
     today = datetime.date.today()
-    elist = Event.objects.filter( dates__eventdate_date__gte = today
-            ).order_by( 'dates__eventdate_date' )
-    # TODO: a lot of queries are issued for getting the tags of each event. Can
-    # it be optimized?
-    paginator = Paginator( elist, settings.MAX_EVENTS_ON_ROOT_PAGE,
+    eventdates = EventDate.objects.select_related( depth=1 ).defer(
+            'event__description', 'event__coordinates',
+            'event__creation_time', 'event__modification_time',
+            'event__postcode', 'event__address').filter(
+            eventdate_date__gte = today )
+    eventdates = add_start( eventdates )
+    eventdates = add_end( eventdates )
+    paginator = Paginator( eventdates, settings.MAX_EVENTS_ON_ROOT_PAGE,
             allow_empty_first_page = False )
     # Make sure page request is an int. If not, deliver first page.
     try:
-        page = int(request.GET.get('page', '1'))
+        page_nr = int(request.GET.get('page', '1'))
     except ValueError:
-        page = 1
+        page_nr = 1
     # If page request (9999) is out of range, deliver last page of results.
     try:
-        events = paginator.page( page )
+        page = paginator.page( page_nr )
     except ( EmptyPage, InvalidPage ):
-        events = paginator.page( paginator.num_pages )
+        page = paginator.page( paginator.num_pages )
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
-    # Generate the response with a custom status code. Rationale: our custom
-    # handler404 and 500 returns the main page with a custom error message and
-    # we want to return the proper html status code
+    # We generate the response with a custom status code. Reason: our custom
+    # handler404 and handler500 returns the main page with a custom error
+    # message and we return also the proper html status code
     template = loader.get_template('base_main.html')
     context = RequestContext( request, dict =
             {
                 'title': Site.objects.get_current().name,
                 'form': event_form,
-                'events': events,
+                'page': page,
+                'reserved_names': EventDate.reserved_names(),
                 'about_text': about_text,
             } )
     return HttpResponse(
             content = template.render( context ),
             mimetype="text/html",
             status = status_code )
-    # Before the custom status code it was:
-    # return render_to_response( 'base_main.html',
-    #        {
-    #            'title': Site.objects.get_current().name,
-    #            'form': event_form,
-    #            'events': elist,
-    #            'about_text': about_text,
-    #            'messages': messages,
-    #            'error_messages': error_messages,
-    #        },
-    #        context_instance = RequestContext( request ) )
 
 @login_required
 def settings_page( request ): # {{{1
@@ -1518,9 +1547,8 @@ def group_add_event(request, event_id): # {{{2
     True
     >>> g, c = Group.objects.get_or_create(name = 'test')
     >>> m = Membership.objects.create(user = u, group = g)
-    >>> e = Event.objects.create(
-    ...         title = 'gae_test', tags = 'berlin',
-    ...         start = datetime.date.today(), user = u )
+    >>> e = Event.objects.create( title='gae_test', tags='berlin', user=u )
+    >>> e.startdate = datetime.date.today()
     >>> m = Calendar.objects.create(group = g, event = e)
     >>> client.get(reverse('group_add_event',
     ...         kwargs={'event_id': e.id,})).status_code
@@ -1574,8 +1602,8 @@ def group_view(request, group_id): # {{{2
     >>> g, c = Group.objects.get_or_create(name = 'test')
     >>> m, c = Membership.objects.get_or_create(user = u1g, group = g)
     >>> e = Event.objects.create(
-    ...         title = 'event in group', tags = 'group-view',
-    ...         start = datetime.date.today(), user = u1g )
+    ...         title = 'event in group', tags = 'group-view', user =u1g )
+    >>> e.startdate = datetime.date.today()
     >>> m, c = Calendar.objects.get_or_create(group = g, event = e)
     >>> client = Client()
     >>> response = client.get(reverse('group_view',
@@ -1676,9 +1704,8 @@ def ICalForSearch( request, query ): # {{{2
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
-    >>> e = Event.objects.create(
-    ...         title = 'icfs_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
+    >>> e = Event.objects.create( title = 'icfs_test', tags = 'berlin' )
+    >>> e.startdate = datetime.date.today()
     >>> Client().get(reverse('search_ical',
     ...         kwargs={'query': 'berlin',})).status_code
     200
@@ -1695,10 +1722,10 @@ def ICalForEvent( request, event_id ): # {{{2
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> from gridcalendar.events.models import Event
-    >>> e = Event.objects.create(
-    ...         title = 'icfe_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
-    >>> Client().get(reverse('event_show_ical',
+    >>> e = Event( title = 'icfe_test', tags = 'berlin')
+    >>> e.save()
+    >>> e.startdate = datetime.date.today()
+    >>> Client().get( reverse( 'event_show_ical',
     ...         kwargs={'event_id': e.id,})).status_code
     200
     """
@@ -1715,9 +1742,8 @@ def ICalForGroup( request, group_id ): # {{{2
     >>> from django.contrib.auth.models import User
     >>> from gridcalendar.events.models import Event
     >>> from gridcalendar.events.models import Group, Membership, Calendar
-    >>> e = Event.objects.create(
-    ...         title = 'icfg_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
+    >>> e = Event.objects.create( title = 'icfg_test', tags = 'berlin' )
+    >>> e.startdate = datetime.date.today()
     >>> u = User.objects.create_user('ICalForGroup', '0@example.com', 'p')
     >>> g, c = Group.objects.get_or_create(name = 'test')
     >>> m, c = Membership.objects.get_or_create(user = u, group = g)
@@ -1730,10 +1756,10 @@ def ICalForGroup( request, group_id ): # {{{2
     200
     """
     group = get_object_or_404(Group, pk = group_id)
-    elist = Event.objects.filter( calendar__group = group )
     today = datetime.date.today()
-    elist = elist.filter ( upcoming__gte = today )
-    elist = elist.distinct().order_by('upcoming') # TODO: needed?
+    elist = Event.objects.filter( calendar__group = group,
+            dates__eventdate_date__gte = today ).distinct()
+    elist = add_upcoming( elist ).order_by('upcoming')
     return _ical_http_response_from_event_list( elist, group.name )
 
 def _ical_http_response_from_event_list( elist, filename ): # {{{2
@@ -1758,26 +1784,27 @@ def _ical_http_response_from_event_list( elist, filename ): # {{{2
     response['Content-Disposition'] = 'attachment; filename=' + filename
     return response
 
-def all_events_text ( request ): #{{{1
-    """ returns a text file with all events.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from gridcalendar.events.models import Event
-    >>> e = Event.objects.create(
-    ...         title = 'aet_test', tags = 'berlin',
-    ...         start = datetime.date.today() )
-    >>> Client().get(reverse('all_events_text')).status_code
-    200
-    """
-    elist = Event.objects.all()
-    text = Event.list_as_text( elist )
-    response = HttpResponse( text, mimetype = 'text/text;charset=UTF-8' )
-    filename =  Site.objects.get_current().name + '_' + \
-            datetime.datetime.now().isoformat() + '.txt'
-    response['Filename'] = filename
-    response['Content-Disposition'] = 'attachment; filename=' + filename
-    return response
+# def all_events_text ( request ): #{{{1
+#     """ returns a text file with all events.
+# 
+#     >>> from django.test import Client
+#     >>> from django.core.urlresolvers import reverse
+#     >>> from gridcalendar.events.models import Event
+#     >>> e = Event.objects.create(
+#     ...         title = 'aet_test', tags = 'berlin',
+#     ...         start = datetime.date.today() )
+#     >>> Client().get(reverse('all_events_text')).status_code
+#     200
+#     """
+#     # TODO: stream it, see https://code.djangoproject.com/ticket/7581
+#     elist = Event.objects.all()
+#     text = Event.list_as_text( elist )
+#     response = HttpResponse( text, mimetype = 'text/text;charset=UTF-8' )
+#     filename =  Site.objects.get_current().name + '_' + \
+#             datetime.datetime.now().isoformat() + '.txt'
+#     response['Filename'] = filename
+#     response['Content-Disposition'] = 'attachment; filename=' + filename
+#     return response
 
 def handler404(request): #{{{1
     """ custom 404 handler """
@@ -1793,7 +1820,7 @@ def handler500( request ): #{{{1
     return main( request, status_code = 500 )
 
 # from http://moinmo.in/MacroMarket/EventAggregator
-def getColour(s):
+def bg_color(s):
     colour = [0, 0, 0]
     digit = 0
     for c in s:
@@ -1803,7 +1830,7 @@ def getColour(s):
         digit = digit % 3
     return tuple(colour)
 # from http://moinmo.in/MacroMarket/EventAggregator
-def getBlackOrWhite(colour):
+def fg_color(colour):
     if sum(colour) / 3.0 > 127:
         return (0, 0, 0)
     else:
@@ -1811,14 +1838,43 @@ def getBlackOrWhite(colour):
 
 class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
 
-    def __init__(self, events, *args, **kwargs):
+    def years_cals( self ):
+        years_cals = []
+        for year in sorted( self._years_set ):
+            html_code = mark_safe(
+                    smart_unicode( self.formatyear( year, width = 1 ) ) )
+            years_cals.append( ( year, html_code ) )
+        return years_cals
+
+    def __init__(self, eventdates, *args, **kwargs):
+        # NOTE: ``eventdates`` is assumed to be sorted
         super(EventsCalendar, self).__init__(*args, **kwargs)
-        self.events = events
+        # we generate an appropiate structure out of the eventdates:
+        # (year,week_nr) -> event_id -> list_of_eventdates
+        self.year_week_dic = {}
+        self._years_set = set()
+        for eventdate in eventdates:
+            self._years_set.add( eventdate.eventdate_date.year )
+            year_week = eventdate.eventdate_date.isocalendar()[0:2]
+            if not self.year_week_dic.has_key( year_week ):
+                eventdate_list = []
+                eventdate_list.append( eventdate )
+                event_id_dic = {}
+                event_id_dic[ eventdate.event.id ] = eventdate_list
+                self.year_week_dic[ year_week ] = event_id_dic
+            else:
+                event_id_idc = self.year_week_dic[ year_week ]
+                if not event_id_dic.has_key( eventdate.event.id ):
+                    eventdate_list = []
+                    eventdate_list.append( eventdate )
+                    event_id_idc[ eventdate.event.id ] = eventdate_list
+                else:
+                    event_id_dic[ eventdate.event.id ].append( eventdate )
 
     def formatyear(self, theyear, *args, **kwargs):
         months = []
         for month in range(1, 13):
-            months.append( self.formatmonth( theyear, month, withyear=False ) )
+            months.append( self.formatmonth( theyear, month, withyear=True ) )
         return ''.join( months )
 
     def formatday(self, day, weekday):
@@ -1841,29 +1897,11 @@ class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
         date1 = datetime.date( year, month, 1 )
         date2 = datetime.date( year, month,
                 calendar.monthrange( year, month )[1] )
-        today = datetime.date.today()
-        if isinstance( self.events, QuerySet ):
-            events = self.events.filter(
-                Q( start__range = (date1, date2) )  |
-                Q( end__range = (date1, date2) ) |
-                Q(deadlines__deadline__range = (date1, date2),
-                    deadlines__deadline__gte = today) |
-                Q( start__lt = date1, end__gt = date2 ) ) # range in-between
-            if events:
+        while date2 >= date1:
+            if self.year_week_dic.has_key( date1.isocalendar()[0:2] ):
                 return super(EventsCalendar, self).formatmonth(
                         year, month, *args, **kwargs )
-        else:
-            for eve in self.events:
-                if ( eve.start >= date1 and eve.start <= date2 ) or \
-                        ( eve.end and eve.end >= date1 and eve.end <= date2 ):
-                    return super(EventsCalendar, self).formatmonth(
-                            year, month, *args, **kwargs )
-                for deadline in eve.deadlines.iterator():
-                    if deadline.deadline >=date1 and \
-                            deadline.deadline <=date2 and \
-                            deadline.deadline >= today:
-                        return super(EventsCalendar, self).formatmonth(
-                                year, month, *args, **kwargs )
+            date1 = date1 + datetime.timedelta(days=1)
         return ""
 
     def formatweek( self, theweek, *args, **kwargs ):
@@ -1871,31 +1909,13 @@ class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
         days = [d for (d, wd) in theweek if d > 0] # d=0 -> not in month
         date1 = datetime.date( self.year, self.month, min( days ) )
         date2 = datetime.date( self.year, self.month, max( days ) )
+        this_year_week = date1.isocalendar()[0:2]
+        assert this_year_week == date2.isocalendar()[0:2]
         today = datetime.date.today()
-        if isinstance( self.events, QuerySet ):
-            events = self.events.filter(
-                Q( start__range = (date1, date2) )  |
-                Q( end__range = (date1, date2) ) |
-                Q(deadlines__deadline__range = (date1, date2),
-                    deadlines__deadline__gte = today) |
-                Q( start__lt = date1, end__gt = date2 ) ) # range in-between
-        else:
-            events = []
-            for eve in self.events:
-                if ( eve.start >= date1 and eve.start <= date2 ) or \
-                        ( eve.end and eve.end >= date1 and eve.end <= date2 ):
-                    events.append( eve )
-                    continue
-                for deadline in eve.deadlines.iterator():
-                    # exclude deadlines in the past
-                    if deadline.deadline < datetime.date.today():
-                        continue
-                    if deadline.deadline >=date1 and deadline.deadline <=date2:
-                        events.append( eve )
         text = u''
         text += super(EventsCalendar, self).formatweek(
                 theweek, *args, **kwargs )
-        if not events:
+        if not self.year_week_dic.has_key( this_year_week ):
             text += '\n<tr class="empty-row">'
             for day, weekday in theweek:
                 if day == 0:
@@ -1903,10 +1923,12 @@ class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
                 else:
                     text += '<td>&nbsp;</td>'
             text += '</tr>\n'
-        for eve in events:
+            return text
+        for event_id, evdas in self.year_week_dic[this_year_week].items():
+            event = evdas[0].event
             text += '\n<tr class="event-row">\n'
-            bg = getColour( eve.title )
-            fg = getBlackOrWhite(bg)
+            bg = bg_color( evdas[0].event.title )
+            fg = fg_color(bg)
             style = ' style="background-color: rgb(%d, %d, %d); ' \
                     'color: rgb(%d, %d, %d);" ' % (bg + fg)
             colspan = 0
@@ -1916,22 +1938,24 @@ class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
                         text += self.formatday( day, weekday )
                     else:
                         # this happen if there is an event until the end of the
-                        # month and the week has some days belonging the next
+                        # month and the week has some days belonging to the next
                         # month (nodays)
                         text += u'<td class="event-rectangle" ' \
                             '%s colspan="%d"><a href="%s">%s</a></td>' % \
-                            (style, colspan, eve.get_absolute_url(), eve.title)
+                            ( style, colspan, event.get_absolute_url(),
+                                    event.title )
                         colspan = 0
                         text += self.formatday( day, weekday )
                     continue
                 date = datetime.date( self.year, self.month, day )
-                if eve.contains( date ): # TODO: is this hitting the DB too much?
+                if filter(lambda d: d.eventdate_date == date, evdas ):
                     colspan += 1
                 else:
                     if colspan > 0:
                         text += u'<td class="event-rectangle" ' \
                             '%s colspan="%d"><a href="%s">%s</a></td>' % \
-                            (style, colspan, eve.get_absolute_url(), eve.title)
+                            ( style, colspan, event.get_absolute_url(),
+                                    event.title )
                     #text += self.formatday( date.day, date.weekday() )
                     text += '<td class="%s">&nbsp;</td>' % \
                                             self.cssclasses[ date.weekday() ]
@@ -1939,6 +1963,7 @@ class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
             if colspan > 0:
                 text += u'<td class="event-rectangle" ' \
                         '%s colspan="%d"><a href="%s">%s</a></td>' % \
-                        (style, colspan, eve.get_absolute_url(), eve.title)
+                        ( style, colspan, event.get_absolute_url(),
+                                event.title )
             text += '\n</tr>\n'
         return text

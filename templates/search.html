@@ -33,11 +33,11 @@
         {% if number_of_events_found > 0 %}
             {% if number_of_events_found == 1 %}
                 {% blocktrans %}
-                    One event found searching for '{{ query }}'.
+                    One entry found searching for '{{ query }}'.
                 {% endblocktrans %}
             {% else %}
                 {% blocktrans %}
-                    {{ number_of_events_found }} events found searching for '{{ query }}'.
+                    {{ number_of_events_found }} entries found searching for '{{ query }}'.
                 {% endblocktrans %}
             {% endif %}
         {% endif %}
@@ -65,10 +65,12 @@
                 {% ifequal current_view "map" %}
                     {% include "search_map.html" %}
                 {% else %}
-                    {% include "boxes.html" %}
-                    {% include "pagination.html" %}
+                    {% with eventdates=page.object_list %}
+                        {% include "boxes.html" %}
+                    {% endwith %}
                 {% endifequal %}
             {% endifequal %}
         {% endifequal %}
+        {% include "pagination.html" %}
     {% endif %}
 {% endblock %}

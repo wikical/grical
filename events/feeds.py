@@ -36,7 +36,7 @@ from django.core.urlresolvers import reverse
 
 from gridcalendar.settings import FEED_SIZE, SITE_ID
 from gridcalendar.events.models import ( Event, Filter, Group,
-        ExtendedUser )
+        ExtendedUser, add_upcoming )
 from gridcalendar.events.search import search_events
 
 SITE_DOMAIN = Site.objects.get(id = SITE_ID).domain
@@ -56,10 +56,10 @@ class EventsFeed(Feed): # {{{1
 
     def item_description(self, item):
         description = _( u'start: %(date)s' ) % \
-                {'date': item.start.isoformat()}
-        if item.upcoming != item.start:
+                {'date': item.startdate.isoformat()}
+        if item.upcomingdate != item.startdate:
             description += "    " +  _('upcoming: %(date)s') % \
-                {'date': item.upcoming.isoformat()}
+                {'date': item.upcomingdate.isoformat()}
         return description
         # one could return the event as text with something like:
         # return '<!CDATA[' + item.as_text().replace('\n', '<br />') + ' ]]'
@@ -77,7 +77,10 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
     def items( self ):
         """ items """
         today = datetime.date.today()
-        elist = Event.objects.filter(upcoming__gte=today ).order_by('upcoming')
+        elist = Event.objects.filter(dates__eventdate_date__gte=today )
+        # TODO: test that this really works, ie it returns future events (and
+        # not past events, and not repetitions) sorted by upcoming
+        elist = add_upcoming(elist.distinct()).order_by('upcoming')
         return elist[0:FEED_SIZE]
 
 class LastAddedEventsFeed(EventsFeed): # {{{1

@@ -62,10 +62,9 @@ from django_webtest import WebTest
 from MultipartPostHandler import MultipartPostHandler
 import urllib2
 
-from gridcalendar.events import models, views, forms, utils, recurring
+from gridcalendar.events import models, views, forms, utils
 from gridcalendar.events.models import ( Event, Group, Filter, Membership,
-        Calendar, GroupInvitation, ExtendedUser, EventDeadline )
-from gridcalendar.events.management.commands.updateupcoming import Command
+        Calendar, GroupInvitation, ExtendedUser, EventDate )
 
 def suite(): #{{{1
     """ returns a TestSuite naming the tests explicitly 
@@ -78,7 +77,6 @@ def suite(): #{{{1
     tests.addTest(doctest.DocTestSuite( views ))
     tests.addTest(doctest.DocTestSuite( forms ))
     tests.addTest(doctest.DocTestSuite( utils ))
-    tests.addTest(doctest.DocTestSuite( recurring ))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsTestCase ))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
@@ -128,13 +126,13 @@ tags: test recurring
 urls:
     com http://example.com
     org http://example.org
-deadlines:
+dates:
     %(dl1)s deadline 1
     %(dl2)s deadline 2
 sessions:
     %(s1start)s 10:00 11:00 session1
     %(s2start)s 10:00 11:00 session2
-dates:
+recurrences:
     %(recurrence1)s
     %(recurrence2)s
     %(recurrence3)s
@@ -148,8 +146,8 @@ dates:
                    'recurrence2': week2,
                    'recurrence3': week3 }
         event = Event.parse_text( text )
-        recurrences = Event.objects.filter(
-                _recurring__master = event ).order_by('start')
+        recurrences = Event.objects.filter( _recurring__master = event )
+        recurrences = add_start( recurrences ).order_by('start')
         assert len( recurrences ) == 4
         # we modify all events at one:
         edit_page = self.app.get(
@@ -157,8 +155,8 @@ dates:
         form = edit_page.forms[1]
         form['tags'] = 'recurring2'
         form['choices'] = 'all'
-        recurrences = Event.objects.filter(
-                _recurring__master = event ).order_by('start')
+        recurrences = Event.objects.filter( _recurring__master = event )
+        recurrences = add_start( recurrences ).order_by('start')
         form.submit()
         # we check the modification and history on all
         for recurrence in Event.objects.filter( _recurring__master = event ):
@@ -311,15 +309,16 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         """ visibility of events """
         user = self._create_user('tpev1')
         event, created = Event.objects.get_or_create(
-                user = user, title = "1234",
-                tags = "test", start=datetime.date.today() )
+                user = user, title = "1234", tags = "test")
+        event.startdate = datetime.date.today()
         self._login ( user )
         response = self.client.get( reverse( 
                 'search_query',
                 kwargs = {'query': '1234',} ) )
         self.assertTrue( event.title in [
-            e.title for e in response.context['events'].object_list ] )
+            ed.event.title for ed in response.context['page'].object_list ] )
         event.delete()
+        user.delete()
 
     def test_group_invitation(self): # {{{2
         """ test group invitation """
@@ -376,9 +375,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         """ tests for icals of groups """
         user = self._create_user()
         event1 = Event.objects.create( title = 'title1',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event1.startdate = datetime.date.today()
         event2 = Event.objects.create( title = 'title2',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event2.startdate = datetime.date.today()
         # self.client.login( username = user1.username, password = 'p' )
         group = self._create_group( user )
         Calendar.objects.create( group = group, event = event1 )
@@ -399,9 +400,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         """ tests for rss feeds of groups """
         user = self._create_user()
         event1 = Event.objects.create( title = 'title1',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event1.startdate = datetime.date.today()
         event2 = Event.objects.create( title = 'title2',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event2.startdate = datetime.date.today()
         # self.client.login( username = user1.username, password = 'p' )
         group = self._create_group( user )
         Calendar.objects.create( group = group, event = event1 )
@@ -418,9 +421,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     def test_lastadded_rss( self ): # {{{2
         user = self._create_user()
         event1 = Event.objects.create( title = 'title1',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event1.startdate = datetime.date.today()
         event2 = Event.objects.create( title = 'title2',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event2.startdate = datetime.date.today()
         url = reverse( 'lastadded_events_rss' )
         self._validate_rss( url )
         content = self.client.get( url ).content
@@ -433,9 +438,11 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     def test_upcoming_rss( self ): # {{{2
         user = self._create_user()
         event1 = Event.objects.create( title = 'title1',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event1.startdate = datetime.date.today()
         event2 = Event.objects.create( title = 'title2',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event2.startdate = datetime.date.today()
         url = reverse( 'upcoming_events_rss' )
         self._validate_rss( url )
         content = self.client.get( url ).content
@@ -445,27 +452,30 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         event2.delete()
         user.delete()
 
-    def test_filter_notification( self ): # {{{2
-        """ test filter notification """
-        user1 = self._create_user()
-        user2 = self._create_user()
-        Filter.objects.create(
-                user = user2, query = '#filter', name = "test", email = True )
-        self.assertEqual(len(mail.outbox), 0)
-        eve = Event.objects.create( title = 'test filter notification',
-                tags = 'filter', start = datetime.date.today(), user = user1 )
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to[0], user2.email)
-        mail.outbox = []
-        # no notification if event changes
-        self.assertEqual(len(mail.outbox), 0)
-        eve.title = 'title changes'
-        eve.save()
-        self.assertEqual(len(mail.outbox), 0)
-        # TODO: makes this work even if emails are sent in a different thread
-        eve.delete()
+    # TODO: we are now using a task manager, create a test account to receive
+    # mails and reimplement this:
+    #def test_filter_notification( self ): # {{{2
+    #    """ test filter notification """
+    #    user1 = self._create_user()
+    #    user2 = self._create_user()
+    #    Filter.objects.create(
+    #            user = user2, query = '#filter', name = "test", email = True )
+    #    self.assertEqual(len(mail.outbox), 0)
+    #    eve = Event.objects.create( title = 'test filter notification',
+    #            tags = 'filter', user = user1 )
+    #    eve.startdate = datetime.date.today()
+    #    self.assertEqual(len(mail.outbox), 1)
+    #    self.assertEqual(mail.outbox[0].to[0], user2.email)
+    #    mail.outbox = []
+    #    # no notification if event changes
+    #    self.assertEqual(len(mail.outbox), 0)
+    #    eve.title = 'title changes'
+    #    eve.save()
+    #    self.assertEqual(len(mail.outbox), 0)
+    #    # TODO: makes this work even if emails are sent in a different thread
+    #    eve.delete()
 
-    def test_updateupcoming( self ):
+    def test_upcomingdate( self ):
         now = datetime.datetime.now().isoformat()
         today = datetime.date.today()
         yesterday = timedelta( days = -1 ) + today
@@ -474,84 +484,28 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         days3 = timedelta( days = +3 ) + today
         dayspast2 = timedelta( days = -2 ) + today
         dayspast3 = timedelta( days = -3 ) + today
-        event = Event(title="test updateupcoming " + now,
-            start = days2, tags="test")
-        event.save()
-        # start = days2
-        assert( event.upcoming == event.start )
-        event_deadline = EventDeadline(
-            event = event, deadline_name = "test",
-            deadline = tomorrow )
-        event_deadline.save()
+        event,c = Event.objects.get_or_create(
+                title = "test updateupcoming " + now, tags = "test" )
+        event.startdate = days2
+        # startdate = days2
+        assert( event.upcomingdate == event.startdate )
+        event_date = EventDate(
+            event = event, eventdate_name = "test",
+            eventdate_date = tomorrow )
+        event_date.save()
         event = Event.objects.get( pk = event.pk )
-        # deadline = tomorrow
-        assert( event.upcoming == tomorrow )
-        # save methods work for Event and EventDeadline
-        # Now we try the command updateupcoming. To avoid to call the save
-        # methods, we write directly to the database.
-        cursor = connection.cursor()
-        cursor.execute(
-            "UPDATE events_eventdeadline SET deadline = %s WHERE id = %s",
-            [yesterday.isoformat(), event_deadline.id] )
-        transaction.commit_unless_managed()
-        event_deadline = EventDeadline.objects.get( pk = event_deadline.id )
-        assert( event_deadline.deadline == yesterday )
-        cursor.execute(
-            "UPDATE events_event SET upcoming = %s WHERE id = %s",
-            [yesterday.isoformat(), event.id] )
-        transaction.commit_unless_managed()
-        event = Event.objects.get( pk = event.pk )
-        assert( event.upcoming == yesterday )
-        # start = days2 , upcoming = yesterday , deadline = yesterday
-        updateupcoming = Command()
-        updateupcoming.handle_noargs()
-        event = Event.objects.get( pk = event.pk )
-        assert( event.upcoming == event.start )
-        # we now put everything in the past but upcoming is not start
-        cursor.execute(
-            "UPDATE events_eventdeadline SET deadline = %s WHERE id = %s",
-            [dayspast3.isoformat(), event_deadline.id] )
-        transaction.commit_unless_managed()
-        cursor.execute(
-            "UPDATE events_event SET upcoming = %s WHERE id = %s",
-            [dayspast3.isoformat(), event.id] )
-        transaction.commit_unless_managed()
-        cursor.execute(
-            "UPDATE events_event SET start = %s WHERE id = %s",
-            [dayspast2.isoformat(), event.id] )
-        transaction.commit_unless_managed()
-        # start = dayspast2 , upcoming = dayspast3 , deadline = dayspast3
-        event = Event.objects.get( pk = event.id )
-        event_deadline = EventDeadline.objects.get( pk = event_deadline.id )
-        assert( event.start == dayspast2 )
-        assert( event.upcoming == dayspast3 )
-        assert( event_deadline.deadline == dayspast3 )
-        assert( event.upcoming != event.start )
-        assert( event.next_coming_date_or_start() == event.start )
-        updateupcoming.handle_noargs()
-        event = Event.objects.get( pk = event.id )
-        assert( event.upcoming == event.start )
-        # now we test with an event without deadlines
-        event_deadline.delete()
-        cursor.execute(
-            "UPDATE events_event SET upcoming = %s WHERE id = %s",
-            [dayspast3.isoformat(), event.id] )
-        transaction.commit_unless_managed()
-        event = Event.objects.get( pk = event.id )
-        assert( event.upcoming == dayspast3 )
-        assert( event.start == dayspast2 )
-        updateupcoming.handle_noargs()
-        event = Event.objects.get( pk = event.id )
-        assert( event.start == event.upcoming )
-        event.delete()
+        # upcomingdate = tomorrow
+        assert( event.upcomingdate == tomorrow )
 
     def test_event_ical( self ): # {{{2
         "test for one ical file for each event"
         user = self._create_user()
         event1 = Event.objects.create( title = 'title1',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event1.startdate = datetime.date.today()
         event2 = Event.objects.create( title = 'title2',
-                tags = 'test', start = datetime.date.today(), user = user )
+                tags = 'test', user = user )
+        event2.startdate = datetime.date.today()
         events = Event.objects.all()
         for event in events:
             self._validate_ical( reverse( 'event_show_ical',
@@ -562,7 +516,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     def test_search_ical( self ): # {{{2
         "test for ical search"
         event = Event.objects.create( title = 'berlin'+str(time()),
-                tags = 'berlin', start = datetime.date.today() )
+                tags = 'berlin' )
+        event.startdate = datetime.date.today()
         self._validate_ical( reverse( 'search_ical',
                                       kwargs = {'query':'berlin'} ) )
         # TODO: text for a no match also
@@ -571,7 +526,8 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     def test_search_rss( self ): # {{{2
         "test for rss search"
         event = Event.objects.create( title = 'berlin',
-                tags = 'berlin', start = datetime.date.today() )
+                tags = 'berlin' )
+        event.startdate = datetime.date.today()
         self._validate_rss( reverse( 'search_rss',
                                       kwargs = {'query':'berlin',} ) )
         # TODO: text for a no match also

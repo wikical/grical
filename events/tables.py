@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker ft=python
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -28,11 +28,14 @@
 # imports {{{1
 from django.utils.translation import ugettext as _
 
-from django_tables import ModelTable, Column
+from django_tables import MemoryTable, Column
 
-class EventTable(ModelTable): # {{{1
+class EventTable(MemoryTable): # {{{1
     upcoming = Column( verbose_name = _( u"upcoming") )
-    start = Column( verbose_name = _( u"start date" ) )
+    start = Column( verbose_name = _( u"start date" ), sortable = True,
+            default = '' )
+    end = Column( verbose_name = _( u"end date" ), sortable = True,
+            default = '')
     city = Column( verbose_name = _( u"city" ), default = '' )
     country = Column( verbose_name = _( "country" ), default = '' )
     title = Column( verbose_name = _( "title" ) )
@@ -40,26 +43,28 @@ class EventTable(ModelTable): # {{{1
             verbose_name = _( "tags" ), sortable = False, default = '' )
     id = Column( sortable = False, visible = False )
 
-    # The next line was used in the past when using
-    # django_tables.MemoryTable. Now we use ModelTable.
-    #@staticmethod
-    #def convert(event_list): # {{{2
-    #    """ converts a list of events to a list of dictionaries.
+    @staticmethod
+    def convert(event_list): # {{{2
+        """ converts a list of events to a list of dictionaries.
 
-    #    See http://elsdoerfer.name/docs/django-tables/#indices-and-tables
-    #    """
-    #    lis = list()
-    #    for event in event_list:
-    #        dic = dict()
-    #        dic['upcoming'] = \
-    #                event.upcoming
-    #        dic['start'] = event.start
-    #        if event.city:
-    #            dic['city'] = event.city
-    #        if event.country:
-    #            dic['country'] = event.country
-    #        dic['title'] = event.title
-    #        dic['tags'] = event.tags
-    #        dic['id'] = event.id
-    #        lis.append( dic )
-    #    return lis
+        See http://elsdoerfer.name/docs/django-tables/#indices-and-tables
+        """
+        lis = list()
+        for event in event_list:
+            dic = dict()
+            dic['upcoming'] = \
+                    event.upcoming
+            dic['start'] = event.start
+            if hasattr( event, 'end') and event.end:
+                dic['end'] = event.end
+            if event.city:
+                dic['city'] = event.city
+            if event.country:
+                dic['country'] = event.country
+            dic['title'] = event.title
+            dic['tags'] = event.tags
+            dic['id'] = event.id
+            lis.append( dic )
+        return lis
+
+

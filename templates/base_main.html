@@ -21,11 +21,14 @@
                                 {{ hidden }}
                             {% endfor %}
                         {% endif %}
-                        {{ field.errors }}
                         <div class="field">
-                            {{ field.label_tag }}<br />
-                            {{ field }}<br />
-                            <div class="help_text">{{ field.help_text }}</div>
+                            {% if field.errors %}
+                                {{ field.label_tag }}<br />
+                                {{ field.errors }}
+                                {{ field }}
+                            {% else %}
+                                {{ field.label_tag }}:&nbsp;{{ field }}{% if field.help_text %}&nbsp;<div class="help_text">{{ field.help_text }}</div>{% endif %}
+                            {% endif %}
                         </div>
                     {% endfor %}
                     <div id="simplified_submit">
@@ -44,7 +47,9 @@
         </div>
     </div>
 
-    {% include "boxes.html" %}
+    {% with eventdates=page.object_list %}
+        {% include "boxes.html" %}
+    {% endwith %}
 
     {% include "pagination.html" %}
 
