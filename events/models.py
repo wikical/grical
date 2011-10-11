@@ -1848,7 +1848,7 @@ class EventDate( models.Model ): # {{{1
                 pass
         elif self.eventdate_name == 'ongoing':
             # we check that 'ongoing' is after start
-            start = event.startdate
+            start = self.event.startdate
             if not start:
                 raise RuntimeError( unicode(self.event) +
                         " was going to have an ongoing without a start" )
@@ -1856,7 +1856,7 @@ class EventDate( models.Model ): # {{{1
                 raise RuntimeError( unicode(self.event) +
                         " was going to have an ongoing before start" )
             # we check that 'ongoing' is before end
-            end = event.enddate
+            end = self.event.enddate
             if not end:
                 raise RuntimeError( unicode(self.event) +
                         " was going to have an ongoing without an end" )
