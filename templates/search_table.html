@@ -30,10 +30,11 @@
         {% for column in events_table.columns %}
             <th class="header_for_{{ column.name }}">
                 {% if column.sortable %}
-                     <a href="?sort={{ column.name_toggled }}&query={{ query|urlencode:"" }}&view=table"> {{ column }} </a>
-                     {# TODO #}
-                     {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
-                     {# {% if column.is_ordered_reverse %}<img src="/media/img/down.gif" />{% endif %} #}
+                    {{ column }}
+                    {# TODO: sorting on start or end produces a database error #}
+                    {# <a href="?sort={{ column.name_toggled }}&query={{ query|urlencode:"" }}&view=table"> {{ column }} </a> #}
+                    {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
+                    {# {% if column.is_ordered_reverse %}<img src="/media/img/down.gif" />{% endif %} #}
                  {% else %}
                     {{ column }}
                  {% endif %}
