@@ -110,7 +110,8 @@ def location_restriction( queryset, query ): #{{{1
                        city__iexact = city, country__iexact = country )
                 else:
                     queryset = queryset.filter(
-                       event__city__iexact = city, country__iexact = country )
+                       event__city__iexact = city,
+                       event__country__iexact = country )
         elif loc[8]:
             point = search_name( loc[8] )
             if loc[10]:
