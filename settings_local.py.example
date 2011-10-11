@@ -102,15 +102,19 @@ EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = False
 
+# see http://docs.djangoproject.com/en/dev/howto/error-reporting/
+SEND_BROKEN_LINK_EMAILS = True
+
 # ======================================================================
 # LOG PIPE
 # ======================================================================
 
 # If this value is not False, events changes will be logged to this pipe
 # Make sure it is writtable
-PIPE_TO_LOG_TO = False # example '/tmp/gricallogpipe'
+LOG_PIPE = '/tmp/gricallogpipe-dev'
+# LOG_PIPE = False
 # the group id. Should be group id of the proccess running Django
-PIPE_TO_LOG_TO_GID = 33
+LOG_PIPE_GID = 33
 
 # ======================================================================
 # IRC

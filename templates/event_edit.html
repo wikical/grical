@@ -16,6 +16,7 @@
             {{ form.as_table }}
         </table>
         <!-- urls -->
+        <h2>{% trans "Web addresses (URLs)" %}</h2>
         {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
         <div>{{ formset_url.management_form }}</div>
         {{ formset_url.non_form_errors.as_ul }}
@@ -50,6 +51,7 @@
             {% endfor %}
         </table>
         <!-- sessions -->
+        <h2>{% trans "Sessions within the event" %}</h2>
         <div>{{ formset_session.management_form }}</div>
         {{ formset_session.non_form_errors.as_ul }}
         <table id="session_table">
@@ -83,6 +85,7 @@
             {% endfor %}
         </table>
         <!-- deadlines -->
+        <h2>{% trans "Special dates / deadlines" %}</h2>
         <div>{{ formset_deadline.management_form }}</div>
         {{ formset_deadline.non_form_errors.as_ul }}
         <table id="deadline_table">
@@ -115,6 +118,12 @@
                 </tr>
             {% endfor %}
         </table>
+        {% if months %}
+            <h2>{% trans "Recurrences" %}</h2>
+            {% for month in months %}
+                {{ month }}
+            {% endfor %}
+        {% endif %}
         {% include "also_recurrences_form.html" %}
         <div><input type="submit" value="{% trans "Save" %}" /></div>
     </form>

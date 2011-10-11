@@ -28,6 +28,9 @@
 import calendar
 from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 import datetime
+from datetime import timedelta
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 from docutils import core
 from docutils import ApplicationError
 from docutils.parsers.rst import roles, nodes
@@ -69,7 +72,8 @@ from reversion.models import Version, Revision
 
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
-     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
+    CalendarForm,
+    NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDate, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo,
@@ -205,6 +209,25 @@ def event_edit( request, event_id = None ): # {{{1
                     formset_deadline.save()
                     revision.add_meta( RevisionInfo,
                             as_text = smart_unicode( event.as_text() ) )
+                # add recurrences if the event is new and dates in the
+                # calendars are marked
+                if not event_id and 'recurrences' in request.POST:
+                    for date_iso in request.POST.getlist('recurrences'):
+                        # ignore same date as start
+                        if date_iso == event.startdate.isoformat():
+                            continue
+                        # save recurrence
+                        with revision:
+                            if request.user.is_authenticated():
+                                revision.user = request.user
+                            # we do not clone dates nor sessions, as they 
+                            # refer to the main event and not to the recurring
+                            # events.TODO: inform the user
+                            clone = event.clone( user = revision.user,
+                                    except_models = [EventDate, EventSession],
+                                    startdate = parse(date_iso).date() )
+                            revision.add_meta( RevisionInfo,
+                                    as_text = smart_unicode( clone.as_text() ) )
                 # change recurrences if appropiate
                 if event_recurring:
                     master = event.recurring.master
@@ -247,7 +270,20 @@ def event_edit( request, event_id = None ): # {{{1
             'formset_deadline': formset_deadline,
             'also_recurrences_form': also_recurrences_form,
             'event_id': event_id }
-    # add a warning message if the start date is in the past, which is probably
+    # recurrences HTML-calendar
+    if not event_id:
+        # we show months from today to DEFAULT_RECURRING_DURATION_IN_DAYS
+        months = []
+        today = datetime.date.today()
+        date = today
+        end = today + timedelta( days =
+                settings.DEFAULT_RECURRING_DURATION_IN_DAYS )
+        while date <= end:
+            months.append( mark_safe( smart_unicode(
+                CalendarForm().formatmonth( date.year, date.month) ) ) )
+            date = date + relativedelta( months=+1 )
+        templates[ 'months' ] = months
+    # add a warning message if the start date is in the past, which might be
     # a mistake
     if event_id and event.startdate < datetime.date.today():
         messages.warning(request, _('warning: the start date is in the past'))
