@@ -24,6 +24,7 @@
 """ Forms """
 
 # imports {{{1
+from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 import re
 import datetime
 import urllib2
@@ -487,3 +488,18 @@ class InviteToGroupForm(Form): # {{{1
     # TODO: accept also an email and create an account with the username as
     # email and a random generated password sent by email to the user
     # (encrypted if possible)
+
+class CalendarForm(HTMLCalendar): #TODO: use LocaleHTMLCalendar
+    """ generates a HTML-calendar with a checkbox in each day """
+    def formatmonth(self, year, month, *args, **kwargs):
+        # we save year and month for their use in formatday
+        self.year, self.month = year, month
+        return super(CalendarForm, self).formatmonth(
+                year, month, *args, **kwargs )
+    def formatday(self, day, weekday):
+        if day == 0:
+            return '<td class="noday">&nbsp;</td>' # day outside month
+        else:
+            return '<td class="cal-form-day"><input type="checkbox" ' \
+                'name="recurrences" value="%s" />%d</td>' % \
+                (datetime.date( self.year, self.month, day ).isoformat(), day)

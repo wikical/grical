@@ -4,30 +4,30 @@
 Installation instructions for Debian based systems
 ==================================================
 
-#. To get the development files::
+#. Get the development files::
 
    cd /usr/local/
-   hg clone http://gridcalendar.net:8001 gridcalendar
+   hg clone http://dev.grical.org:8001 gridcalendar
 
   You can then update your local copy with the newest changes anytime with the commands::
 
    hg pull
    hg update
 
-#. Install the following packages and their dependencies: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools python-gdal python-yaml postgresql-8.4 python-psycopg2 postgresql-8.4-postgis libgeos-c1 python-tz``
+#. Install the following packages and their dependencies: ``python python-django python-django-registration python-django-tagging python-docutils python-dateutil python-geoip python-vobject binutils python-setuptools python-gdal python-yaml postgresql-9.1 python-psycopg2 postgresql-9.1-postgis libgeos-c1 python-tz django-tables``
 
     - python-django must be at least Version 1.3
-    - python-django-reversion must be compatible with Django 1.3, see
-      https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
 
-#. Install ``django-tables``::
+#. Install ``blist``::
 
-    easy_install django-tables
+    aptitude install gcc
+    aptitude install python2.6-dev
+    pip install blist
 
 #. Install ``django-celery`` and dependencies::
 
     apt-get install rabbitmq-server
-    easy_install django-celery
+    pip install django-celery
 
 #. Install the `proper version of django-reversion`__ for the installed Django version.
 
@@ -45,7 +45,7 @@ __ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
     #. Install the needed software::
 
         aptitude install memcached
-        easy_install python-memcached
+        pip install python-memcached
 
     #. Configure memcached_::
 
@@ -63,7 +63,7 @@ the IRC logger with::
 #. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
    Using this data improves the front page, search results and the introduction of addresses of events.
-   You can install it following the steps::
+   You can install it with ``geoip-database-contrib`` or following the steps::
     
     cd /usr/share/GeoIP
     wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
@@ -123,12 +123,8 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
       Django 1.3. As root::
 
           aptitude install python-django-debug-toolbar python-webtest python-profiler
-          easy_install django-webtest
-          easy_install MultipartPostHandler
-
-      If you have an old version of django-webtest already installed::
-
-          easy_install --upgrade django-webtest
+          pip install django-webtest
+          pip install MultipartPostHandler
 
    #. Set in ``settings_local.py`` (see below) the variable ``DEBUG`` to ``True`` and add the
       IP(s) you use when developing. Example::
@@ -160,8 +156,7 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
         chmod +x create_template_postgis-debian.sh
         ./create_template_postgis-debian.sh
 
-    #. create the GridCalendar ``postgres`` user with a password. If you intend to develop Grid
-    Calendar, allow him to create databases. Example on the command line::
+    #. create the GridCalendar ``postgres`` user with a password. Command line session example::
 
         su postgres
         createuser --pwprompt gridcalendar
@@ -174,6 +169,15 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
     #. create the gridcalendar database (use the same password as before)::
 
         createdb -U gridcalendar -O gridcalendar --password -T template_postgis gridcalendar
+
+       If you get the error::
+
+        createdb: database creation failed: ERROR:  permission denied to copy database "template_postgis"
+
+       then you need first to::
+
+        psql
+        update pg_database set datistemplate = true where datname = 'template_postgis';
 
     #. modify settings_local.py to use postgresql. Example::
 
