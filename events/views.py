@@ -977,13 +977,12 @@ def search( request, query = None, view = 'boxes' ): # {{{1
             # for the view boxes and calendars we use EventDate model to get
             # each date of each event
             search_result = search_events( query, related, model = EventDate )
-            search_result = search_result.distinct()
         else:
             search_result = search_events( query, related, model = Event )
-            search_result = search_result.distinct()
             search_result = add_upcoming( search_result )
         search_result = add_start( search_result )
         search_result = add_end( search_result )
+        search_result = search_result.distinct()
     except ValueError as err: # TODO: catch other errors
         # this can happen for instance when a date is malformed like 2011-01-32
         messages.error( request, 
@@ -1002,12 +1001,10 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         if sort not in ('upcoming', 'title', 'city', 'country',
                 'start', 'end'):
             raise Http404
-            # TODO: allow to sort on startdate and enddate
-            # see http://stackoverflow.com/questions/807096/about-annotate-django
-            # and experiment with something like
-            # select * from event join (select date where name = 'start') on
-            # (event.id = date.event_id) ...
-        search_result = search_result.order_by( sort )
+        # TODO: following line produces an error when sorting after something
+        # else than upcoming. Fix it and change the table template
+        # search_result = search_result.order_by( sort )
+        search_result = search_result.order_by( 'upcoming' )
     else:
         search_result = search_result.order_by( 'upcoming' )
     # limit {{{3
@@ -1036,7 +1033,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         data = serializers.serialize(
                 'json',
                 search_result,
-                fields=('title', 'upcoming', 'start', 'tags', 'coordinates'),
+                fields=('title', 'upcoming', 'start', 'tags', 'coordinates'), #FIXME: start seems wrong
                 indent = 2,
                 ensure_ascii=False )
         if jsonp:
@@ -1050,7 +1047,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                 view,
                 search_result,
                 indent = 2,
-                fields=('title', 'upcoming', 'start', 'tags', 'coordinates') )
+                fields=('title', 'upcoming', 'start', 'tags', 'coordinates') ) #FIXME: start seems wrong
         if view == 'xml':
             mimetype = "application/xml"
         else:
