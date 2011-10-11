@@ -2878,7 +2878,7 @@ if settings.LOG_PIPE:
             deleted_url = reverse( 'event_deleted',
                     kwargs={'event_id': event.id,} )
             log_using_celery.delay( u'http://%(site)s%(deleted_url)s\n' % {
-                'site': site, 'deleted_url': deleted_url, } )
+                'site': unicode( site ), 'deleted_url': deleted_url, } )
         #  Revision, used to log undeletions {{{3
         elif kwargs['sender'] == Version:
             version = kwargs['instance']
