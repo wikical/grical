@@ -348,10 +348,15 @@ class EventForm(ModelForm): # {{{1
         title = self.cleaned_data.get("title", None)
         startdate = self.cleaned_data.get("startdate", None)
         if title and startdate:
-            if Event.objects.filter(
+            same_title_date = Event.objects.filter(
                     title = title,
                     dates__eventdate_name = 'start',
-                    dates__eventdate_date = startdate ).exists():
+                    dates__eventdate_date = startdate )
+            if hasattr(self, 'instance') and self.instance and \
+                    hasattr(self.instance, 'id'):
+                if same_title_date.exclude(id = self.instance.id).exists():
+                    raise same_title_day_validation_error
+            elif same_title_date.exists():
                 raise same_title_day_validation_error
         return self.cleaned_data
 
