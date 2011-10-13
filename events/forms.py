@@ -302,8 +302,8 @@ class EventForm(ModelForm): # {{{1
         super(EventForm, self).__init__(*args, **kwargs)
         # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
         self.fields.keyOrder = ['acronym', 'title', 'startdate', 'starttime',
-            'enddate', 'endtime', 'tags', 'country', 'city', 'postcode',
-            'address', 'coordinates', 'description']
+            'enddate', 'endtime', 'timezone', 'tags', 'country', 'city',
+            'postcode', 'address', 'coordinates', 'description']
         self.fields['startdate'].label = _(u'Start date')
         self.fields['enddate'].label = _(u'End date')
         if kwargs.has_key('instance'):

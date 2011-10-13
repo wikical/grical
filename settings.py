@@ -412,6 +412,8 @@ SYNONYMS = (
     ( u'end_date', u'enddate' ),
     ( u'ed', u'enddate' ),
     ( u'endd', u'enddate' ),
+    ( u'timezone', u'timezone' ),         # timezone ^
+    ( u'tz', u'timezone' ),
     ( u'acronym', u'acronym' ),         # acronym ^
     ( u'^', u'acronym' ),
     ( u'ac', u'acronym' ),
@@ -482,3 +484,4 @@ SYNONYMS = (
     ( u'repetitions', u'recurrences' ),
 )
 # (*) can have multi-lines and are not simple text fields
+# TODO: add all translations available

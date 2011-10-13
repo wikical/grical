@@ -22,6 +22,7 @@ Installation instructions for Debian based systems
 
     aptitude install gcc
     aptitude install python2.6-dev
+    aptitude install python-pip
     pip install blist
 
 #. Install ``django-celery`` and dependencies::

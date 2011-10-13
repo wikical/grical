@@ -78,7 +78,8 @@ from gridcalendar.events.models import (
     Event, EventUrl, EventSession, EventDate, Filter, Group,
     Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo,
     add_start, add_end, add_upcoming )
-from gridcalendar.events.utils import search_address, html_diff
+from gridcalendar.events.utils import ( search_address, search_timezone,
+        html_diff )
 from gridcalendar.events.tables import EventTable
 from gridcalendar.events.feeds import SearchEventsFeed
 from gridcalendar.events.search import search_events
@@ -1370,6 +1371,11 @@ def main( request, status_code=200 ):# {{{1
                             event.postcode = address['postcode']
                         if address.has_key( 'city' ):
                             event.city = address['city']
+                        timezone = search_timezone(
+                                address['latitude'],
+                                address['longitude'] )
+                        if timezone:
+                            event.timezone = timezone
                     else:
                         #FIXME: deal with more than one address, none or general
                         # coordinates like e.g. pointing to the center of
@@ -1748,7 +1754,9 @@ def ICalForSearch( request, query ): # {{{2
     except ValueError:
         # this can happen for instance when a date is malformed like 2011-01-32
         elist = Event.objects.none()
-    return _ical_http_response_from_event_list( elist, query )
+    domain = Site.objects.get_current().domain
+    return _ical_http_response_from_event_list( elist, query,
+            calname = domain + " " + query )
 
 def ICalForEvent( request, event_id ): # {{{2
     """ ical file for an event
@@ -1793,9 +1801,11 @@ def ICalForGroup( request, group_id ): # {{{2
     elist = Event.objects.filter( calendar__group = group,
             dates__eventdate_date__gte = today ).distinct()
     elist = add_upcoming( elist ).order_by('upcoming')
-    return _ical_http_response_from_event_list( elist, group.name )
+    domain = Site.objects.get_current().domain
+    return _ical_http_response_from_event_list( elist, group.name,
+           calname = domain + " " + "!" + group.name )
 
-def _ical_http_response_from_event_list( elist, filename ): # {{{2
+def _ical_http_response_from_event_list( elist, filename, calname = None ):#{{{2
     """ returns an ical file with the events in ``elist`` and the name
     ``filename`` """
     if len(elist) == 1:
@@ -1804,6 +1814,8 @@ def _ical_http_response_from_event_list( elist, filename ): # {{{2
         ical = vobject.iCalendar()
         ical.add('METHOD').value = 'PUBLISH' # IE/Outlook needs this
         ical.add('PRODID').value = settings.PRODID
+        if calname:
+            ical.add('X-WR-CALNAME').value = calname
         for event in elist:
             event.icalendar(ical)
         icalstream = ical.serialize()

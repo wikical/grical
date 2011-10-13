@@ -24,13 +24,14 @@
 """ Models """
 
 # imports {{{1
+import datetime
+import hashlib
+from itertools import chain
+import pytz
 import random
 import re
 from re import UNICODE
-import hashlib
-import datetime
 from smtplib import SMTPConnectError
-from itertools import chain
 
 import vobject
 
@@ -65,8 +66,8 @@ import reversion
 from reversion import revision
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
-from gridcalendar.events.utils import (
-        validate_year, search_name, text_diff, validate_tags_chars )
+from gridcalendar.events.utils import ( validate_year, search_name,
+        search_timezone, text_diff, validate_tags_chars )
 from gridcalendar.events.tasks import (
         log_using_celery, notify_users_when_wanted )
 
@@ -76,6 +77,8 @@ from gridcalendar.events.tasks import (
 # España, etc. Name colisions in different languages needs to be checked.
 # OR use python.django.countries
 # TODO: use the language selected by the user in all APIs
+# TODO: use a package with the names which is updated automatically, think
+# what would happen if a name is longer than the len of the field in the DB
 COUNTRIES = (
     ( 'AF', _( u'Afghanistan' ) ),
     ( 'AX', _( u'Åland Islands' ) ),
@@ -326,6 +329,442 @@ COUNTRIES = (
     ( 'ZW', _( u'Zimbabwe' ) ),
  )
 
+# TIMEZONES {{{1
+# data from: ``from pytz import common_timezones`` at Wed Oct 12 2011
+# TODO: use a package with the names which is updated automatically, think
+# what would happen if a name is longer than the len of the field in the DB
+TIMEZONES = (
+    ( _( 'Africa' ), ( # {{{2
+        ( 'Africa/Abidjan', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Abidjan' )) ),
+        ( 'Africa/Accra', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Accra' )) ),
+        ( 'Africa/Addis Ababa', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Addis Ababa' )) ),
+        ( 'Africa/Algiers', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Algiers' )) ),
+        ( 'Africa/Asmara', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Asmara' )) ),
+        ( 'Africa/Bamako', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Bamako' )) ),
+        ( 'Africa/Bangui', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Bangui' )) ),
+        ( 'Africa/Banjul', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Banjul' )) ),
+        ( 'Africa/Bissau', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Bissau' )) ),
+        ( 'Africa/Blantyre', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Blantyre' )) ),
+        ( 'Africa/Brazzaville', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Brazzaville' )) ),
+        ( 'Africa/Bujumbura', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Bujumbura' )) ),
+        ( 'Africa/Cairo', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Cairo' )) ),
+        ( 'Africa/Casablanca', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Casablanca' )) ),
+        ( 'Africa/Ceuta', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Ceuta' )) ),
+        ( 'Africa/Conakry', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Conakry' )) ),
+        ( 'Africa/Dakar', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Dakar' )) ),
+        ( 'Africa/Dar es Salaam', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Dar es Salaam' )) ),
+        ( 'Africa/Djibouti', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Djibouti' )) ),
+        ( 'Africa/Douala', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Douala' )) ),
+        ( 'Africa/El Aaiun', unicode(_( 'Africa' )) + u'/' + unicode(_( 'El Aaiun' )) ),
+        ( 'Africa/Freetown', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Freetown' )) ),
+        ( 'Africa/Gaborone', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Gaborone' )) ),
+        ( 'Africa/Harare', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Harare' )) ),
+        ( 'Africa/Johannesburg', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Johannesburg' )) ),
+        ( 'Africa/Kampala', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Kampala' )) ),
+        ( 'Africa/Khartoum', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Khartoum' )) ),
+        ( 'Africa/Kigali', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Kigali' )) ),
+        ( 'Africa/Kinshasa', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Kinshasa' )) ),
+        ( 'Africa/Lagos', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Lagos' )) ),
+        ( 'Africa/Libreville', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Libreville' )) ),
+        ( 'Africa/Lome', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Lome' )) ),
+        ( 'Africa/Luanda', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Luanda' )) ),
+        ( 'Africa/Lubumbashi', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Lubumbashi' )) ),
+        ( 'Africa/Lusaka', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Lusaka' )) ),
+        ( 'Africa/Malabo', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Malabo' )) ),
+        ( 'Africa/Maputo', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Maputo' )) ),
+        ( 'Africa/Maseru', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Maseru' )) ),
+        ( 'Africa/Mbabane', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Mbabane' )) ),
+        ( 'Africa/Mogadishu', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Mogadishu' )) ),
+        ( 'Africa/Monrovia', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Monrovia' )) ),
+        ( 'Africa/Nairobi', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Nairobi' )) ),
+        ( 'Africa/Ndjamena', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Ndjamena' )) ),
+        ( 'Africa/Niamey', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Niamey' )) ),
+        ( 'Africa/Nouakchott', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Nouakchott' )) ),
+        ( 'Africa/Ouagadougou', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Ouagadougou' )) ),
+        ( 'Africa/Porto-Novo', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Porto-Novo' )) ),
+        ( 'Africa/Sao Tome', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Sao Tome' )) ),
+        ( 'Africa/Tripoli', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Tripoli' )) ),
+        ( 'Africa/Tunis', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Tunis' )) ),
+        ( 'Africa/Windhoek', unicode(_( 'Africa' )) + u'/' + unicode(_( 'Windhoek' )) ), )
+    ),
+    ( _( 'America' ), ( # {{{2
+        ( 'America/Adak', unicode(_( 'America' )) + u'/' + unicode(_( 'Adak' )) ),
+        ( 'America/Anchorage', unicode(_( 'America' )) + u'/' + unicode(_( 'Anchorage' )) ),
+        ( 'America/Anguilla', unicode(_( 'America' )) + u'/' + unicode(_( 'Anguilla' )) ),
+        ( 'America/Antigua', unicode(_( 'America' )) + u'/' + unicode(_( 'Antigua' )) ),
+        ( 'America/Araguaina', unicode(_( 'America' )) + u'/' + unicode(_( 'Araguaina' )) ),
+        ( 'America/Argentina/Buenos Aires', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina' )) + u'/' + unicode(_( 'Buenos Aires' )) ),
+        ( 'America/Argentina/Catamarca', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Catamarca' )) ),
+        ( 'America/Argentina/Cordoba', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Cordoba' )) ),
+        ( 'America/Argentina/Jujuy', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Jujuy' )) ),
+        ( 'America/Argentina/La Rioja', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'La Rioja' )) ),
+        ( 'America/Argentina/Mendoza', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Mendoza' )) ),
+        ( 'America/Argentina/Rio Gallegos', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Rio Gallegos' )) ),
+        ( 'America/Argentina/Salta', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Salta' )) ),
+        ( 'America/Argentina/San Juan', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'San Juan' )) ),
+        ( 'America/Argentina/San Luis', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'San Luis' )) ),
+        ( 'America/Argentina/Tucuman', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Tucuman' )) ),
+        ( 'America/Argentina/Ushuaia', unicode(_( 'America' )) + u'/' + unicode(_( 'Argentina')) + u'/' + unicode(_( 'Ushuaia' )) ),
+        ( 'America/Aruba', unicode(_( 'America' )) + u'/' + unicode(_( 'Aruba' )) ),
+        ( 'America/Asuncion', unicode(_( 'America' )) + u'/' + unicode(_( 'Asuncion' )) ),
+        ( 'America/Atikokan', unicode(_( 'America' )) + u'/' + unicode(_( 'Atikokan' )) ),
+        ( 'America/Bahia', unicode(_( 'America' )) + u'/' + unicode(_( 'Bahia' )) ),
+        ( 'America/Barbados', unicode(_( 'America' )) + u'/' + unicode(_( 'Barbados' )) ),
+        ( 'America/Belem', unicode(_( 'America' )) + u'/' + unicode(_( 'Belem' )) ),
+        ( 'America/Belize', unicode(_( 'America' )) + u'/' + unicode(_( 'Belize' )) ),
+        ( 'America/Blanc-Sablon', unicode(_( 'America' )) + u'/' + unicode(_( 'Blanc-Sablon' )) ),
+        ( 'America/Boa Vista', unicode(_( 'America' )) + u'/' + unicode(_( 'Boa Vista' )) ),
+        ( 'America/Bogota', unicode(_( 'America' )) + u'/' + unicode(_( 'Bogota' )) ),
+        ( 'America/Boise', unicode(_( 'America' )) + u'/' + unicode(_( 'Boise' )) ),
+        ( 'America/Cambridge Bay', unicode(_( 'America' )) + u'/' + unicode(_( 'Cambridge Bay' )) ),
+        ( 'America/Campo Grande', unicode(_( 'America' )) + u'/' + unicode(_( 'Campo Grande' )) ),
+        ( 'America/Cancun', unicode(_( 'America' )) + u'/' + unicode(_( 'Cancun' )) ),
+        ( 'America/Caracas', unicode(_( 'America' )) + u'/' + unicode(_( 'Caracas' )) ),
+        ( 'America/Cayenne', unicode(_( 'America' )) + u'/' + unicode(_( 'Cayenne' )) ),
+        ( 'America/Cayman', unicode(_( 'America' )) + u'/' + unicode(_( 'Cayman' )) ),
+        ( 'America/Chicago', unicode(_( 'America' )) + u'/' + unicode(_( 'Chicago' )) ),
+        ( 'America/Chihuahua', unicode(_( 'America' )) + u'/' + unicode(_( 'Chihuahua' )) ),
+        ( 'America/Costa Rica', unicode(_( 'America' )) + u'/' + unicode(_( 'Costa Rica' )) ),
+        ( 'America/Cuiaba', unicode(_( 'America' )) + u'/' + unicode(_( 'Cuiaba' )) ),
+        ( 'America/Curacao', unicode(_( 'America' )) + u'/' + unicode(_( 'Curacao' )) ),
+        ( 'America/Danmarkshavn', unicode(_( 'America' )) + u'/' + unicode(_( 'Danmarkshavn' )) ),
+        ( 'America/Dawson', unicode(_( 'America' )) + u'/' + unicode(_( 'Dawson' )) ),
+        ( 'America/Dawson Creek', unicode(_( 'America' )) + u'/' + unicode(_( 'Dawson Creek' )) ),
+        ( 'America/Denver', unicode(_( 'America' )) + u'/' + unicode(_( 'Denver' )) ),
+        ( 'America/Detroit', unicode(_( 'America' )) + u'/' + unicode(_( 'Detroit' )) ),
+        ( 'America/Dominica', unicode(_( 'America' )) + u'/' + unicode(_( 'Dominica' )) ),
+        ( 'America/Edmonton', unicode(_( 'America' )) + u'/' + unicode(_( 'Edmonton' )) ),
+        ( 'America/Eirunepe', unicode(_( 'America' )) + u'/' + unicode(_( 'Eirunepe' )) ),
+        ( 'America/El Salvador', unicode(_( 'America' )) + u'/' + unicode(_( 'El Salvador' )) ),
+        ( 'America/Fortaleza', unicode(_( 'America' )) + u'/' + unicode(_( 'Fortaleza' )) ),
+        ( 'America/Glace Bay', unicode(_( 'America' )) + u'/' + unicode(_( 'Glace Bay' )) ),
+        ( 'America/Godthab', unicode(_( 'America' )) + u'/' + unicode(_( 'Godthab' )) ),
+        ( 'America/Goose Bay', unicode(_( 'America' )) + u'/' + unicode(_( 'Goose Bay' )) ),
+        ( 'America/Grand Turk', unicode(_( 'America' )) + u'/' + unicode(_( 'Grand Turk' )) ),
+        ( 'America/Grenada', unicode(_( 'America' )) + u'/' + unicode(_( 'Grenada' )) ),
+        ( 'America/Guadeloupe', unicode(_( 'America' )) + u'/' + unicode(_( 'Guadeloupe' )) ),
+        ( 'America/Guatemala', unicode(_( 'America' )) + u'/' + unicode(_( 'Guatemala' )) ),
+        ( 'America/Guayaquil', unicode(_( 'America' )) + u'/' + unicode(_( 'Guayaquil' )) ),
+        ( 'America/Guyana', unicode(_( 'America' )) + u'/' + unicode(_( 'Guyana' )) ),
+        ( 'America/Halifax', unicode(_( 'America' )) + u'/' + unicode(_( 'Halifax' )) ),
+        ( 'America/Havana', unicode(_( 'America' )) + u'/' + unicode(_( 'Havana' )) ),
+        ( 'America/Hermosillo', unicode(_( 'America' )) + u'/' + unicode(_( 'Hermosillo' )) ),
+        ( 'America/Indiana/Indianapolis', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Indianapolis' )) ),
+        ( 'America/Indiana/Knox', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Knox' )) ),
+        ( 'America/Indiana/Marengo', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Marengo' )) ),
+        ( 'America/Indiana/Petersburg', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Petersburg' )) ),
+        ( 'America/Indiana/Tell City', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Tell City' )) ),
+        ( 'America/Indiana/Vevay', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Vevay' )) ),
+        ( 'America/Indiana/Vincennes', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Vincennes' )) ),
+        ( 'America/Indiana/Winamac', unicode(_( 'America')) + u'/' + unicode(_( 'Indiana' )) + u'/' + unicode(_( 'Winamac' )) ),
+        ( 'America/Inuvik', unicode(_( 'America' )) + u'/' + unicode(_( 'Inuvik' )) ),
+        ( 'America/Iqaluit', unicode(_( 'America' )) + u'/' + unicode(_( 'Iqaluit' )) ),
+        ( 'America/Jamaica', unicode(_( 'America' )) + u'/' + unicode(_( 'Jamaica' )) ),
+        ( 'America/Juneau', unicode(_( 'America' )) + u'/' + unicode(_( 'Juneau' )) ),
+        ( 'America/Kentucky/Louisville', unicode(_( 'America')) + u'/' + unicode(_( 'Kentucky' )) + u'/' + unicode(_( 'Louisville' )) ),
+        ( 'America/Kentucky/Monticello', unicode(_( 'America')) + u'/' + unicode(_( 'Kentucky' )) + u'/' + unicode(_( 'Monticello' )) ),
+        ( 'America/La Paz', unicode(_( 'America' )) + u'/' + unicode(_( 'La Paz' )) ),
+        ( 'America/Lima', unicode(_( 'America' )) + u'/' + unicode(_( 'Lima' )) ),
+        ( 'America/Los Angeles', unicode(_( 'America' )) + u'/' + unicode(_( 'Los Angeles' )) ),
+        ( 'America/Maceio', unicode(_( 'America' )) + u'/' + unicode(_( 'Maceio' )) ),
+        ( 'America/Managua', unicode(_( 'America' )) + u'/' + unicode(_( 'Managua' )) ),
+        ( 'America/Manaus', unicode(_( 'America' )) + u'/' + unicode(_( 'Manaus' )) ),
+        ( 'America/Martinique', unicode(_( 'America' )) + u'/' + unicode(_( 'Martinique' )) ),
+        ( 'America/Matamoros', unicode(_( 'America' )) + u'/' + unicode(_( 'Matamoros' )) ),
+        ( 'America/Mazatlan', unicode(_( 'America' )) + u'/' + unicode(_( 'Mazatlan' )) ),
+        ( 'America/Menominee', unicode(_( 'America' )) + u'/' + unicode(_( 'Menominee' )) ),
+        ( 'America/Merida', unicode(_( 'America' )) + u'/' + unicode(_( 'Merida' )) ),
+        ( 'America/Mexico City', unicode(_( 'America' )) + u'/' + unicode(_( 'Mexico City' )) ),
+        ( 'America/Miquelon', unicode(_( 'America' )) + u'/' + unicode(_( 'Miquelon' )) ),
+        ( 'America/Moncton', unicode(_( 'America' )) + u'/' + unicode(_( 'Moncton' )) ),
+        ( 'America/Monterrey', unicode(_( 'America' )) + u'/' + unicode(_( 'Monterrey' )) ),
+        ( 'America/Montevideo', unicode(_( 'America' )) + u'/' + unicode(_( 'Montevideo' )) ),
+        ( 'America/Montreal', unicode(_( 'America' )) + u'/' + unicode(_( 'Montreal' )) ),
+        ( 'America/Montserrat', unicode(_( 'America' )) + u'/' + unicode(_( 'Montserrat' )) ),
+        ( 'America/Nassau', unicode(_( 'America' )) + u'/' + unicode(_( 'Nassau' )) ),
+        ( 'America/New York', unicode(_( 'America' )) + u'/' + unicode(_( 'New York' )) ),
+        ( 'America/Nipigon', unicode(_( 'America' )) + u'/' + unicode(_( 'Nipigon' )) ),
+        ( 'America/Nome', unicode(_( 'America' )) + u'/' + unicode(_( 'Nome' )) ),
+        ( 'America/Noronha', unicode(_( 'America' )) + u'/' + unicode(_( 'Noronha' )) ),
+        ( 'America/North Dakota/Center', unicode(_( 'America' )) + u'/' + unicode(_( 'North Dakota' )) + u'/' + unicode(_( 'Center' )) ),
+        ( 'America/North Dakota/New Salem', unicode(_( 'America' )) + u'/' + unicode(_( 'North Dakota' )) + u'/' + unicode(_( 'New Salem' )) ),
+        ( 'America/Ojinaga', unicode(_( 'America' )) + u'/' + unicode(_( 'Ojinaga' )) ),
+        ( 'America/Panama', unicode(_( 'America' )) + u'/' + unicode(_( 'Panama' )) ),
+        ( 'America/Pangnirtung', unicode(_( 'America' )) + u'/' + unicode(_( 'Pangnirtung' )) ),
+        ( 'America/Paramaribo', unicode(_( 'America' )) + u'/' + unicode(_( 'Paramaribo' )) ),
+        ( 'America/Phoenix', unicode(_( 'America' )) + u'/' + unicode(_( 'Phoenix' )) ),
+        ( 'America/Port-au-Prince', unicode(_( 'America' )) + u'/' + unicode(_( 'Port-au-Prince' )) ),
+        ( 'America/Port of Spain', unicode(_( 'America' )) + u'/' + unicode(_( 'Port of Spain' )) ),
+        ( 'America/Porto Velho', unicode(_( 'America' )) + u'/' + unicode(_( 'Porto Velho' )) ),
+        ( 'America/Puerto Rico', unicode(_( 'America' )) + u'/' + unicode(_( 'Puerto Rico' )) ),
+        ( 'America/Rainy River', unicode(_( 'America' )) + u'/' + unicode(_( 'Rainy River' )) ),
+        ( 'America/Rankin Inlet', unicode(_( 'America' )) + u'/' + unicode(_( 'Rankin Inlet' )) ),
+        ( 'America/Recife', unicode(_( 'America' )) + u'/' + unicode(_( 'Recife' )) ),
+        ( 'America/Regina', unicode(_( 'America' )) + u'/' + unicode(_( 'Regina' )) ),
+        ( 'America/Resolute', unicode(_( 'America' )) + u'/' + unicode(_( 'Resolute' )) ),
+        ( 'America/Rio Branco', unicode(_( 'America' )) + u'/' + unicode(_( 'Rio Branco' )) ),
+        ( 'America/Santa Isabel', unicode(_( 'America' )) + u'/' + unicode(_( 'Santa Isabel' )) ),
+        ( 'America/Santarem', unicode(_( 'America' )) + u'/' + unicode(_( 'Santarem' )) ),
+        ( 'America/Santiago', unicode(_( 'America' )) + u'/' + unicode(_( 'Santiago' )) ),
+        ( 'America/Santo Domingo', unicode(_( 'America' )) + u'/' + unicode(_( 'Santo Domingo' )) ),
+        ( 'America/Sao Paulo', unicode(_( 'America' )) + u'/' + unicode(_( 'Sao Paulo' )) ),
+        ( 'America/Scoresbysund', unicode(_( 'America' )) + u'/' + unicode(_( 'Scoresbysund' )) ),
+        ( 'America/St Johns', unicode(_( 'America' )) + u'/' + unicode(_( 'St Johns' )) ),
+        ( 'America/St Kitts', unicode(_( 'America' )) + u'/' + unicode(_( 'St Kitts' )) ),
+        ( 'America/St Lucia', unicode(_( 'America' )) + u'/' + unicode(_( 'St Lucia' )) ),
+        ( 'America/St Thomas', unicode(_( 'America' )) + u'/' + unicode(_( 'St Thomas' )) ),
+        ( 'America/St Vincent', unicode(_( 'America' )) + u'/' + unicode(_( 'St Vincent' )) ),
+        ( 'America/Swift Current', unicode(_( 'America' )) + u'/' + unicode(_( 'Swift Current' )) ),
+        ( 'America/Tegucigalpa', unicode(_( 'America' )) + u'/' + unicode(_( 'Tegucigalpa' )) ),
+        ( 'America/Thule', unicode(_( 'America' )) + u'/' + unicode(_( 'Thule' )) ),
+        ( 'America/Thunder Bay', unicode(_( 'America' )) + u'/' + unicode(_( 'Thunder Bay' )) ),
+        ( 'America/Tijuana', unicode(_( 'America' )) + u'/' + unicode(_( 'Tijuana' )) ),
+        ( 'America/Toronto', unicode(_( 'America' )) + u'/' + unicode(_( 'Toronto' )) ),
+        ( 'America/Tortola', unicode(_( 'America' )) + u'/' + unicode(_( 'Tortola' )) ),
+        ( 'America/Vancouver', unicode(_( 'America' )) + u'/' + unicode(_( 'Vancouver' )) ),
+        ( 'America/Whitehorse', unicode(_( 'America' )) + u'/' + unicode(_( 'Whitehorse' )) ),
+        ( 'America/Winnipeg', unicode(_( 'America' )) + u'/' + unicode(_( 'Winnipeg' )) ),
+        ( 'America/Yakutat', unicode(_( 'America' )) + u'/' + unicode(_( 'Yakutat' )) ),
+        ( 'America/Yellowknife', unicode(_( 'America' )) + u'/' + unicode(_( 'Yellowknife' ))), )
+    ),
+    ( _( 'Antarctica' ), ( # {{{2
+        ( 'Antarctica/Casey', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Casey' )) ),
+        ( 'Antarctica/Davis', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Davis' )) ),
+        ( 'Antarctica/DumontDUrville', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'DumontDUrville' )) ),
+        ( 'Antarctica/Mawson', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Mawson' )) ),
+        ( 'Antarctica/McMurdo', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'McMurdo' )) ),
+        ( 'Antarctica/Palmer', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Palmer' )) ),
+        ( 'Antarctica/Rothera', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Rothera' )) ),
+        ( 'Antarctica/Syowa', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Syowa' )) ),
+        ( 'Antarctica/Vostok', unicode(_( 'Antarctica' )) + u'/' + unicode(_( 'Vostok' )) ), )
+    ),
+    ( _( 'Asia' ), ( # {{{2
+        ( 'Asia/Aden', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Aden' )) ),
+        ( 'Asia/Almaty', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Almaty' )) ),
+        ( 'Asia/Amman', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Amman' )) ),
+        ( 'Asia/Anadyr', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Anadyr' )) ),
+        ( 'Asia/Aqtau', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Aqtau' )) ),
+        ( 'Asia/Aqtobe', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Aqtobe' )) ),
+        ( 'Asia/Ashgabat', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Ashgabat' )) ),
+        ( 'Asia/Baghdad', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Baghdad' )) ),
+        ( 'Asia/Bahrain', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Bahrain' )) ),
+        ( 'Asia/Baku', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Baku' )) ),
+        ( 'Asia/Bangkok', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Bangkok' )) ),
+        ( 'Asia/Beirut', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Beirut' )) ),
+        ( 'Asia/Bishkek', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Bishkek' )) ),
+        ( 'Asia/Brunei', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Brunei' )) ),
+        ( 'Asia/Choibalsan', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Choibalsan' )) ),
+        ( 'Asia/Chongqing', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Chongqing' )) ),
+        ( 'Asia/Colombo', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Colombo' )) ),
+        ( 'Asia/Damascus', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Damascus' )) ),
+        ( 'Asia/Dhaka', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Dhaka' )) ),
+        ( 'Asia/Dili', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Dili' )) ),
+        ( 'Asia/Dubai', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Dubai' )) ),
+        ( 'Asia/Dushanbe', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Dushanbe' )) ),
+        ( 'Asia/Gaza', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Gaza' )) ),
+        ( 'Asia/Harbin', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Harbin' )) ),
+        ( 'Asia/Ho Chi Minh', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Ho Chi Minh' )) ),
+        ( 'Asia/Hong Kong', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Hong Kong' )) ),
+        ( 'Asia/Hovd', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Hovd' )) ),
+        ( 'Asia/Irkutsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Irkutsk' )) ),
+        ( 'Asia/Jakarta', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Jakarta' )) ),
+        ( 'Asia/Jayapura', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Jayapura' )) ),
+        ( 'Asia/Jerusalem', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Jerusalem' )) ),
+        ( 'Asia/Kabul', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kabul' )) ),
+        ( 'Asia/Kamchatka', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kamchatka' )) ),
+        ( 'Asia/Karachi', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Karachi' )) ),
+        ( 'Asia/Kashgar', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kashgar' )) ),
+        ( 'Asia/Kathmandu', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kathmandu' )) ),
+        ( 'Asia/Kolkata', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kolkata' )) ),
+        ( 'Asia/Krasnoyarsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Krasnoyarsk' )) ),
+        ( 'Asia/Kuala Lumpur', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kuala Lumpur' )) ),
+        ( 'Asia/Kuching', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kuching' )) ),
+        ( 'Asia/Kuwait', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Kuwait' )) ),
+        ( 'Asia/Macau', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Macau' )) ),
+        ( 'Asia/Magadan', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Magadan' )) ),
+        ( 'Asia/Makassar', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Makassar' )) ),
+        ( 'Asia/Manila', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Manila' )) ),
+        ( 'Asia/Muscat', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Muscat' )) ),
+        ( 'Asia/Nicosia', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Nicosia' )) ),
+        ( 'Asia/Novokuznetsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Novokuznetsk' )) ),
+        ( 'Asia/Novosibirsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Novosibirsk' )) ),
+        ( 'Asia/Omsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Omsk' )) ),
+        ( 'Asia/Oral', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Oral' )) ),
+        ( 'Asia/Phnom Penh', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Phnom Penh' )) ),
+        ( 'Asia/Pontianak', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Pontianak' )) ),
+        ( 'Asia/Pyongyang', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Pyongyang' )) ),
+        ( 'Asia/Qatar', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Qatar' )) ),
+        ( 'Asia/Qyzylorda', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Qyzylorda' )) ),
+        ( 'Asia/Rangoon', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Rangoon' )) ),
+        ( 'Asia/Riyadh', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Riyadh' )) ),
+        ( 'Asia/Sakhalin', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Sakhalin' )) ),
+        ( 'Asia/Samarkand', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Samarkand' )) ),
+        ( 'Asia/Seoul', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Seoul' )) ),
+        ( 'Asia/Shanghai', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Shanghai' )) ),
+        ( 'Asia/Singapore', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Singapore' )) ),
+        ( 'Asia/Taipei', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Taipei' )) ),
+        ( 'Asia/Tashkent', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Tashkent' )) ),
+        ( 'Asia/Tbilisi', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Tbilisi' )) ),
+        ( 'Asia/Tehran', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Tehran' )) ),
+        ( 'Asia/Thimphu', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Thimphu' )) ),
+        ( 'Asia/Tokyo', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Tokyo' )) ),
+        ( 'Asia/Ulaanbaatar', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Ulaanbaatar' )) ),
+        ( 'Asia/Urumqi', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Urumqi' )) ),
+        ( 'Asia/Vientiane', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Vientiane' )) ),
+        ( 'Asia/Vladivostok', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Vladivostok' )) ),
+        ( 'Asia/Yakutsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yakutsk' )) ),
+        ( 'Asia/Yekaterinburg', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yekaterinburg' )) ),
+        ( 'Asia/Yerevan', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yerevan' )) ), )
+    ),
+    ( _( 'Atlantic' ), ( # {{{2
+        ( 'Atlantic/Azores', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Azores' )) ),
+        ( 'Atlantic/Bermuda', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Bermuda' )) ),
+        ( 'Atlantic/Canary', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Canary' )) ),
+        ( 'Atlantic/Cape Verde', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Cape Verde' )) ),
+        ( 'Atlantic/Faroe', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Faroe' )) ),
+        ( 'Atlantic/Madeira', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Madeira' )) ),
+        ( 'Atlantic/Reykjavik', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Reykjavik' )) ),
+        ( 'Atlantic/South Georgia', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'South Georgia' )) ),
+        ( 'Atlantic/St Helena', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'St Helena' )) ),
+        ( 'Atlantic/Stanley', unicode(_( 'Atlantic' )) + u'/' + unicode(_( 'Stanley' )) ), )
+    ),
+    ( _( 'Australia' ), ( # {{{2
+        ( 'Australia/Adelaide', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Adelaide' )) ),
+        ( 'Australia/Brisbane', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Brisbane' )) ),
+        ( 'Australia/Broken Hill', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Broken Hill' )) ),
+        ( 'Australia/Currie', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Currie' )) ),
+        ( 'Australia/Darwin', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Darwin' )) ),
+        ( 'Australia/Eucla', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Eucla' )) ),
+        ( 'Australia/Hobart', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Hobart' )) ),
+        ( 'Australia/Lindeman', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Lindeman' )) ),
+        ( 'Australia/Lord Howe', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Lord Howe' )) ),
+        ( 'Australia/Melbourne', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Melbourne' )) ),
+        ( 'Australia/Perth', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Perth' )) ),
+        ( 'Australia/Sydney', unicode(_( 'Australia' )) + u'/' + unicode(_( 'Sydney' )) ), )
+    ),
+    ( _( 'Canada' ), ( # {{{2
+        ( 'Canada/Atlantic', unicode(_( 'Canada' )) + u'/' + unicode(_( 'Atlantic' )) ),
+        ( 'Canada/Central', unicode(_( 'Canada' )) + u'/' + unicode(_( 'Central' )) ),
+        ( 'Canada/Eastern', unicode(_( 'Canada' )) + u'/' + unicode(_( 'Eastern' )) ),
+        ( 'Canada/Mountain', unicode(_( 'Canada' )) + u'/' + unicode(_( 'Mountain' )) ),
+        ( 'Canada/Newfoundland', unicode(_( 'Canada' )) + u'/' + unicode(_( 'Newfoundland' )) ),
+        ( 'Canada/Pacific', unicode(_( 'Canada' )) + u'/' + unicode(_( 'Pacific' )) ), )
+    ),
+    ( _( 'Europe' ), ( # {{{2
+        ( 'Europe/Amsterdam', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Amsterdam' )) ),
+        ( 'Europe/Andorra', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Andorra' )) ),
+        ( 'Europe/Athens', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Athens' )) ),
+        ( 'Europe/Belgrade', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Belgrade' )) ),
+        ( 'Europe/Berlin', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Berlin' )) ),
+        ( 'Europe/Brussels', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Brussels' )) ),
+        ( 'Europe/Bucharest', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Bucharest' )) ),
+        ( 'Europe/Budapest', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Budapest' )) ),
+        ( 'Europe/Chisinau', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Chisinau' )) ),
+        ( 'Europe/Copenhagen', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Copenhagen' )) ),
+        ( 'Europe/Dublin', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Dublin' )) ),
+        ( 'Europe/Gibraltar', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Gibraltar' )) ),
+        ( 'Europe/Helsinki', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Helsinki' )) ),
+        ( 'Europe/Istanbul', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Istanbul' )) ),
+        ( 'Europe/Kaliningrad', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Kaliningrad' )) ),
+        ( 'Europe/Kiev', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Kiev' )) ),
+        ( 'Europe/Lisbon', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Lisbon' )) ),
+        ( 'Europe/London', unicode(_( 'Europe' )) + u'/' + unicode(_( 'London' )) ),
+        ( 'Europe/Luxembourg', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Luxembourg' )) ),
+        ( 'Europe/Madrid', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Madrid' )) ),
+        ( 'Europe/Malta', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Malta' )) ),
+        ( 'Europe/Minsk', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Minsk' )) ),
+        ( 'Europe/Monaco', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Monaco' )) ),
+        ( 'Europe/Moscow', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Moscow' )) ),
+        ( 'Europe/Oslo', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Oslo' )) ),
+        ( 'Europe/Paris', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Paris' )) ),
+        ( 'Europe/Prague', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Prague' )) ),
+        ( 'Europe/Riga', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Riga' )) ),
+        ( 'Europe/Rome', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Rome' )) ),
+        ( 'Europe/Samara', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Samara' )) ),
+        ( 'Europe/Simferopol', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Simferopol' )) ),
+        ( 'Europe/Sofia', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Sofia' )) ),
+        ( 'Europe/Stockholm', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Stockholm' )) ),
+        ( 'Europe/Tallinn', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Tallinn' )) ),
+        ( 'Europe/Tirane', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Tirane' )) ),
+        ( 'Europe/Uzhgorod', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Uzhgorod' )) ),
+        ( 'Europe/Vaduz', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Vaduz' )) ),
+        ( 'Europe/Vienna', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Vienna' )) ),
+        ( 'Europe/Vilnius', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Vilnius' )) ),
+        ( 'Europe/Volgograd', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Volgograd' )) ),
+        ( 'Europe/Warsaw', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Warsaw' )) ),
+        ( 'Europe/Zaporozhye', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Zaporozhye' )) ),
+        ( 'Europe/Zurich', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Zurich' )) ), )
+    ),
+    ( _( 'GMT' ), ( # {{{2
+        ( 'GMT', _( 'GMT' ) ), )
+    ),
+    ( _( 'Indian' ), ( # {{{2
+        ( 'Indian/Antananarivo', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Antananarivo' )) ),
+        ( 'Indian/Chagos', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Chagos' )) ),
+        ( 'Indian/Christmas', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Christmas' )) ),
+        ( 'Indian/Cocos', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Cocos' )) ),
+        ( 'Indian/Comoro', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Comoro' )) ),
+        ( 'Indian/Kerguelen', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Kerguelen' )) ),
+        ( 'Indian/Mahe', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Mahe' )) ),
+        ( 'Indian/Maldives', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Maldives' )) ),
+        ( 'Indian/Mauritius', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Mauritius' )) ),
+        ( 'Indian/Mayotte', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Mayotte' )) ),
+        ( 'Indian/Reunion', unicode(_( 'Indian' )) + u'/' + unicode(_( 'Reunion' )) ), )
+    ),
+    ( _( 'Pacific' ), ( # {{{2
+        ( 'Pacific/Apia', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Apia' )) ),
+        ( 'Pacific/Auckland', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Auckland' )) ),
+        ( 'Pacific/Chatham', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Chatham' )) ),
+        ( 'Pacific/Easter', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Easter' )) ),
+        ( 'Pacific/Efate', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Efate' )) ),
+        ( 'Pacific/Enderbury', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Enderbury' )) ),
+        ( 'Pacific/Fakaofo', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Fakaofo' )) ),
+        ( 'Pacific/Fiji', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Fiji' )) ),
+        ( 'Pacific/Funafuti', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Funafuti' )) ),
+        ( 'Pacific/Galapagos', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Galapagos' )) ),
+        ( 'Pacific/Gambier', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Gambier' )) ),
+        ( 'Pacific/Guadalcanal', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Guadalcanal' )) ),
+        ( 'Pacific/Guam', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Guam' )) ),
+        ( 'Pacific/Honolulu', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Honolulu' )) ),
+        ( 'Pacific/Johnston', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Johnston' )) ),
+        ( 'Pacific/Kiritimati', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Kiritimati' )) ),
+        ( 'Pacific/Kosrae', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Kosrae' )) ),
+        ( 'Pacific/Kwajalein', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Kwajalein' )) ),
+        ( 'Pacific/Majuro', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Majuro' )) ),
+        ( 'Pacific/Marquesas', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Marquesas' )) ),
+        ( 'Pacific/Midway', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Midway' )) ),
+        ( 'Pacific/Nauru', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Nauru' )) ),
+        ( 'Pacific/Niue', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Niue' )) ),
+        ( 'Pacific/Norfolk', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Norfolk' )) ),
+        ( 'Pacific/Noumea', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Noumea' )) ),
+        ( 'Pacific/Pago Pago', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Pago Pago' )) ),
+        ( 'Pacific/Palau', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Palau' )) ),
+        ( 'Pacific/Pitcairn', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Pitcairn' )) ),
+        ( 'Pacific/Ponape', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Ponape' )) ),
+        ( 'Pacific/Port Moresby', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Port Moresby' )) ),
+        ( 'Pacific/Rarotonga', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Rarotonga' )) ),
+        ( 'Pacific/Saipan', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Saipan' )) ),
+        ( 'Pacific/Tahiti', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Tahiti' )) ),
+        ( 'Pacific/Tarawa', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Tarawa' )) ),
+        ( 'Pacific/Tongatapu', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Tongatapu' )) ),
+        ( 'Pacific/Truk', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Truk' )) ),
+        ( 'Pacific/Wake', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Wake' )) ),
+        ( 'Pacific/Wallis', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Wallis' )) ), )
+    ),
+    ( _( 'US' ), ( # {{{2
+        ( 'US/Alaska', unicode(_( 'US' )) + u'/' + unicode(_( 'Alaska' )) ),
+        ( 'US/Arizona', unicode(_( 'US' )) + u'/' + unicode(_( 'Arizona' )) ),
+        ( 'US/Central', unicode(_( 'US' )) + u'/' + unicode(_( 'Central' )) ),
+        ( 'US/Eastern', unicode(_( 'US' )) + u'/' + unicode(_( 'Eastern' )) ),
+        ( 'US/Hawaii', unicode(_( 'US' )) + u'/' + unicode(_( 'Hawaii' )) ),
+        ( 'US/Mountain', unicode(_( 'US' )) + u'/' + unicode(_( 'Mountain' )) ),
+        ( 'US/Pacific', unicode(_( 'US' )) + u'/' + unicode(_( 'Pacific' )) ), )
+    ),
+    ( _( 'UTC' ), ( # {{{2
+        ( 'UTC', _( 'UTC' ) ), )
+    )
+)
+
 # EXAMPLE {{{1
 EXAMPLE = u"""acronym: GriCal
 title: GridCalendar presentation
@@ -333,6 +772,7 @@ start: 2010-12-29
 starttime: 10:00
 end: 2010-12-30
 endtime: 18:00
+timezone: Europe/Berlin
 tags: calendar software open-source gridmind gridcalendar
 urls:
     code    http://example.com
@@ -378,6 +818,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     endtime = models.TimeField( 
             _( u'End time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
+    # max_length in the line below was calculated with:
+    # max( [len(x) for x in common_timezones] )
+    timezone = models.CharField( _( u'Timezone' ), blank = True, null = True,
+            max_length = 30, choices = TIMEZONES )
     tags = TagField( _( u'Tags' ), blank = True, null = True,
             validators = [validate_tags_chars] )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
@@ -569,6 +1013,56 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # FIXME: include a different color-palette for past events:
         return 0
 
+    def update_timezone( self ):
+        """ recalculate and save self.timezone according to self.coordinates,
+            or self.address, or self.city and self.country
+
+        >>> event = Event.parse_text(EXAMPLE)
+        >>> timezone = event.timezone
+        >>> latitude = event.latitude
+        >>> longitude = event.longitude
+        >>> event.coordinates = None
+        >>> event.timezone = None
+        >>> event.update_timezone()
+        >>> assert event.timezone == timezone
+        >>> event.timezone = None
+        >>> event.city = None
+        >>> event.country = None
+        >>> event.address = None
+        >>> event.latitude = latitude
+        >>> event.longitude = longitude
+        >>> event.update_timezone()
+        >>> assert event.timezone == timezone
+        >>> event.delete()
+        """
+        if self.coordinates:
+            timezone = search_timezone( self.latitude, self.longitude )
+            if timezone:
+                self.timezone = timezone
+                self.save()
+                return
+        # either no coordinates or they didn't help. We try with the address
+        if self.address:
+            locations = search_address( self.address )
+            if len( locations ) == 1:
+                location = locations.items()[0][1]
+                timezone = search_timezone(
+                        location['latitude'], location['longitude'] )
+                if timezone:
+                    self.timezone = timezone
+                    self.save()
+                    return
+        if self.country:
+            if self.city:
+                locations = search_address( self.country + ', ' + self.city )
+                if len( locations ) == 1:
+                    location = locations.items()[0][1]
+                    timezone = search_timezone(
+                        location['latitude'], location['longitude'] )
+                if timezone:
+                    self.timezone = timezone
+                    self.save()
+        
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
 
@@ -587,14 +1081,21 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             ical = vobject.iCalendar()
             ical.add('METHOD').value = 'PUBLISH' # IE/Outlook needs this
             ical.add('PRODID').value = settings.PRODID
+            ical.add('CALSCALE').value = 'GREGORIAN'
         vevent = ical.add('vevent')
         vevent.add('SUMMARY').value = self.title
         vevent.add('URL').value = 'http://' + \
             Site.objects.get_current().domain + self.get_absolute_url()
         if self.starttime:
-            vevent.add('DTSTART').value = datetime.datetime.combine(
+            date_time = datetime.datetime.combine(
                     self.startdate, self.starttime )
-            # TODO: get tzinfo from city and country
+            if not self.timezone:
+                self.update_timezone()
+            if self.timezone:
+                timezone = pytz.timezone( self.timezone )
+                loc_dt = timezone.localize( date_time )
+                date_time = loc_dt.astimezone( pytz.utc )
+            vevent.add('DTSTART').value = date_time
         else:
             vevent.add('DTSTART').value = self.startdate
         if self.tags:
@@ -615,13 +1116,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
                 + unicode(self.id) + u'@' + \
                 Site.objects.get_current().domain
+        # calculate DTEND
         if self.enddate:
-            if self.endtime:
-                vevent.add('DTEND').value = datetime.datetime.combine(
-                        self.enddate, self.endtime )
-                # TODO: get tzinfo from city and country
-            else:
-                vevent.add('DTEND').value = self.enddate
+            enddate = self.enddate
+        else:
+            enddate = self.startdate
+        if self.endtime:
+            date_time = datetime.datetime.combine(
+                    enddate, self.endtime )
+            if self.timezone:
+                timezone = pytz.timezone( self.timezone )
+                loc_dt = timezone.localize( date_time )
+                date_time = loc_dt.astimezone( pytz.utc )
+            vevent.add('DTEND').value = date_time
+        else:
+            vevent.add('DTEND').value = enddate
+        # calculate DESCRIPTION
         if self.description: vevent.add('DESCRIPTION').value = self.description
         # see rfc5545 3.8.7.2. Date-Time Stamp
         vevent.add('DTSTAMP').value = self.modification_time
@@ -891,6 +1401,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 if self.endtime:
                     to_return += keyword + ": " + \
                         unicode(self.endtime.strftime( "%H:%M" )) + "\n"
+            elif keyword == u'timezone':
+                if self.timezone:
+                    to_return += keyword + ": " + self.timezone + "\n"
             elif keyword == u'country':
                 if self.country:
                     to_return += keyword + ": " + self.country + "\n"
@@ -1373,17 +1886,17 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         representation, but it is not present in the output text
         representation.
  
-        >>> gpl_len = len(Event.get_priority_list())  # 16
-        >>> gsf_len = len(Event.get_simple_fields())  # 12
+        >>> gpl_len = len(Event.get_priority_list())  # 17
+        >>> gsf_len = len(Event.get_simple_fields())  # 13
         >>> gcf_len = len(Event.get_complex_fields()) #  5 recurring not in gpl
         >>> assert(gpl_len + 1 == gsf_len + gcf_len)
         >>> synonyms_values_set = set(Event.get_synonyms().values())
         >>> assert(gpl_len + 1  == len(synonyms_values_set))
         """
-        return (u"acronym", u"title", u"startdate", u"starttime", u"enddate",
-                u"endtime", u"tags", u"urls", u"address", u"postcode", u"city",
-                u"country", u"coordinates", u"dates", u"sessions",
-                u"description")
+        return ( u"acronym", u"title", u"startdate", u"starttime", u"enddate",
+                u"endtime", u"timezone", u"tags", u"urls", u"address",
+                u"postcode", u"city", u"country", u"coordinates", u"dates",
+                u"sessions", u"description" )
  
     @staticmethod # def get_synonyms(): {{{3
     def get_synonyms():
