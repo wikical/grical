@@ -1059,9 +1059,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     location = locations.items()[0][1]
                     timezone = search_timezone(
                         location['latitude'], location['longitude'] )
-                if timezone:
-                    self.timezone = timezone
-                    self.save()
+                    if timezone:
+                        self.timezone = timezone
+                        self.save()
         
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
