@@ -1044,7 +1044,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # either no coordinates or they didn't help. We try with the address
         if self.address:
             locations = search_address( self.address )
-            if len( locations ) == 1:
+            if locations and len( locations ) == 1:
                 location = locations.items()[0][1]
                 timezone = search_timezone(
                         location['latitude'], location['longitude'] )
@@ -1055,7 +1055,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if self.country:
             if self.city:
                 locations = search_address( self.country + ', ' + self.city )
-                if len( locations ) == 1:
+                if locations and len( locations ) == 1:
                     location = locations.items()[0][1]
                     timezone = search_timezone(
                         location['latitude'], location['longitude'] )
