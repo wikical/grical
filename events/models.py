@@ -67,7 +67,7 @@ from reversion import revision
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from gridcalendar.events.utils import ( validate_year, search_name,
-        search_timezone, text_diff, validate_tags_chars )
+        search_address, search_timezone, text_diff, validate_tags_chars )
 from gridcalendar.events.tasks import (
         log_using_celery, notify_users_when_wanted )
 
