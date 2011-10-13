@@ -40,6 +40,7 @@ from xml.parsers.expat import ExpatError
 from django.contrib.gis.geos import Point
 from django.contrib.gis.utils import GeoIP
 from django.core.exceptions import ValidationError
+from django.core.mail import mail_admins
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
@@ -288,6 +289,41 @@ def search_address_google( data, country_code = None ): # {{{1
     if len( result ) > 0:
         return result
     return None
+
+def search_timezone( lat, lng ): # {{{1
+    """ it uses the geonames API returning the name of the timezone (according
+    to olson).
+
+    See http://www.geonames.org/export/web-services.html
+    """
+    url = 'http://api.geonames.org/timezone?lat=%s&lng=%s&username=%s' % \
+            ( str(lat), str(lng), GEONAMES_USERNAME )
+    try:
+        # FIXME: check for API limit reached
+        response = urllib2.urlopen( url, timeout = 10 )
+        if not response:
+            return None
+        response_text = response.read()
+        doc = fromstring( response_text ) # can raise a ExpatError
+        timezone = doc.findall( 'timezone' )[0]
+        timezoneId = timezone.find('timezoneId').text
+    except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
+            IndexError, AttributeError ) as err:
+        # TODO: log the err
+        return None
+    if not timezoneId:
+        return None
+    from models import TIMEZONES
+    found = False
+    for group in TIMEZONES:
+        for tup in group[1]:
+            if tup[0] == timezoneId:
+                found = True
+                break
+    if not found:
+        # TODO: log the error
+        return None
+    return timezoneId
 
 # TODO cache API searches and download the data of geonames to use when running
 # out of allowed queries
