@@ -768,9 +768,9 @@ TIMEZONES = (
 # EXAMPLE {{{1
 EXAMPLE = u"""acronym: GriCal
 title: GridCalendar presentation
-start: 2010-12-29
+startdate: 2010-12-29
 starttime: 10:00
-end: 2010-12-30
+enddate: 2010-12-30
 endtime: 18:00
 timezone: Europe/Berlin
 tags: calendar software open-source gridmind gridcalendar
@@ -1023,14 +1023,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> longitude = event.longitude
         >>> event.coordinates = None
         >>> event.timezone = None
+        >>> event.save()
         >>> event.update_timezone()
         >>> assert event.timezone == timezone
         >>> event.timezone = None
         >>> event.city = None
         >>> event.country = None
         >>> event.address = None
-        >>> event.latitude = latitude
-        >>> event.longitude = longitude
+        >>> event.coordinates = Point( longitude, latitude )
+        >>> event.save()
         >>> event.update_timezone()
         >>> assert event.timezone == timezone
         >>> event.delete()
@@ -1164,7 +1165,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         parameter ``recurrence`` is False)
 
         Notice that because there cannot be two events with the same title and
-        start date, either 'title' or 'start' must be used in **kwargs.
+        startdate, either 'title' or 'startdate' must be used in **kwargs.
 
         If ``self`` has a master in :class:`Recurrence`, the master
         of the returned clone in :class:`Recurrence` will be set to the same
@@ -1354,8 +1355,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> from django.utils.encoding import smart_str
         >>> example = Event.example()
         >>> event = Event.parse_text(example)
-        >>> assert (smart_str(example) == event.as_text()), smart_str(example)
-        ...     + "\n" event.as_text()
+        >>> assert smart_str(example) == event.as_text()
         >>> event.delete()
         >>> text = example.replace(u'DE', u'Germany')
         >>> event = Event.parse_text(text)
@@ -1492,7 +1492,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         u'Berlin'
         >>> s[u'country']
         u'DE'
-        >>> s[u'end']
+        >>> s[u'enddate']
         u'2010-12-30'
         >>> s[u'endtime']
         u'18:00'
@@ -1500,7 +1500,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         u'52.55247, 13.40364'
         >>> s[u'postcode']
         u'10439'
-        >>> s[u'start']
+        >>> s[u'startdate']
         u'2010-12-29'
         >>> s[u'starttime']
         u'10:00'
@@ -1868,6 +1868,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names.remove(u"creation_time")
         field_names.remove(u"modification_time")
         field_names.remove(u"description")
+        field_names.remove(u"version")
         return tuple(field_names)
  
     @staticmethod # def get_necessary_fields(): {{{3
@@ -1913,11 +1914,18 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> synonyms_values_set.remove('dates')
         >>> assert ('sessions' in synonyms_values_set)
         >>> synonyms_values_set.remove('sessions')
-        >>> assert ('recurring' in synonyms_values_set)
-        >>> synonyms_values_set.remove('recurring')
+        >>> assert ('recurrences' in synonyms_values_set)
+        >>> synonyms_values_set.remove('recurrences')
         >>> field_names = [f.name for f in Event._meta.fields]
-        >>> field_names = set(field_names)
-        >>> assert (field_names >= synonyms_values_set)
+        >>> field_names_set = set(field_names)
+        >>> field_names_set.remove('id')
+        >>> field_names_set.remove('user')
+        >>> field_names_set.remove('creation_time')
+        >>> field_names_set.remove('modification_time')
+        >>> field_names_set.remove('version')
+        >>> field_names_set.add('startdate')
+        >>> field_names_set.add('enddate')
+        >>> assert field_names_set == synonyms_values_set
         """
         if settings.DEBUG:
             # ensure you don't override a key
@@ -2170,8 +2178,8 @@ class ExtendedUser(User): # {{{1
     >>> assert ( len( euser.get_filters() ) == 2)
     >>> assert euser.has_filters()
     >>> event = Event(title="test for ExtendedUser " + now, tags = "test" )
-    >>> event.startdate = datetime.date.today()
     >>> event.save()
+    >>> event.startdate = datetime.date.today()
     >>> calendar = Calendar.objects.create(event = event, group = group2)
     >>> assert euser.has_groups_with_coming_events()
     """
@@ -2778,8 +2786,8 @@ class Group( models.Model ): # {{{1
     >>> group = Group.objects.create(name="group " + now)
     >>> event = Event(title="test for events " + now,
     ...     tags = "test" )
-    >>> event.startdate = timedelta(days=-1)+today
     >>> event.save()
+    >>> event.startdate = timedelta(days=-1)+today
     >>> eventdate = EventDate(
     ...         event = event, eventdate_name = "test",
     ...         eventdate_date = today)
@@ -2792,6 +2800,7 @@ class Group( models.Model ): # {{{1
     >>> user = User.objects.create(username = now)
     >>> membership = Membership.objects.create(group = group, user = user)
     >>> assert ( len(group.get_users()) == 1 )
+    >>> event.delete()
     """
     # TODO test names with special characters including urls like grical.org/group_name
     name = models.CharField( _( u'Name' ), max_length = 80, unique = True,
@@ -3342,7 +3351,7 @@ class Session: #{{{1
 # LOG to a pipe {{{1
 # it is recommended in the Django documentation to connect to signals in
 # models.py. That is why this code is here.
-if settings.LOG_PIPE:
+if settings.LOG_PIPE and not settings.DEBUG:
     def write_to_pipe( **kwargs ): # {{{2
         from gridcalendar.events.models import Event, RevisionInfo
         site = Site.objects.get_current().domain

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # GPL {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>

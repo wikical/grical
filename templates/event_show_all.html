@@ -242,7 +242,7 @@
     {% if user.is_authenticated %}
         {% render_comment_form for event %}
     {% else %}
-        <p><a href="{% url auth_login %}">{% trans "Log in to add a comment." %}</a></p>
+        <p><a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>
         {# TODO: redirect user to the position to add a comment to this event after logging in #}
     {% endif %}
 

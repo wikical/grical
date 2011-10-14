@@ -42,7 +42,7 @@
         |&nbsp;<a href="{% url auth_logout %}">{% trans "logout" %}</a>
     {% else %}
         <a href="{% url registration_register %}">{% trans "Sign&nbsp;up" %}</a>
-        |&nbsp;<a href="{% url auth_login %}">{% trans "log&nbsp;in" %}</a>
+        |&nbsp;<a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
     {% endif %}
     |&nbsp;<a href="{% url help %}">{% trans "help" %}</a>
     |&nbsp;<a href="{% url legal_notice %}">{% trans "legal&nbsp;notice" %}</a>

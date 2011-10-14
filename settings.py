@@ -91,6 +91,8 @@ DEFAULT_CHARSET = 'utf-8'
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/a/accounts/login/'
 LOGOUT_URL = '/a/accounts/logout/'
+# https://docs.djangoproject.com/en/dev/ref/settings/#csrf-failure-view
+CSRF_FAILURE_VIEW = 'accounts.views.csrf_failure'
 
 # =============================================================================
 # localization settings {{{1
@@ -139,7 +141,8 @@ SEND_BROKEN_LINK_EMAILS = True
 
 # at the end additional applications are conditionaly added
 INSTALLED_APPS = (
-    'events',
+    'gridcalendar.accounts',
+    'gridcalendar.events',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.messages',
@@ -164,6 +167,11 @@ if DEBUG:
 # at the end additional middleware are conditionaly added
 MIDDLEWARE_CLASSES = (
     'django.middleware.gzip.GZipMiddleware',
+)
+if DEBUG:
+    MIDDLEWARE_CLASSES += (
+        'debug_toolbar.middleware.DebugToolbarMiddleware', )
+MIDDLEWARE_CLASSES += (
     # see http://docs.djangoproject.com/en/1.2/ref/contrib/csrf/
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -175,18 +183,19 @@ MIDDLEWARE_CLASSES = (
     # FetchFromCacheMiddleware; as explained in the Dajngo documentation:
     # https://docs.djangoproject.com/en/1.3/topics/db/transactions/
     'django.middleware.transaction.TransactionMiddleware',
-    # Not used because in events.views.edit_event (among other places)
-    # sometimes we create many revisions
+    # NOTE next middleware  used because in events.views.edit_event (among
+    # other places) sometimes we create many revisions.
     # 'reversion.middleware.RevisionMiddleware',
  )
 if DEBUG:
     MIDDLEWARE_CLASSES += (
-        'debug_toolbar.middleware.DebugToolbarMiddleware', )
-    MIDDLEWARE_CLASSES += (
         'gridcalendar.middlewares.ProfileMiddleware', )
 
-MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
 # see http://docs.djangoproject.com/en/1.3/ref/contrib/messages/
+MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
+
+# https://docs.djangoproject.com/en/dev/topics/http/sessions/
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 # used by python-django-debug-toolbar
 if DEBUG:
@@ -219,11 +228,12 @@ if DEBUG:
     }
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.core.context_processors.auth",
-    "django.core.context_processors.i18n",
-    "django.core.context_processors.media",
+    'django.core.context_processors.auth',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'django.core.context_processors.request',
     'django.contrib.messages.context_processors.messages',
-    "context_processors.global_template_vars",
+    'context_processors.global_template_vars',
  )
 # http://docs.djangoproject.com/en/dev/ref/templates/api/#django-core-context-processors-debug
 #if DEBUG:
@@ -370,8 +380,8 @@ SYNONYMS = (
     ( u'`', u'title' ),
     ( u'ti', u'title' ),
     ( u'titl', u'title' ),
-    ( u'start', u'startdate' ),             # startdate [
-    ( u'startdate', u'startdate' ),
+    ( u'startdate', u'startdate' ),             # startdate [
+    ( u'start', u'startdate' ),
     ( u'[', u'startdate' ),
     ( u'st', u'startdate' ),
     ( u'starts', u'startdate' ),
@@ -399,14 +409,14 @@ SYNONYMS = (
     ( u'subject', u'tags' ),
     ( u'su', u'tags' ),
     ( u'subj', u'tags' ),
-    ( u'end', u'enddate' ),                 # enddate ]
+    ( u'enddate', u'enddate' ),                 # enddate ]
+    ( u'end', u'enddate' ),
     ( u']', u'enddate' ),
     ( u'en', u'enddate' ),
     ( u'ends', u'enddate' ),
     ( u'finish', u'enddate' ),
     ( u'finishes', u'enddate' ),
     ( u'fi', u'enddate' ),
-    ( u'enddate', u'enddate' ),
     ( u'end date', u'enddate' ),
     ( u'end-date', u'enddate' ),
     ( u'end_date', u'enddate' ),

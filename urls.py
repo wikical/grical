@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{ 1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -30,7 +30,7 @@ from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:
 # http://code.djangoproject.com/ticket/5350
 
-from events import views
+from gridcalendar.events import views
 
 # registrations {{{1
 admin.autodiscover()
@@ -72,7 +72,7 @@ urlpatterns += patterns( '',
 
 # include events.urls {{{1
 urlpatterns += patterns( '',
-    ( r'', include( 'events.urls' ) ),
+    ( r'', include( 'gridcalendar.events.urls' ) ),
  )
 
 # static files {{{1
