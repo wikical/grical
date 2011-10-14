@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<p>
+{% blocktrans %}
+<a href="https://secure.wikimedia.org/wikipedia/en/wiki/HTTP_cookie>">Cookies</a>
+are requeired for the operation you have tried. Please enable.
+{% endblocktrans %}
+</p>
+
+<p>
+{% url contact_form as contact_form_url %}
+{% blocktrans %}
+If the error persists after enabling cookies, please
+<a href="{{ contact_form_url }}">contact us</a>.
+{% endblocktrans %}
+</p>
+
+{% endblock %}
