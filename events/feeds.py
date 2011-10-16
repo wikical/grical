@@ -119,7 +119,9 @@ class SearchEventsFeed(EventsFeed): # {{{1
 
     def items(self, obj):
         """ items """
-        return search_events( obj )[0:FEED_SIZE]
+        # TODO: restrict the querysearch in the search to the values needed
+        return add_upcoming( search_events( obj )
+                ).order_by('upcoming').distinct()[0:FEED_SIZE]
 
 class GroupEventsFeed(EventsFeed): # {{{1
     """ feed with the events of a group """
