@@ -1749,8 +1749,9 @@ def ICalForSearch( request, query ): # {{{2
     ...         kwargs={'query': 'berlin',})).status_code
     200
     """
+    # TODO: add test checking that an event with two dates is not a duplicate
     try:
-        elist = search_events( query )
+        elist = search_events( query ).distinct()
     except ValueError:
         # this can happen for instance when a date is malformed like 2011-01-32
         elist = Event.objects.none()
