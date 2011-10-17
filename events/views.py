@@ -188,23 +188,38 @@ def event_edit( request, event_id = None ): # {{{1
                     formset_deadline.is_valid() :
                 # FIXME: don't allow to save an event with missing basic
                 # data like a URL
+                # FIXME: don't allow to save an event with enddate != startdate
+                # and recurrences
                 if not event_form.cleaned_data.get( 'coordinates', False ):
                     event.coordinates = None
                 with revision:
                     if request.user.is_authenticated():
                         revision.user = request.user
                     event.save()
-                    event.startdate = event_form.cleaned_data['startdate']
+                    startdate = event_form.cleaned_data['startdate']
+                    event.startdate = startdate
                     if not event_form.cleaned_data.get( 'enddate', False ):
                         try:
                             end = EventDate.objects.get(event = event,
                                     eventdate_name = 'end')
+                            end.delete()
                         except EventDate.DoesNotExist:
                             pass
-                        else:
-                            end.delete()
                     else:
-                        event.enddate = event_form.cleaned_data['enddate']
+                        # we save the enddate only if different from the
+                        # startdate
+                        enddate = event_form.cleaned_data['enddate']
+                        if enddate != startdate:
+                            event.enddate = event_form.cleaned_data['enddate']
+                        else:
+                            # there is a enddate in the form which is the same
+                            # as the startdate.
+                            try:
+                                end = EventDate.objects.get(event = event,
+                                        eventdate_name = 'end')
+                                end.delete()
+                            except EventDate.DoesNotExist:
+                                pass
                     formset_url.save()
                     formset_session.save()
                     formset_deadline.save()
@@ -526,6 +541,9 @@ def event_edit_raw( request, event_id ): # {{{1
                 as_text = smart_unicode( event.as_text() ) )
         revision.end()
         transaction.savepoint_commit(sid)
+        # TODO: this revision has more than one event when recurrences. Test
+        # that the history of each of them works just fine (before recurrences
+        # there was the supposition that each revision has only one event).
         return HttpResponseRedirect( 
             reverse('event_show_all', kwargs = {'event_id': event_id}))
     else:
