@@ -319,7 +319,7 @@ def search_events( query, related = True, model = Event ): #{{{1
             if model == Event:
                 queryset = queryset.filter( pk = event_id )
             else: # model is EventDate
-                queryset = queryset.filter( event_id = event_id )
+                queryset = queryset.filter( event__pk = event_id )
             broad = True # '=' show past events too
         query = EVENT_REGEX.sub("", query)
         # groups
