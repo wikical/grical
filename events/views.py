@@ -44,7 +44,7 @@ import unicodedata
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models import Q
 from django.contrib.sites.models import Site
@@ -300,7 +300,7 @@ def _change_recurrences( user, event, events ): # {{{1
     for rec in events:
         assert rec.recurring.master == event.recurring.master
         with revision:
-            if not isinstance( user, AnonymousUser ):
+            if user and user.is_authenticated():
                 revision.user = user
             for field in Event.get_simple_fields():
                 if field in ['startdate', 'enddate']:
@@ -323,10 +323,10 @@ def _change_recurrences( user, event, events ): # {{{1
                         changed = True
                     if changed:
                         rec_urls[i].save()
-                elif i >= len( events_urls ):
+                elif i >= len( event_urls ):
                     rec_urls[i].delete()
                 else:
-                    assert i > len( rec_urls )
+                    assert i >= len( rec_urls )
                     EventUrl.objects.create(
                             event    = rec,
                             url_name = event_urls[i].url_name,
@@ -361,42 +361,42 @@ def event_new_raw( request, template_event_id = None ): # {{{1
                 "browser and try again.") )
         return main( request )
     event_textarea = request.POST['event_astext']
-    with transaction.commit_manually():
-        try:
-            with revision:
-                if request.user.is_authenticated():
-                    revision.user = request.user
-                event = Event.parse_text(event_textarea, None, request.user.id)
-                revision.add_meta( RevisionInfo,
-                        as_text = smart_unicode( event.as_text() ) )
-            transaction.commit()
-            messages.success( request, _( u'event saved' ) )
-            return HttpResponseRedirect( 
-                reverse( 'event_show_all', kwargs={'event_id': event.id} ))
-        except ValidationError as err:
-            transaction.rollback()
-            # TODO: test that revision works here including invalidation
-            if hasattr( err, 'message_dict' ):
-                # if hasattr(err, 'message_dict'), it looks like:
-                # {'url': [u'Enter a valid value.']}
-                for field_name, error_message in err.message_dict.items():
-                    messages.error( request,
-                            field_name + ": " + ', '.join(error_message) )
-            elif hasattr( err, 'messages' ):
-                for message in err.messages:
-                    messages.error( request, message )
-            elif hasattr( err, 'message' ):
-                messages.error( request, err.message )
-            templates = {
-                    'title': _( "edit event as text" ),
-                    'event_textarea': event_textarea, }
-            return render_to_response(
-                    'event_new_raw.html',
-                    templates,
-                    context_instance = RequestContext( request ) )
-        except:
-            transaction.rollback()
-            raise
+    try:
+        sid = transaction.savepoint()
+        with revision:
+            if request.user.is_authenticated():
+                revision.user = request.user
+            event = Event.parse_text(event_textarea, None, request.user.id)
+            revision.add_meta( RevisionInfo,
+                    as_text = smart_unicode( event.as_text() ) )
+        transaction.savepoint_commit(sid)
+        messages.success( request, _( u'event saved' ) )
+        return HttpResponseRedirect( 
+            reverse( 'event_show_all', kwargs={'event_id': event.id} ))
+    except ValidationError as err:
+        transaction.savepoint_rollback(sid)
+        # TODO: test that revision works here including invalidation
+        if hasattr( err, 'message_dict' ):
+            # if hasattr(err, 'message_dict'), it looks like:
+            # {'url': [u'Enter a valid value.']}
+            for field_name, error_message in err.message_dict.items():
+                messages.error( request,
+                        field_name + ": " + ', '.join(error_message) )
+        elif hasattr( err, 'messages' ):
+            for message in err.messages:
+                messages.error( request, message )
+        elif hasattr( err, 'message' ):
+            messages.error( request, err.message )
+        templates = {
+                'title': _( "edit event as text" ),
+                'event_textarea': event_textarea, }
+        return render_to_response(
+                'event_new_raw.html',
+                templates,
+                context_instance = RequestContext( request ) )
+    except:
+        transaction.savepoint_rollback(sid)
+        raise
 
 def event_edit_raw( request, event_id ): # {{{1
     """ View to edit an event as text.
@@ -446,6 +446,9 @@ def event_edit_raw( request, event_id ): # {{{1
                 'Click the back button in your browser and try again.') )
         return main( request )
     sid = transaction.savepoint()
+    # TODO: test that this is working having a look at the db directly after
+    # submitting without errors and with errors. Test that there is no
+    # inconsistencies in the db for all cases:
     revision.start()
     if request.user.is_authenticated():
         revision.user = request.user
@@ -657,6 +660,8 @@ def event_show_all( request, event_id ): # {{{1
     # templates {{{2
     templates = { 'title': title, 'event': event, 'recurrences': recurrences,
             'rst2html': rst2html }
+    if 'oembed' in settings.INSTALLED_APPS:
+        templates['load_oembed'] = True
     return render_to_response( 'event_show_all.html', templates,
             context_instance = RequestContext( request ) )
 
