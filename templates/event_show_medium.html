@@ -4,6 +4,7 @@
 {% load cache %}
 
 {% with name=eventdate.eventdate_name date=eventdate.eventdate_date event=eventdate.event %}
+{% with start=eventdate.start end=eventdate.end %}
 <div class="event_medium">
 
     <div class="title" style="color: {{ event.fg_color }}; background-color: {{ event.bg_color }}">
@@ -15,17 +16,15 @@
 
     <div class="content">
 
-        {% with start=eventdate.start end=eventdate.end %}
+        <span class="date">
+            <a href='{% urlsearch query=start|date:"Y-m-d" %}'>{{ start }}</a>
+        </span>
+        {% if end and end != start %}
+            :
             <span class="date">
-                <a href='{% urlsearch query=start|date:"Y-m-d" %}'>{{ start }}</a>
+                <a href='{% urlsearch query=end|date:"Y-m-d" %}'>{{ end }}</a>
             </span>
-            {% if end and end != start %}
-                :
-                <span class="date">
-                    <a href='{% urlsearch query=end|date:"Y-m-d" %}'>{{ end }}</a>
-                </span>
-            {% endif %}
-        {% endwith %}
+        {% endif %}
 
         {% if event.starttime %}
           &nbsp;&nbsp;&nbsp;
@@ -59,11 +58,13 @@
             {% endif %}
         {% endif %}
 
-        <br />
-        <span class="deadlines">
-            <a href='{% urlsearch query=date|date:"Y-m-d" %}'>{{ date }}</a>
-        </span>
-        {{ name }}
+        {% if name != "start" or end %}
+            <br />
+            <span class="deadlines">
+                <a href='{% urlsearch query=date|date:"Y-m-d" %}'>{{ date }}</a>
+            </span>
+            {{ name }}
+        {% endif %}
 
         {# we use a cache here because getting the tags implies to query the db #}
         {% cache 2592000 event_tags event.id event.version %}
@@ -96,4 +97,5 @@
     {% endcomment %}
 
 </div>
+{% endwith %}
 {% endwith %}

@@ -1700,15 +1700,45 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             # the user is present and the event is new (event_id = None)
             event.user = user
         event.save()
-        # save startdate (and enddate if present)
+        # save startdate (and enddate if present and != startdate)
         startdate = event_form.cleaned_data.get('startdate', None)
         if startdate:
-            EventDate.objects.get_or_create( event = event,
-                    eventdate_name = 'start', eventdate_date = startdate )
+            try: 
+                eventdate = EventDate.objects.get( event = event,
+                        eventdate_name = 'start' )
+                if eventdate.eventdate_date != startdate:
+                    eventdate.eventdate_date = startdate
+                    eventdate.save()
+            except EventDate.DoesNotExist:
+                EventDate.objects.create( event = event,
+                        eventdate_name = 'start', eventdate_date = startdate )
         enddate = event_form.cleaned_data.get('enddate', None)
         if enddate:
-            EventDate.objects.get_or_create( event = event,
-                    eventdate_name = 'end', eventdate_date = enddate )
+            if enddate != startdate:
+                try: 
+                    eventdate = EventDate.objects.get( event = event,
+                            eventdate_name = 'end' )
+                    if eventdate.eventdate_date != enddate:
+                        eventdate.eventdate_date = enddate
+                        eventdate.save()
+                except EventDate.DoesNotExist:
+                    EventDate.objects.create( event = event,
+                            eventdate_name = 'end', eventdate_date = enddate )
+            else:
+                try: 
+                     eventdate = EventDate.objects.get( event = event,
+                            eventdate_name = 'end' )
+                     eventdate.delete()
+                except EventDate.DoesNotExist:
+                    pass
+        else:
+            # we delete the enddate if there was one
+            try:
+                enddate = EventDate.objects.get(
+                        event = event, eventdate_name = 'end' )
+                enddate.delete()
+            except EventDate.DoesNotExist:
+                pass
         # urls {{{5
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls( complex_fields[u'urls'] )
