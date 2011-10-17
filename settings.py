@@ -161,6 +161,11 @@ INSTALLED_APPS = (
     'contact_form',
     'djcelery',
  )
+try:
+    import oembed
+    INSTALLED_APPS += ( 'oembed', )
+except:
+    pass
 if DEBUG:
     INSTALLED_APPS = ( 'debug_toolbar', ) + INSTALLED_APPS
 
@@ -183,7 +188,7 @@ MIDDLEWARE_CLASSES += (
     # FetchFromCacheMiddleware; as explained in the Dajngo documentation:
     # https://docs.djangoproject.com/en/1.3/topics/db/transactions/
     'django.middleware.transaction.TransactionMiddleware',
-    # NOTE next middleware  used because in events.views.edit_event (among
+    # NOTE next middleware not used because in events.views.edit_event (among
     # other places) sometimes we create many revisions.
     # 'reversion.middleware.RevisionMiddleware',
  )

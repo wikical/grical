@@ -49,7 +49,6 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
-from django.db import transaction
 from django.db.models import Min
 from django.db.models.signals import \
         pre_save, post_save, pre_delete, post_delete

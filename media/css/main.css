@@ -338,11 +338,23 @@ td {
 }
 .urls, .urls ul, .urls li {
     display: inline ;
-    margin: 1em 1em 1em 0 ;
+    margin: 0em 1em 1em 0 ;
     -moz-padding-start: 0;
 }
 .urls li:before {
     content: "\00BB \0020";
+    font-size: 1.4em;
+}
+ul.urls li {
+    max-width: 320px;
+    display: block;
+    float: left;
+    font-size: 0.8em;
+    color: gray;
+}
+.url_name {
+    font-size: 1.4em;
+    color: #546878;
 }
 .event_full td {
     border: 1px solid #aaa;

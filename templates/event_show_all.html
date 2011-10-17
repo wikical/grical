@@ -5,6 +5,7 @@
 {% load urlsearch %}
 {% load comments %}
 {% load cache %}
+{% if load_oembed %}{% load oembed_tags %}{% endif %}
 
 {% block container %}
 <div class="event_full">
@@ -120,7 +121,12 @@
                         {% for url in event.urls.all %}
                             <li>
                                 <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
-                                {# &emsp; <a href="{{ url.url }}"><span class="url">{{ url.url|escape }}</span></a> #}
+                                <br />
+                                {% if load_oembed %}
+                                    {% oembed 320x240 %} {{ url.url }} {% endoembed %}
+                                {% else %}
+                                    url.url
+                                {% endif %}
                             </li>
                         {% endfor %}
                     </ul>
