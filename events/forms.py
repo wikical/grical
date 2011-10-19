@@ -328,9 +328,10 @@ class EventForm(ModelForm): # {{{1
         model = Event
         exclude = ('coordinates',) # excludes the model field 'coordinates'
     def clean( self ):
-        """ it adds the value of coordinates to the Event instance, and
+        """ it adds the value of coordinates to the Event instance,
         checks that there is no other event with the same name and start
-        date """
+        date, checks that startdate if before enddate, and checks that
+        starttime is before endtime. """
         # see http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
         # coordinates
         self.cleaned_data = super(EventForm, self).clean()
@@ -345,19 +346,30 @@ class EventForm(ModelForm): # {{{1
         else:
             self.instance.coordinates = None
         # checks uniqueness of title and startdate
-        title = self.cleaned_data.get("title", None)
-        startdate = self.cleaned_data.get("startdate", None)
-        if title and startdate:
-            same_title_date = Event.objects.filter(
-                    title = title,
-                    dates__eventdate_name = 'start',
-                    dates__eventdate_date = startdate )
-            if hasattr(self, 'instance') and self.instance and \
-                    hasattr(self.instance, 'id'):
-                if same_title_date.exclude(id = self.instance.id).exists():
-                    raise same_title_day_validation_error
-            elif same_title_date.exists():
+        title = self.cleaned_data["title"]
+        startdate = self.cleaned_data["startdate"]
+        same_title_date = Event.objects.filter(
+                title = title,
+                dates__eventdate_name = 'start',
+                dates__eventdate_date = startdate )
+        if hasattr(self, 'instance') and self.instance and \
+                hasattr(self.instance, 'id'):
+            if same_title_date.exclude(id = self.instance.id).exists():
                 raise same_title_day_validation_error
+        elif same_title_date.exists():
+            raise same_title_day_validation_error
+        # checks that startdate is before enddate if present
+        enddate = self.cleaned_data.get("enddate", None)
+        if enddate and enddate < startdate:
+            raise ValidationError( _('enddate must be after startdate') )
+        # checks starttime and endtime constrains
+        starttime = self.cleaned_data.get("starttime", None)
+        endtime = self.cleaned_data.get("endtime", None)
+        if endtime and not starttime:
+            raise ValidationError( 
+                    _('endtime without starttime is not allowed') )
+        if starttime and endtime and endtime < starttime:
+            raise ValidationError( _('endtime must be after starttime') )
         return self.cleaned_data
 
 same_title_day_validation_error = ValidationError(

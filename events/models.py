@@ -1789,7 +1789,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 else:
                     assert(previous_eventdate.eventdate_name == name)
                     assert(previous_eventdate.event == event)
-                    if previous_eventdate.date != date:
+                    if previous_eventdate.eventdate_date != date:
                         previous_eventdate.eventdate_date = date
                         previous_eventdate.full_clean()
                         eventdates_final.append( previous_eventdate )
