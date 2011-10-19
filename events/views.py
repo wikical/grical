@@ -52,9 +52,10 @@ from django.core import serializers
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
-from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.db import transaction, IntegrityError
+# from django.core.exceptions import ValidationError
+from django.forms import ValidationError
 from django.forms.models import inlineformset_factory, ModelForm
 from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
         HttpResponseForbidden, HttpResponseBadRequest )
@@ -499,21 +500,29 @@ def event_edit_raw( request, event_id ): # {{{1
     except (ValidationError, IntegrityError) as err:
         revision.invalidate()
         transaction.savepoint_rollback(sid)
+        # TODO: create a proper django form and move all this to the clean
+        # method of the form.
         if isinstance(err, ValidationError):
             # found a validation error with one or more errors
+            # unattached error messages start with '* __all__\n  * '
+            # getting rid of it:
+            def noall( message ):
+                if message.startswith("* __all__\n  * "):
+                    return message[14:]
+                return message
             if hasattr( err, 'message_dict' ):
                 # if hasattr(err, 'message_dict'), it looks like:
                 # {'url': [u'Enter a valid value.']}
                 for field_name, error_message in err.message_dict.items():
                     if isinstance(error_message, list):
-                        error_message = " ; ".join(error_message)
+                        error_message = " ; ".join(noall(error_message))
                     messages.error( request,
                             field_name + ": " + error_message )
             elif hasattr( err, 'messages' ):
                 for message in err.messages:
-                    messages.error( request, message )
+                    messages.error( request, noall(message) )
             elif hasattr( err, 'message' ):
-                messages.error( request, err.message )
+                messages.error( request, noall(err.message) )
         elif isinstance(err, IntegrityError):
             # at least one date already exists
             # TODO: write a better error code
