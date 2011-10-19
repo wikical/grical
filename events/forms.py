@@ -295,7 +295,7 @@ class FilterForm(ModelForm): # {{{1
 class EventForm(ModelForm): # {{{1
     """ ModelForm for all user editable fields of an Event, a custom coordinate
     field and fields for all days of two years from now """
-    startdate = DateField()
+    startdate = DateField( required = True )
     enddate = DateField( required = False )
     coordinates = CoordinatesField( max_length = 26, required = False )
     def __init__(self, *args, **kwargs):
@@ -346,21 +346,22 @@ class EventForm(ModelForm): # {{{1
         else:
             self.instance.coordinates = None
         # checks uniqueness of title and startdate
-        title = self.cleaned_data["title"]
-        startdate = self.cleaned_data["startdate"]
-        same_title_date = Event.objects.filter(
-                title = title,
-                dates__eventdate_name = 'start',
-                dates__eventdate_date = startdate )
-        if hasattr(self, 'instance') and self.instance and \
-                hasattr(self.instance, 'id'):
-            if same_title_date.exclude(id = self.instance.id).exists():
+        title = self.cleaned_data.get("title", None)
+        startdate = self.cleaned_data.get("startdate", None)
+        if title and startdate:
+            same_title_date = Event.objects.filter(
+                    title = title,
+                    dates__eventdate_name = 'start',
+                    dates__eventdate_date = startdate )
+            if hasattr(self, 'instance') and self.instance and \
+                    hasattr(self.instance, 'id'):
+                if same_title_date.exclude(id = self.instance.id).exists():
+                    raise same_title_day_validation_error
+            elif same_title_date.exists():
                 raise same_title_day_validation_error
-        elif same_title_date.exists():
-            raise same_title_day_validation_error
         # checks that startdate is before enddate if present
         enddate = self.cleaned_data.get("enddate", None)
-        if enddate and enddate < startdate:
+        if startdate and enddate and enddate < startdate:
             raise ValidationError( _('enddate must be after startdate') )
         # checks starttime and endtime constrains
         starttime = self.cleaned_data.get("starttime", None)
