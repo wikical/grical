@@ -687,8 +687,6 @@ def event_show_all( request, event_id ): # {{{1
     # templates {{{2
     templates = { 'title': title, 'event': event, 'recurrences': recurrences,
             'rst2html': rst2html }
-    if 'oembed' in settings.INSTALLED_APPS:
-        templates['load_oembed'] = True
     return render_to_response( 'event_show_all.html', templates,
             context_instance = RequestContext( request ) )
 

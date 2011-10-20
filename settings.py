@@ -160,12 +160,8 @@ INSTALLED_APPS = (
     'django.contrib.markup', # used for rendering ReStructuredText
     'contact_form',
     'djcelery',
+    'oembed',
  )
-try:
-    import oembed
-    INSTALLED_APPS += ( 'oembed', )
-except:
-    pass
 if DEBUG:
     INSTALLED_APPS = ( 'debug_toolbar', ) + INSTALLED_APPS
 

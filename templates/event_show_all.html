@@ -5,7 +5,7 @@
 {% load urlsearch %}
 {% load comments %}
 {% load cache %}
-{% if load_oembed %}{% load oembed_tags %}{% endif %}
+{% load oembed_tags %}
 
 {% block container %}
 <div class="event_full">
@@ -122,11 +122,7 @@
                             <li>
                                 <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
                                 <br />
-                                {% if load_oembed %}
-                                    {% oembed 320x240 %} {{ url.url }} {% endoembed %}
-                                {% else %}
-                                    url.url
-                                {% endif %}
+                                {% oembed 320x240 %} {{ url.url }} {% endoembed %}
                             </li>
                         {% endfor %}
                     </ul>
