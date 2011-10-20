@@ -266,6 +266,14 @@ class CoordinatesField( CharField ): #{{{1
         if value['longitude'] < -180 or value['longitude'] > 180:
             raise ValidationError( _(u'Longitude is not within (-180,180)') )
 
+class EventSessionForm( ModelForm ):
+    def __init__(self, *args, **kwargs):
+        super(EventSessionForm, self).__init__(*args, **kwargs)
+        self.fields['session_starttime'].widget.format = '%H:%M'
+        self.fields['session_endtime'].widget.format = '%H:%M'
+    class Meta: # pylint: disable-msg=C0111,W0232,R0903
+        model = EventSession
+
 class FilterForm(ModelForm): # {{{1
     """ ModelForm using Filter excluding `user` """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
