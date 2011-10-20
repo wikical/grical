@@ -41,10 +41,16 @@ Installation instructions for Debian based systems
 
 __ https://github.com/etianen/django-reversion/wiki/Compatible-Django-Versions
 
-#. Optionally for embedded url contents, install a version of django-oembed. Take into consideration security issues.
+#. Install ``django-oembed`` which will embedurl content using the oEmbed_ standard. There are many
+forks of ``django-oembed``. Choose one carefully taking into consideration security and privacy
+issues: an external package can contain malicious code and oEmbeds from some sites can contain
+tracking javascript code and the like. Unfortunately there is no simple way to make this package
+optional in Django. This remains as a TODO. See
+http://www.codekoala.com/blog/2009/django-tip-application-specific-templates/
 
     #. Install a version of ``djando-oembed`` (there are many at github_). Example::
 
+        aptitude install git
         pip install -e git+git://github.com/ixc/django-oembed.git#egg=django-oembed
 
 #. If you want to use memcached_ (not necessary but highly recommended as GriCal is designed to use it for performance):
@@ -129,7 +135,7 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
       ``python-webtest`` and ``django-webtest``. webtest version 1.3 is needed for
       Django 1.3. As root::
 
-          aptitude install python-django-debug-toolbar python-webtest python-profiler
+          aptitude install python-django-debug-toolbar python-profiler
           pip install django-webtest
           pip install MultipartPostHandler
 
@@ -242,3 +248,4 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
 .. _#6362: http://code.djangoproject.com/ticket/6362
 .. _snippet 656: http://www.djangosnippets.org/snippets/956/
 .. _github: https://github.com/
+.. _oEmbed: https://secure.wikimedia.org/wikipedia/en/wiki/OEmbed
