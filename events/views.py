@@ -73,7 +73,7 @@ from reversion.models import Version, Revision
 
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
-    CalendarForm,
+    CalendarForm, EventSessionForm,
     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDate, Filter, Group,
@@ -158,7 +158,8 @@ def event_edit( request, event_id = None ): # {{{1
     event_deadlines_factory = inlineformset_factory( 
             Event, EventDate, extra = 4, can_delete = can_delete, )
     event_sessions_factory = inlineformset_factory( 
-            Event, EventSession, extra = 4, can_delete = can_delete, )
+            Event, EventSession, extra = 4, can_delete = can_delete,
+            form = EventSessionForm )
     if request.method == 'POST':
         try:
             event_form = EventForm( request.POST, instance = event )
