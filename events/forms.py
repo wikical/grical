@@ -338,8 +338,9 @@ class EventForm(ModelForm): # {{{1
     def clean( self ):
         """ it adds the value of coordinates to the Event instance,
         checks that there is no other event with the same name and start
-        date, checks that startdate if before enddate, and checks that
-        starttime is before endtime. """
+        date, checks that startdate if before enddate, checks that
+        starttime is before endtime, and checks that if enddate != startdate it
+        is not recurring """
         # see http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
         # coordinates
         self.cleaned_data = super(EventForm, self).clean()
@@ -369,8 +370,12 @@ class EventForm(ModelForm): # {{{1
                 raise same_title_day_validation_error
         # checks that startdate is before enddate if present
         enddate = self.cleaned_data.get("enddate", None)
-        if startdate and enddate and enddate < startdate:
-            raise ValidationError( _('enddate must be after startdate') )
+        if startdate and enddate:
+            if enddate < startdate:
+                raise ValidationError( _('enddate must be after startdate') )
+            if enddate != startdate and self.instance.recurring:
+                raise ValidationError( _('recurring events cannot occur ' \
+                        'more than one day') )
         # checks starttime and endtime constrains
         starttime = self.cleaned_data.get("starttime", None)
         endtime = self.cleaned_data.get("endtime", None)
@@ -516,7 +521,13 @@ class InviteToGroupForm(Form): # {{{1
     # (encrypted if possible)
 
 class CalendarForm(HTMLCalendar): #TODO: use LocaleHTMLCalendar
-    """ generates a HTML-calendar with a checkbox in each day """
+    """ generates a HTML-calendar with a checkbox in each day
+    """
+    def __init__(self, *args, **kwargs):
+        self.dates_iso = kwargs.pop( 'dates_iso', set() )
+        self.not_editable_dates_iso = kwargs.pop(
+                'not_editable_dates_iso', set() )
+        super(CalendarForm, self).__init__(*args, **kwargs)
     def formatmonth(self, year, month, *args, **kwargs):
         # we save year and month for their use in formatday
         self.year, self.month = year, month
@@ -525,7 +536,18 @@ class CalendarForm(HTMLCalendar): #TODO: use LocaleHTMLCalendar
     def formatday(self, day, weekday):
         if day == 0:
             return '<td class="noday">&nbsp;</td>' # day outside month
+        day_iso = datetime.date( self.year, self.month, day ).isoformat()
+        if day_iso in self.not_editable_dates_iso:
+            return '<td class="cal-form-day-not-editable">%d</td>' % day
+        if day_iso in self.dates_iso:
+            return \
+                '<td class="cal-form-day-checked">' \
+                '<input type="checkbox" ' \
+                'name="recurrences" value="%s" checked="checked" /> ' \
+                '%d</td>' % ( day_iso, day )
         else:
-            return '<td class="cal-form-day"><input type="checkbox" ' \
-                'name="recurrences" value="%s" />%d</td>' % \
-                (datetime.date( self.year, self.month, day ).isoformat(), day)
+            return \
+                '<td class="cal-form-day-unchecked">' \
+                '<input type="checkbox" ' \
+                'name="recurrences" value="%s" /> ' \
+                '%d</td>' % ( day_iso, day )
