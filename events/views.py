@@ -46,7 +46,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models import Q
+from django.contrib.gis.db.models import Q, F
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.cache import cache
@@ -120,6 +120,158 @@ def legal_notice( request ): # {{{1
                     ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
+@login_required
+def event_edit_recurrences( request, event_id ): # {{{1
+    event = get_object_or_404( Event, pk = event_id )
+    if event.enddate:
+        messages.error( request, _("it was tried to edit recurrences of " \
+                "the following event, which has a duration of more " \
+                "than one day and thus cannot have recurrences") )
+        return HttpResponseRedirect( reverse( 'event_show_all',
+                kwargs = {'event_id': event.id} ) )
+    recurring = event.recurring
+    if recurring:
+        master = recurring.master
+        recurring_dates = EventDate.objects.values_list(
+            'eventdate_date', flat=True ).filter(
+                eventdate_name = 'start', event___recurring__master = master )
+        recurring_dates = recurring_dates.order_by('eventdate_date')
+        recurring_dates_iso = sorted(
+                [ d.isoformat() for d in recurring_dates ] )
+    else:
+        recurring_dates = [event.startdate,]
+        recurring_dates_iso = [event.startdate.isoformat(),]
+        master = event
+    # the master of a recurrence is always the event with the oldest
+    # startdate
+    assert recurring_dates[0] == master.startdate
+    assert recurring_dates_iso[0] == master.startdate.isoformat()
+    if not request.method == 'POST':
+        # we will show the months where at least one recurring event
+        # happens and 12 more from master.startdate to
+        # settings.DEFAULT_RECURRING_DURATION_IN_DAYS
+        if recurring:
+            messages.warning( request, _('warning: unmarking dates will ' \
+                    'delete all information regarding that date') )
+            # dates indicating months: yyyy-mm-01
+            months_to_show = set( [ datetime.date( d.year, d.month, 1 ) for
+                    d in recurring_dates ] )
+            # if there is only one date (which is the start date of the master)
+            # we make it not editable
+            if len ( recurring_dates ) == 1:
+                not_editable_dates_iso = set([ master.startdate.isoformat() ])
+            else:
+                not_editable_dates_iso = set()
+        else:
+            months_to_show = set()
+            not_editable_dates_iso = set([ master.startdate.isoformat() ])
+        start = master.startdate
+        date = start
+        end = start + timedelta( days =
+                settings.DEFAULT_RECURRING_DURATION_IN_DAYS )
+        while date <= end:
+            months_to_show.add( datetime.date( date.year, date.month, 1 ) )
+            date = date + relativedelta( months=+1 )
+        months = []
+        calendar_form = CalendarForm(
+                dates_iso = set( recurring_dates_iso ),
+                not_editable_dates_iso = not_editable_dates_iso )
+        for date in sorted( months_to_show ):
+            months.append( mark_safe( smart_unicode(
+                calendar_form.formatmonth( date.year, date.month) ) ) )
+            templates = { 'months': months, 'event': master,
+                'title': _('editing recurrences of the event: %s' % unicode(
+                    master) ) }
+        return render_to_response( 'event_edit_recurrences.html', templates,
+                context_instance = RequestContext( request ) )
+    # request.method = POST
+    if not 'recurrences' in request.POST:
+        messages.error( request,
+            _(u'Unexpected missing data when editing recurrences. ' \
+                    'Nothing has been saved.') )
+        return HttpResponseRedirect( reverse( 'event_show_all',
+                kwargs = {'event_id': event.id} ) )
+    deleted_counter = 0
+    added_counter = 0
+    dates_iso_in_form = sorted( request.POST.getlist('recurrences') )
+    if recurring and dates_iso_in_form and \
+            dates_iso_in_form[0] != master.startdate.isoformat():
+        # The master has been unmarked. We need to eventually create and to
+        # replace the master for all remaining events.
+        # We check if the new master already exists:
+        try:
+            new_master = Event.objects.get(
+                    _recurring__master = master,
+                    dates__eventdate_date = parse( dates_iso_in_form[0] ),
+                    dates__eventdate_name = 'start' )
+        except Event.DoesNotExist:
+            # Master does not exists. We create it.
+            with revision:
+                if request.user.is_authenticated():
+                    revision.user = request.user
+                new_master = event.clone( user = revision.user,
+                        except_models = [EventDate, EventSession],
+                        startdate = dates_iso_in_form[0] )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( new_master.as_text() ) )
+                added_counter += 1
+        # We get and update recurrences with the old master
+        recurrences = Recurrence.objects.get( master = master )
+        recurrences.update( master = new_master )
+        master = new_master
+        dates_iso_in_form = dates_iso_in_form[1:]
+    for date_iso in dates_iso_in_form:
+        if not date_iso in recurring_dates_iso:
+            # new recurrence
+            with revision:
+                if request.user.is_authenticated():
+                    revision.user = request.user
+                clone = master.clone( user = request.user,
+                        except_models = [EventDate, EventSession],
+                        startdate = parse(date_iso).date() )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( clone.as_text() ) )
+                added_counter += 1
+        else:
+            recurring_dates_iso.remove( date_iso )
+    # all remaining dates in recurring_dates_iso must be deleted
+    master_iso = master.startdate.isoformat()
+    for date_iso in recurring_dates_iso:
+        if date_iso == master_iso:
+            continue
+        dele = Event.objects.get(
+                dates__eventdate_name = 'start',
+                dates__eventdate_date = date_iso,
+                _recurring__master = master )
+        with revision:
+            if request.user.is_authenticated():
+                revision.user = request.user
+            info_dict = {}
+            info_dict['reason'] = unicode( _('deleted from recurrences') )
+            info_dict['redirect'] = master.id
+            info_dict['as_text'] = smart_unicode( dele.as_text() )
+            revision.add_meta( RevisionInfo, **info_dict )
+            dele.delete()
+            deleted_counter += 1
+    # if any changes were made, we update the event.version to disable the
+    # cache of all the events of the serie
+    if added_counter + deleted_counter > 0:
+        events = Event.objects.filter( _recurring__master = master )
+        events.update( version = F('version') + 1 )
+    if not event.pk: # event deleted, we check master
+        event = master
+    if not event.pk:
+        messages.info( request,
+                _( u'An event and all its recurrences has been ' \
+                'successfully deleted, the title was: %s' )% event.title )
+        return HttpResponseRedirect( reverse('main') )
+    # TODO: plurarize the message correctly (quantities can be 0 or 1 or more)
+    messages.info( request,
+            _( u'%d recurrences added, %d recurrences deleted' ) %
+            ( added_counter, deleted_counter ) )
+    return HttpResponseRedirect( reverse( 'event_show_all',
+            kwargs = {'event_id': event.id} ) )
+
 def event_edit( request, event_id = None ): # {{{1
     """ view to edit or create an event as a form
 
@@ -173,9 +325,9 @@ def event_edit( request, event_id = None ): # {{{1
                 also_recurrences_form = AlsoRecurrencesForm( request.POST )
             else:
                 also_recurrences_form = None
-            # some spammers modify ManagementForm data in formsets which raises
-            # a ValidationError with the message: 'ManagementForm data is
-            # missing or has been tampered with'
+            # NOTE: some spammers modify ManagementForm data in formsets which
+            # raises a ValidationError with the message: 'ManagementForm data
+            # is missing or has been tampered with'
         except ValidationError:
             messages.error( request, _('Internal data missing. No data ' \
                     'saved. If the error persists, please contact us.') )
@@ -227,25 +379,6 @@ def event_edit( request, event_id = None ): # {{{1
                     formset_deadline.save()
                     revision.add_meta( RevisionInfo,
                             as_text = smart_unicode( event.as_text() ) )
-                # add recurrences if the event is new and dates in the
-                # calendars are marked
-                if not event_id and 'recurrences' in request.POST:
-                    for date_iso in request.POST.getlist('recurrences'):
-                        # ignore same date as start
-                        if date_iso == event.startdate.isoformat():
-                            continue
-                        # save recurrence
-                        with revision:
-                            if request.user.is_authenticated():
-                                revision.user = request.user
-                            # we do not clone dates nor sessions, as they 
-                            # refer to the main event and not to the recurring
-                            # events.TODO: inform the user
-                            clone = event.clone( user = revision.user,
-                                    except_models = [EventDate, EventSession],
-                                    startdate = parse(date_iso).date() )
-                            revision.add_meta( RevisionInfo,
-                                    as_text = smart_unicode( clone.as_text() ) )
                 # change recurrences if appropiate
                 if event_recurring:
                     master = event.recurring.master
@@ -288,19 +421,6 @@ def event_edit( request, event_id = None ): # {{{1
             'formset_deadline': formset_deadline,
             'also_recurrences_form': also_recurrences_form,
             'event_id': event_id }
-    # recurrences HTML-calendar
-    if not event_id:
-        # we show months from today to DEFAULT_RECURRING_DURATION_IN_DAYS
-        months = []
-        today = datetime.date.today()
-        date = today
-        end = today + timedelta( days =
-                settings.DEFAULT_RECURRING_DURATION_IN_DAYS )
-        while date <= end:
-            months.append( mark_safe( smart_unicode(
-                CalendarForm().formatmonth( date.year, date.month) ) ) )
-            date = date + relativedelta( months=+1 )
-        templates[ 'months' ] = months
     # add a warning message if the start date is in the past, which might be
     # a mistake
     if event_id and event.startdate < datetime.date.today():
@@ -318,7 +438,7 @@ def _change_recurrences( user, event, events ): # {{{1
         assert rec.recurring.master == event.recurring.master
         with revision:
             if user and user.is_authenticated():
-                revision.user = user
+                revision.user = request.user
             for field in Event.get_simple_fields():
                 if field in ['startdate', 'enddate']:
                     continue
@@ -775,6 +895,8 @@ def event_revert( request, revision_id, event_id ): # {{{1
     assert unicode(event.id) in [ version.object_id for version in
             revision.version_set.all() ]
     revision.revert()
+    # TODO: implement reversion of a reversion. Ask the makers of the
+    # application first how they would recommend it
     messages.success( request, _(u'event has been reverted') )
     return HttpResponseRedirect( reverse(
             'event_show_all', kwargs = {'event_id': event.id,} ) )
@@ -824,7 +946,7 @@ def event_delete( request, event_id ):
             for dele in events:
                 with revision:
                     if request.user.is_authenticated():
-                        revision.user = user
+                        revision.user = request.user
                     info_dict = {}
                     reason = form.cleaned_data['reason']
                     if reason:
@@ -1065,7 +1187,8 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         data = serializers.serialize(
                 'json',
                 search_result,
-                fields=('title', 'upcoming', 'start', 'tags', 'coordinates'), #FIXME: start seems wrong
+                # FIXME: startdate, starttime, upcoming and url are missing
+                fields=('title', 'tags', 'coordinates'), #FIXME: start seems wrong
                 indent = 2,
                 ensure_ascii=False )
         if jsonp:
@@ -1079,7 +1202,8 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                 view,
                 search_result,
                 indent = 2,
-                fields=('title', 'upcoming', 'start', 'tags', 'coordinates') ) #FIXME: start seems wrong
+                # FIXME: startdate, starttime, upcoming and url are missing
+                fields=('title', 'tags', 'coordinates') )
         if view == 'xml':
             mimetype = "application/xml"
         else:

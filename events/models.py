@@ -1742,7 +1742,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # urls {{{5
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls( complex_fields[u'urls'] )
-            event_urls = list() # stores EventURLs to be saved at the end
+            event_urls_final = list() # stores EventURLs to be saved at the end
             for url_name, url in urls.items():
                 try:
                     previous_event_url = EventUrl.objects.get(
@@ -1752,33 +1752,38 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     # see
                     # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
                     event_url.full_clean()
-                    event_urls.append(event_url)
+                    event_urls_final.append(event_url)
                 else:
                     previous_event_url.url = url
                     assert(previous_event_url.url_name == url_name)
                     assert(previous_event_url.event == event)
                     previous_event_url.full_clean()
-                    event_urls.append(previous_event_url)
-            assert(len(event_urls) == len(urls))
+                    event_urls_final.append(previous_event_url)
+            assert(len(event_urls_final) == len(urls))
             # save all
-            for event_url in event_urls:
+            for event_url in event_urls_final:
                 event_url.save()
             # delete old urls of the event which are not in ``text`` parameter
-            event_urls = EventUrl.objects.filter(event=event)
-            for event_url in event_urls:
-                if not urls.has_key(event_url.url_name):
-                    event_url.delete()
+            EventUrl.objects.filter(event=event).exclude(
+                    pk__in = [ eu.pk for eu in event_urls_final ] ).delete()
             del complex_fields[u'urls']
         # dates {{{5
         if complex_fields.has_key(u'dates'):
-            eventdates = EventDate.get_eventdates(
-                    complex_fields[u'dates'] )
+            eventdates = EventDate.get_eventdates( complex_fields[u'dates'] )
             eventdates_final = list() # stores EventDate instances to be saved
-                                     # at the end
+            reserved_names = EventDate.reserved_names()
             for name, date in eventdates.items():
+                if name in reserved_names:
+                    raise ValidationError(
+                        _(u"the name '%(name)s' for a date is not allowed") %
+                            {'name': name,} )
                 try:
                     previous_eventdate = EventDate.objects.get(
                             event=event, eventdate_name=name)
+                    if previous_eventdate.eventdate_date != date:
+                        previous_eventdate.eventdate_date = date
+                        previous_eventdate.full_clean()
+                        eventdates_final.append( previous_eventdate )
                 except EventDate.DoesNotExist:
                     eventdate = EventDate(event=event, eventdate_name=name,
                             eventdate_date=date)
@@ -1786,14 +1791,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
                     eventdate.full_clean()
                     eventdates_final.append(eventdate)
-                else:
-                    assert(previous_eventdate.eventdate_name == name)
-                    assert(previous_eventdate.event == event)
-                    if previous_eventdate.eventdate_date != date:
-                        previous_eventdate.eventdate_date = date
-                        previous_eventdate.full_clean()
-                        eventdates_final.append( previous_eventdate )
-            assert(len(eventdates_final) == len(eventdates))
             # save all
             for eventdate in eventdates_final:
                 eventdate.save()
@@ -1801,19 +1798,32 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             all_eventdates = EventDate.objects.filter(event=event)
             for eventdate in all_eventdates:
                 name = eventdate.eventdate_name
-                if ( not eventdates.has_key( name ) ) and \
-                        name not in EventDate.reserved_names():
+                if ( name not in reserved_names ) and \
+                        not eventdates.has_key(name):
                     eventdate.delete()
             del complex_fields[u'dates']
         # sessions {{{5
         if complex_fields.has_key(u'sessions'):
-            sessions = EventSession.get_sessions( complex_fields[u'sessions'] )
-            event_sessions = list() # stores EventSessions to be saved at the end
-            for session in sessions:
+            sessions_in_text = \
+                    EventSession.get_sessions( complex_fields[u'sessions'] )
+            # stores EventSessions to be saved at the end
+            event_sessions_to_save = list()
+            for session in sessions_in_text:
+                if session.date < event.startdate:
+                    raise ValidationError( _("the following session's " \
+                        "date is before the start date of the event, " \
+                        "which is not allowed: %s") % session.name )
                 try:
                     # check if there is an EventSession with the same name
                     previous_event_session = EventSession.objects.get(
                             event = event, session_name = session.name)
+                    # check that the session date is not before the startdate
+                    previous_event_session.session_date = session.date
+                    previous_event_session.session_starttime = session.start
+                    previous_event_session.session_endtime = session.end
+                    # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
+                    previous_event_session.full_clean()
+                    event_sessions_to_save.append( previous_event_session )
                 except EventSession.DoesNotExist:
                     event_session = EventSession(
                             event = event,
@@ -1824,25 +1834,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     # see
                     # http://docs.djangoproject.com/en/dev/ref/models/instances/#validating-objects
                     event_session.full_clean()
-                    event_sessions.append(event_session)
-                else:
-                    previous_event_session.session_date = session.date
-                    previous_event_session.session_starttime = session.start
-                    previous_event_session.session_endtime = session.end
-                    previous_event_session.full_clean()
+                    event_sessions_to_save.append(event_session)
             # save all
-            for event_session in event_sessions:
+            for event_session in event_sessions_to_save:
                 event_session.save()
             # delete old sessions of the event which are not in ``text`` parameter
-            event_sessions = EventSession.objects.filter(event=event)
-            for event_session in event_sessions:
-                found = False
-                for session in sessions:
-                    if session.name == event_session.session_name:
-                        found = True
-                        break
-                if not found:
-                    event_session.delete()
+            EventSession.objects.filter( event = event ).exclude(
+                pk__in = [ es.pk for es in event_sessions_to_save ] ).delete()
             del complex_fields[u'sessions']
         # recurrences {{{5
         from forms import DatesTimesField
@@ -2275,8 +2273,9 @@ class EventUrl( models.Model ): # {{{1
 
     def save( self, *args, **kwargs ):
         super( EventUrl, self ).save( *args, **kwargs )
-        # we call Event.save to update Event.version
-        self.event.save()
+        # we update Event.version
+        event_queryset = Event.objects.filter( pk = self.event.pk )
+        event_queryset.update( version = self.event.version + 1 )
 
     def __unicode__( self ): # {{{2
         return self.url
@@ -2431,7 +2430,9 @@ class EventDate( models.Model ): # {{{1
                 # TODO: the above can be done more efficiently, see
                 # http://stackoverflow.com/questions/2252530/efficent-way-to-bulk-insert-with-get-or-create-in-django-sql-python-django
         # we call Event.save to update Event.version {{{4
-        self.event.save()
+        # we update Event.version
+        event_queryset = Event.objects.filter( pk = self.event.pk )
+        event_queryset.update( version = self.event.version + 1 )
 
     #def natural_key( self ):
     #    return ( self.eventdate_name, self.event.natural_key() )
@@ -2564,7 +2565,9 @@ class EventSession( models.Model ): # {{{1
 
     def save( self, *args, **kwargs ): #{{{3
         super( EventSession, self ).save( *args, **kwargs )
-        self.event.save() # to update version
+        # we update Event.version
+        event_queryset = Event.objects.filter( pk = self.event.pk )
+        event_queryset.update( version = self.event.version + 1 )
 
     def __unicode__( self ): # {{{2
         return unicode( self.session_date ) + u'    ' + \

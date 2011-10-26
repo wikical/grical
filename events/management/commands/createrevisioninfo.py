@@ -51,7 +51,10 @@ class Command( NoArgsCommand ): # {{{1
                         smart_unicode( event.as_text() ) )
                 count = count + 1
             else:
-                assert len( infos ) == 1
+                assert len( infos ) == 1, \
+                        'event %d has more than one RevisionInfo' % event.id
+                assert infos[0].as_text == smart_unicode( event.as_text() ), \
+                        'event %d has already a RevisionInfo' % event.id
         print "created %d RevisionInfo records" % count
 
 # setting stdout and stderr {{{1

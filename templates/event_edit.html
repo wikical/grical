@@ -118,12 +118,6 @@
                 </tr>
             {% endfor %}
         </table>
-        {% if months %}
-            <h2>{% trans "Recurrences" %}</h2>
-            {% for month in months %}
-                {{ month }}
-            {% endfor %}
-        {% endif %}
         {% include "also_recurrences_form.html" %}
         <div><input type="submit" value="{% trans "Save" %}" /></div>
     </form>

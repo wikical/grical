@@ -33,6 +33,8 @@
                     &nbsp;|&nbsp;
                     {% show_add_to_group %}
                     &nbsp;|&nbsp;
+                    <a href="{% url event_edit_recurrences event.id %}">{% trans "recurrences" %}</a>
+                    &nbsp;|&nbsp;
                     <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
                 {% endif %}
             </div>
