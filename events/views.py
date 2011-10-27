@@ -46,7 +46,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models import Q, F
+from django.contrib.gis.db.models import Q, F, DateField
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.cache import cache
@@ -73,7 +73,7 @@ from reversion.models import Version, Revision
 
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
-    CalendarForm, EventSessionForm,
+    CalendarForm, EventSessionForm, DateExtendedField,
     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDate, Filter, Group,
@@ -301,6 +301,11 @@ def event_edit( request, event_id = None ): # {{{1
         event_recurring = True
     else:
         event_recurring = False
+    # callback
+    def replace_date_with_date_extended( field, **kwargs):
+        if not isinstance( field, DateField ):
+            return field.formfield( **kwargs )
+        return DateExtendedField( **kwargs )
     # TODO: when removing all fields of a row the expected behaviour is to
     # delete the entry, but the inlineformset shows an error telling that the
     # fields are required, change it. Notice that the user can delete with the
@@ -308,9 +313,11 @@ def event_edit( request, event_id = None ): # {{{1
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4, can_delete = can_delete, )
     event_deadlines_factory = inlineformset_factory( 
-            Event, EventDate, extra = 4, can_delete = can_delete, )
+            Event, EventDate, extra = 4, can_delete = can_delete,
+            formfield_callback = replace_date_with_date_extended )
     event_sessions_factory = inlineformset_factory( 
             Event, EventSession, extra = 4, can_delete = can_delete,
+            formfield_callback = replace_date_with_date_extended,
             form = EventSessionForm )
     if request.method == 'POST':
         try:
@@ -364,7 +371,7 @@ def event_edit( request, event_id = None ): # {{{1
                         # startdate
                         enddate = event_form.cleaned_data['enddate']
                         if enddate != startdate:
-                            event.enddate = event_form.cleaned_data['enddate']
+                            event.enddate = enddate
                         else:
                             # there is a enddate in the form which is the same
                             # as the startdate.

@@ -27,6 +27,7 @@
 # imports {{{1
 from difflib import HtmlDiff, unified_diff
 import datetime
+from dateutil import parser
 from dateutil.relativedelta import relativedelta
 import re
 import sys
@@ -454,7 +455,7 @@ def search_address_osm( data ): # {{{1
         return result
     return None
 
-def validate_event_exists( value ):
+def validate_event_exists( value ): # {{{1
     """ checks that there is an event with ``value`` as id """
     from gridcalendar.events.models import Event
     try:
@@ -463,7 +464,7 @@ def validate_event_exists( value ):
         raise ValidationError( _(u'An event with the number %(event_nr)s ' \
                 'does not exists.') % {'event_nr': value,} )
 
-def validate_tags_chars( value ):
+def validate_tags_chars( value ): # {{{1
     """ it validates that tag characters are only international letters, spaces
     and hyphen """
     if re.search("[^ \-\w]|_", value, re.UNICODE):
@@ -471,7 +472,7 @@ def validate_tags_chars( value ):
                 "tags are separated by spaces and can contain only " \
                 "letters and hyphens (-)"))
 
-def validate_year( value ):
+def validate_year( value ): # {{{1
     """ it validates ``value.year`` newer than 1900 and less than 2 years from
     now.
     
@@ -493,7 +494,7 @@ def validate_year( value ):
             _( u'%(year)s is more than four years in the future, ' \
                     'which is not allowed' ) % {'year': value.year,} )
 
-def html_diff(old_as_text, new_as_text):
+def html_diff(old_as_text, new_as_text): # {{{1
     """ returns a utf8 string containing the code of a html table showing
     differences of the utf8 parameters """
     old_as_text = old_as_text.splitlines()
@@ -501,7 +502,7 @@ def html_diff(old_as_text, new_as_text):
     table = HtmlDiff( tabsize = 4 ).make_table( old_as_text, new_as_text )
     return table.replace( '&nbsp;', ' ' ).replace( ' nowrap="nowrap"', '' )
 
-def text_diff(old_as_text, new_as_text):
+def text_diff(old_as_text, new_as_text): # {{{1
     """ returns a unicode string containing a diff text showing
     differences of the utf8 parameters """
     old_as_text = smart_unicode( old_as_text ).splitlines()
@@ -518,10 +519,110 @@ def text_diff(old_as_text, new_as_text):
     text_diff = u'\n'.join( text_diff )
     return text_diff
 
-# only for testing:
-if __name__ == "__main__": # {{{1
-#    result = search_address_google(
-#            sys.argv[1].decode( sys.getfilesystemencoding() ) )
-    result = search_address( sys.argv[1].decode( sys.getfilesystemencoding() ) )
-    print result
 
+class GermanParserInfo(parser.parserinfo): # {{{1
+    """Enable German dates for the parser of dateutils
+
+    >>> parser.parse('20. Dezember 2001',
+    ...     parserinfo=GermanParserInfo())
+    datetime.datetime(2001, 12, 20, 0, 0)
+    """
+    # Code originally from https://bitbucket.org/miracle2k/pyutils/ under the
+    # BSD license
+    JUMP = [" ", ".", ",", ";", "-", "/", "'",
+            "am", "an", "bis", "in", "im", "Uhr",
+            "der", "den", "dem", "des", "das", "die" ]
+    PERTAIN = ["von", "vom"]
+    AMPM = [("Morgen", "morgens", "vormittags", "Vormittag"),
+            ("abend", "abends", "nachmittag", "nachmittags")]
+    WEEKDAYS = [("Mo", "Montag"),
+                ("Di", "Dienstag"),
+                ("Mi", "Mittwoch"),
+                ("Do", "Donnerstag"),
+                ("Fr", "Freitag"),
+                ("Sa", "Samstag"),
+                ("So", "Sonntag")]
+    MONTHS   = [("Jan", "Januar"),
+                ("Feb", "Februar"),
+                ("Mär", "Mrz", "März"),
+                ("Apr", "April"),
+                ("Mai", "Mai"),
+                ("Jun", "Juni"),
+                ("Jul", "Juli"),
+                ("Aug", "August"),
+                ("Sep", "Sept", "September"),
+                ("Okt", "Oktober"),
+                ("Nov", "November"),
+                ("Dez", "Dezember")]
+    HMS = [("h", "Stunde", "Stunden"),
+           ("m", "Minute", "Minuten"),
+           ("s", "Sekunde", "Sekunden")]
+
+    def __init__(self, dayfirst=True, yearfirst=False):
+        # for german dates, set ``dayfirst`` by default
+        super(GermanParserInfo, self).__init__(dayfirst=dayfirst, yearfirst=yearfirst)
+
+    def weekday(self, name):
+        """
+        We need to reimplement this, as German weekdays in shortform
+        are only two characters long, and the superclass implementation
+        has a hardcoded requirement of at least 3.
+        """
+        if len(name) >= 2:
+            try:
+                return self._weekdays[name.lower()]
+            except KeyError:
+                pass
+        return None
+
+
+class SpanishParserInfo(parser.parserinfo): # {{{1
+    """Enable Spanish dates for the parser of dateutils
+
+    >>> parser.parse('20 de diciembre del 2001',
+    ...     parserinfo=SpanishParserInfo())
+    datetime.datetime(2001, 12, 20, 0, 0)
+    """
+    # Code originally from https://bitbucket.org/miracle2k/pyutils/ under the
+    # BSD license
+    JUMP = [" ", ".", ",", ";", "-", "/", "'",
+            "a", "la", "las", "el", "del", "de", "y"]
+    WEEKDAYS = [("L", "lunes"),
+                ("M", "martes"),
+                ("X", "miércoles", "miercoles"),
+                ("J", "jueves"),
+                ("V", "viernes"),
+                ("S", "sábado", "sabado"),
+                ("D", "domingo")]
+    MONTHS   = [("ENE", "enero"),
+                ("FEB", "febrero"),
+                ("MAR", "marzo"),
+                ("ABR", "abril"),
+                ("MAY", "mayo"),
+                ("JUN", "junio"),
+                ("JUL", "julio"),
+                ("AGO", "agosto"),
+                ("SET", "septiembre"),
+                ("OCT", "octubre"),
+                ("NOV", "noviembre"),
+                ("DIC", "diciembre")]
+    HMS = [("h", "hora", "horas"),
+           ("m", "minuto", "minutos"),
+           ("s", "segundo", "segundos")]
+
+    def __init__(self, dayfirst=True, yearfirst=False):
+        # for Spanish dates, set ``dayfirst`` by default
+        super(SpanishParserInfo, self).__init__(dayfirst=dayfirst, yearfirst=yearfirst)
+
+    def weekday(self, name):
+        """
+        We need to reimplement this, as Spanish weekdays in shortform
+        are only one character long, and the superclass implementation
+        has a hardcoded requirement of at least 3.
+        """
+        if len(name) >= 1:
+            try:
+                return self._weekdays[name.lower()]
+            except KeyError:
+                pass
+        return None

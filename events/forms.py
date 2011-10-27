@@ -25,6 +25,7 @@
 
 # imports {{{1
 from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
+from dateutil.parser import parse
 import re
 import datetime
 import urllib2
@@ -43,20 +44,21 @@ from gridcalendar.settings_local import DEBUG
 from gridcalendar.events.models import (Event, EventUrl, EventDate,
         EventSession, Filter, Group, Membership )
 from gridcalendar.events.search import COORDINATES_REGEX
-from gridcalendar.events.utils import validate_year, validate_event_exists
+from gridcalendar.events.utils import ( validate_year, validate_event_exists,
+        GermanParserInfo, SpanishParserInfo )
 
 def _date(string): # {{{1
     """ parse a date in the format ``yyyy-mm-dd`` using
     ``gridcalendar.events.utils.validate_year """
-    parsed_date = datetime.datetime.strptime(string, '%Y-%m-%d').date()
+    parsed_date = datetime.datetime.strptime(string.strip(), '%Y-%m-%d').date()
     validate_year( parsed_date )
     return parsed_date
 
 def _time(string): # {{{1
     """ parse a time in the format: hh:mm """
-    return datetime.datetime.strptime(string, '%H:%M').time()
+    return datetime.datetime.strptime(string.strip(), '%H:%M').time()
 
-class URLValidatorExtended( validators.URLValidator ):
+class URLValidatorExtended( validators.URLValidator ): # {{{1
     """ Like ``URLValidation`` but adding support to HTTP Basic Auth.
     See https://code.djangoproject.com/ticket/9791 """
     def __call__( self, value ):
@@ -149,6 +151,10 @@ class DatesTimesField(Field): # {{{1
         - 25 October 2006
         - 25 October, 2006
 
+    - some other English formats recognized by dateutil.parser.parse
+    - some other English formats recognized by dateutil.parser.parse with
+      custom parserinfo (see utils.py)
+
     >>> dt = DatesTimesField()
     >>> d = dt.to_python('2010-01-25')
     >>> d = dt.to_python('2010-1-25')
@@ -167,6 +173,7 @@ class DatesTimesField(Field): # {{{1
     def to_python(self, value):
         """ returns a dictionary with four values: startdate, enddate,
         starttime, endtime """
+        value = value.strip()
         re_d = \
             re.compile( r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s*$', re.UNICODE )
         re_d_d = \
@@ -222,8 +229,29 @@ class DatesTimesField(Field): # {{{1
             # the validationError comes from utils.validate_year and the error
             # message is translated
             raise e
+        # No matches, we try now dateutil.parser.parse without and with custom
+        # parseinfos
+        if value: # we need this here because parse('') returns today
+            parseinfos = [ None, GermanParserInfo, SpanishParserInfo ]
+            for parseinfo in parseinfos:
+                try:
+                    if not parseinfo:
+                        dati = parse( value )
+                    else:
+                        dati = parse( value, parserinfo = parseinfo() )
+                    if dati.hour==0 and dati.minute==0 and not " 00" in value:
+                        # time was not specified
+                        return { 'startdate': dati.date(), }
+                    # time was specified
+                    return  { 'startdate': dati.date(),
+                              'starttime': dati.time(), }
+                except ValueError:
+                    pass
         # No matches. We try now DateField
-        return { 'startdate': DateField().clean( value ) }
+        # TODO: try DateField with different language settings, and also
+        # DateTimeField
+        return { 'startdate':
+                DateField( required = self.required ).clean( value ) }
 
     def validate(self, value):
         """ checks that dates and times are in order, i.e. startdate before
@@ -231,9 +259,16 @@ class DatesTimesField(Field): # {{{1
         if value.has_key('enddate'):
             if value['startdate'] > value['enddate']:
                 raise ValidationError( _('end date is before start date') )
-        if value.has_key('endtime'):
+        if value.has_key('starttime') and value.has_key('endtime'):
             if value['starttime'] > value['endtime']:
                 raise ValidationError( _('end time is before start time') )
+
+class DateExtendedField(DatesTimesField): # {{{1
+    def to_python(self, value):
+        datestimes = super( DateExtendedField, self ).to_python( value )
+        return datestimes['startdate']
+    def validate(self, value):
+        return
 
 class CoordinatesField( CharField ): #{{{1
     default_error_messages = {
@@ -303,8 +338,8 @@ class FilterForm(ModelForm): # {{{1
 class EventForm(ModelForm): # {{{1
     """ ModelForm for all user editable fields of an Event, a custom coordinate
     field and fields for all days of two years from now """
-    startdate = DateField( required = True )
-    enddate = DateField( required = False )
+    startdate = DateExtendedField( required = True )
+    enddate = DateExtendedField( required = False )
     coordinates = CoordinatesField( max_length = 26, required = False )
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)

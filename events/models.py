@@ -1693,7 +1693,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # testing data
         if not event_form.is_valid():
             raise ValidationError(event_form.errors.as_text())
-        # save the event from the form
+        # create a preliminary event from the form
         event = event_form.save(commit = False)
         if user and not event_id:
             # event.user is the user who created the event, we add her/him if
