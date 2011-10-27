@@ -1915,6 +1915,15 @@ def ICalForSearch( request, query ): # {{{2
     return _ical_http_response_from_event_list( elist, query,
             calname = domain + " " + query )
 
+def ICalForEventRecurrences( request, event_id ): # {{{2
+    """ ical file for an event and all its recurrences """
+    event = get_object_or_404( Event, id = event_id )
+    recurring = event.recurring
+    if not recurring:
+        return ICalForEvent( request, event_id )
+    elist = Event.objects.filter( _recurring__master = recurring.master )
+    return _ical_http_response_from_event_list( elist, event.title )
+
 def ICalForEvent( request, event_id ): # {{{2
     """ ical file for an event
     >>> from django.test import Client

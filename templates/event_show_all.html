@@ -19,6 +19,12 @@
                 <span class="ical_logo">
                   <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
                 </span>
+                {% if event.recurring %}
+                    <span class="ical_logo">
+                        <a href="{% url event_show_recurrences_ical event.id %}">
+                            <img alt="ICAL recurrences" src="{{ MEDIA_URL }}icalrecurrencesicon.png" /></a>
+                    </span>
+                {% endif %}
                 {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
             </div>
             <div class="options">

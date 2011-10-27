@@ -81,6 +81,9 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^e/show/(?P<event_id>\d+)/ical/$',
         views.ICalForEvent,             name='event_show_ical'),
 
+    url(r'^e/show/recurrences/(?P<event_id>\d+)/ical/$',
+        views.ICalForEventRecurrences,  name='event_show_recurrences_ical'),
+
     url(r'^e/group/(?P<event_id>\d+)/$',
         views.group_add_event,          name='group_add_event'), )
 
