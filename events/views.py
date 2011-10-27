@@ -1104,8 +1104,9 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> e2.delete()
     """
     # function body {{{2
-    # query
-    query = request.GET.get('query', None)
+    # query, we prioritize /s/?query= in the url but if not present we accept
+    # /s/query
+    query = request.GET.get('query', query)
     # view
     view = request.GET.get('view', 'boxes')
     # shows the homepage with a message if no query, except when view=json
