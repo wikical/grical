@@ -1310,7 +1310,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def save( self, *args, **kwargs ): #{{{3
         """ Marks an event as new or not (for :meth:`Event.post_save`),
-        and update the master of a recurrence if appropiate."""
+        update the master of a recurrence if appropiate, and deletes caches of
+        properties.
+        """
         # FIXME: increase version field of all events in the recurring serie
         try:
             Event.objects.get( id = self.id )
@@ -2369,9 +2371,11 @@ class EventDate( models.Model ): # {{{1
         unique_together = ( "event", "eventdate_name", "eventdate_date" )
 
     def save( self, *args, **kwargs ): #{{{3
-        assert 'start' in self.reserved_names()
-        assert 'end' in self.reserved_names()
-        assert 'ongoing' in self.reserved_names()
+        reserved_names = self.reserved_names()
+        assert 'start' in reserved_names
+        assert 'end' in reserved_names
+        assert 'ongoing' in reserved_names
+        assert len( reserved_names ) == 3
         # checkings {{{4
         if self.eventdate_name == 'start':
             # we check that, if there is an end, it is after the start
@@ -2413,26 +2417,49 @@ class EventDate( models.Model ): # {{{1
                 raise RuntimeError( unicode(self.event) +
                         " was going to have an ongoing after end" )
         super( EventDate, self ).save( *args, **kwargs ) # {{{4
-        # adding missing ongoing dates {{{4
-        # if it is and end-date, we add missing ongoing-dates:
-        if self.eventdate_name == 'end':
-            end = self.eventdate_date
+        # adding and deleting ongoing dates {{{4
+        # if it is and end-date, we add missing ongoing-dates and delete
+        # gratuitous
+        if self.eventdate_name == 'end' or self.eventdate_name == 'start':
+            self.event.startdate_cache = None
+            self.event.enddate_cache = None
             start = self.event.startdate
-            ongoings = EventDate.objects.filter(
-                    event = self.event, eventdate_name = 'ongoing' )
-            dates = [ start + datetime.timedelta(days=x) for x in
-                    range( 1, (end - start).days) ]
-            for date in dates:
-                EventDate.objects.get_or_create(
+            end = self.event.enddate
+            if end:
+                # deletes all ongoings outside start-end range
+                gratuitous_ongoings = EventDate.objects.filter(
+                        event = self.event, eventdate_name = 'ongoing',
+                        ).exclude( eventdate_date__range = ( start, end ) )
+                gratuitous_ongoings.delete()
+                # deletes ongoings == start or == end
+                EventDate.objects.filter(
                         event = self.event,
-                        eventdate_name = 'ongoing',
-                        eventdate_date = date )
-                # TODO: the above can be done more efficiently, see
-                # http://stackoverflow.com/questions/2252530/efficent-way-to-bulk-insert-with-get-or-create-in-django-sql-python-django
-        # we call Event.save to update Event.version {{{4
-        # we update Event.version
+                        eventdate_date__in = (start, end),
+                        eventdate_name = 'ongoing' ).delete()
+                # we add missing ongoings
+                dates = [ start + datetime.timedelta(days=x) for x in
+                        range( 1, (end - start).days) ]
+                for date in dates:
+                    EventDate.objects.get_or_create(
+                            event = self.event,
+                            eventdate_name = 'ongoing',
+                            eventdate_date = date )
+                    # TODO: the above can be done more efficiently, see
+                    # http://stackoverflow.com/questions/2252530/efficent-way-to-bulk-insert-with-get-or-create-in-django-sql-python-django
         event_queryset = Event.objects.filter( pk = self.event.pk )
         event_queryset.update( version = self.event.version + 1 )
+
+    def delete( self, *args, **kwargs ): #{{{3
+        """ deletes all ongoing dates when the deleted EventDate is an end date
+        """
+        super( EventDate, self ).delete( *args, **kwargs )
+        # update event.version
+        event_queryset = Event.objects.filter( pk = self.event.pk )
+        event_queryset.update( version = self.event.version + 1 )
+        if not self.eventdate_name == 'end':
+            return
+        EventDate.objects.filter(
+            event = self.event, eventdate_name = 'ongoing' ).delete()
 
     #def natural_key( self ):
     #    return ( self.eventdate_name, self.event.natural_key() )
