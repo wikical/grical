@@ -6,7 +6,7 @@
 
 {% block container %}
 
-{% cache 2592000 event_history event.id event.version %}
+{% cache 2592000 event_history event.id event.version user_authenticated %}
 
     <div class="event_history">
         <div class="options">

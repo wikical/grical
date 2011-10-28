@@ -544,7 +544,12 @@ class GermanParserInfo(parser.parserinfo): # {{{1
                 ("So", "Sonntag")]
     MONTHS   = [("Jan", "Januar"),
                 ("Feb", "Februar"),
-                ("Mär", "Mrz", "März"),
+                # the dateutil library works with iso-8859-1 encoding
+                # TODO: contact the author to modify it, because many languages
+                # cannot be encoded in iso-8859-1
+                (u"Mär".encode('iso-8859-1', 'replace'),
+                    u"März".encode('iso-8859-1', 'replace'),
+                    "Maerz", "Marz", "Mar", "Mrz"),
                 ("Apr", "April"),
                 ("Mai", "Mai"),
                 ("Jun", "Juni"),
@@ -589,10 +594,15 @@ class SpanishParserInfo(parser.parserinfo): # {{{1
             "a", "la", "las", "el", "del", "de", "y"]
     WEEKDAYS = [("L", "lunes"),
                 ("M", "martes"),
-                ("X", "miércoles", "miercoles"),
+                # the dateutil library works with iso-8859-1 encoding
+                # TODO: contact the author to modify it, because many languages
+                # cannot be encoded in iso-8859-1
+                ("X", "miercoles",
+                    u"miércoles".encode('iso-8859-1', 'replace')),
                 ("J", "jueves"),
                 ("V", "viernes"),
-                ("S", "sábado", "sabado"),
+                ("S", "sabado",
+                    u"sábado".encode('iso-8859-1', 'replace')),
                 ("D", "domingo")]
     MONTHS   = [("ENE", "enero"),
                 ("FEB", "febrero"),
