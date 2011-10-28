@@ -44,7 +44,6 @@ def global_template_vars(request):
             return None
     vars_funcs = {
             'CURRENT_SITE': lambda: Site.objects.get_current(),
-            'USER':         get_user,
             'USERS_NR':     lambda: User.objects.count(),
             'EVENTS_NR':    lambda: Event.objects.count(),
             'GROUPS_NR':    lambda: Group.objects.count(), }
@@ -64,5 +63,7 @@ def global_template_vars(request):
         vars_dic['PROTOCOL'] = "http"
     vars_dic['VERSION'] = settings.VERSION
     vars_dic['MEDIA_URL'] = settings.MEDIA_URL
+    # TODO: think on the trick to get the user out of a signed Django-1.4 cookie
+    vars_dic['USER'] = get_user()
     # return
     return vars_dic

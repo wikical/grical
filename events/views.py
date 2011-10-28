@@ -874,8 +874,8 @@ def event_history( request, event_id ): # {{{1
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
         return event_does_not_exist( request, event_id, 'event_history' )
-    key = 'revs_diffs_of_%d_v%d' % (event.id, event.version)
-    revs_diffs = cache.get( key )
+    cache_key = 'revs_diffs_of_%d_v%d' % (event.id, event.version)
+    revs_diffs = cache.get( cache_key )
     if not revs_diffs:
         revisions = [ version.revision for version in
                 Version.objects.get_for_object( event ) ]
@@ -883,18 +883,20 @@ def event_history( request, event_id ): # {{{1
         # we create a list of tuples with a revision and a string which is a html
         # diff to the previous revision (or None if it is not possible)
         revs_diffs = revisions_diffs( revisions )
-        cache.set( key, revs_diffs, 2592000 )
+        cache.set( cache_key, revs_diffs, 2592000 )
     templates = {
             'title': _( "History of event %(event_nr)s" ) % \
                     {'event_nr': str(event.id)},
             'event': event,
-            'revisions_diffs': revs_diffs }
+            'revisions_diffs': revs_diffs,
+            'user_authenticated': request.user.is_authenticated(), }
     return render_to_response( 'event_history.html',
             templates, context_instance = RequestContext( request ) )
 
 @login_required
 def event_revert( request, revision_id, event_id ): # {{{1
     event = get_object_or_404( Event, pk = event_id )
+    version_nr = event.version
     revision = get_object_or_404( Revision, pk = revision_id )
     # we check that the event is a version of the revision (a revision in
     # django-reversion consists of one or more versions, which are changes to
@@ -902,6 +904,8 @@ def event_revert( request, revision_id, event_id ): # {{{1
     assert unicode(event.id) in [ version.object_id for version in
             revision.version_set.all() ]
     revision.revert()
+    event.version = version_nr + 1
+    event.save()
     # TODO: implement reversion of a reversion. Ask the makers of the
     # application first how they would recommend it
     messages.success( request, _(u'event has been reverted') )
