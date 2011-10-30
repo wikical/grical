@@ -173,7 +173,8 @@ class DatesTimesField(Field): # {{{1
     def to_python(self, value):
         """ returns a dictionary with four values: startdate, enddate,
         starttime, endtime """
-        value = value.strip()
+        if value:
+            value = value.strip()
         re_d = \
             re.compile( r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s*$', re.UNICODE )
         re_d_d = \
