@@ -86,6 +86,11 @@ LOCATION_REGEX = re.compile(r"""
 # CITY_COUNTRY_RE : city, country (optional) #{{{2
 CITY_COUNTRY_RE = re.compile(r'\s*([^,]+)(?:,\s*(.+))?')
 
+class GeoLookupError( Exception ): # {{{1
+    """ exception raises when no coordinates can be looked up for a given name
+    """
+    pass
+
 def location_restriction( queryset, query ): #{{{1
     """ returns a tuple (a queryset an a string ) restricting ``queryset`` with
     the locations of ``query`` and removing them from ``query`` """
@@ -114,6 +119,8 @@ def location_restriction( queryset, query ): #{{{1
                        event__country__iexact = country )
         elif loc[8]:
             point = search_name( loc[8] )
+            if not point:
+                raise GeoLookupError()
             if loc[10]:
                 distance = {loc[10]: loc[9],}
             else:

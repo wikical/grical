@@ -274,7 +274,15 @@ CACHES = {
             'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
             'LOCATION': '127.0.0.1:11211',
             'TIMEOUT': 300, # 5 minutes
-        } #TODO: use also the hot spare server
+        }, #TODO: use also the hot spare server
+        'db': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'cache',
+            'TIMEOUT': 60*60*24*31, # 31 days
+            'OPTIONS': {
+                'MAX_ENTRIES': 100000
+            },
+        },
 }
 if DEBUG:
     CACHES['default']['KEY_PREFIX'] = 'debug'
