@@ -83,7 +83,7 @@ from gridcalendar.events.utils import ( search_address, search_timezone,
         html_diff )
 from gridcalendar.events.tables import EventTable
 from gridcalendar.events.feeds import SearchEventsFeed
-from gridcalendar.events.search import search_events
+from gridcalendar.events.search import search_events, GeoLookupError
 
 # TODO: check if this works with i18n
 views = [_('table'), _('map'), _('boxes'), _('calendars'),]
@@ -1149,11 +1149,19 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         search_result = add_start( search_result )
         search_result = add_end( search_result )
         search_result = search_result.distinct()
-    except ValueError as err: # TODO: catch other errors
-        # this can happen for instance when a date is malformed like 2011-01-32
-        messages.error( request, 
-                _( u"The search is malformed: %(error_message)s" ) %
-                {'error_message': err.args[0]} )
+    except (ValueError, GeoLookupError) as err: # TODO: catch other errors
+        if isinstance( err, ValueError ):
+            # this can happen for instance when a date is malformed like 2011-01-32
+            messages.error( request, 
+                    _( u"The search is malformed: %(error_message)s" ) %
+                    {'error_message': err.args[0]} )
+        if isinstance( err, GeoLookupError ):
+            # this can happen when the external API runs out of allowed request
+            # limit
+            messages.error( request, 
+                    _( u"The lookup of the coordinates of the name was not"
+                        " possible. You can try using the coordinates instead."
+                        " Example: @52.12,13.23+500km" ) )
         if view == 'boxes' or view == 'calendars':
             search_result = EventDate.objects.none()
         else:

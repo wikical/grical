@@ -221,6 +221,10 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
         update django_site set domain='gridcalendar.net' where id=1 ;
         update django_site set name='Grid Calendar' where id=1 ;
 
+    #. Creates the cache table::
+
+        ./manage.py createcachetable cache
+
 #. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
    of it.
 
