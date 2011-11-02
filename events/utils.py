@@ -55,6 +55,9 @@ from gridcalendar.events.tasks import save_in_caches
 # requests per day. (Users of Google Maps API Premier may perform up to 100,000
 # requests per day.)
 
+# TODO: count and avoid transgressions of the geonames terms of use, which
+# seems to be 2000 credits hourly
+
 def search_address( data, ip = None ): # {{{1
     """ uses nominatim.openstreetmap.org and a Google API to get the geo-data
     of the address ``data`` (unicode)
@@ -293,18 +296,34 @@ def search_address_google( data, country_code = None ): # {{{1
         return result
     return None
 
-def search_timezone( lat, lng ): # {{{1
+def search_timezone( lat, lng, use_cache = True ): # {{{1
     """ it uses the geonames API returning the name of the timezone (according
     to olson).
 
     See http://www.geonames.org/export/web-services.html
     """
+    if use_cache:
+        cache_value = None
+        cache_key =  'search_timezone__' + str(lat) + "_" + str(lng)
+        db_cache = get_cache('db')
+        # we try the memcached cache (see settings.CACHES)
+        if cache.has_key( cache_key ):
+            cache_value = cache.get( cache_key )
+        # we try the db cache
+        elif db_cache.has_key( cache_key ):
+            cache_value = db_cache.get( cache_key )
+        if cache_value:
+            # we want to be sure that it is saved in all caches
+            save_in_caches.delay( cache_key, cache_value )
+            return cache_value
     url = 'http://api.geonames.org/timezone?lat=%s&lng=%s&username=%s' % \
             ( str(lat), str(lng), GEONAMES_USERNAME )
     try:
         # FIXME: check for API limit reached
         response = urllib2.urlopen( url, timeout = 10 )
         if not response:
+            if use_cache:
+                save_in_caches.delay( cache_key, None, timeout = 300 )
             return None
         response_text = response.read()
         doc = fromstring( response_text ) # can raise a ExpatError
@@ -313,8 +332,12 @@ def search_timezone( lat, lng ): # {{{1
     except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
             IndexError, AttributeError ) as err:
         # TODO: log the err
+        if use_cache:
+            save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
     if not timezoneId:
+        if use_cache:
+            save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
     from models import TIMEZONES
     found = False
@@ -325,7 +348,14 @@ def search_timezone( lat, lng ): # {{{1
                 break
     if not found:
         # TODO: log the error
+        if use_cache:
+            save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
+    if use_cache:
+        # we save it fast in memcached before saving it slowly in all caches
+        cache.set( cache_key, timezoneId )
+        save_in_caches.delay( cache_key, timezoneId )
+        # TODO: test that we recognize the timezoneId and log if not
     return timezoneId
 
 # TODO cache API searches and download the data of geonames to use when running
@@ -556,7 +586,7 @@ class GermanParserInfo(parser.parserinfo): # {{{1
     # BSD license
     JUMP = [" ", ".", ",", ";", "-", "/", "'",
             "am", "an", "bis", "in", "im", "Uhr",
-            "der", "den", "dem", "des", "das", "die" ]
+            "der", "den", "dem", "des", "das", "die", "um" ]
     PERTAIN = ["von", "vom"]
     AMPM = [("Morgen", "morgens", "vormittags", "Vormittag"),
             ("abend", "abends", "nachmittag", "nachmittags")]

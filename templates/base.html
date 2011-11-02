@@ -170,6 +170,13 @@
             <li> <a href="{% url lastadded_events_rss %}">{% trans "last added RSS feed" %}</a></li>
         </ul>
     </div>
+    <div class="title">{% trans "Using" %}</div>
+    <div class="info">
+        <ul>
+            <li> <a href="http://www.openstreetmap.org/">OpenStreetMap</a></li>
+            <li> <a href="http://www.geonames.org/">GeoNames</a></li>{# GeoNames asks for it #}
+        </ul>
+    </div>
     {% cache 3600 tags_cloud %}
         <div class="title">{% trans "Tags cloud" %}</div>
         <div class="info">
