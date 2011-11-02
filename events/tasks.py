@@ -30,6 +30,7 @@ from django.contrib.auth.models import User
 from django.contrib.comments import Comment
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
+from django.core.cache import cache, get_cache
 from django.core.mail import send_mail, BadHeaderError, EmailMessage
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
@@ -40,7 +41,6 @@ from django.utils.translation import ugettext_lazy as _
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from gridcalendar import settings
-from gridcalendar.events.utils import text_diff
 
 # NOTE: if tasks are supposed to use translations, you need to pass a language
 # parameter to the celery task and add to it:
@@ -59,6 +59,15 @@ def log_using_celery( text ):
         lines = map( lambda line: '    %s\n' % line, lines[1:] )
         pipe.write( ''.join( lines ) )
 
+@task() # save_in_caches {{{1
+def save_in_caches( key, value, timeout = None ):
+    cache_db = get_cache('db')
+    if timeout:
+        cache.set( key, value, seconds )
+        cache_db.set( key, value, seconds )
+    else:
+        cache.set( key, value )
+        cache_db.set( key, value )
 
 # @task() def notify_users_when_wanted( event ): {{{1
 @task()
