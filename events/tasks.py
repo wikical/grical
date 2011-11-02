@@ -63,8 +63,8 @@ def log_using_celery( text ):
 def save_in_caches( key, value, timeout = None ):
     cache_db = get_cache('db')
     if timeout:
-        cache.set( key, value, seconds )
-        cache_db.set( key, value, seconds )
+        cache.set( key, value, timeout )
+        cache_db.set( key, value, timeout )
     else:
         cache.set( key, value )
         cache_db.set( key, value )
