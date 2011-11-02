@@ -47,26 +47,13 @@ from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
 from settings import GEONAMES_USERNAME
+from gridcalendar.events.tasks import save_in_caches
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
 # OpenStreetMap doesn't want more than one query per second
 # Google Geocoding API is subject to a query limit of 2,500 geolocation
 # requests per day. (Users of Google Maps API Premier may perform up to 100,000
 # requests per day.)
-
-def save_in_caches( use_cache, cache_key, value ): # {{{1
-    if not use_cache:
-        return value
-    if not value:
-        seconds = 300 # 5 minutes
-    else:
-        seconds = 60*60*24*31 # 31 days
-    if not cache.has_key( cache_key ):
-        cache.set( cache_key, value, seconds )
-    cache_db = get_cache('db')
-    if not cache_db.has_key( cache_key ):
-        cache_db.set( cache_key, value, seconds )
-    return value
 
 def search_address( data, ip = None ): # {{{1
     """ uses nominatim.openstreetmap.org and a Google API to get the geo-data
@@ -378,25 +365,28 @@ def search_name( name, use_cache = True ): # {{{1
     """
     query = urllib.quote( name.encode('utf-8'), safe=',' )
     if use_cache:
+        cache_value = None
         cache_key =  'search_name__' +  query
         db_cache = get_cache('db')
-        # we try the default cache (see settings.CACHES)
+        # we try the memcached cache (see settings.CACHES)
         if cache.has_key( cache_key ):
-            return save_in_caches( use_cache, cache_key,
-                    cache.get( cache_key ) )
+            cache_value = cache.get( cache_key )
         # we try the db cache
-        if db_cache.has_key( cache_key ):
-            return save_in_caches( use_cache, cache_key,
-                    db_cache.get( cache_key ) )
-    else:
-        cache_key = None
+        elif db_cache.has_key( cache_key ):
+            cache_value = db_cache.get( cache_key )
+        if cache_value:
+            # we want to be sure that it is saved in all caches
+            save_in_caches.delay( cache_key, cache_value )
+            return cache_value
     url = 'http://api.geonames.org/search?q=%s&maxRows=1&username=%s' % \
             ( query, GEONAMES_USERNAME )
     try:
         # FIXME: check for API limit reached
         response = urllib2.urlopen( url, timeout = 10 )
         if not response:
-            return save_in_caches( use_cache, cache_key, None )
+            if use_cache:
+                save_in_caches.delay( cache_key, None, timeout = 300 )
+            return None
         response_text = response.read()
         doc = fromstring( response_text ) # can raise a ExpatError
         geonames = doc.findall( 'geoname' )
@@ -409,9 +399,15 @@ def search_name( name, use_cache = True ): # {{{1
     except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
             IndexError, AttributeError ) as err:
         # TODO: log the err
-        return save_in_caches( use_cache, cache_key, None )
+        if use_cache:
+            save_in_caches.delay( cache_key, None, timeout = 300 )
+        return None
     point = Point( lng, lat )
-    return save_in_caches( use_cache, cache_key, point )
+    if use_cache:
+        # we save it fast in memcached before saving it slowly in all caches
+        cache.set( cache_key, point )
+        save_in_caches.delay( cache_key, point )
+    return point
 
 def search_address_osm( data ): # {{{1
     """ uses nominatim.openstreetmap.org to look up for ``data``.#{{{
