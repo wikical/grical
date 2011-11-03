@@ -18,6 +18,25 @@ Installation instructions for Debian based systems
 
     - python-django must be at least Version 1.3
 
+#. Install and symlink jquery
+
+    #. install jquery::
+
+        aptitude install libjs-jquery libjs-jquery-ui
+
+    #. symlink jquery (from the gridcalendar directory)::
+
+        cd media/js
+        ln -s /usr/share/javascript/jquery/jquery.min.js
+        ln -s /usr/share/javascript/jquery-ui/jquery-ui.min.js
+
+    #. symlink jquery css (notice that we use the **smoothness** theme here, but another one can
+    be used): from the gridcalendar directory)::
+
+        cd media/css
+        ln -s /usr/share/javascript/jquery-ui/css/smoothness/jquery-ui.css
+        ln -s /usr/share/javascript/jquery-ui/css/smoothness/images
+
 #. Install ``blist``::
 
     aptitude install gcc
@@ -29,6 +48,10 @@ Installation instructions for Debian based systems
 
     apt-get install rabbitmq-server
     pip install django-celery
+
+#. Install django-floppyforms_::
+
+    pip install -U django-floppyforms
 
 #. Install the `proper version of django-reversion`__ for the installed Django version.
 
@@ -381,3 +404,4 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
 .. _oEmbed: https://secure.wikimedia.org/wikipedia/en/wiki/OEmbed
 .. _nginx: https://secure.wikimedia.org/wikipedia/en/wiki/Nginx
 .. _uwsgi: http://projects.unbit.it/uwsgi/
+.. _django-floppyforms: http://django-floppyforms.readthedocs.org/en/latest/index.html

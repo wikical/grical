@@ -305,6 +305,7 @@ def event_edit( request, event_id = None ): # {{{1
     def replace_date_with_date_extended( field, **kwargs):
         if not isinstance( field, DateField ):
             return field.formfield( **kwargs )
+        kwargs['required'] = False
         return DateExtendedField( **kwargs )
     # TODO: when removing all fields of a row the expected behaviour is to
     # delete the entry, but the inlineformset shows an error telling that the

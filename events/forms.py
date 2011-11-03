@@ -34,9 +34,8 @@ import urlparse
 from django.db import models
 from django.contrib.gis.geos import Point
 from django.core import validators
-from django.forms import ( CharField, IntegerField, HiddenInput, RadioSelect,
-        ModelMultipleChoiceField, ModelForm, ValidationError, ChoiceField,
-        Textarea, CheckboxSelectMultiple, Form, Field, DateField, TimeField )
+# import django.forms as forms
+import floppyforms as forms
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -58,17 +57,36 @@ def _time(string): # {{{1
     """ parse a time in the format: hh:mm """
     return datetime.datetime.strptime(string.strip(), '%H:%M').time()
 
+class DatePicker(forms.DateInput):
+    template_name = 'datepicker.html'
+    # NOTE: the form in which this widget is used will add all media
+    # definitions of all its widgets. Remember to add that media definition of
+    # the form in the template with:
+    # {% block extraheaders %}
+    #     {{ form.media }}
+    # {% endblock %}
+    class Media:
+        js = (
+            'js/jquery.min.js',
+            'js/jquery-ui.min.js',
+        )
+        css = {
+            'all': (
+                'css/jquery-ui.css',
+            )
+        }
+
 class URLValidatorExtended( validators.URLValidator ): # {{{1
     """ Like ``URLValidation`` but adding support to HTTP Basic Auth.
     See https://code.djangoproject.com/ticket/9791 """
     def __call__( self, value ):
         try:
             return super( URLValidatorExtended, self ).__call__( value )
-        except ValidationError, err:
+        except forms.ValidationError, err:
             # we check now http basic auth
             url = urlparse.urlsplit( value )
             if url.scheme.lower() != "http" and url.scheme.lower() != "https":
-                raise ValidationError(
+                raise forms.ValidationError(
                     _( u"Only http and https are supported" ) )
             passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
             if url.netloc.find('@') >= 0:
@@ -96,16 +114,16 @@ class URLValidatorExtended( validators.URLValidator ): # {{{1
                 req = urllib2.Request( urlf, headers = headers )
                 f = urllib2.urlopen( req, timeout = 10 )
             except urllib2.HTTPError, e:
-                raise ValidationError(
+                raise forms.ValidationError(
                         _( u"Couldn't get URL %(url)s: %(error)s" ) % 
                         { 'url': value, 'error': e} )
             except urllib2.URLError, e:
-                raise ValidationError(
+                raise forms.ValidationError(
                     "Couldn't connect to %s: %s" %
                         _( u"Couldn't connect to %(url)s: %(error)s" ) % 
                         { 'url': u[1], 'error':e.reason } )
 
-class URLFieldExtended(CharField): #{{{1
+class URLFieldExtended(forms.CharField): #{{{1
     """ like URLFiled but adding support for in-URL basic AUTH, see
         http://code.djangoproject.com/ticket/9791 """
     default_error_messages = {
@@ -125,7 +143,7 @@ class URLFieldExtended(CharField): #{{{1
         value = value.strip()
         return super( URLFieldExtended, self ).to_python( value )
 
-class DatesTimesField(Field): # {{{1
+class DatesTimesField(forms.Field): # {{{1
     """ processes one or two dates and optionally one or two times, returning a
     dictionary with possible keys: startdate, enddate, starttime, endtime
 
@@ -226,7 +244,7 @@ class DatesTimesField(Field): # {{{1
                         'endtime': _time(matcher.group(3))}
         except (TypeError, ValueError), e:
             pass
-        except ValidationError, e:
+        except forms.ValidationError, e:
             # the validationError comes from utils.validate_year and the error
             # message is translated
             raise e
@@ -252,26 +270,30 @@ class DatesTimesField(Field): # {{{1
         # TODO: try DateField with different language settings, and also
         # DateTimeField
         return { 'startdate':
-                DateField( required = self.required ).clean( value ) }
+                forms.DateField( required = self.required ).clean( value ) }
 
     def validate(self, value):
         """ checks that dates and times are in order, i.e. startdate before
         enddate """
         if value.has_key('enddate'):
             if value['startdate'] > value['enddate']:
-                raise ValidationError( _('end date is before start date') )
+                raise forms.ValidationError( _('end date is before start date') )
         if value.has_key('starttime') and value.has_key('endtime'):
             if value['starttime'] > value['endtime']:
-                raise ValidationError( _('end time is before start time') )
+                raise forms.ValidationError( _('end time is before start time') )
 
 class DateExtendedField(DatesTimesField): # {{{1
+    def __init__(self, *args, **kwargs):
+        super( DateExtendedField, self ).__init__(
+                *args, widget = DatePicker, **kwargs )
+        #self.widget = DatePicker
     def to_python(self, value):
         datestimes = super( DateExtendedField, self ).to_python( value )
         return datestimes['startdate']
     def validate(self, value):
         return
 
-class CoordinatesField( CharField ): #{{{1
+class CoordinatesField( forms.CharField ): #{{{1
     default_error_messages = {
             'invalid': _(
                 u'Enter a valid pair of coordinates (latitude,longitude)'),
@@ -289,20 +311,20 @@ class CoordinatesField( CharField ): #{{{1
         value = value.strip()
         matcher = COORDINATES_REGEX.match( value )
         if not matcher:
-            raise ValidationError(_(u'No two separate numbers with decimals'))
+            raise forms.ValidationError(_(u'No two separate numbers with decimals'))
         return {
             'latitude':  float ( matcher.group(1) ),
             'longitude': float ( matcher.group(2) )}
     @staticmethod
     def validate_latitude( value ):
         if value['latitude'] < -90 or value['latitude'] > 90:
-            raise ValidationError( _( u'Latitude is not within (-90,90)' ) )
+            raise forms.ValidationError( _( u'Latitude is not within (-90,90)' ) )
     @staticmethod
     def validate_longitude( value ):
         if value['longitude'] < -180 or value['longitude'] > 180:
-            raise ValidationError( _(u'Longitude is not within (-180,180)') )
+            raise forms.ValidationError( _(u'Longitude is not within (-180,180)') )
 
-class EventSessionForm( ModelForm ):
+class EventSessionForm( forms.ModelForm ):
     def __init__(self, *args, **kwargs):
         super(EventSessionForm, self).__init__(*args, **kwargs)
         self.fields['session_starttime'].widget.format = '%H:%M'
@@ -310,11 +332,11 @@ class EventSessionForm( ModelForm ):
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = EventSession
 
-class FilterForm(ModelForm): # {{{1
+class FilterForm(forms.ModelForm): # {{{1
     """ ModelForm using Filter excluding `user` """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Filter
-        widgets = { 'user' : HiddenInput(), }
+        widgets = { 'user' : forms.HiddenInput(), }
     # TODO: change the error displayed when the name already exists:
     # "Filter with this User and Name already exists."
     # It should be: you already has a filter with this name
@@ -330,13 +352,13 @@ class FilterForm(ModelForm): # {{{1
     #        user_id = data.get('user_id')
     #    if Filter.objects.filter(
     #            user = user_id, name = data.get('name') ).exists():
-    #        raise ValidationError(
+    #        raise forms.ValidationError(
     #                 _(u"You already have a filter with the name " \
     #                 "'%(filter_name)s'. Choose another name") % \
     #                         {'filter_name': data.get('name')} )
     #    return data
 
-class EventForm(ModelForm): # {{{1
+class EventForm(forms.ModelForm): # {{{1
     """ ModelForm for all user editable fields of an Event, a custom coordinate
     field and fields for all days of two years from now """
     startdate = DateExtendedField( required = True )
@@ -408,21 +430,21 @@ class EventForm(ModelForm): # {{{1
         enddate = self.cleaned_data.get("enddate", None)
         if startdate and enddate:
             if enddate < startdate:
-                raise ValidationError( _('enddate must be after startdate') )
+                raise forms.ValidationError( _('enddate must be after startdate') )
             if enddate != startdate and self.instance.recurring:
-                raise ValidationError( _('recurring events cannot occur ' \
+                raise forms.ValidationError( _('recurring events cannot occur ' \
                         'more than one day') )
         # checks starttime and endtime constrains
         starttime = self.cleaned_data.get("starttime", None)
         endtime = self.cleaned_data.get("endtime", None)
         if endtime and not starttime:
-            raise ValidationError( 
+            raise forms.ValidationError( 
                     _('endtime without starttime is not allowed') )
         if starttime and endtime and endtime < starttime:
-            raise ValidationError( _('endtime must be after starttime') )
+            raise forms.ValidationError( _('endtime must be after starttime') )
         return self.cleaned_data
 
-same_title_day_validation_error = ValidationError(
+same_title_day_validation_error = forms.ValidationError(
         _('There is already an event with the same title and start date ' \
             '(for events taking place in different locations at the same ' \
             'day, create different events with a differentiated toponym in ' \
@@ -437,10 +459,10 @@ def get_field_attr( field_name, field_attr ):
             field_name )[0]
     return getattr( field, field_attr )
 
-class SimplifiedEventForm( ModelForm ): # {{{1
+class SimplifiedEventForm( forms.ModelForm ): # {{{1
     """ ModelForm for Events with only the fields `title`, `start`, `tags`,
     """
-    where = CharField(
+    where = forms.CharField(
             max_length = get_field_attr( 'address', 'max_length'),
             required = False )
     when = DatesTimesField()
@@ -448,7 +470,7 @@ class SimplifiedEventForm( ModelForm ): # {{{1
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'What')
-        #self.fields['title'].widget = Textarea()
+        #self.fields['title'].widget = forms.Textarea()
         self.fields['where'].label = _(u'Where')
         self.fields['when'].label = _(u'When')
         self.fields['tags'].label = _(u'Tags or Topics')
@@ -476,21 +498,21 @@ class SimplifiedEventForm( ModelForm ): # {{{1
                 raise same_title_day_validation_error
         return self.cleaned_data
 
-class AlsoRecurrencesForm( Form ):
+class AlsoRecurrencesForm( forms.Form ):
     """ show options when editing an event which belongs to a recurrence """
-    choices = ChoiceField( label = _('Apply changes to'), choices = [
+    choices = forms.ChoiceField( label = _('Apply changes to'), choices = [
         ( 'this', _(u'only this event') ),
         ( 'past',   _(u'this and all past events') ),
         ( 'future', _(u'this and all future events') ),
         ( 'all', _(u'all events') ) ],
-        widget = RadioSelect )
+        widget = forms.RadioSelect )
 
-class DeleteEventForm(Form): # {{{1
-    reason = CharField( required = True, max_length = 100,
+class DeleteEventForm(forms.Form): # {{{1
+    reason = forms.CharField( required = True, max_length = 100,
             label = _(u'Reason for the deletion'),
             help_text = _(u'please summarize the reason for the deletion' \
                     ' (maximum 100 characters).') )
-    redirect = IntegerField( required = False,
+    redirect = forms.IntegerField( required = False,
             label = _(u"Number of the event to redirect to" \
                     " (or blank for no redirection)"),
             help_text = _(u'If there is another event holding the ' \
@@ -500,29 +522,29 @@ class DeleteEventForm(Form): # {{{1
         super(DeleteEventForm, self).__init__(*args, **kwargs)
         self.fields['redirect'].validators.append( validate_event_exists )
 
-class NewGroupForm(ModelForm): # {{{1
+class NewGroupForm(forms.ModelForm): # {{{1
     """ ModelForm for Group with only the fields `name` and `description` """
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Group
         fields = ('name', 'description',)
 
-class AddEventToGroupForm(Form): # {{{1
+class AddEventToGroupForm(forms.Form): # {{{1
     """ Form with a overriden constructor that takes an user and an event and
     rovides selectable group names in which the user is a member of and the
     event is not already in the group. """
-    grouplist = ModelMultipleChoiceField(
-            queryset=Group.objects.none(), widget=CheckboxSelectMultiple())
+    grouplist = forms.ModelMultipleChoiceField(
+            queryset=Group.objects.none(), widget=forms.CheckboxSelectMultiple())
     def __init__(self, user, event, *args, **kwargs):
         super(AddEventToGroupForm, self).__init__(*args, **kwargs)
         self.fields["grouplist"].queryset = \
                 Group.groups_for_add_event(user, event)
         self.fields['grouplist'].label = _(u'Groups:')
 
-class InviteToGroupForm(Form): # {{{1
+class InviteToGroupForm(forms.Form): # {{{1
     """ Form for a user name to invite to a group """
-    group_id = IntegerField(widget=HiddenInput)
+    group_id = forms.IntegerField(widget=forms.HiddenInput)
     # TODO: use the constrains of the model User
-    username = CharField(max_length=30)
+    username = forms.CharField(max_length=30)
     def __init__(self, *args, **kwargs):
         super(InviteToGroupForm, self).__init__(*args, **kwargs)
         self.fields['username'].label = _(u'Username')

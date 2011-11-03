@@ -302,6 +302,8 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
 
     See http://www.geonames.org/export/web-services.html
     """
+    # TODO: add settings options to use the primium server ws.geonames.net and
+    # token (auth setting in geonames.org)
     if use_cache:
         cache_value = None
         cache_key =  'search_timezone__' + str(lat) + "_" + str(lng)
