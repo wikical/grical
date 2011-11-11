@@ -305,6 +305,7 @@ def event_edit( request, event_id = None ): # {{{1
     def replace_date_with_date_extended( field, **kwargs):
         if not isinstance( field, DateField ):
             return field.formfield( **kwargs )
+        # TODO: test if this is correct when adding new and when editing
         kwargs['required'] = False
         return DateExtendedField( **kwargs )
     # TODO: when removing all fields of a row the expected behaviour is to
@@ -396,11 +397,13 @@ def event_edit( request, event_id = None ): # {{{1
                     elif choice == 'past':
                         events = Event.objects.filter(
                                 _recurring__master = master,
-                                start__lt = event.startdate )
+                                dates__eventdate_date__lt = event.startdate,
+                                dates__eventdate_name = 'start')
                     elif choice == 'future':
                         events = Event.objects.filter(
                                 _recurring__master = master,
-                                start__gt = event.startdate )
+                                dates__eventdate_date__gt = event.startdate,
+                                dates__eventdate_name = 'start')
                     elif choice == 'all':
                         events = Event.objects.filter(
                                 _recurring__master = master)
@@ -614,11 +617,13 @@ def event_edit_raw( request, event_id ): # {{{1
             elif choice == 'past':
                 events = Event.objects.filter(
                         _recurring__master = master,
-                        start__lt = event.startdate )
+                        dates__eventdate_date__lt = event.startdate,
+                        dates__eventdate_name = 'start')
             elif choice == 'future':
                 events = Event.objects.filter(
                         _recurring__master = master,
-                        start__gt = event.startdate )
+                        dates__eventdate_date__gt = event.startdate,
+                        dates__eventdate_name = 'start')
             elif choice == 'all':
                 events = Event.objects.filter(
                         _recurring__master = master)
@@ -944,11 +949,13 @@ def event_delete( request, event_id ):
                 elif choice == 'past':
                     events = Event.objects.filter(
                             _recurring__master = master,
-                            start__lte = event.startdate )
+                            dates__eventdate_date__lte = event.startdate,
+                            dates__eventdate_name = 'start')
                 elif choice == 'future':
                     events = Event.objects.filter(
                             _recurring__master = master,
-                            start__gte = event.startdate )
+                            dates__eventdate_date__gte = event.startdate,
+                            dates__eventdate_name = 'start')
                 elif choice == 'all':
                     events = Event.objects.filter(
                             _recurring__master = master)

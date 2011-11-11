@@ -49,10 +49,6 @@ Installation instructions for Debian based systems
     apt-get install rabbitmq-server
     pip install django-celery
 
-#. Install django-floppyforms_::
-
-    pip install -U django-floppyforms
-
 #. Install the `proper version of django-reversion`__ for the installed Django version.
 
     #. If you have already a database running and have some data or you import data e.g. with
@@ -404,4 +400,3 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
 .. _oEmbed: https://secure.wikimedia.org/wikipedia/en/wiki/OEmbed
 .. _nginx: https://secure.wikimedia.org/wikipedia/en/wiki/Nginx
 .. _uwsgi: http://projects.unbit.it/uwsgi/
-.. _django-floppyforms: http://django-floppyforms.readthedocs.org/en/latest/index.html

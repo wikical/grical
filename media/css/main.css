@@ -36,7 +36,7 @@ a[href] {
     /* background-color: transparent; */
     /* color: #546878; */
     color: inherit;
-    text-decoration: none;
+    text-decoration: underline;
 }
 h1, h2, h3, h4, h5, h6 {
     color: #2C516D;
@@ -149,11 +149,38 @@ general forms and for event_form */
     clear: both;
 }
 
+.label {
+    float: left;
+    margin-right: 1em;
+    text-align: right;
+    width: 8em;
+}
+.left-fields {
+    float: left;
+    width: 40em;
+    margin-right: 1em;
+}
+.right-fields {
+    display: inline-block;
+    width: 500px;
+}
+.left-fields .helptext {
+    margin-left: 11.2em;
+}
+.label-field-helptext {
+    margin: 0 1em 1em 0;
+}
+.description {
+    clear: both;
+    margin-left: 0.5em;
+}
+
 /* general form directives */
 form .helptext {
     color: #9DBCD3;
     font-size: 0.8em;
 }
+
 form label {
     color: #2C516D;
     font-weight: bold;
@@ -199,6 +226,9 @@ form li {
 /*
  * event medium format (used in main page and box-search-results)
  */
+.event_medium a[href] {
+    text-decoration: none;
+}
 .event_medium {
     float:left;
     margin: 0.5em;
@@ -471,11 +501,34 @@ legend {
 }
 
 /* complete event form */
-#event_form label {
-  float:left;
-  width: auto;
-  text-align:right;
-  margin-right:0.5em
+#event_form input#id_title {
+    font-size: 150%;
+    font-weight: bold;
+    margin: 0.5em 1em 1em 0.5em;
+    padding: 0.2em;
+    width: 95%;
+    font-style: italic;
+}
+#event_form #id_description {
+    height: 30em;
+    width: 100%;
+}
+#event_form #id_address {
+    width: 30em;
+    height: 6em;
+}
+#event_form input#id_tags {
+    width: 30em;
+}
+#event_form input#id_coordinates {
+    width: 20em;
+}
+.left-fields label {
+    float: left;
+    font-weight: bold;
+    margin-right: 1em;
+    min-width: 8em;
+    text-align: right;
 }
 #event_form input {
     margin: 0.1em 0 0.1em 0;
@@ -485,14 +538,12 @@ legend {
     color: gray;
     padding-bottom:1em;
 }
-#event_form label {
-    /* font-size:1.4em; */
-    color: #003a6b;
-    font-weight: bold;
-    min-width:10em;
-}
 #event_form th {
     vertical-align:top;
+}
+/* urls-form */
+#urls-form {
+    margin: 0.5em;
 }
 #url_table, #session_table, #deadline_table {
     margin-top:1.5em;
@@ -532,6 +583,26 @@ legend {
 }
 #also_recurrences label {
     min-width: 0;
+}
+#event_form h2 {
+    margin-top: 2em;
+    margin-bottom: 0;
+}
+#sessions-form {
+    margin: 0.5em;
+}
+#deadlines-form {
+    margin: 0.5em;
+}
+#submit-button input {
+    background-color: black;
+    color: white;
+    font-size: 150%;
+    height: 2em;
+    width: 5em;
+}
+#submit-button input:hover {
+    background-color: #5E7C93;
 }
 
 /**
