@@ -816,7 +816,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             help_text = _(u'Example: 18:00') )
     endtime = models.TimeField( 
             _( u'End time' ), blank = True, null = True,
-            help_text = _(u'Example: 18:00') )
+            help_text = _(u'Example: 19:00') )
     # max_length in the line below was calculated with:
     # max( [len(x) for x in common_timezones] )
     timezone = models.CharField( _( u'Timezone' ), blank = True, null = True,
@@ -832,7 +832,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     address = models.CharField( _( u'Address' ), blank = True,
             null = True, max_length = 200,
             help_text = _( u'Complete address including city and country. ' \
-                u'Example: Malmöer Str. 6, Berlin, DE' ) )
+                u'Example:<br />Malmöer Str. 6, Berlin, DE' ) )
     coordinates = models.PointField( _('Coordinates'),
             editable = False, blank=True, null=True )
     """ used for calculating events within a distance to a point """
@@ -2355,12 +2355,12 @@ if not reversion.is_registered( EventUrl ): # {{{1
 
 class EventDate( models.Model ): # {{{1
     """ stores dates for events """
-    eventdate_date = models.DateField( _( u'Date' ), blank = False,
-            null = False, db_index = True, validators = [validate_year] )
     eventdate_name = models.CharField( 
             _( u'Name' ), blank = False, null = False,
             max_length = 80, help_text = _( 
             "Example: call for papers" ) )
+    eventdate_date = models.DateField( _( u'Date' ), blank = False,
+            null = False, db_index = True, validators = [validate_year] )
     event = models.ForeignKey( Event, related_name = 'dates' )
 
     objects = models.GeoManager()

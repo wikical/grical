@@ -34,8 +34,7 @@ import urlparse
 from django.db import models
 from django.contrib.gis.geos import Point
 from django.core import validators
-# import django.forms as forms
-import floppyforms as forms
+import django.forms as forms
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
@@ -58,17 +57,22 @@ def _time(string): # {{{1
     return datetime.datetime.strptime(string.strip(), '%H:%M').time()
 
 class DatePicker(forms.DateInput):
-    template_name = 'datepicker.html'
+    """ DateInput widget using jQuery UI's datepicker
+    """
     # NOTE: the form in which this widget is used will add all media
     # definitions of all its widgets. Remember to add that media definition of
     # the form in the template with:
     # {% block extraheaders %}
     #     {{ form.media }}
     # {% endblock %}
+    def __init__(self, *args, **kwargs):
+        super(DatePicker, self).__init__( *args, **kwargs )
+        self.attrs.update({'class':'datePicker',})
     class Media:
         js = (
             'js/jquery.min.js',
             'js/jquery-ui.min.js',
+            'js/datepicker.js',
         )
         css = {
             'all': (
@@ -284,6 +288,7 @@ class DatesTimesField(forms.Field): # {{{1
 
 class DateExtendedField(DatesTimesField): # {{{1
     def __init__(self, *args, **kwargs):
+        kwargs['label'] = _('Date')
         super( DateExtendedField, self ).__init__(
                 *args, widget = DatePicker, **kwargs )
         #self.widget = DatePicker
@@ -298,9 +303,13 @@ class CoordinatesField( forms.CharField ): #{{{1
             'invalid': _(
                 u'Enter a valid pair of coordinates (latitude,longitude)'),
         }
-    def __init__(self, max_length=None, min_length=None, *args, **kwargs):
+    def __init__(self, initial='', max_length=None, min_length=None,
+            *args, **kwargs):
         super( CoordinatesField, self).__init__(
                 max_length, min_length, *args, **kwargs )
+        self.widget.attrs.update( {
+            'onblur':'updateMap(this.value)',
+            'maxlength': '50' } )
         self.validators.append( CoordinatesField.validate_latitude )
         self.validators.append( CoordinatesField.validate_longitude )
     def to_python( self, value ):
@@ -311,7 +320,9 @@ class CoordinatesField( forms.CharField ): #{{{1
         value = value.strip()
         matcher = COORDINATES_REGEX.match( value )
         if not matcher:
-            raise forms.ValidationError(_(u'No two separate numbers with decimals'))
+            raise forms.ValidationError(_(u'This field must be two numbers ' \
+                    '(latitude, longitud) separated with a comma.'))
+            # TODO: i18n for the numbers format (also in the JavaScript code)
         return {
             'latitude':  float ( matcher.group(1) ),
             'longitude': float ( matcher.group(2) )}
@@ -367,11 +378,12 @@ class EventForm(forms.ModelForm): # {{{1
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
-        self.fields.keyOrder = ['acronym', 'title', 'startdate', 'starttime',
+        self.fields.keyOrder = ['title', 'acronym', 'startdate', 'starttime',
             'enddate', 'endtime', 'timezone', 'tags', 'country', 'city',
             'postcode', 'address', 'coordinates', 'description']
         self.fields['startdate'].label = _(u'Start date')
         self.fields['enddate'].label = _(u'End date')
+        self.fields['address'].widget = forms.Textarea()
         if kwargs.has_key('instance'):
             # not a new event
             # We use a custom field called 'coordinates' for
