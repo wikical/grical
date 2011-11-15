@@ -76,7 +76,7 @@ from gridcalendar.events.forms import (
     CalendarForm, EventSessionForm, DateExtendedField,
     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
-    Event, EventUrl, EventSession, EventDate, Filter, Group,
+    Event, EventUrl, EventSession, EventDate, Filter, Group, Recurrence,
     Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo,
     add_start, add_end, add_upcoming )
 from gridcalendar.events.utils import ( search_address, search_timezone,
@@ -125,8 +125,8 @@ def event_edit_recurrences( request, event_id ): # {{{1
     event = get_object_or_404( Event, pk = event_id )
     if event.enddate:
         messages.error( request, _("it was tried to edit recurrences of " \
-                "the following event, which has a duration of more " \
-                "than one day and thus cannot have recurrences") )
+                "the following event, however it has a duration of more " \
+                "than one day, which is not possible for recurring events.") )
         return HttpResponseRedirect( reverse( 'event_show_all',
                 kwargs = {'event_id': event.id} ) )
     recurring = event.recurring
@@ -191,38 +191,69 @@ def event_edit_recurrences( request, event_id ): # {{{1
                     'Nothing has been saved.') )
         return HttpResponseRedirect( reverse( 'event_show_all',
                 kwargs = {'event_id': event.id} ) )
+    sid = transaction.savepoint()
     deleted_counter = 0
     added_counter = 0
     dates_iso_in_form = sorted( request.POST.getlist('recurrences') )
     if recurring and dates_iso_in_form and \
             dates_iso_in_form[0] != master.startdate.isoformat():
+        new_iso = dates_iso_in_form[0]
         # The master has been unmarked. We need to eventually create and to
         # replace the master for all remaining events.
         # We check if the new master already exists:
+        deleted_counter += 1
         try:
             new_master = Event.objects.get(
-                    _recurring__master = master,
-                    dates__eventdate_date = parse( dates_iso_in_form[0] ),
-                    dates__eventdate_name = 'start' )
+                _recurring__master = master,
+                dates__eventdate_date = parse( new_iso ).date(),
+                dates__eventdate_name = 'start' )
         except Event.DoesNotExist:
             # Master does not exists. We create it.
+            # But first we need to check that there is no event with the same
+            # title and startdate
+            if Event.objects.filter(
+                    title = event.title,
+                    dates__eventdate_date = parse(new_iso).date(),
+                    dates__eventdate_name = 'start' ).exists():
+                messages.error( request,
+                    _( u'if was not possible to save the recurrences '
+                        'because there is already an event on the '
+                        '%(date_in_iso_format)s with the same title.' ) % \
+                                {'date_in_iso_format': new_iso,} )
+                transaction.savepoint_rollback(sid)
+                return HttpResponseRedirect( reverse( 'event_show_all',
+                        kwargs = {'event_id': event.id} ) )
             with revision:
                 if request.user.is_authenticated():
                     revision.user = request.user
                 new_master = event.clone( user = revision.user,
                         except_models = [EventDate, EventSession],
-                        startdate = dates_iso_in_form[0] )
+                        startdate = parse(dates_iso_in_form[0]).date() )
                 revision.add_meta( RevisionInfo,
                         as_text = smart_unicode( new_master.as_text() ) )
                 added_counter += 1
         # We get and update recurrences with the old master
-        recurrences = Recurrence.objects.get( master = master )
+        recurrences = Recurrence.objects.filter( master = master )
         recurrences.update( master = new_master )
         master = new_master
         dates_iso_in_form = dates_iso_in_form[1:]
     for date_iso in dates_iso_in_form:
         if not date_iso in recurring_dates_iso:
             # new recurrence
+            # we check there is no other event with the same title and
+            # startdate
+            if Event.objects.filter(
+                    title = event.title,
+                    dates__eventdate_date = parse(date_iso).date(),
+                    dates__eventdate_name = 'start' ).exists():
+                messages.error( request,
+                    _( u'if was not possible to save the recurrences '
+                        'because there is already an event on the '
+                        '%(date_in_iso_format)s with the same title.' ) % \
+                                {'date_in_iso_format': date_iso,} )
+                transaction.savepoint_rollback(sid)
+                return HttpResponseRedirect( reverse( 'event_show_all',
+                        kwargs = {'event_id': event.id} ) )
             with revision:
                 if request.user.is_authenticated():
                     revision.user = request.user
@@ -264,11 +295,13 @@ def event_edit_recurrences( request, event_id ): # {{{1
         messages.info( request,
                 _( u'An event and all its recurrences has been ' \
                 'successfully deleted, the title was: %s' )% event.title )
+        transaction.savepoint_commit(sid)
         return HttpResponseRedirect( reverse('main') )
     # TODO: plurarize the message correctly (quantities can be 0 or 1 or more)
     messages.info( request,
             _( u'%d recurrences added, %d recurrences deleted' ) %
             ( added_counter, deleted_counter ) )
+    transaction.savepoint_commit(sid)
     return HttpResponseRedirect( reverse( 'event_show_all',
             kwargs = {'event_id': event.id} ) )
 
@@ -353,9 +386,14 @@ def event_edit( request, event_id = None ): # {{{1
                 # and recurrences
                 if not event_form.cleaned_data.get( 'coordinates', False ):
                     event.coordinates = None
+                # TODO: do nothing if nothing has changed
                 with revision:
                     if request.user.is_authenticated():
                         revision.user = request.user
+                    if event.version:
+                        event.version = event.version + 1
+                    else:
+                        event.version = 1
                     event.save()
                     startdate = event_form.cleaned_data['startdate']
                     event.startdate = startdate
@@ -445,40 +483,48 @@ def _change_recurrences( user, event, events ): # {{{1
         return
     for rec in events:
         assert rec.recurring.master == event.recurring.master
+        something_changed = False
         with revision:
             if user and user.is_authenticated():
-                revision.user = request.user
+                revision.user = user
             for field in Event.get_simple_fields():
                 if field in ['startdate', 'enddate']:
                     continue
                 if getattr(rec, field) != getattr(event, field):
                     setattr( rec, field, getattr( event, field ) )
+                    something_changed = True
             if rec.description != event.description:
                 rec.description = event.description
-            rec.save()
+                something_changed = True
             rec_urls = rec.urls.all()
             event_urls = event.urls.all()
             for i in range( max( len(rec_urls), len(event_urls) ) ):
                 if i < len( rec_urls ) and i < len( event_urls ):
-                    changed = False
+                    url_changed = False
                     if rec_urls[i].url_name != event_urls[i].url_name:
                         rec_urls[i].url_name = event_urls[i].url_name
-                        changed = True
+                        url_changed = True
                     if rec_urls[i].url != event_urls[i].url:
                         rec_urls[i].url = event_urls[i].url
-                        changed = True
-                    if changed:
+                        url_changed = True
+                    if url_changed:
                         rec_urls[i].save()
+                        something_changed = True
                 elif i >= len( event_urls ):
                     rec_urls[i].delete()
+                    something_changed = True
                 else:
                     assert i >= len( rec_urls )
                     EventUrl.objects.create(
                             event    = rec,
                             url_name = event_urls[i].url_name,
                             url      = event_urls[i].url )
-            revision.add_meta( RevisionInfo,
-                    as_text = smart_unicode( rec.as_text() ) )
+                    something_changed = True
+            if something_changed:
+                rec.version = rec.version + 1
+                rec.save()
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( rec.as_text() ) )
 
 def event_new_raw( request, template_event_id = None ): # {{{1
     """ View to create an event as text
@@ -512,9 +558,23 @@ def event_new_raw( request, template_event_id = None ): # {{{1
         with revision:
             if request.user.is_authenticated():
                 revision.user = request.user
-            event = Event.parse_text(event_textarea, None, request.user.id)
+            event, dates_times_list = \
+                    Event.parse_text(event_textarea, None, request.user.id)
             revision.add_meta( RevisionInfo,
                     as_text = smart_unicode( event.as_text() ) )
+        for dates_times in dates_times_list:
+            with revision:
+                if request.user.is_authenticated():
+                    revision.user = request.user
+                    clone = event.clone( user = request.user,
+                            except_models = [EventDate, EventSession],
+                            **dates_times )
+                else:
+                    clone = event.clone( user = None,
+                            except_models = [EventDate, EventSession],
+                            **dates_times )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( clone.as_text() ) )
         transaction.savepoint_commit(sid)
         messages.success( request, _( u'event saved' ) )
         return HttpResponseRedirect( 
@@ -595,16 +655,31 @@ def event_edit_raw( request, event_id ): # {{{1
     # TODO: test that this is working having a look at the db directly after
     # submitting without errors and with errors. Test that there is no
     # inconsistencies in the db for all cases:
-    revision.start()
-    if request.user.is_authenticated():
-        revision.user = request.user
     event_textarea = request.POST['event_astext']
     try:
         if event_recurring and not also_recurrences_form.is_valid():
             raise ValidationError(_(u'Please select to which ' \
                     'recurring events changes should be applied'))
-        event = event.parse_text(
+        with revision:
+            if request.user.is_authenticated():
+                revision.user = request.user
+            event, dates_times_list = Event.parse_text(
                     event_textarea, event_id, request.user.id )
+            revision.add_meta( RevisionInfo,
+                    as_text = smart_unicode( event.as_text() ) )
+        for dates_times in dates_times_list:
+            with revision:
+                if request.user.is_authenticated():
+                    revision.user = request.user
+                    event.clone( user = request.user,
+                            except_models = [EventDate, EventSession],
+                            **dates_times )
+                else:
+                    clone = event.clone( user = None,
+                            except_models = [EventDate, EventSession],
+                            **dates_times )
+                revision.add_meta( RevisionInfo,
+                        as_text = smart_unicode( clone.as_text() ) )
         if not event_recurring:
             events = None
         else:
@@ -630,7 +705,6 @@ def event_edit_raw( request, event_id ): # {{{1
                 raise ValidationError( _(u'Unexpected value in recurring form') )
             _change_recurrences( request.user, event, events )
     except (ValidationError, IntegrityError) as err:
-        revision.invalidate()
         transaction.savepoint_rollback(sid)
         # TODO: create a proper django form and move all this to the clean
         # method of the form.
@@ -672,23 +746,15 @@ def event_edit_raw( request, event_id ): # {{{1
         return render_to_response( 'event_edit_raw.html', templates,
                 context_instance = RequestContext( request ) )
     except:
-        revision.invalidate()
         transaction.savepoint_rollback(sid)
         raise
     if isinstance(event, Event):
         # TODO: change messages to "eventS modified" if more than one was modified
         messages.success( request, _( u'event modifed' ) )
-        revision.add_meta( RevisionInfo,
-                as_text = smart_unicode( event.as_text() ) )
-        revision.end()
         transaction.savepoint_commit(sid)
-        # TODO: this revision has more than one event when recurrences. Test
-        # that the history of each of them works just fine (before recurrences
-        # there was the supposition that each revision has only one event).
         return HttpResponseRedirect( 
             reverse('event_show_all', kwargs = {'event_id': event_id}))
     else:
-        revision.invalidate()
         transaction.savepoint_rollback(sid)
         raise RuntimeError()
 
@@ -920,25 +986,24 @@ def event_revert( request, revision_id, event_id ): # {{{1
 def event_delete( request, event_id ):
     event = get_object_or_404( Event, pk = event_id )
     user = request.user
-    if event.recurring:
-        event_recurring = True
-    else:
-        event_recurring = False
+    recurring = event.recurring
+    if recurring:
+        master = recurring.master
     if not request.method == "POST":
         form = DeleteEventForm()
-        if event_recurring:
+        if recurring:
             also_recurrences_form = AlsoRecurrencesForm()
         else:
             also_recurrences_form = None
     else:
         form = DeleteEventForm( data = request.POST )
-        if event_recurring:
+        if recurring:
             also_recurrences_form = AlsoRecurrencesForm( request.POST )
         else:
             also_recurrences_form = None
         if form.is_valid() and (
-                (not event_recurring) or also_recurrences_form.is_valid() ):
-            if not event_recurring:
+                (not recurring) or also_recurrences_form.is_valid() ):
+            if not recurring:
                 events = [event,]
             else:
                 choice = also_recurrences_form.cleaned_data['choices']
@@ -957,7 +1022,6 @@ def event_delete( request, event_id ):
                 elif choice == 'all':
                     events = Event.objects.filter(
                             _recurring__master = master)
-                    events = events.exclude( pk = event.pk )
                 else:
                     raise RuntimeError()
             for dele in events:

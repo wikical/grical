@@ -317,9 +317,20 @@ td {
 }
 
 /** event full **/
+.event_full fieldset {
+    background: none repeat scroll 0 0 #9DBCD3;
+    border: 1px solid #2C516D;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    margin: 1.5em 0.5em;
+    padding: 0.5em 1em;
+}
+.item {
+    clear: both;
+    margin: 0.5em;
+}
 .icon {
-    vertical-align: middle;
     width: 1.5em;
+    position: absolute;
 }
 .ical_logo {
     margin: 0;
@@ -338,7 +349,7 @@ td {
 }
 .data {
     display: inline-block;
-    margin-left: 1em;
+    margin-left: 2em;
 }
 .event_full .header {
     background: none repeat scroll 0 0 black;

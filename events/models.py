@@ -41,7 +41,7 @@ from django.contrib.comments import Comment
 from django.contrib.comments.signals import comment_was_posted
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models
-from django.contrib.gis.db.models import Q
+from django.contrib.gis.db.models import Q, F
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
 from django.contrib.sites.models import Site
@@ -1016,7 +1016,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ recalculate and save self.timezone according to self.coordinates,
             or self.address, or self.city and self.country
 
-        >>> event = Event.parse_text(EXAMPLE)
+        >>> event, l = Event.parse_text(EXAMPLE)
         >>> timezone = event.timezone
         >>> latitude = event.latitude
         >>> longitude = event.longitude
@@ -1070,7 +1070,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         ...     dates__eventdate_name = 'start',
         ...     dates__eventdate_date = '2010-12-29' )
         >>> if events: events.delete()
-        >>> event = Event.parse_text(EXAMPLE)
+        >>> event,l = Event.parse_text(EXAMPLE)
         >>> ical = event.icalendar()
         >>> ical = vobject.readOne(ical.serialize())
         >>> assert (ical.vevent.categories.serialize() == 
@@ -1186,7 +1186,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> user, c = User.objects.get_or_create( username = unicode(now_t) )
         >>> events = Event.objects.filter( title='GridCalendar presentation' )
         >>> if events: events.delete()
-        >>> event = Event.parse_text(EXAMPLE)
+        >>> event,l = Event.parse_text(EXAMPLE)
         >>> event.enddate = None
         >>> clone = event.clone( user, startdate = today )
         >>> clone_text = clone.as_text()
@@ -1295,25 +1295,35 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def delete( self, *args, **kwargs ): #{{{3
         """ it tests that ``self`` is not the master of a recurrence fixing it
-        if it is. """
-        if self.recurring and self == self.recurring.master:
-            events = Event.objects.filter( _recurring__master = self)
-            try:
-                first = add_start(events.exclude( pk = self.pk )).order_by(
-                        'start' )[0]
-                recurrences = Recurrence.objects.filter( master = self )
-                recurrences.update( master = first )
-            except IndexError:
-                pass
+        if it is for all recurrences and increasing ``event.version`` of them
+        """
+        recurring = self.recurring
+        if recurring:
+            master = recurring.master
+            events = Event.objects.filter( _recurring__master = master )
+            events.exclude( pk = self.pk ).update( version = F('version') + 1 )
+            if self == master:
+                try:
+                    first = add_start(events.exclude( pk = self.pk )).order_by(
+                            'start' )[0]
+                    recurrences = Recurrence.objects.filter( master = self )
+                    recurrences.update( master = first )
+                    master = first
+                except IndexError:
+                    pass
         # Call the "real" delete() method:
         super( Event, self ).delete( *args, **kwargs )
+        # if the recurrences contains only one event, we delete it
+        if recurring:
+            recurrences = Recurrence.objects.filter( master = master )
+            if recurrences.count() == 1:
+                recurrences.delete()
 
     def save( self, *args, **kwargs ): #{{{3
         """ Marks an event as new or not (for :meth:`Event.post_save`),
         update the master of a recurrence if appropiate, and deletes caches of
         properties.
         """
-        # FIXME: increase version field of all events in the recurring serie
         try:
             Event.objects.get( id = self.id )
             self.not_new = True # Event.post_save uses this
@@ -1325,6 +1335,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 # self is going to be the new master of the serie. The master
                 # is by convention the first event of a serie.
                 master.recurrences.all().update( master = self )
+            events = Event.objects.filter( _recurring__master = master)
+            events.exclude( pk = self.pk ).update( version = F('version') + 1 )
         self.version = self.version + 1
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
@@ -1355,15 +1367,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         
         >>> from django.utils.encoding import smart_str
         >>> example = Event.example()
-        >>> event = Event.parse_text(example)
+        >>> event,l = Event.parse_text(example)
         >>> assert smart_str(example) == event.as_text()
         >>> event.delete()
         >>> text = example.replace(u'DE', u'Germany')
-        >>> event = Event.parse_text(text)
+        >>> event,l = Event.parse_text(text)
         >>> assert (smart_str(example) == event.as_text())
         >>> event.delete()
         >>> text = text.replace(u'Germany', u'de')
-        >>> event = Event.parse_text(text)
+        >>> event,l = Event.parse_text(text)
         >>> assert (smart_str(example) == event.as_text())
         >>> event.delete()
         """
@@ -1598,55 +1610,29 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     @staticmethod
     def parse_text( input_text_in, event_id = None, user_id = None ):
         # doc {{{4
-        """It parses a text and saves it as a single event in the data base and
-        return the event object, or doesn't save the event and raises a
+        """It parses ``input_text_in`` and saves or updates (when event_id
+        given) an event, returning the '`event`` and ``dates_times_list``.
+
+        The value of ``dates_times_list`` is a list of dictionaries containing
+        the keys ``startdate`` and eventually ``startime`` and eventually
+        ``endtime``. That values are the result of parsing recurrences and are
+        expected to be saved as recurrences with::
+
+            event.clone( user = user,
+                    except_models = [EventDate, EventSession],
+                    **dates_times )
+
+        If the event is not saved this method raises a
         ValidationError or a Event.DoesNotExist or a User.DoesNotExist or a
         RuntimeError.
 
         It raises a ValidationError when the data is wrong, e.g. when a date is
-        not valid. It raises and Event.DoesNotExist error when there is no
+        not valid. It raises and Event.DoesNotExist when there is no
         event with ``event_id``. It raises a User.DoesNotExist when there is no
         user with ``user_id``.
 
-        A text to be parsed as an event is of the form::
-
-            title: a title
-            tags: tag1 tag2 tag3
-            start: 2020-01-30 10:00
-            ...
-
         There are synonyms for the names of the fields, like e.g. 't' for
-        'title'. See get_synonyms()
-
-        The text for the field 'urls' is of the form::
-            urls: web_url
-                name1  name1_url
-                name2  name2_url
-                ...
-
-        The idented lines are optional. If web_url is present, it will be saved
-        with the url_name 'url'
-
-        The text for the field 'dates' is of the form::
-
-            dates: deadline_date
-                date_1 name_1
-                date_2 name_2
-                ...
-
-        The idented lines are optional when deadline_date is present, which
-        will be saved with the eventdate_name 'deadline'
-
-        The text for the field 'sessions' is of the form::
-
-            sessions: session_date session_starttime-session_endtime
-              session1_date session1_starttime-session1_endtime session1_name
-              session2_date session2_starttime-session2_endtime session2_name
-              ...
-
-        The idented lines are optional. If session_date is present, it will be
-        saved with the session_name 'session'
-
+        'title'. See ``get_synonyms()``
         """
         # code {{{4
         if not isinstance(input_text_in, unicode):
@@ -1697,6 +1683,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             raise ValidationError(event_form.errors.as_text())
         # create a preliminary event from the form
         event = event_form.save(commit = False)
+        if event_id:
+            event.version = event.version + 1
         if user and not event_id:
             # event.user is the user who created the event, we add her/him if
             # the user is present and the event is new (event_id = None)
@@ -1846,8 +1834,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             del complex_fields[u'sessions']
         # recurrences {{{5
         from forms import DatesTimesField
+        dates_times_list = list()
         if complex_fields.has_key(u'recurrences'):
-            dates = list()
             for text_date in complex_fields[u'recurrences'][1:]:
                 dates_times_field = DatesTimesField()
                 try:
@@ -1860,12 +1848,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     raise ValidationError( _(
                         u'a repeating date cannot have an end date: (date)s') % \
                                 {'date': text_date} )
-                # we do not clone dates nor sessions, as they 
-                # refer to the main event and not to the recurring events.
-                # TODO: inform the user
-                event.clone( user = user,
-                        except_models = [EventDate, EventSession],
-                        **dates_times )
+                dates_times_list.append( dates_times )
             del complex_fields[u'recurrences']
         # test and return event {{{5
         assert(len(complex_fields) == 0)
@@ -1875,7 +1858,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # enddate_cache avoids to query the DB, see
         # :meth:`Event._get_enddate`
         event.enddate_cache = enddate
-        return event
+        return event, dates_times_list
 
     @staticmethod # def get_complex_fields(): {{{3
     def get_complex_fields():

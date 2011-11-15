@@ -40,6 +40,7 @@ from StringIO import StringIO
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMessage
+from django.db import transaction, IntegrityError
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_str
 from django.core.management.base import NoArgsCommand
@@ -125,7 +126,18 @@ class Command( NoArgsCommand ): # {{{1
             # sender of our emails
             from_email = settings.DEFAULT_FROM_EMAIL
             try:
-                event = Event.parse_text( text )
+                sid = transaction.savepoint()
+                with revision:
+                    event, dates_times_list = Event.parse_text( text )
+                    revision.add_meta( RevisionInfo,
+                            as_text = smart_unicode( event.as_text() ) )
+                for dates_times in dates_times_list:
+                    with revision:
+                        clone = event.clone( user = None,
+                                except_models = [EventDate, EventSession],
+                                **dates_times )
+                        revision.add_meta( RevisionInfo,
+                                as_text = smart_unicode( clone.as_text() ) )
                 assert( type( event ) == Event )
                 self.mv_mail( number, 'saved' )
                 self.stdout.write( smart_str(
@@ -138,7 +150,9 @@ class Command( NoArgsCommand ): # {{{1
                 mail = EmailMessage( ''.join( subject.splitlines()),
                         message, from_email, ( to_email, ) )
                 mail.send(fail_silently=False)
-            except ValidationError as err:
+                transaction.savepoint_commit(sid)
+            except (ValidationError, IntegrityError) as err:
+                transaction.savepoint_rollback(sid)
                 # error found, saving the message in the imap forder 'errors'
                 self.mv_mail( number, 'errors' )
                 # sending a notification email to the sender {{{3
