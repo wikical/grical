@@ -145,7 +145,11 @@ recurrences:
                    'recurrence1': week1,
                    'recurrence2': week2,
                    'recurrence3': week3 }
-        event = Event.parse_text( text )
+        event,l = Event.parse_text( text )
+        for dates_times in l:
+            event.clone( user = None,
+                    except_models = [EventDate, EventSession],
+                    **dates_times )
         recurrences = Event.objects.filter( _recurring__master = event )
         recurrences = add_start( recurrences ).order_by('start')
         assert len( recurrences ) == 4

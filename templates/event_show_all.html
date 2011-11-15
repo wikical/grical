@@ -10,7 +10,7 @@
 {% block container %}
 <div class="event_full">
 
-    {% cache 2592000 event_show_all event.id event.version %}
+    {% cache 2592000 event_show_all user.is_authenticated event.id event.version %}
     {% with start=event.startdate end=event.enddate %}
 
         <div class="item-nr">{{ event.id }}</div>
@@ -157,8 +157,7 @@
                                 <tr>
                                     <td>
                                         <span class="deadlines">
-                                            <a href='{% urlsearch
-                                                query=eventdate.eventdate_date|date:"Y-m-d" %}'>{{ eventdate.eventdate_date }}</a>
+                                            <a href='{% urlsearch query=eventdate.eventdate_date|date:"Y-m-d" %}'>{{ eventdate.eventdate_date }}</a>
                                         </span>
                                         </td>
                                     <td>{{ eventdate.eventdate_name|escape }}</td>
@@ -194,8 +193,6 @@
         {% endif %}
 
         {% if event.coordinates %}
-            <br />
-            <br />
             <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
             <div id="map" class="smallmap"></div>
             <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
