@@ -49,7 +49,7 @@ from django.template.loader import render_to_string
 
 from reversion import revision
 
-from gridcalendar.events.models import Event
+from gridcalendar.events.models import Event, RevisionInfo
 
 
 #TODO: set the Django language to the first possible language the email sender
@@ -222,6 +222,9 @@ class Command( NoArgsCommand ): # {{{1
                     #TODO: write to an error log file instead of stderr
                     self.stderr.write(
                             'imap.py:ERR:missing info for error email')
+            except:
+                transaction.savepoint_rollback(sid)
+                raise
 
     def mv_mail( self, number, mbox_name ): # {{{2
         '''
