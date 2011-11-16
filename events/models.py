@@ -1606,6 +1606,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             complex_dic[current] = lines
         return simple_dic, complex_dic
 
+    # FIXME: everywhere when using parse_text check that no recurrence is added
+    # when there is an event with the same title and startdate
     # parse_text {{{3
     @staticmethod
     def parse_text( input_text_in, event_id = None, user_id = None ):
