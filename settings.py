@@ -154,7 +154,6 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.comments',
     'django.contrib.gis',
-    'floppyforms',
     'tagging',
     'registration',
     'reversion',
