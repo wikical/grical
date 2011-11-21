@@ -39,8 +39,10 @@ from xml.etree.ElementTree import fromstring
 from xml.parsers.expat import ExpatError
 
 from django.core.cache import cache, get_cache
+from django.core.mail import mail_admins
 from django.contrib.gis.geos import Point
 from django.contrib.gis.utils import GeoIP
+from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import mail_admins
 from django.utils.encoding import smart_unicode
@@ -413,7 +415,7 @@ def search_name( name, use_cache = True ): # {{{1
     url = 'http://api.geonames.org/search?q=%s&maxRows=1&username=%s' % \
             ( query, GEONAMES_USERNAME )
     try:
-        # FIXME: check for API limit reached
+        response_text = None
         response = urllib2.urlopen( url, timeout = 10 )
         if not response:
             if use_cache:
@@ -430,9 +432,18 @@ def search_name( name, use_cache = True ): # {{{1
         lng = float( geonames[0].find('lng').text )
     except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
             IndexError, AttributeError ) as err:
-        # TODO: log the err
         if use_cache:
             save_in_caches.delay( cache_key, None, timeout = 300 )
+        if response_text and 'the daily limit of' in response_text:
+            mail_admins(
+                'URGENT: geonames limit reached',
+                'time: %s\nsearch query: %s\nresponse:\n%s' % \
+                    ( str(datetime.datetime.now()), name, response_text ) )
+        else:
+            mail_admins(
+                'error in search_name',
+                'time: %s\nsearch query: %s\nerror: %s' % \
+                    ( str(datetime.datetime.now()), name, str(err) ) )
         return None
     point = Point( lng, lat )
     if use_cache:

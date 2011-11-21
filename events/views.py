@@ -40,6 +40,7 @@ import re
 import sys
 import vobject
 import unicodedata
+import yaml
 
 from django.conf import settings
 from django.contrib import messages
@@ -62,6 +63,7 @@ from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
 from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
 from django.template import RequestContext, Context, loader
+from django.utils import simplejson
 from django.utils.encoding import smart_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
@@ -1269,36 +1271,62 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         search_result = search_result[0:limit]
         # for the others we use a paginator later on
     # views
+    if view in ('json', 'yaml', 'xml'):
+        # we put it in the cache in context_processors.py:
+        domain = cache.get( 'CURRENT_SITE',
+                Site.objects.get_current().domain )
+        # TODO: add starttime and endtime including timezone
+        # TODO: optimize event.tags to not hit the db for each event
+        event_list_dict = [
+                {
+                    'pk': e.pk,
+                    'title': e.title,
+                    'start': e.start,
+                    'tags': e.tags,
+                    'upcoming': e.upcoming,
+                    'url': 'http://' + domain + e.get_absolute_url(),
+                    # see https://en.wikipedia.org/wiki/GeoJSON
+                    'geometry': e.coordinates
+                } for e in search_result ]
     if view == 'json': # {{{3
         if 'jsonp' in request.GET and request.GET['jsonp']:
             jsonp = request.GET['jsonp']
         else:
             jsonp = None
-        data = serializers.serialize(
-                'json',
-                search_result,
-                # FIXME: startdate, starttime, upcoming and url are missing
-                fields=('title', 'tags', 'coordinates'), #FIXME: start seems wrong
-                indent = 2,
-                ensure_ascii=False )
+        # needed to handle some types of objects that simplejson don't handle
+        def handler(obj):
+            if hasattr(obj, 'isoformat'):
+                return obj.isoformat()
+            elif isinstance(obj, Point):
+                return obj.geojson
+            else:
+                raise TypeError, 'Object of type %s with value of %s is not' \
+                       ' JSON serializable' % (type(obj), repr(obj))
+        # needed because the django serializers doesn't work with extra
+        # fields which are in the queryset but not in the model, see
+        # https://code.djangoproject.com/ticket/5711
+        data = simplejson.dumps(
+                event_list_dict, indent = 2, ensure_ascii=False,
+                default = handler )
         if jsonp:
             data = jsonp + '(' + data + ')'
             mimetype = "application/javascript"
         else:
             mimetype = "application/json"
         return HttpResponse( mimetype = mimetype, content = data )
-    if view in ('yaml', 'xml'): # {{{3
-        data = serializers.serialize(
-                view,
-                search_result,
-                indent = 2,
-                # FIXME: startdate, starttime, upcoming and url are missing
-                fields=('title', 'tags', 'coordinates') )
-        if view == 'xml':
-            mimetype = "application/xml"
-        else:
-            mimetype = "application/x-yaml"
-        return HttpResponse( mimetype = mimetype, content = data )
+    if view == 'xml': # {{{3
+        # TODO: use a proper xml library for performance
+        data = loader.render_to_string(
+                'events_xml.txt',
+                {
+                    'events': event_list_dict,
+                    'VERSION': settings.VERSION
+                } )
+        return HttpResponse( mimetype = 'application/xml', content = data )
+    if view == 'yaml': # {{{3
+        # TODO: fix POINT output
+        data = yaml.dump( event_list_dict )
+        return HttpResponse( mimetype = 'application/x-yaml', content = data )
     # views table, map, boxes or calendars {{{3
     # variables to be passed to the html templates
     context = dict()

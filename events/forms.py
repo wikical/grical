@@ -481,7 +481,7 @@ class SimplifiedEventForm( forms.ModelForm ): # {{{1
     web = URLFieldExtended(verify_exists=True)
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
-        self.fields['title'].label = _(u'What')
+        self.fields['title'].label = _(u'Title')
         #self.fields['title'].widget = forms.Textarea()
         self.fields['where'].label = _(u'Where')
         self.fields['when'].label = _(u'When')
