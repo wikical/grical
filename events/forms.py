@@ -134,11 +134,10 @@ class URLFieldExtended(forms.CharField): #{{{1
         'invalid': _(u'Enter a valid URL.'),
         'invalid_link': _(u'This URL appears to be a broken link.'),
     }
-    def __init__(self, max_length=None, min_length=None, verify_exists=False,
+    def __init__(self, verify_exists=False,
             validator_user_agent=validators.URL_VALIDATOR_USER_AGENT,
             *args, **kwargs):
-        super(URLFieldExtended, self).__init__(
-                max_length, min_length, *args, **kwargs )
+        super(URLFieldExtended, self).__init__( *args, **kwargs )
         self.validators.append( URLValidatorExtended(
             verify_exists=verify_exists,
             validator_user_agent=validator_user_agent ) )
@@ -462,23 +461,25 @@ same_title_day_validation_error = forms.ValidationError(
             'day, create different events with a differentiated toponym in ' \
             ' the title).' ) )
 
-def get_field_attr( field_name, field_attr ):
+def get_field_attr( model, field_name, field_attr ):
     """ returns the value of the attribute ``field_attr`` of the Event model
     field ``field_name`` """
     # from
     # http://stackoverflow.com/questions/2384436/how-to-introspect-django-model-fields
-    field = models.get_model('events', 'Event')._meta.get_field_by_name(
+    field = models.get_model('events', model)._meta.get_field_by_name(
             field_name )[0]
     return getattr( field, field_attr )
 
 class SimplifiedEventForm( forms.ModelForm ): # {{{1
-    """ ModelForm for Events with only the fields `title`, `start`, `tags`,
+    """ ModelForm for Events with only the model fields `title`, and `tags`.
     """
     where = forms.CharField(
-            max_length = get_field_attr( 'address', 'max_length'),
+            max_length = get_field_attr( 'Event', 'address', 'max_length'),
             required = False )
     when = DatesTimesField()
-    web = URLFieldExtended(verify_exists=True)
+    web = URLFieldExtended(
+            verify_exists=True,
+            max_length = get_field_attr( 'EventURL', 'url', 'max_length' ) )
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'Title')
