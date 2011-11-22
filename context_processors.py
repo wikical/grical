@@ -36,14 +36,19 @@ from gridcalendar.events.models import Event, Group
 from gridcalendar.events.models import ExtendedUser
 
 def global_template_vars(request):
-    """ Adds variables to all templates. """
+    """
+    Adds variables to all templates.
+    
+    It uses memcached to minimize hitting the db.
+    """
     def get_user():
         if request.user.is_authenticated():
             return ExtendedUser.objects.get( id = request.user.id )
         else:
             return None
     vars_funcs = {
-            'CURRENT_SITE': lambda: Site.objects.get_current(),
+            'SITE_NAME':    lambda: Site.objects.get_current().name,
+            'SITE_DOMAIN':  lambda: Site.objects.get_current().domain,
             'USERS_NR':     lambda: User.objects.count(),
             'EVENTS_NR':    lambda: Event.objects.count(),
             'GROUPS_NR':    lambda: Group.objects.count(), }
