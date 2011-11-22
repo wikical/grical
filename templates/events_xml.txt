@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gridcalendar-events version="{{ VERSION }}">
+    {% for event in events %}
+    <event pk="{{ event.pk }}">
+        <title>{{ event.title }}</title>
+        <start>{{ event.start }}</start>
+        <upcoming>{{ event.upcoming }}</upcoming>
+        <tags>{{ event.tags }}</tags>
+        {{ event.geometry.kml }}
+        <url>{{ event.url }}</url>
+    </event>
+    {% endfor %}
+</gridcalendar-events>
