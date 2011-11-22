@@ -817,8 +817,8 @@ def event_show_all( request, event_id ): # {{{1
     if event.country:
         title += " (" + event.country + ")"
     # we put it in the cache in context_processors.py:
-    current_site = cache.get( 'CURRENT_SITE', Site.objects.get_current().name )
-    title += " - " + event.title + " | " + unicode(current_site)
+    current_site = cache.get( 'SITE_NAME', Site.objects.get_current().name )
+    title += " - " + event.title + " | " + current_site
     rst2html = None
     # recurring {{{2
     rec = event.recurring
@@ -1273,8 +1273,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     # views
     if view in ('json', 'yaml', 'xml'):
         # we put it in the cache in context_processors.py:
-        domain = cache.get( 'CURRENT_SITE',
-                Site.objects.get_current().domain )
+        domain = cache.get( 'SITE_DOMAIN', Site.objects.get_current().domain )
         # TODO: add starttime and endtime including timezone
         # TODO: optimize event.tags to not hit the db for each event
         event_list_dict = [
