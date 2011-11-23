@@ -1801,10 +1801,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             # stores EventSessions to be saved at the end
             event_sessions_to_save = list()
             for session in sessions_in_text:
-                if session.date < event.startdate:
-                    raise ValidationError( _("the following session's " \
-                        "date is before the start date of the event, " \
-                        "which is not allowed: %s") % session.name )
+                # commented because some users asked to be able to introduce
+                # pre-events as sessions
+                # if session.date < event.startdate:
+                #     raise ValidationError( _("the following session's " \
+                #         "date is before the start date of the event, " \
+                #         "which is not allowed: %s") % session.name )
                 try:
                     # check if there is an EventSession with the same name
                     previous_event_session = EventSession.objects.get(
