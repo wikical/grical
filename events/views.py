@@ -398,23 +398,36 @@ def event_edit( request, event_id = None ): # {{{1
                         event.version = 1
                     event.save()
                     startdate = event_form.cleaned_data['startdate']
-                    event.startdate = startdate
-                    if not event_form.cleaned_data.get( 'enddate', False ):
+                    enddate = event_form.cleaned_data.get( 'enddate', False )
+                    if not enddate:
+                        # we delete enddate if exists and then save startdate
                         try:
                             end = EventDate.objects.get(event = event,
                                     eventdate_name = 'end')
                             end.delete()
                         except EventDate.DoesNotExist:
                             pass
+                        event.startdate = startdate
                     else:
                         # we save the enddate only if different from the
                         # startdate
-                        enddate = event_form.cleaned_data['enddate']
                         if enddate != startdate:
-                            event.enddate = enddate
+                            # at this point it is tricky because there are some
+                            # sanity checks in :meth:`EventDate.save`,
+                            # concretely: it is check that startdate is before
+                            # enddate and viceversa. Depending on the new and
+                            # old dates we need to save one before the other in
+                            # order to pass the sanity checks
+                            old_start = event.startdate
+                            if old_start < enddate:
+                                event.enddate = enddate
+                                event.startdate = startdate
+                            else:
+                                event.startdate = startdate
+                                event.enddate = enddate
                         else:
                             # there is a enddate in the form which is the same
-                            # as the startdate.
+                            # as the startdate, we delete it if in the db
                             try:
                                 end = EventDate.objects.get(event = event,
                                         eventdate_name = 'end')
