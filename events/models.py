@@ -946,7 +946,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                                 # everything too slow
 
     # methods {{{2
-    def custom_dates(self):
+    def custom_dates(self): #{{{3
         """ returns a queryset with custom EventDates (not reserved, see
         :meth:`EventDate.reserved_names` ) """
         return EventDate.objects.filter( event = self ).exclude(
@@ -1361,6 +1361,55 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return
         notify_users_when_wanted.delay( event = event )
 
+    @staticmethod # def save_startdate_enddate(event, startdate, enddate) {{{3
+    def save_startdate_enddate( event, startdate, enddate ):
+        """
+        saves startdate and enddate of event taking into consideration doing it
+        in the right order to avoid erros because e.g. new enddate is before
+        old startdate.
+        """
+        assert event
+        assert startdate
+        if not enddate:
+            # we delete enddate if exists and then save startdate
+            try:
+                end = EventDate.objects.get(event = event,
+                        eventdate_name = 'end')
+                end.delete()
+            except EventDate.DoesNotExist:
+                pass
+            event.startdate = startdate
+        else:
+            # we save the enddate only if different from the startdate
+            if enddate != startdate:
+                # at this point it is tricky because there are some sanity
+                # checks in :meth:`EventDate.save`, concretely: it is check
+                # that startdate is before enddate and viceversa. Depending on
+                # the new and old dates we need to save one before the other in
+                # order to pass the sanity checks
+                old_start = event.startdate
+                if not old_start:
+                    # the event is new (because all events have a startdate)
+                    assert not event.enddate
+                    event.startdate = startdate
+                    event.enddate = enddate
+                    return
+                if old_start < enddate:
+                    event.enddate = enddate
+                    event.startdate = startdate
+                else:
+                    event.startdate = startdate
+                    event.enddate = enddate
+            else:
+                # there is a enddate which is the same as the startdate, we
+                # delete it if in the db
+                try:
+                    end = EventDate.objects.get(event = event,
+                            eventdate_name = 'end')
+                    end.delete()
+                except EventDate.DoesNotExist:
+                    pass
+
     @staticmethod # def example(): {{{3
     def example():
         """ returns an example of an event as unicode
@@ -1654,7 +1703,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             user = None
         # Check if the country is in Englisch (instead of the international
         # short two-letter form) and replace it. TODO: check in other
-        # languages but taking care of colisions
+        # languages (from translations) but taking care of colisions
         if simple_fields.has_key(u'country'):
             for names in COUNTRIES:
                 long_name = names[1].lower()
@@ -1694,43 +1743,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         event.save()
         # save startdate (and enddate if present and != startdate)
         startdate = event_form.cleaned_data.get('startdate', None)
-        if startdate:
-            try: 
-                eventdate = EventDate.objects.get( event = event,
-                        eventdate_name = 'start' )
-                if eventdate.eventdate_date != startdate:
-                    eventdate.eventdate_date = startdate
-                    eventdate.save()
-            except EventDate.DoesNotExist:
-                EventDate.objects.create( event = event,
-                        eventdate_name = 'start', eventdate_date = startdate )
         enddate = event_form.cleaned_data.get('enddate', None)
-        if enddate:
-            if enddate != startdate:
-                try: 
-                    eventdate = EventDate.objects.get( event = event,
-                            eventdate_name = 'end' )
-                    if eventdate.eventdate_date != enddate:
-                        eventdate.eventdate_date = enddate
-                        eventdate.save()
-                except EventDate.DoesNotExist:
-                    EventDate.objects.create( event = event,
-                            eventdate_name = 'end', eventdate_date = enddate )
-            else:
-                try: 
-                     eventdate = EventDate.objects.get( event = event,
-                            eventdate_name = 'end' )
-                     eventdate.delete()
-                except EventDate.DoesNotExist:
-                    pass
-        else:
-            # we delete the enddate if there was one
-            try:
-                enddate = EventDate.objects.get(
-                        event = event, eventdate_name = 'end' )
-                enddate.delete()
-            except EventDate.DoesNotExist:
-                pass
+        Event.save_startdate_enddate( event, startdate, enddate )
         # urls {{{5
         if complex_fields.has_key(u'urls'):
             urls = EventUrl.get_urls( complex_fields[u'urls'] )
