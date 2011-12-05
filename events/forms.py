@@ -144,6 +144,9 @@ class URLFieldExtended(forms.CharField): #{{{1
 
     def to_python(self, value):
         value = value.strip()
+        url = urlparse.urlsplit( value )
+        if not url.scheme:
+            value = 'http://' + value
         return super( URLFieldExtended, self ).to_python( value )
 
 class DatesTimesField(forms.Field): # {{{1

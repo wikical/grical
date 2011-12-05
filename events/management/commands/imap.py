@@ -42,7 +42,7 @@ from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMessage
 from django.db import transaction, IntegrityError
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import smart_str
+from django.utils.encoding import smart_str, smart_unicode
 from django.core.management.base import NoArgsCommand
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string

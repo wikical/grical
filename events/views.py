@@ -354,7 +354,7 @@ def event_edit( request, event_id = None ): # {{{1
             Event, EventSession, extra = 4, can_delete = can_delete,
             formfield_callback = replace_date_with_date_extended,
             form = EventSessionForm )
-    if request.method == 'POST':
+    if request.method == 'POST': # {{{2
         try:
             event_form = EventForm( request.POST, instance = event )
             formset_url = event_urls_factory(
@@ -430,7 +430,7 @@ def event_edit( request, event_id = None ): # {{{1
                     _change_recurrences( request.user, event, events )
                 return HttpResponseRedirect( reverse( 'event_show_all',
                         kwargs = {'event_id': event.id} ) )
-    else:
+    else: # {{{2
         event_form = EventForm( instance = event )
         formset_url = event_urls_factory( instance = event )
         formset_deadline = event_deadlines_factory( instance = event,
@@ -441,7 +441,7 @@ def event_edit( request, event_id = None ): # {{{1
             also_recurrences_form = AlsoRecurrencesForm()
         else:
             also_recurrences_form = None
-    templates = {
+    templates = { # {{{2
             'title': 'edit event',
             'form': event_form,
             'formset_url': formset_url,
