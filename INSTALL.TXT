@@ -44,10 +44,18 @@ Installation instructions for Debian based systems
     aptitude install python-pip
     pip install blist
 
-#. Install ``django-celery`` and dependencies::
+#. Install ``django-celery``, dependencies and configure ``rabbitmq``:
 
-    apt-get install rabbitmq-server
-    pip install django-celery
+    #. as root::
+
+        apt-get install rabbitmq-server
+        pip install django-celery
+
+    #. add a rabiitmq user and host::
+
+        rabbitmqctl add_user guest guest
+        rabbitmqctl add_vhost "/"
+        rabbitmqctl set_permissions -p "/" guest ".*" ".*" ".*"
 
 #. Install the `proper version of django-reversion`__ for the installed Django version.
 
@@ -103,15 +111,44 @@ the IRC logger with::
 
 #. Create and edit ``settings_local.py`` (see as example ``settings_local.py.example``)
 
-#. Run the celery worker server. See `Running Celery as a daemon`__. Example::
-
-    python manage.py celeryd -l info
+#. Run the celery worker server. See `Running Celery as a daemon`__.
 
 __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
+
+    #. Example in the working directory::
+
+        python manage.py celeryd -l info
+
+    #. Alternatively (daemonizing)::
+
+        #. copy the file ``celeryd`` in ``/etc/init.d/`` and make it executable
+
+        #. as root run::
+
+            update-rc.d celeryd defaults
+
+        #. create the file ``/etc/default/celeryd`` with the content::
+
+            DJANGO_SETTINGS_MODULE="settings"
+            DAEMON="/usr/local/gridcalendar/manage.py celeryd"
+            CELERYD_USER="www-data"
+            CELERYD_GROUP="www-data"
+            DAEMON_ARGS="--time-limit=300 --concurrency=8"
+
+    #. If in trouble with this step, see
+    http://mattsnider.com/python/using-celery-to-handle-asynchronous-processes/
 
 #. To parse events submitted as emails to an imap server, add to a cron file::
 
    cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
+
+#. You need to cleanup the sessions table from time to time (see
+   `clearing the session table in the Django documentation`__).
+   Add to a cron file something like::
+
+        00 02 * * * cd /usr/local/gridcalendar ; python manage.py cleanup
+
+__ https://docs.djangoproject.com/en/dev/topics/http/sessions/#clearing-the-session-table
 
 #. For Apache as the webserver
    
