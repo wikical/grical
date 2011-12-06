@@ -1380,10 +1380,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 pass
             event.startdate = startdate
         else:
-            # we save the enddate only if different from the startdate
-            if enddate != startdate:
-                # at this point it is tricky because there are some sanity
-                # checks in :meth:`EventDate.save`, concretely: it is check
+            if startdate == enddate:
+                # there is a enddate which is the same as the startdate, we
+                # delete it if in the db, as we don't save enddate when equals
+                # startdate
+                try:
+                    end = EventDate.objects.get(event = event,
+                            eventdate_name = 'end')
+                    end.delete()
+                except EventDate.DoesNotExist:
+                    pass
+                # we save startdate
+                event.startdate = startdate
+            else:
+                # startdate != enddate
+                # At this point it is tricky because there are some sanity
+                # checks in :meth:`EventDate.save`. Concretely: it is checked
                 # that startdate is before enddate and viceversa. Depending on
                 # the new and old dates we need to save one before the other in
                 # order to pass the sanity checks
@@ -1400,15 +1412,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 else:
                     event.startdate = startdate
                     event.enddate = enddate
-            else:
-                # there is a enddate which is the same as the startdate, we
-                # delete it if in the db
-                try:
-                    end = EventDate.objects.get(event = event,
-                            eventdate_name = 'end')
-                    end.delete()
-                except EventDate.DoesNotExist:
-                    pass
 
     @staticmethod # def example(): {{{3
     def example():
