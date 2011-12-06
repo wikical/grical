@@ -31,6 +31,7 @@ register = template.Library()
 def show_add_to_group(context):
     """ custom tag to know and show (if needed) an "add to group" link when an
     event can be added to one or more of the groups of the logged-in user """
+    # NOTE: think of problems with the caching system when using it
     user = context['user']
     event = context['event']
     if user is None or user.id is None:
