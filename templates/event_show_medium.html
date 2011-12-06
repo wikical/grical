@@ -81,21 +81,6 @@
 
     </div>
 
-    {% comment %}
-    too resource and space consuming
-    <div class="options">
-        <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
-        &nbsp;|&nbsp;
-        <a href="{% url event_edit_raw event.id %}">{% trans "edit as text" %}</a>
-        {% if user.is_authenticated %}
-        &nbsp;|&nbsp;
-        {% show_add_to_group %}
-            &nbsp;|&nbsp;
-            <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
-        {% endif %}
-    </div>
-    {% endcomment %}
-
 </div>
 {% endwith %}
 {% endwith %}

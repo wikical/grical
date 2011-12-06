@@ -37,7 +37,7 @@
                 <a href="{% url event_new_copyraw event.id %}">{% trans "copy&nbsp;as&nbsp;text" %}</a>
                 {% if user.is_authenticated %}
                     &nbsp;|&nbsp;
-                    {% show_add_to_group %}
+                    <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
                     &nbsp;|&nbsp;
                     <a href="{% url event_edit_recurrences event.id %}">{% trans "recurrences" %}</a>
                     &nbsp;|&nbsp;

@@ -1836,18 +1836,29 @@ def group_add_event(request, event_id): # {{{2
     >>> client.login(username = u.username, password = 'p')
     True
     >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m = Membership.objects.create(user = u, group = g)
+    >>> m, c = Membership.objects.get_or_create(user = u, group = g)
     >>> e = Event.objects.create( title='gae_test', tags='berlin', user=u )
     >>> e.startdate = datetime.date.today()
-    >>> m = Calendar.objects.create(group = g, event = e)
     >>> client.get(reverse('group_add_event',
     ...         kwargs={'event_id': e.id,})).status_code
     200
+    >>> m, c = Calendar.objects.get_or_create(group = g, event = e)
+    >>> client.get(reverse('group_add_event',
+    ...         kwargs={'event_id': e.id,})).status_code
+    302
+    >>> e.delete()
     """
     if isinstance(event_id, str) or isinstance(event_id, unicode):
         event_id = int(event_id)
     event = get_object_or_404( Event, id = event_id )
     user = request.user
+    groups = Group.objects.filter(membership__user = user)
+    if len(groups) < 1:
+        messages.info( request,
+            _(u'You have tried to add this event to a group, however it ' \
+            'is not possible as you are currently no member of any group') )
+        return HttpResponseRedirect( reverse( 'event_show_all',
+                kwargs = {'event_id': event.id} ) )
     if len(Group.groups_for_add_event(user, event)) > 0:
         if request.method == "POST":
             form = AddEventToGroupForm(
@@ -1870,9 +1881,10 @@ def group_add_event(request, event_id): # {{{2
                 context_instance=RequestContext(request, context))
     else:
         messages.info( request,
-                _(u'The event %(event_id)d is already in all the ' \
-                'groups that you are in') % {'event_id': event_id,} )
-        return main(request )
+            _(u'You have tried to add this event to a group, however this ' \
+            'event is already in all the groups you are a member of') )
+        return HttpResponseRedirect( reverse( 'event_show_all',
+                kwargs = {'event_id': event.id} ) )
 
 def group_name_view(request, group_name): # {{{2
     """ lists everything about a group for members of the group, or the

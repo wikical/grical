@@ -12,7 +12,7 @@
 &nbsp;
 <a href="{% url event_edit_raw event.id %}"><span class="field_title">{% trans "edit as text" %}</span></a>
 &nbsp;
-{% show_add_to_group %}
+<a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
 
 <div id="event_textarea_form">
 <pre>
