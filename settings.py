@@ -66,11 +66,19 @@ MAX_EVENTS_ON_ROOT_PAGE = 20
 PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
 
 # =============================================================================
-# GeoIP settings {{{1
+# GeoIP and GEONAME settings {{{1
 # =============================================================================
 # see # http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
 
 GEOIP_PATH = '/usr/share/GeoIP'
+try:
+    GEONAMES_URL
+except NameError:
+    GEONAMES_URL = 'http://api.geonames.org/'
+try:
+    GEONAMES_USERNAME
+except NameError:
+    GEONAMES_USERNAME = 'demo'
 
 # =============================================================================
 # test settings {{{1

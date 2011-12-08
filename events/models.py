@@ -1012,9 +1012,32 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # FIXME: include a different color-palette for past events:
         return 0
 
+    def complete_address( self ):
+        """ it returns a string separating by comma and space
+        :attr:`Event.address`, :attr:`Event.city`, 
+        :attr:`Event.postcode` and :attr:`Event.country`
+
+        NOTE: we use the order ``address, city, postcode, country`` because the
+        nominatim API of OpenStreetMap works only with this order at the moment
+        (Thu Dec  8 17:31:12 CET 2011)
+        """
+        address = u""
+        if self.address:
+            address += self.address
+        if self.city and not self.city.lower() in address.lower():
+            address += ", " + self.city
+        if self.postcode and not self.postcode.lower() in address.lower():
+            address += ", " + self.postcode
+        if self.country and not self.country.lower() in address.lower():
+            address += ", " + self.country
+
     def update_timezone( self ):
         """ recalculate and save self.timezone according to self.coordinates,
-            or self.address, or self.city and self.country
+        self.address, self.city and self.country
+
+        If returns True if a timezone was found and saved, False otherwise.
+
+        When more than one timezone is found, it uses the most important one.
 
         >>> event, l = Event.parse_text(EXAMPLE)
         >>> timezone = event.timezone
@@ -1024,6 +1047,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event.timezone = None
         >>> event.save()
         >>> event.update_timezone()
+        True
         >>> assert event.timezone == timezone
         >>> event.timezone = None
         >>> event.city = None
@@ -1032,6 +1056,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event.coordinates = Point( longitude, latitude )
         >>> event.save()
         >>> event.update_timezone()
+        True
         >>> assert event.timezone == timezone
         >>> event.delete()
         """
@@ -1040,28 +1065,39 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             if timezone:
                 self.timezone = timezone
                 self.save()
-                return
-        # either no coordinates or they didn't help. We try with the address
+                return True
+        # either no coordinates or they didn't help. We try with the complete
+        # address
         if self.address:
-            locations = search_address( self.address )
-            if locations and len( locations ) == 1:
+            locations = search_address( self.complete_address() )
+            if locations:
                 location = locations.items()[0][1]
                 timezone = search_timezone(
                         location['latitude'], location['longitude'] )
                 if timezone:
                     self.timezone = timezone
                     self.save()
-                    return
+                    return True
+        # We try with the country (and city) only
         if self.country:
             if self.city:
                 locations = search_address( self.country + ', ' + self.city )
-                if locations and len( locations ) == 1:
-                    location = locations.items()[0][1]
-                    timezone = search_timezone(
-                        location['latitude'], location['longitude'] )
-                    if timezone:
-                        self.timezone = timezone
-                        self.save()
+            else:
+                locations = search_address( self.country )
+        else:
+            if self.city:
+                locations = search_address( self.city )
+            else:
+                return False
+        if locations:
+            location = locations.items()[0][1]
+            timezone = search_timezone(
+                location['latitude'], location['longitude'] )
+            if timezone:
+                self.timezone = timezone
+                self.save()
+                return True
+        return False
         
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
