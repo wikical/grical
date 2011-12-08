@@ -7,38 +7,6 @@ INTRODUCTION
 See ABOUT.TXT
 
 
-LICENSE
-=======
-
-GridCalendar is licensed under the GNU Affero General Public License. See the file LICENSE.TXT
-
-The subproject GriCalDroid is licensed under the GPLv3__.
-
-__ http://www.gnu.org/licenses/gpl.html
-
-GriCalDroid uses mapsforge__ which is licensed under the LGPL3__
-
-__ http://code.google.com/p/mapsforge/
-__ http://www.gnu.org/licenses/lgpl.html
-
-Reversion__ uses the `Modified BSD License`__ which is `compatible with the GPLv3`__
-
-__ https://github.com/etianen/django-reversion/
-__ http://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_.28.22New_BSD_License.22_or_.22Modified_BSD_License.22.29
-__ http://en.wikipedia.org/wiki/List_of_FSF_approved_software_licenses
-
-CONTACT
-=======
-
-> GridMind Vorgründungsgesellschaft Iván Fernando Villanueva Barrio EU
-> Malmöer Str. 6
-> 10439 Berlin
-> Germany
-> 
-> Tel. +49 3039820596
-> E-Mail: info ät gridmind.org
-
-
 INSTALLATION
 ============
 
