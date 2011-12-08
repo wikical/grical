@@ -4,6 +4,7 @@ syntax: glob
 .*.swp
 *.bak
 settings_local.py
+docs/_build
 
 syntax: regexp
 /\.svn$
