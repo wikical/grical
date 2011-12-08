@@ -48,7 +48,7 @@ from django.core.mail import mail_admins
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
-from settings import GEONAMES_USERNAME
+from settings import GEONAMES_USERNAME, GEONAMES_URL
 from gridcalendar.events.tasks import save_in_caches
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
@@ -69,6 +69,8 @@ def search_address( data, ip = None ): # {{{1
     ``longitude``, ``latitude``, ``postcode``, ``country`` and ``city``.
 
     >>> import math
+    >>> import time
+    >>> time.sleep(1)
     >>> result = search_address( u'c-base' )
     >>> len ( result )
     1
@@ -77,7 +79,8 @@ def search_address( data, ip = None ): # {{{1
     13.0
     >>> math.floor( float(result['latitude']) )
     52.0
-    >>> result = search_address( u'Malmöer Str. 6, Berlin, DE' )
+    >>> time.sleep(1)
+    >>> result = search_address( u'Schivelbeiner Str. 22, Berlin, DE' )
     >>> len ( result )
     1
     >>> result = result.values()[0]
@@ -85,6 +88,7 @@ def search_address( data, ip = None ): # {{{1
     13.0
     >>> math.floor( float(result['latitude']) )
     52.0
+    >>> time.sleep(1)
     >>> result = search_address( u'Kantstr. 6', ip = '85.179.47.148' )
     >>> len ( result )
     1
@@ -247,55 +251,56 @@ def search_address_google( data, country_code = None ): # {{{1
     >>> result['city']
     'Berlin'
     """
-    # FIXME check response code, etc and return None if no address are given or
-    # an error occur
-    address = urllib.quote( data.encode('utf-8') )
-    conn = httplib.HTTPConnection( "maps.googleapis.com" )
-    if country_code:
-        url_sufix = "//maps/api/geocode/xml?address=" + address + \
-                "&sensor=false&region=" + country_code.lower()
-    else:
-        url_sufix = "//maps/api/geocode/xml?address=" + address + \
-                "&sensor=false"
-    conn.request( "GET", url_sufix )
-    # TODO: there is a timeout? if not use a thread and stop it after some time
-    response = conn.getresponse()
-    response_text = response.read()
-    doc = fromstring( response_text )
-    # a dictionary with a display_name as unicode keys and values as
-    # dictionaries of field names and values
-    result = dict()
-    status = doc.findtext('status')
-    if ( not status ) or status != 'OK':
-        return None
-    # we suppose we get results with type = street_address
-    # TODO find out what else there is and how it looks like
-    for place in doc.findall('result'):
-        pdic = dict() # place dict
-        value = place.findtext('geometry/location/lat')
-        if value:
-            pdic['latitude'] = value
-        value = place.findtext('geometry/location/lng')
-        if value:
-            pdic['longitude'] = value
-        for component in place.findall('address_component'):
-            types = [value.text for value in component.findall('type')]
-            if 'locality' in types:
-                pdic['city'] = component.findtext('long_name')
-            elif 'postal_code' in types:
-                pdic['postcode'] = component.findtext('long_name')
-            elif 'country' in types:
-                pdic['country'] = component.findtext('short_name').upper()
-        value = place.findtext('formatted_address')
-        if value:
-            if len( value ) > len( data ):
-                result[value] = pdic
+    try:
+        address = urllib.quote( data.encode('utf-8') )
+        conn = httplib.HTTPConnection( "maps.googleapis.com", timeout=10 )
+        if country_code:
+            url_sufix = "//maps/api/geocode/xml?address=" + address + \
+                    "&sensor=false&region=" + country_code.lower()
+        else:
+            url_sufix = "//maps/api/geocode/xml?address=" + address + \
+                    "&sensor=false"
+        conn.request( "GET", url_sufix )
+        conn.sock.settimeout( 10.0 )
+        response = conn.getresponse()
+        response_text = response.read()
+        doc = fromstring( response_text )
+        # a dictionary with a display_name as unicode keys and values as
+        # dictionaries of field names and values
+        result = dict()
+        status = doc.findtext('status')
+        if ( not status ) or status != 'OK':
+            return None
+        # we suppose we get results with type = street_address
+        # TODO find out what else there is and how it looks like
+        for place in doc.findall('result'):
+            pdic = dict() # place dict
+            value = place.findtext('geometry/location/lat')
+            if value:
+                pdic['latitude'] = value
+            value = place.findtext('geometry/location/lng')
+            if value:
+                pdic['longitude'] = value
+            for component in place.findall('address_component'):
+                types = [value.text for value in component.findall('type')]
+                if 'locality' in types:
+                    pdic['city'] = component.findtext('long_name')
+                elif 'postal_code' in types:
+                    pdic['postcode'] = component.findtext('long_name')
+                elif 'country' in types:
+                    pdic['country'] = component.findtext('short_name').upper()
+            value = place.findtext('formatted_address')
+            if value:
+                if len( value ) > len( data ):
+                    result[value] = pdic
+                else:
+                    result[ data ] = pdic
             else:
                 result[ data ] = pdic
-        else:
-            result[ data ] = pdic
-    if len( result ) > 0:
-        return result
+        if len( result ) > 0:
+            return result
+    except:
+        pass
     return None
 
 def search_timezone( lat, lng, use_cache = True ): # {{{1
@@ -320,7 +325,7 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
             # we want to be sure that it is saved in all caches
             save_in_caches.delay( cache_key, cache_value )
             return cache_value
-    url = 'http://api.geonames.org/timezone?lat=%s&lng=%s&username=%s' % \
+    url = GEONAMES_URL + 'timezone?lat=%s&lng=%s&username=%s' % \
             ( str(lat), str(lng), GEONAMES_USERNAME )
     try:
         # FIXME: check for API limit reached
@@ -405,14 +410,14 @@ def search_name( name, use_cache = True ): # {{{1
         # we try the memcached cache (see settings.CACHES)
         if cache.has_key( cache_key ):
             cache_value = cache.get( cache_key )
-        # we try the db cache
         elif db_cache.has_key( cache_key ):
+            # we try the db cache
             cache_value = db_cache.get( cache_key )
         if cache_value:
             # we want to be sure that it is saved in all caches
             save_in_caches.delay( cache_key, cache_value )
             return cache_value
-    url = 'http://api.geonames.org/search?q=%s&maxRows=1&username=%s' % \
+    url = GEONAMES_URL + 'search?q=%s&maxRows=1&username=%s' % \
             ( query, GEONAMES_USERNAME )
     try:
         response_text = None
@@ -453,7 +458,46 @@ def search_name( name, use_cache = True ): # {{{1
     return point
 
 def search_address_osm( data ): # {{{1
-    """ uses nominatim.openstreetmap.org to look up for ``data``.#{{{
+    """ uses nominatim.openstreetmap.org to look up for ``data``.
+
+    Example of a query::
+
+        http://nominatim.openstreetmap.org/search?q=
+        Gleimstr.+60,+Berlin,+10439,+DE&format=xml&addressdetails=1
+
+    Example of the response::
+
+        <searchresults timestamp="Thu, 08 Dec 11 11:18:13 -0500"
+                attribution="Data Copyright OpenStreetMap Contributors, Some
+                Rights Reserved. CC-BY-SA 2.0."
+                querystring="Gleimstr. 60, Berlin, 10439, DE" polygon="false"
+                exclude_place_ids="12347262"
+                more_url="http://open.mapquestapi.com/nominatim/v1/search?
+                    format=xml&exclude_place_ids=12347262&accept-language=
+                    en-us,en;q=0.5&addressdetails=1&q=Gleimstr.+60%2C+
+                    Berlin%2C+10439%2C+DE">
+            <place place_id="12347262" osm_type="node" osm_id="1023766671"
+                    place_rank="30"
+                    boundingbox="52.5368559265,52.5568597412,13.3921701813,
+                            13.4121711349"
+                    lat="52.5468563" lon="13.4021706"
+                    display_name="60, Gleimstraße, Prenzlauer
+                            Berg, Pankow, Berlin, Berlin, Stadt, Pankow,
+                            Berlin, 10437"
+                    class="place" type="house">
+                <house_number>60</house_number>
+                <road>Gleimstraße</road>
+                <suburb>Prenzlauer Berg</suburb>
+                <city_district>Pankow</city_district>
+                <city>Berlin</city>
+                <county>Berlin, Stadt</county>
+                <region>Pankow</region>
+                <state>Berlin</state>
+                <boundary>10437</boundary>
+                <postcode>10437</postcode>
+                <country_code>de</country_code>
+            </place>
+        </searchresults>
 
     See ``search_address``
 
@@ -469,58 +513,57 @@ def search_address_osm( data ): # {{{1
     >>> result['country']
     'DE'
     """
-    # FIXME check response code, etc and return None if no address are given or
-    # an error occur#}}}
-    address = urllib.quote( data.encode('utf-8') )
-    params = ''.join( [
-        '&format=xml',
-        '&polygon=0',
-        '&addressdetails=1',
-        '&email=office@gridmind.org',
-        '&limit=10', ] )
-    conn = httplib.HTTPConnection( "nominatim.openstreetmap.org" )
-    # see http://wiki.openstreetmap.org/wiki/Nominatim
-    # TODO: include parameter accept-language according to user/browser
-    url_sufix = "/search?q=" + address + params 
-    conn.request( "GET", url_sufix )
-    response = conn.getresponse()
-    response_text = response.read()
-    # FIXME: use a thread
     try:
-        # can throw a ExpatError
-        doc = fromstring( response_text )
-    except ExpatError:
-        return None
-    # a dictionary with a display_name as unicode keys and values as
-    # dictionaries of field names and values
-    result = dict()
-    for place in doc.findall('place'):
-        pdic = dict() # place dict
-        value = place.get('lon')
-        if value is not None:
-            pdic['longitude'] = value
-        value = place.get('lat')
-        if value is not None:
-            pdic['latitude'] = value
-        value = place.find('city')
-        if value is not None:
-            pdic['city'] = value.text
-        value = place.find('country_code')
-        if value is not None:
-            pdic['country'] = value.text.upper()
-        value = place.find('postcode')
-        if value is not None:
-            pdic['postcode'] = value.text
-        value = place.get('display_name')
-        if value:
-            if len( value ) > len( data ):
-                result[value] = pdic
+        address = urllib.quote( data.encode('utf-8') )
+        params = ''.join( [
+            '&format=xml',
+            '&polygon=0',
+            '&addressdetails=1',
+            '&email=office@gridmind.org',
+            '&limit=10', ] )
+        conn = httplib.HTTPConnection( "nominatim.openstreetmap.org",
+                timeout=10 )
+        # see http://wiki.openstreetmap.org/wiki/Nominatim
+        # TODO: include parameter accept-language according to user/browser
+        url_sufix = "/search?q=" + address + params 
+        conn.request( "GET", url_sufix )
+        conn.sock.settimeout( 10.0 )
+        response = conn.getresponse()
+        response_text = response.read()
+        # FIXME: use a thread
+        doc = fromstring( response_text ) # can throw a ExpatError
+        # a dictionary with a display_name as unicode keys and values as
+        # dictionaries of field names and values
+        result = dict()
+        for place in doc.findall('place'):
+            pdic = dict() # place dict
+            value = place.get('lon')
+            if value is not None:
+                pdic['longitude'] = value
+            value = place.get('lat')
+            if value is not None:
+                pdic['latitude'] = value
+            value = place.find('city')
+            if value is not None:
+                pdic['city'] = value.text
+            value = place.find('country_code')
+            if value is not None:
+                pdic['country'] = value.text.upper()
+            value = place.find('postcode')
+            if value is not None:
+                pdic['postcode'] = value.text
+            value = place.get('display_name')
+            if value:
+                if len( value ) > len( data ):
+                    result[value] = pdic
+                else:
+                    result[ data ] = pdic
             else:
                 result[ data ] = pdic
-        else:
-            result[ data ] = pdic
-    if len( result ) > 0:
-        return result
+        if len( result ) > 0:
+            return result
+    except:
+        pass
     return None
 
 def validate_event_exists( value ): # {{{1
