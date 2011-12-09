@@ -1,0 +1,317 @@
+.. _administrators_guide:
+
+=====================
+Administrator's guide
+=====================
+
+Installation
+============
+
+Prerequisites
+-------------
+
+====================== =========
+Prerequisite           Version
+====================== =========
+Operating system [1]
+Python                 2.6 [2]
+PostgreSQL             8.4 [3]
+PostGIS                1.4 [4]
+psycopg2               2.2 [5]
+pip or setuptools [6]
+docutils               0.7 [7]
+dateutil               1.4 [7]
+geoip                  1.2 [7]
+vobject                0.8 [7]
+gdal                   3.09 [7]
+tz                     2010b [7]
+blist                  1.3 [7]
+yaml                   3.10 [7]
+irclib                 0.4 [8]
+Django                 1.3
+django-registration    0.7 [7]
+django-tagging         0.3 [7]
+django-reversion       1.5 [7]
+django-tables          0.2 [7]
+Mercurial [9]
+====================== =========
+
+.. admonition:: Note for production installations
+
+   These prerequisites are for development installations. For
+   production installations you also need a web server.
+
+[1] We currently develop, test and deploy GridCalendar on Debian 6.0.
+You should not have any trouble running it on other Debian-based
+distributions, or on any other GNU/Linux distributions. We do not
+support it on Windows at the time, but it should not be too hard to
+get it to run there. Installing 64-bit versions on Windows may be
+difficult because of lack of dependencies compiled for 64-bit Windows.
+If you need help, email us.
+
+[2] GridCalendar runs on Python 2.6 or any later 2.x version. It does
+not run on Python 3.
+
+[3] GridCalendar is known to run on PostgreSQL 8.4. It is also likely
+to run without problems on 8.3 and on 9.0. In order to avoid possible
+incompatibilities with psycopg2 and PostGIS, it is better to use the
+version prepackaged by your operating system.
+
+[4] Except for PostGIS, more libraries could be needed, such as geos
+and proj; however, you probably not need to worry about that, because
+in most GNU/Linux distributions PostGIS has a dependency on them and
+therefore they will be installed automatically. GridCalendar is known
+to run on PostGIS 1.5. It can probably run on later versions as well.
+It is not known whether it can run on earlier versions.
+
+[5] Because of a `Django bug`_ which is present in Django versions up
+to and including 1.3, tests fail on psycopg2 2.4.2 or later. Therefore
+you should either use Django 1.4 or later, or psycopg2 no later than
+2.4.1, or not expect the tests to run.
+
+.. _Django bug: https://code.djangoproject.com/ticket/16250
+
+[6] pip or setuptools are useful in order to install the rest of the
+Python modules; GridCalendar does not actually need it.
+
+[7] The table indicates the versions of various Python and Django
+modules on which GridCalendar is known to run. Usually it can run on
+later versions as well.
+
+[8] irclib is needed only if you want to use the IRC logging features
+of GridCalendar.
+
+[9] Mercurial is needed in order to download the software, not for
+running it.
+
+.. admonition:: Example: Installing prerequisites on Debian 6.0
+
+   ::
+
+       apt-get install python postgresql postgis postgresql-8.4-postgis \
+           python-psycopg2 python-pip mercurial python-docutils \
+           python-dateutil python-geoip python-vobject python-gdal \
+           python-tz python-irclib
+       pip install blist django django-registration django-tagging \
+           django-reversion django-tables
+
+Additional prerequisites for development
+----------------------------------------
+
+====================== =========
+Prerequisite           Version
+====================== =========
+profiler
+webtest                1.2
+MultipartPostHandler
+django-debug-toolbar
+django-webtest
+====================== =========
+
+.. admonition:: Example: Installing prerequisites on Debian 6.0
+
+   ::
+
+       apt-get install python-profiler python-webtest
+       pip install MultipartPostHandler django-debug-toolbar \
+           django-webtest
+
+
+Creating a database
+===================
+
+First, you need to create a spatially enabled database template. You
+can skip this step if you have already done so. Otherwise, you need to
+consult your PostgreSQL and PostGIS documentation.
+
+.. admonition:: How to do it in Debian
+
+   ::
+
+      su postgres
+      cd /tmp
+      wget http://docs.djangoproject.com/en/1.3/_downloads/create_template_postgis-debian.sh
+      chmod +x create_template_postgis-debian.sh
+      ./create_template_postgis-debian.sh
+      exit
+
+Then you need to create a database user and a database (we use
+``gridcalendar_user`` and ``gridcalendar_db`` in the examples below).
+GridCalendar will be connecting to the database as that user. The user
+should not be a super user, not be allowed to create databases, and
+not be allowed to create more users.
+
+.. admonition:: Example: creating a database in GNU
+
+   ::
+
+      sudo -u postgres -s
+      createuser --pwprompt gridcalendar_user
+      createdb --owner gridcalendar_user -T template_postgis gridcalendar_db
+      exit
+
+   You may also need to edit your ``pg_hba.conf`` file as needed
+   (under ``/var/lib/pgsql/data/`` or ``/etc/postgresql/X.Y/main/``,
+   depending on your system). The chapter on `client authentication`_
+   of the PostgreSQL manual explains this in detail. A simple setup is
+   to authenticate with username and password, in which case you
+   should add or modify the following lines in ``pg_hba.conf``::
+
+       local   all         all                               md5
+       host    all         all         127.0.0.1/32          md5
+       host    all         all         ::1/128               md5
+
+   Restart the server to read the new ``pg_hba.conf`` configuration.
+   For example, in Debian::
+
+       /etc/init.d/postgresql restart
+
+   .. _client authentication: http://www.postgresql.org/docs/8.4/static/client-authentication.html
+
+Getting the software
+====================
+
+Clone the Mercurial repository http://gridcalendar.net:8001/::
+
+   hg clone http://gridcalendar.net:8001/
+
+This will create a :file:`gridcalendar` directory inside the current
+directory, which should be somewhere inside your home directory for
+a development instance, or :file:`/usr/local` for a production
+instance.
+
+Configuring GridCalendar
+========================
+
+Copy the file :file:`settings_local.py.example` to
+:file:`settings_local.py`, then open the new file in an editor and
+make the following changes:
+
+* Set :data:`ADMINS` to a list of admins (the administrators will get
+  all enhydris exceptions by mail and also all user emails, as
+  generated by the contact application).
+* Under :data:`DATABASES`, set :data:`NAME` to the name of the
+  database, and :data:`USER` and :data:`PASSWORD` according to the
+  user created above.
+* For a development installation, also set :data:`DEBUG` to ``True``
+  and :data:`INTERNAL_IPS` to ``('127.0.0.1',)``.
+
+Initializing the database
+=========================
+
+Run the following to initialize the database and create the necessary
+database tables for GridCalendar::
+
+    python manage.py syncdb
+
+Running GridCalendar
+====================
+
+Run the following command::
+
+    python manage.py runserver 8088
+
+The above command will start the Django development server and set it
+to listen to port 8088. If you then start your browser and point it to
+``http://localhost:8088/``, you should see GridCalendar in action. Note
+that this only listens to the localhost; if you want it to listen on
+all interfaces, use ``0.0.0.0:8088`` instead.
+
+To use GridCalendar in production, you need to setup a web server such
+as apache. This is described in detail in `Deploying Django`_.
+
+.. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
+
+Random information
+==================
+
+The rest of this file contains an unordered collection of all items
+which were previously in the now deleted :file:`INSTALL.TXT` and have
+not yet found their new home (but they are being fixed).
+
+#. If you have already a database running and have some data or you import data e.g. with
+   ``manage.py loadata``, you should create manually a first revision, for this issue the
+   commands::
+
+        ./manage.py createinitialrevisions
+        ./manage.py createrevisioninfo
+
+#. GriCal can log into an IRC channel. To use the IRC logger, install ``python-irclib``.
+   Configure the appropiate parameters in ``settings_local.py``. When GriCal is running, you can start
+   the IRC logger with::
+
+    ./manage.py irclogger
+
+#. If you want to be able to locate cities by the user's IPs, you need to install the data base of
+   Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
+   Using this data improves the front page, search results and the introduction of addresses of events.
+   You can install it following the steps::
+    
+    cd /usr/share/GeoIP
+    wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+    gzip -d GeoLiteCity.dat.gz
+
+   #. You can run a web test server with ``python manage.py testserver``
+
+   #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
+      could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
+
+#. It is needed to run a command each day at 00:01 (just after midnight), which will update a field
+   in the database (Event.upcoming) which is needed for sorting the events and finding events in the
+   future. This is necessary for performance and scalability reasons. Add to your cron file::
+
+     cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py updateupcoming
+
+#. To parse events submitted as emails to an imap server, add to a cron file::
+
+     cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
+
+#. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and make sure Apache can read it::
+
+        ln -s /usr/local/gridcalendar/media /var/www/gridcalendar.net/m/
+
+#. The same for ``favicon.ico``::
+
+        ln -s /usr/local/gridcalendar/media/favicon.ico /var/www/gridcalendar.net/favicon.ico
+
+#. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+
+#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
+
+        MaxRequestsPerChild 1
+   
+#. Configure the ``django_site`` table. **Important note**: the first entry in this table is
+   used when sending emails, e.g. by ``events/management/commands/imap.py``
+   which can be used by a cronjob to read and reply emails (see above). As root you can update the table with::
+
+    su postgre
+    psql gridcalendar
+    update django_site set domain='gridcalendar.net' where id=1 ;
+    update django_site set name='Grid Calendar' where id=1 ;
+
+#. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
+   of it.
+
+    #. Group invitations are sent with the sender (``from`` header) set to the user
+       ``group-invitation`` and the host provided by the setting ``DEFAULT_FROM_EMAIL``
+ 
+#. **Graph of the data base**: To generate a graph of the data base::
+
+    cd /usr/local/gridcalendar/
+    aptitude install graphviz ttf-liberation
+    wget http://djangosnippets.org/snippets/1168/download/
+    export PYTHONPATH="/home/hg/gridcalendar:/home/hg/"
+    export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+    python graph_db.py events | dot -Tpng -o media/graph_db.png
+
+#. Dates and times with **leading and/or trailing spaces in web forms**. At this time (Tue May 3
+   21:38:28 CEST 2011) there is an open ticket (`#6362`_) for it in Django. Several approaches (like
+   `snippet 656`_) don't work for ModelForms used with ``inlineformset_factory`` (probably a Django
+   bug). Until `#6362`_ is fixed, you can modify
+   ``/usr/lib/pymodules/python2.6/django/forms/fields.py`` and add in the body of the function
+   ``to_python`` of ``DateField`` and ``TimeField``::
+
+        if hasattr(value, 'strip'): value = value.strip()
+
+.. _#6362: http://code.djangoproject.com/ticket/6362
+.. _snippet 656: http://www.djangosnippets.org/snippets/956/

@@ -1,16 +1,6 @@
-.. This file is written in ReStructuredText__
-__ http://en.wikipedia.org/wiki/ReStructuredText
-
-INTRODUCTION
-============
-
-See ABOUT.TXT
-
-
-INSTALLATION
-============
-
-See INSTALL.TXT
+This documentation is being overhauled. For installation instructions and
+copyright and licensing information, see the documentation under the docs
+directory.
 
 
 NOTES FOR DEVELOPERS
