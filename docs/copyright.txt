@@ -1,0 +1,50 @@
+Legal and meta
+==============
+
+Copyright and license
+---------------------
+
+| Copyright (C) 2010-2012 The authors
+
+(The authors can be determined by looking into individual source files
+or examining the history in the version control system.)
+
+Permission is granted to redistribute and/or modify GridCalendar under
+the terms of the GNU Affero General Public License (AGPL) as published
+by the Free Software Foundation; either version 3 of the License, or,
+at your option, any later version.
+
+Permission is granted to redistribute and/or modify the GriCalDroid
+subproject under the terms of the GNU General Public License (GPL) as
+published by the Free Software Foundation; either version 3 of the
+License, or, at your option, any later version.
+
+The software is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose. See the AGPL and
+the GPL for more details.
+
+You should have received a copy of AGPL and of the GPL
+along with this program. If not, see
+http://www.gnu.org/licenses/.
+
+The calendar small icon is
+
+| Copyright (C) Mark James
+
+Permission is granted to reproduce and/or modify the icon under the
+terms of the `Creative Commons Attribution 3.0 License`_. Mark James'
+icons are available at http://www.famfamfam.com/lab/icons/silk/.
+
+.. _Creative Commons Attribution 3.0 License: http://creativecommons.org/licenses/by/3.0/
+
+Contact
+-------
+
+| GridMind Vorgründungsgesellschaft Iván Fernando Villanueva Barrio EU
+| Malmöer Str. 6
+| 10439 Berlin
+| Germany
+| 
+| Tel. +49 3039820596
+| E-Mail: info ät gridmind.org
