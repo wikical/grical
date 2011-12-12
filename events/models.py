@@ -522,8 +522,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def next_coming_date_or_start(self): #{{{3
         """ returns the next most proximate date of an event to today, which
-        can be the start date, the end date, and ongoing date or one of the
-        deadlines; otherwise it returns the start date if all are in the past
+        can be the start date, the end date or one of the deadlines; otherwise
+        it returns the start date if all are in the past
         
         >>> from datetime import timedelta
         >>> today = datetime.date.today()
@@ -559,12 +559,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event2.delete()
         >>> event3.delete()
         """
-        today = datetime.date.today()
-        if self.start == today:
-            return today
-        if self.end and self.end >= today and self.start < today:
-            # today is an ongoing day (or the end) of the event
-            return today
         # creates a list with all dates of the event (self)
         dates = []
         dates.append(self.start)
@@ -574,6 +568,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if deadlines:
             for deadline in deadlines:
                 dates.append(deadline.deadline)
+        today = datetime.date.today()
         # creates a list of deltas of the dates to today
         deltas = map(lambda d: d - today, dates)
         # removes negative deltas from the past
@@ -815,8 +810,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     @transaction.commit_on_success
     def save( self, *args, **kwargs ): #{{{3
-        """ Marks an event as new or not (for :meth:`Event.post_save`); call
-        the real 'save' function after updating :attr:`Event.upcoming`;
+        """ Marks an event as new or not (for :meth:`Event.post_save`), call
+        the real 'save' function after updating :attr:`Event.upcoming`, and
         update the master of a recurrence if appropiate."""
         try:
             Event.objects.get( id = self.id )

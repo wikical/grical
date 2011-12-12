@@ -25,7 +25,6 @@
 """ VIEWS """
 
 # imports {{{1
-from blist import sortedlist
 import calendar
 from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 import datetime
@@ -1333,50 +1332,23 @@ def main( request, status_code=200 ):# {{{1
                     kwargs = {'event_id': str( event.id )} ) )
     else:
         event_form = SimplifiedEventForm()
-    # code for pagination
+    # calculates events to show
+    today = datetime.date.today()
+    elist = Event.objects.filter( upcoming__gte = today )
+    # TODO: a lot of queries are issued for getting the tags of each event. Can
+    # it be optimized?
+    paginator = Paginator( elist, settings.MAX_EVENTS_ON_ROOT_PAGE,
+            allow_empty_first_page = False )
+    # Make sure page request is an int. If not, deliver first page.
     try:
         page = int(request.GET.get('page', '1'))
     except ValueError:
         page = 1
-    # calculates events to show
-    # we create a sorted (by date) list of date-event tuples,
-    # merging two queries:
-    #   1) events happening today or in the future
-    #   2) events with a deadline today or in the future
-    max_events = settings.MAX_EVENTS_ON_ROOT_PAGE
-    # for each query we take max_events/2, so that after merging we will have a
-    # maximum of max_events
-    today = datetime.datetime.today().date()
-    events_start_end = Event.objects.filter(
-            Q( start__gte = today ) | Q( start__lt = today, end__gte = today)
-            ).order_by('start')
-    # we take a slice of them:
-    events_start_end = events_start_end \
-            [ (max_events / 2) * (page-1) : (max_events / 2) * page ]
-    deadline_event = EventDeadline.objects.select_related( depth=1 ).filter(
-            deadline__gte = today ).order_by('deadline')
-    # we take a slice of them:
-    deadline_event = deadline_event \
-            [ (max_events / 2) * (page-1) : (max_events / 2) * page ]
-    date_event_list = sortedlist( key = lambda tut: tut[0] )
-    for event in events_start_end:
-        if event.start < today and event.end > today:
-            # we add ongoing dates
-            date_list = [ today + datetime.timedelta(days=x) for x in
-                    range(0, (event.end - today).days) ]
-            for date in date_list:
-                date_event_list.add( (date, event) )
-        elif event.start >= today:
-            date_event_list.add( (event.start, event) )
-        else:
-            date_event_list.add( (event.end, event) )
-            assert( event.end == today )
-    for deadline in deadline_event:
-        date_event_list.add( (deadline.deadline, deadline.event) )
-
-    # TODO: a lot of queries are issued for getting the tags of each event. Can
-    # it be optimized?
-
+    # If page request (9999) is out of range, deliver last page of results.
+    try:
+        events = paginator.page( page )
+    except ( EmptyPage, InvalidPage ):
+        events = paginator.page( paginator.num_pages )
     about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
     # Generate the response with a custom status code. Rationale: our custom
     # handler404 and 500 returns the main page with a custom error message and
@@ -1386,10 +1358,7 @@ def main( request, status_code=200 ):# {{{1
             {
                 'title': Site.objects.get_current().name,
                 'form': event_form,
-                'date_event_list': date_event_list,
-                'page': page,
-                'next_page': page+1,
-                'previous_page': page-1,
+                'events': events,
                 'about_text': about_text,
             } )
     return HttpResponse(
