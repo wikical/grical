@@ -273,12 +273,8 @@ as apache. This is described in detail in `Deploying Django`_.
 
 .. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
 
-Random information
-==================
-
-The rest of this file contains an unordered collection of all items
-which were previously in the now deleted :file:`INSTALL.TXT` and have
-not yet found their new home (but they are being fixed).
+Miscellaneous
+=============
 
 #. If you have already a database running and have some data or you import data e.g. with
    ``manage.py loadata``, you should create manually a first revision, for this issue the
@@ -307,13 +303,8 @@ not yet found their new home (but they are being fixed).
    #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
       could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
 
-#. It is needed to run a command each day at 00:01 (just after midnight), which will update a field
-   in the database (Event.upcoming) which is needed for sorting the events and finding events in the
-   future. This is necessary for performance and scalability reasons. Add to your cron file::
-
-     cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py updateupcoming
-
-#. To parse events submitted as emails to an imap server, add to a cron file::
+#. To parse events submitted as emails to an imap server, modify the proper section of
+   ``settings_local.py`` and add to a cron file::
 
      cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
