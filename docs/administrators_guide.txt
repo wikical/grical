@@ -310,6 +310,18 @@ Make certain you read the license_ for the database.
 
 .. _license: http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
 
+IMAP
+----
+
+Events can be submitted by sending email to GridCalendar. To activate
+this, GridCalendar must periodically process emails on an IMAP server.
+To activate this functionality, set the :data:`IMAP_SERVER`,
+:data:`IMAP_LOGIN`, :data:`IMAP_PASSWD` and :data:`IMAP_SSL`
+configuration settings and set the following command to be run
+periodically (e.g. with cron)::
+
+     python manage.py imap
+
 Miscellaneous
 =============
 
@@ -322,11 +334,6 @@ Miscellaneous
 
    #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
       could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
-
-#. To parse events submitted as emails to an imap server, modify the proper section of
-   ``settings_local.py`` and add to a cron file::
-
-     cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
 #. For Apache as the webserver
    
