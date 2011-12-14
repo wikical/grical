@@ -287,6 +287,29 @@ start the IRC logger with::
 
    python manage.py irclogger
 
+GeoIP database
+--------------
+
+Except for installing the python ``geoip``, you also need an IP
+database. If you have installed the Debian ``python-geoip`` package,
+it will also have automatically installed its default database,
+``geoip-database``, which relates IPs to countries. If you want to
+locate the users' cities, you need to download another database.
+Debian has an automatic downloader::
+
+   apt-get install geoip-database-contrib
+
+If your operating system does not have such a downloader, download it
+yourself, like this::
+    
+   cd /usr/share/GeoIP
+   wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+   gunzip GeoLiteCity.dat.gz
+
+Make certain you read the license_ for the database.
+
+.. _license: http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
+
 Miscellaneous
 =============
 
@@ -296,15 +319,6 @@ Miscellaneous
 
         ./manage.py createinitialrevisions
         ./manage.py createrevisioninfo
-
-#. If you want to be able to locate cities by the user's IPs, you need to install the data base of
-   Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
-   Using this data improves the front page, search results and the introduction of addresses of events.
-   You can install it following the steps::
-    
-    cd /usr/share/GeoIP
-    wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
-    gzip -d GeoLiteCity.dat.gz
 
    #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
       could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
