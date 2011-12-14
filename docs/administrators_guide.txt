@@ -274,6 +274,19 @@ as apache. This is described in detail in `Deploying Django`_.
 
 .. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
 
+Advanced GridCalendar configuration
+===================================
+
+IRC
+---
+
+GridCalendar can log into an IRC channel. To use the IRC logger,
+configure the :data:`IRC_NETWORK`, :data:`IRC_PORT`, :data:`IRC_NICK`,
+:data:`IRC_NAME` and :data:`IRC_CHANNEL` configuration settings, and
+start the IRC logger with::
+
+   python manage.py irclogger
+
 Miscellaneous
 =============
 
@@ -283,12 +296,6 @@ Miscellaneous
 
         ./manage.py createinitialrevisions
         ./manage.py createrevisioninfo
-
-#. GriCal can log into an IRC channel. To use the IRC logger, install ``python-irclib``.
-   Configure the appropiate parameters in ``settings_local.py``. When GriCal is running, you can start
-   the IRC logger with::
-
-    ./manage.py irclogger
 
 #. If you want to be able to locate cities by the user's IPs, you need to install the data base of
    Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
