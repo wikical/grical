@@ -37,6 +37,7 @@ django-tagging         0.3 [7]
 django-reversion       1.5 [7]
 django-tables          0.2 [7]
 django-celery          2.4 [7]
+django-oembed          0.1 [7]
 Mercurial [11]
 ====================== =========
 
@@ -105,7 +106,7 @@ running it.
            rabbitmq-server
        apt-get install build-essential python-dev   # Required for blist
        pip install blist django django-registration django-tagging \
-           django-reversion django-tables django-celery
+           django-reversion django-tables django-celery django-oembed
 
 Additional prerequisites for development
 ----------------------------------------
