@@ -370,10 +370,6 @@ Miscellaneous
 
 #. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
-#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
-
-        MaxRequestsPerChild 1
-   
 #. Configure the ``django_site`` table. **Important note**: the first entry in this table is
    used when sending emails, e.g. by ``events/management/commands/imap.py``
    which can be used by a cronjob to read and reply emails (see above). As root you can update the table with::
