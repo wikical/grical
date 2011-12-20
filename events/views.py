@@ -41,6 +41,7 @@ import sys
 import vobject
 import unicodedata
 import yaml
+import os.path
 
 from django.conf import settings
 from django.contrib import messages
@@ -100,8 +101,8 @@ def help_page( request ): # {{{1
     >>> Client().get(reverse('help')).status_code
     200
     """
-    usage_text = open( settings.PROJECT_ROOT + '/USAGE.TXT', 'r' ).read()
-    about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    usage_text = open(os.path.join(settings.PROJECT_ROOT, 'USAGE.TXT')).read()
+    about_text = open(os.path.join(settings.PROJECT_ROOT, 'ABOUT.TXT')).read()
     return render_to_response( 'help.html', {
             'title': Site.objects.get_current().name + " - " + _( 'help' ),
             'usage_text': usage_text,
@@ -1678,7 +1679,7 @@ def main( request, status_code=200 ):# {{{1
         page = paginator.page( page_nr )
     except ( EmptyPage, InvalidPage ):
         page = paginator.page( paginator.num_pages )
-    about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    about_text = open(os.path.join(settings.PROJECT_ROOT, 'ABOUT.TXT')).read()
     # We generate the response with a custom status code. Reason: our custom
     # handler404 and handler500 returns the main page with a custom error
     # message and we return also the proper html status code
