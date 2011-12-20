@@ -95,7 +95,7 @@ tested it with RabbitMQ 1.8. Later versions should also work.
 [11] Mercurial is needed in order to download the software, not for
 running it.
 
-.. admonition:: Example: Installing prerequisites on Debian 6.0
+.. admonition:: Example: Installing prerequisites on a virtualenv on Debian 6.0
 
    ::
 
@@ -103,8 +103,11 @@ running it.
            python-psycopg2 python-pip mercurial python-docutils \
            python-dateutil python-geoip python-vobject python-gdal \
            python-tz python-irclib libjs-jquery libjs-jquery-ui \
-           rabbitmq-server
+           rabbitmq-server python-virtualenv
        apt-get install build-essential python-dev   # Required for blist
+       virtualenv $HOME/virtualenv
+       export PATH=$HOME/virtualenv:$PATH
+       pip install pip               # Upgrade of pip required for blist
        pip install blist django django-registration django-tagging \
            django-reversion django-tables django-celery django-oembed
 
@@ -130,7 +133,7 @@ django-webtest
            django-webtest
 
 Getting the software
-====================
+--------------------
 
 Clone the Mercurial repository http://gridcalendar.net:8001/::
 
@@ -142,7 +145,7 @@ a development instance, or :file:`/usr/local` for a production
 instance.
 
 Setting up the database
-=======================
+-----------------------
 
 First, you need to create a spatially enabled database template. You
 can skip this step if you have already done so. Otherwise, you need to
@@ -193,7 +196,7 @@ not be allowed to create more users.
    .. _client authentication: http://www.postgresql.org/docs/8.4/static/client-authentication.html
 
 Setting up GridCalendar
-=======================
+-----------------------
 
 Copy the file :file:`settings_local.py.example` to
 :file:`settings_local.py`, then open the new file in an editor and
@@ -224,7 +227,7 @@ Debian 6.0::
    ln -s /usr/share/javascript/jquery-ui/css/smoothness/images css/
 
 Setting up Celery
-=================
+-----------------
 
 Add a RabbitMQ user and host::
 
@@ -257,7 +260,7 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
 
 
 Running GridCalendar
-====================
+--------------------
 
 Run the following command::
 
@@ -275,10 +278,10 @@ as apache. This is described in detail in `Deploying Django`_.
 .. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
 
 Advanced GridCalendar configuration
-===================================
+-----------------------------------
 
 IRC
----
+^^^
 
 GridCalendar can log into an IRC channel. To use the IRC logger,
 configure the :data:`IRC_NETWORK`, :data:`IRC_PORT`, :data:`IRC_NICK`,
@@ -288,7 +291,7 @@ start the IRC logger with::
    python manage.py irclogger
 
 GeoIP database
---------------
+^^^^^^^^^^^^^^
 
 Except for installing the python ``geoip``, you also need an IP
 database. If you have installed the Debian ``python-geoip`` package,
@@ -311,7 +314,7 @@ Make certain you read the license_ for the database.
 .. _license: http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
 
 IMAP
-----
+^^^^
 
 Events can be submitted by sending email to GridCalendar. To activate
 this, GridCalendar must periodically process emails on an IMAP server.
@@ -323,7 +326,7 @@ periodically (e.g. with cron)::
      python manage.py imap
 
 Miscellaneous
-=============
+-------------
 
 #. If you have already a database running and have some data or you import data e.g. with
    ``manage.py loadata``, you should create manually a first revision, for this issue the
