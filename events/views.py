@@ -29,6 +29,9 @@ import calendar
 from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 import datetime
 from datetime import timedelta
+import os.path
+import unicodedata
+
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from docutils import core
@@ -37,9 +40,7 @@ from docutils.parsers.rst import roles, nodes
 from docutils.parsers.rst.roles import set_classes
 from docutils.writers.html4css1 import Writer
 import vobject
-import unicodedata
 import yaml
-import os.path
 
 from django.conf import settings
 from django.contrib import messages
