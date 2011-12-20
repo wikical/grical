@@ -137,7 +137,7 @@ Getting the software
 
 Clone the Mercurial repository http://gridcalendar.net:8001/::
 
-   hg clone http://dev.grical.org:8001/
+   hg clone http://dev.grical.org:8001/ gridcalendar
 
 This will create a :file:`gridcalendar` directory inside the current
 directory, which should be somewhere inside your home directory for
