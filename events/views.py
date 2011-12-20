@@ -1667,8 +1667,7 @@ def main( request, status_code=200 ):# {{{1
             eventdate_date__gte = today )
     eventdates = add_start( eventdates )
     eventdates = add_end( eventdates )
-    paginator = Paginator( eventdates, settings.MAX_EVENTS_ON_ROOT_PAGE,
-            allow_empty_first_page = False )
+    paginator = Paginator(eventdates, settings.MAX_EVENTS_ON_ROOT_PAGE)
     # Make sure page request is an int. If not, deliver first page.
     try:
         page_nr = int(request.GET.get('page', '1'))
