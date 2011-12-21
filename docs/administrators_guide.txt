@@ -180,10 +180,15 @@ not be allowed to create more users.
 
 .. admonition:: Example: creating a database in GNU
 
+   Note: the commands below create a PostgreSQL user who does not have
+   permission to create databases. This is appropriate for production.
+   However, if you want the user to be able to run the tests, change
+   the :data:`--no-createdb` parameter to :data:`--createdb`.
+
    ::
 
       sudo -u postgres -s
-      createuser --pwprompt gridcalendar_user
+      createuser --pwprompt --no-createdb --no-createrole --no-superuser gridcalendar_user
       createdb --owner gridcalendar_user -T template_postgis gridcalendar_db
       exit
 
