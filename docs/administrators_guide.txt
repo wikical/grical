@@ -97,19 +97,29 @@ running it.
 
 .. admonition:: Example: Installing prerequisites on a virtualenv on Debian 6.0
 
-   ::
+   First, it is best to be certain that the active locale is UTF-8 (we
+   use en_DK.UTF-8, because en_DK has the added advantage that it
+   displays dates in ISO8601 format). When PostgreSQL is installed, it
+   will automatically create a database cluster using the active
+   locale, and it's better if the database templates use UTF-8::
 
-       apt-get install python postgresql postgis postgresql-8.4-postgis \
-           python-psycopg2 python-pip mercurial python-docutils \
-           python-dateutil python-geoip python-vobject python-gdal \
-           python-tz python-irclib libjs-jquery libjs-jquery-ui \
-           rabbitmq-server python-virtualenv
-       apt-get install build-essential python-dev   # Required for blist
-       virtualenv $HOME/virtualenv
-       export PATH=$HOME/virtualenv:$PATH
-       pip install pip               # Upgrade of pip required for blist
-       pip install blist django django-registration django-tagging \
-           django-reversion django-tables django-celery django-oembed
+      dpkg-reconfigure locales
+      export LC_ALL=en_DK.UTF-8
+
+   After setting :data:`LC_ALL` to a proper locale, as above, proceed
+   to install everything::
+
+      apt-get install python postgresql postgis postgresql-8.4-postgis \
+          python-psycopg2 python-pip mercurial python-docutils \
+          python-dateutil python-geoip python-vobject python-gdal \
+          python-tz python-irclib libjs-jquery libjs-jquery-ui \
+          rabbitmq-server python-virtualenv
+      apt-get install build-essential python-dev   # Required for blist
+      virtualenv $HOME/virtualenv
+      export PATH=$HOME/virtualenv:$PATH
+      pip install pip               # Upgrade of pip required for blist
+      pip install blist django django-registration django-tagging \
+          django-reversion django-tables django-celery django-oembed
 
 Additional prerequisites for development
 ----------------------------------------
