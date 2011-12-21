@@ -113,7 +113,7 @@ running it.
       apt-get install python postgresql postgis postgresql-8.4-postgis \
           python-psycopg2 python-pip mercurial python-docutils \
           python-dateutil python-geoip python-vobject python-gdal \
-          python-tz python-irclib python-memcache libjs-jquery \
+          python-tz python-yaml python-irclib python-memcache libjs-jquery \
           libjs-jquery-ui rabbitmq-server python-virtualenv
       apt-get install build-essential python-dev   # Required for blist
       virtualenv $HOME/virtualenv
