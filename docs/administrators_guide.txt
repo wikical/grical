@@ -28,6 +28,7 @@ tz                     2010b [7]
 blist                  1.3 [7]
 yaml                   3.10 [7]
 irclib                 0.4 [8]
+memcache               1.45 [7]
 jQuery Core            1.4 [9]
 jQuery UI              1.8 [9]
 rabbitmq               1.8 [10]
@@ -37,6 +38,7 @@ django-tagging         0.3 [7]
 django-reversion       1.5 [7]
 django-tables          0.2 [7]
 django-celery          2.4 [7]
+django-oembed          0.1 [7]
 Mercurial [11]
 ====================== =========
 
@@ -94,18 +96,31 @@ tested it with RabbitMQ 1.8. Later versions should also work.
 [11] Mercurial is needed in order to download the software, not for
 running it.
 
-.. admonition:: Example: Installing prerequisites on Debian 6.0
+.. admonition:: Example: Installing prerequisites on a virtualenv on Debian 6.0
 
-   ::
+   First, it is best to be certain that the active locale is UTF-8 (we
+   use en_DK.UTF-8, because en_DK has the added advantage that it
+   displays dates in ISO8601 format). When PostgreSQL is installed, it
+   will automatically create a database cluster using the active
+   locale, and it's better if the database templates use UTF-8::
 
-       apt-get install python postgresql postgis postgresql-8.4-postgis \
-           python-psycopg2 python-pip mercurial python-docutils \
-           python-dateutil python-geoip python-vobject python-gdal \
-           python-tz python-irclib libjs-jquery libjs-jquery-ui \
-           rabbitmq-server
-       apt-get install build-essential python-dev   # Required for blist
-       pip install blist django django-registration django-tagging \
-           django-reversion django-tables django-celery
+      dpkg-reconfigure locales
+      export LC_ALL=en_DK.UTF-8
+
+   After setting :data:`LC_ALL` to a proper locale, as above, proceed
+   to install everything::
+
+      apt-get install python postgresql postgis postgresql-8.4-postgis \
+          python-psycopg2 python-pip mercurial python-docutils \
+          python-dateutil python-geoip python-vobject python-gdal \
+          python-tz python-yaml python-irclib python-memcache libjs-jquery \
+          libjs-jquery-ui rabbitmq-server python-virtualenv
+      apt-get install build-essential python-dev   # Required for blist
+      virtualenv $HOME/virtualenv
+      export PATH=$HOME/virtualenv:$PATH
+      pip install pip               # Upgrade of pip required for blist
+      pip install blist django django-registration django-tagging \
+          django-reversion django-tables django-celery django-oembed
 
 Additional prerequisites for development
 ----------------------------------------
@@ -129,11 +144,11 @@ django-webtest
            django-webtest
 
 Getting the software
-====================
+--------------------
 
 Clone the Mercurial repository http://gridcalendar.net:8001/::
 
-   hg clone http://dev.grical.org:8001/
+   hg clone http://dev.grical.org:8001/ gridcalendar
 
 This will create a :file:`gridcalendar` directory inside the current
 directory, which should be somewhere inside your home directory for
@@ -141,7 +156,7 @@ a development instance, or :file:`/usr/local` for a production
 instance.
 
 Setting up the database
-=======================
+-----------------------
 
 First, you need to create a spatially enabled database template. You
 can skip this step if you have already done so. Otherwise, you need to
@@ -161,15 +176,20 @@ consult your PostgreSQL and PostGIS documentation.
 Then you need to create a database user and a database (we use
 ``gridcalendar_user`` and ``gridcalendar_db`` in the examples below).
 GridCalendar will be connecting to the database as that user. The user
-should not be a super user, not be allowed to create databases (unless
-you intend to run the tests), and not be allowed to create more users.
+should not be a super user, not be allowed to create databases, and
+not be allowed to create more users.
 
 .. admonition:: Example: creating a database in GNU
+
+   Note: the commands below create a PostgreSQL user who does not have
+   permission to create databases. This is appropriate for production.
+   However, if you want the user to be able to run the tests, change
+   the :data:`--no-createdb` parameter to :data:`--createdb`.
 
    ::
 
       sudo -u postgres -s
-      createuser --pwprompt gridcalendar_user
+      createuser --pwprompt --no-createdb --no-createrole --no-superuser gridcalendar_user
       createdb --owner gridcalendar_user -T template_postgis gridcalendar_db
       exit
 
@@ -192,7 +212,7 @@ you intend to run the tests), and not be allowed to create more users.
    .. _client authentication: http://www.postgresql.org/docs/8.4/static/client-authentication.html
 
 Setting up GridCalendar
-=======================
+-----------------------
 
 Copy the file :file:`settings_local.py.example` to
 :file:`settings_local.py`, then open the new file in an editor and
@@ -223,7 +243,7 @@ Debian 6.0::
    ln -s /usr/share/javascript/jquery-ui/css/smoothness/images css/
 
 Setting up Celery
-=================
+-----------------
 
 Add a RabbitMQ user and host::
 
@@ -256,7 +276,7 @@ __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
 
 
 Running GridCalendar
-====================
+--------------------
 
 Run the following command::
 
@@ -273,8 +293,70 @@ as Apache_. This is described in detail in `Deploying Django`_.
 
 .. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
 
+Advanced GridCalendar configuration
+-----------------------------------
+
+IRC
+^^^
+
+GridCalendar can log into an IRC channel. To use the IRC logger,
+configure the :data:`IRC_NETWORK`, :data:`IRC_PORT`, :data:`IRC_NICK`,
+:data:`IRC_NAME` and :data:`IRC_CHANNEL` configuration settings, and
+start the IRC logger with::
+
+   python manage.py irclogger
+
+GeoIP database
+^^^^^^^^^^^^^^
+
+Except for installing the python ``geoip``, you also need an IP
+database. If you have installed the Debian ``python-geoip`` package,
+it will also have automatically installed its default database,
+``geoip-database``, which relates IPs to countries. If you want to
+locate the users' cities, you need to download another database.
+Debian has an automatic downloader::
+
+   apt-get install geoip-database-contrib
+
+If your operating system does not have such a downloader, download it
+yourself, like this::
+    
+   cd /usr/share/GeoIP
+   wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+   gunzip GeoLiteCity.dat.gz
+
+Make certain you read the license_ for the database.
+
+.. _license: http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
+
+IMAP
+^^^^
+
+Events can be submitted by sending email to GridCalendar. To activate
+this, GridCalendar must periodically process emails on an IMAP server.
+To activate this functionality, set the :data:`IMAP_SERVER`,
+:data:`IMAP_LOGIN`, :data:`IMAP_PASSWD` and :data:`IMAP_SSL`
+configuration settings and set the following command to be run
+periodically (e.g. with cron)::
+
+     python manage.py imap
+
+memcached
+^^^^^^^^^
+
+memcached_ is recommended on production environments; GridCalendar
+will automatically use it for performance. For example, in Debian
+6.0::
+
+  apt-get install memcached
+
+then edit :file:`/etc/memcached.conf` and restart memcached.
+
+.. _memcached: http://memcached.org/
+
+
 Miscellaneous
-=============
+-------------
 
 #. If you have already a database running and have some data or you import data e.g. with
    ``manage.py loadata``, you should create manually a first revision, for this issue the
@@ -283,29 +365,8 @@ Miscellaneous
         ./manage.py createinitialrevisions
         ./manage.py createrevisioninfo
 
-#. GriCal can log into an IRC channel. To use the IRC logger, install ``python-irclib``.
-   Configure the appropiate parameters in ``settings_local.py``. When GriCal is running, you can start
-   the IRC logger with::
-
-    ./manage.py irclogger
-
-#. If you want to be able to locate cities by the user's IPs, you need to install the data base of
-   Maxmind.com which askes you to mention it. Read http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
-   Using this data improves the front page, search results and the introduction of addresses of events.
-   You can install it following the steps::
-    
-    cd /usr/share/GeoIP
-    wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
-    gzip -d GeoLiteCity.dat.gz
-
-   #. You can run a web test server with ``python manage.py testserver``
 
    #. To run the tests, issue ``python manage.py test --failfast --settings=gridcalendar.settings_for_tests events``.
-
-#. To parse events submitted as emails to an imap server, modify the proper section of
-   ``settings_local.py`` and add to a cron file::
-
-     cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
 #. For Apache_ as the webserver
    
@@ -388,20 +449,6 @@ containing the flags. Example::
 
 .. _#6362: http://code.djangoproject.com/ticket/6362
 .. _snippet 656: http://www.djangosnippets.org/snippets/956/
-
-#. If you want to use memcached_ (not necessary but highly recommended as GriCal is designed to use it for performance):
-
-    #. Install the needed software::
-
-        aptitude install memcached
-        pip install python-memcached
-
-    #. Configure memcached_::
-
-        vim /etc/memcached.conf
-        /etc/init.d/memcached restart
-
-.. _memcached: http://memcached.org/
 
 #. You need to cleanup the sessions table from time to time (see
    `clearing the session table in the Django documentation`__).
