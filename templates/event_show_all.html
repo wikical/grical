@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load event_tags %} 
+{% load urlsearch %}
+{% load comments %}
+{% load cache %}
+{% load oembed_tags %}
+
+{% block container %}
+<div class="event_full">
+
+    {% cache 2592000 event_show_all user.is_authenticated event.id event.version %}
+    {% with start=event.startdate end=event.enddate %}
+
+        <div class="item-nr">{{ event.id }}</div>
+        <div class="header">
+            <div id="title">
+                <span class="ical_logo">
+                  <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+                </span>
+                {% if event.recurring %}
+                    <span class="ical_logo">
+                        <a href="{% url event_show_recurrences_ical event.id %}">
+                            <img alt="ICAL recurrences" src="{{ MEDIA_URL }}icalrecurrencesicon.png" /></a>
+                    </span>
+                {% endif %}
+                {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
+            </div>
+            <div class="options">
+                <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+                &nbsp;|&nbsp;
+                <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit&nbsp;as&nbsp;text" %}</span></a>
+                &nbsp;|&nbsp;
+                <a href="{% url event_history event.id %}">{% trans "history" %}</a>
+                &nbsp;|&nbsp;
+                <a href="{% url event_new_copyraw event.id %}">{% trans "copy&nbsp;as&nbsp;text" %}</a>
+                {% if user.is_authenticated %}
+                    &nbsp;|&nbsp;
+                    <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+                    &nbsp;|&nbsp;
+                    <a href="{% url event_edit_recurrences event.id %}">{% trans "recurrences" %}</a>
+                    &nbsp;|&nbsp;
+                    <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="item">
+            <!--
+            <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+            &nbsp;|&nbsp;
+            -->
+            <img class="icon" alt="ICAL" src="{{ MEDIA_URL }}dates-icon.png" />
+            <div class="data">
+                <span class="date"><a href='{% urlsearch query=start|date:"Y-m-d" %}'>{{ start }}</a></span>
+                {% if event.starttime %}
+                    <span class="time">
+                        {{ event.starttime|time }}
+                    </span>{% if event.endtime %}
+                    {% if not end or start == end %}
+                        -<span class="time">{{ event.endtime|time }}</span>{% endif %}{% endif %}</span>
+                    {% endif %}
+                {% if end and not start == end %}
+                    : <span class="date"><a href='{% urlsearch query=end|date:"Y-m-d" %}'>{{ end }}</a></span>
+                    {% if event.endtime %}
+                        <span class="time">
+                            {{ event.endtime|time }}
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        {% if event.address or event.city or event.country or event.coordinates %}
+            <div class="item">
+                <img class="icon" src="{{ MEDIA_URL }}venue-icon.png" alt="{% trans 'where' %}" />
+                <div class="data">
+                    {% if event.address %}
+                        {{ event.address }}
+                        {% if event.coordinates and event.exact %}
+                            &nbsp; &#8212; &nbsp;
+                        {% endif %}
+                    {% else %}
+                        {# we only display city and/or country if no address present, because the address should contain the city and the country #}
+                        {% if event.city %}
+                            <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
+                            {% if event.country %}
+                                &nbsp;, &nbsp;
+                            {% endif %}
+                        {% endif %}
+                        {% if event.country %}
+                            <span class="field_country">
+                                <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                    {% if event.country %}
+                        <a href='{% urlsearch country=event.country %}'>
+                            <img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" />
+                        </a>
+                    {% endif %}
+                    {% if event.coordinates and event.exact %}
+                        {{ event.coordinates.y }}, {{ event.coordinates.x }}
+                        (&nbsp;<a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,&nbsp;<a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a>&nbsp;)
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if event.get_tags %}
+            <div class="item">
+                <img class="icon" src="{{ MEDIA_URL }}tags-icon.png" alt="{% trans 'tags' %}" />
+                <div class="tags data">
+                    {% for tag in event.get_tags %}
+                        <a href="{% urlsearch tag=tag %}">{{ tag }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if event.urls.all %}
+            <div class="item">
+                <img class="icon" src="{{ MEDIA_URL }}links-icon.png" alt="{% trans 'urls' %}" />
+                <div class="data">
+                    <ul class="urls">
+                        {% for url in event.urls.all %}
+                            <li>
+                                <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
+                                <br />
+                                {% oembed 320x240 %} {{ url.url }} {% endoembed %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if recurrences %}{# is part of a serie as intermediate instance OR is master of a serie #}
+            <h3>{% trans "Recurring dates" %}</h3>
+            <ul>
+                {% for event in recurrences %}
+                    <li>{% include "event_show_small_start.html" %}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% with dates=event.custom_dates %}
+            {% if dates %}
+                <div class="item">
+                    <img class="icon" src="{{ MEDIA_URL }}deadlines-icon.png" alt="{% trans 'urls' %}" />
+                    <div class="data">
+                        <table class='deadlines'>
+                            {% for eventdate in dates %}
+                                <tr>
+                                    <td>
+                                        <span class="deadlines">
+                                            <a href='{% urlsearch query=eventdate.eventdate_date|date:"Y-m-d" %}'>{{ eventdate.eventdate_date }}</a>
+                                        </span>
+                                        </td>
+                                    <td>{{ eventdate.eventdate_name|escape }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+                
+        {% if event.sessions.all %}
+            <table>
+                {% for session in event.sessions.all %}
+                    <tr>
+                        <td><a href='{% urlsearch query=session.session_date|date:"Y-m-d" %}'>{{ session.session_date }}</a></td>
+                        <td>{{ session.session_starttime|time:"H:i" }} - {{ session.session_endtime|time:"H:i" }}</td>
+                        <td>{{ session.session_name|escape }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+
+        {% if event.description %}
+            <fieldset>
+            <legend>{% trans "Description" %}</legend>
+                {% if rst2html %}
+                    {{ rst2html|safe }}
+                {% else %}
+                    {{ event.description|escape|linebreaksbr|urlize }}
+                {% endif %}
+            </fieldset>
+        {% endif %}
+
+        {% if event.coordinates and event.exact %}
+            <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
+            <div id="map" class="smallmap"></div>
+            <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+            <!-- <script type="text/javascript" src="{{ MEDIA_URL }}js/OpenLayers.js"></script> -->
+            <script defer="defer" type="text/javascript">
+            //<![CDATA[
+
+                function marker( lon, lat, image ) {
+                    return new OpenLayers.Marker(
+                        new OpenLayers.LonLat( lon, lat ).transform(
+                            new OpenLayers.Projection( "EPSG:4326" ),
+                            map.getProjectionObject()
+                        ),
+                        new OpenLayers.Icon( image, new OpenLayers.Size( 32, 32 ), new OpenLayers.Pixel( -16, -16 ) )
+                    );
+                }
+                map = new OpenLayers.Map( "map", {
+                        controls:[
+                            new OpenLayers.Control.Navigation(),
+                            new OpenLayers.Control.PanZoomBar(),
+                            new OpenLayers.Control.LayerSwitcher(),
+                            new OpenLayers.Control.Attribution()],
+                        projection: new OpenLayers.Projection( "EPSG:900913" ),
+                        displayProjection: new OpenLayers.Projection( "EPSG:4326" )
+                } );
+                map.addLayer( new OpenLayers.Layer.OSM() );
+                var pois = new OpenLayers.Layer.Markers( "{% trans "Marker" %}" );
+                pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }}, "{{ MEDIA_URL }}marker_red.png" ) );
+                map.addLayer( pois );
+                mapArea = pois.getDataExtent().toArray();
+                // map.zoomToMaxExtent();
+                map.setCenter (
+                    new OpenLayers.LonLat( ( mapArea[0] + mapArea[2]) /2, ( mapArea[1] + mapArea[3] ) /2 ),
+                    map.getZoomForExtent( pois.getDataExtent(), true ) -1
+                );
+
+            //]]>
+            </script>
+        {% endif %}
+
+    {% endwith %}
+    {% endcache %}
+
+    {# comments #} {# TODO: make comment form available for non-logged-in users but with a captcha #}
+    {% get_comment_count for event as comment_count %}
+    <h2>{% trans "Comments" %}</h2>
+    {% if comment_count > 0 %}
+        {% render_comment_list for event %}
+    {% else %}
+        {% if not user.is_authenticated %}
+            <p>{% trans "There are so far no comments about this event." %}</p>
+        {% endif %}
+    {% endif %}
+    {% if user.is_authenticated %}
+        {% render_comment_form for event %}
+    {% else %}
+        <p><a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>
+        {# TODO: redirect user to the position to add a comment to this event after logging in #}
+    {% endif %}
+
+</div>
+{% endblock %}

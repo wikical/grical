@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load event_tags %} 
+{% load cache %}
+
+{% block container %}
+
+{% cache 2592000 event_history event.id event.version user_authenticated %}
+
+    <div class="event_history">
+        <div class="options">
+            <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+            &nbsp;|&nbsp;
+            <a href="{% url event_show_all event.id %}">{% trans "show" %}</a>
+            &nbsp;|&nbsp;
+            <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+            &nbsp;|&nbsp;
+            <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+            &nbsp;|&nbsp;
+            <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+        </div>
+
+        <h1>{% trans "History of: " %} {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
+
+        <h2>{% trans "Current version" %} ({{ event.modification_time.isoformat }})</h2>
+        <pre>
+    {{ event.as_text|escape }}
+        </pre>
+
+        {% for revision, diff in revisions_diffs %}
+            {% if diff %}
+                <h2> {{ revision.date_created.isoformat }}</h2>
+                {% if USER.is_authenticated %}
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="{% url event_revert revision.id event.id %}">
+                        {% trans "Revert event to the left version" %}</a></p>
+                {% endif %}
+                {{ diff|safe }} {# FIXME: when creating the html diff ensure escaping #}
+            {% endif %}
+        {% empty %}
+            <p>{% trans "This event has no history so far" %}</p>
+        {% endfor %}
+    </div>
+
+{% endcache %}
+
+{% endblock %}

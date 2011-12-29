@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<h1>{% trans "Recurrences of:" %} {{ event }}</h1>
+<form action="" method="post">{% csrf_token %}
+    {% for month in months %}
+        {{ month }}
+    {% endfor %}
+    <div><input type="submit" value="{% trans "Save" %}" /></div>
+</form>
+
+{% endblock %}

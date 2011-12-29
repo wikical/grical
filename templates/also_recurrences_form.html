@@ -1,0 +1,7 @@
+{% load i18n %}
+{% if also_recurrences_form %}
+    <div id="also_recurrences">
+        {% trans "Warning! This is a recurring event. If not only this event is selected below, the other selected events' data will be overwritten except start date, end date, deadlines and sessions." %}
+        {{ also_recurrences_form.as_p }}
+    </div>
+{% endif %}
