@@ -75,4 +75,4 @@ Contact
 | Tel. +49 3039820596
 | E-Mail: info ät gridmind.org
 
-.. MIT license: https://en.wikipedia.org/wiki/Mit_license
+.. _MIT license: https://en.wikipedia.org/wiki/Mit_license
