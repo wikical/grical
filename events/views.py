@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
@@ -81,8 +81,7 @@ from gridcalendar.events.models import (
     Event, EventUrl, EventSession, EventDate, Filter, Group, Recurrence,
     Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo,
     add_start, add_end, add_upcoming )
-from gridcalendar.events.utils import ( search_address, search_timezone,
-        html_diff )
+from gridcalendar.events.utils import html_diff
 from gridcalendar.events.tables import EventTable
 from gridcalendar.events.feeds import SearchEventsFeed
 from gridcalendar.events.search import search_events, GeoLookupError
@@ -321,6 +320,7 @@ def event_edit( request, event_id = None ): # {{{1
     200
     >>> Client().get(reverse('event_new')).status_code
     200
+    >>> e.delete()
     """
     # FIXME: create more tests above for e.g. trying to save a new event
     # without a URL; and deleting some urls, deadlines and sessions
@@ -336,7 +336,8 @@ def event_edit( request, event_id = None ): # {{{1
         event_recurring = True
     else:
         event_recurring = False
-    # callback
+    # callback to modify a field in the automated generated forms by
+    # inlineformset_factory
     def replace_date_with_date_extended( field, **kwargs):
         if not isinstance( field, DateField ):
             return field.formfield( **kwargs )
@@ -344,7 +345,7 @@ def event_edit( request, event_id = None ): # {{{1
     # TODO: when removing all fields of a row the expected behaviour is to
     # delete the entry, but the inlineformset shows an error telling that the
     # fields are required, change it. Notice that the user can delete with the
-    # delete check box, but deleting all fields should also work.
+    # delete check box, but deleting all fields data should also work.
     event_urls_factory = inlineformset_factory( 
             Event, EventUrl, extra = 4, can_delete = can_delete, )
     event_deadlines_factory = inlineformset_factory( 
@@ -386,8 +387,6 @@ def event_edit( request, event_id = None ): # {{{1
                 # data like a URL
                 # FIXME: don't allow to save an event with enddate != startdate
                 # and recurrences
-                if not event_form.cleaned_data.get( 'coordinates', False ):
-                    event.coordinates = None
                 # TODO: do nothing if nothing has changed
                 with revision:
                     if request.user.is_authenticated():
@@ -396,7 +395,7 @@ def event_edit( request, event_id = None ): # {{{1
                         event.version = event.version + 1
                     else:
                         event.version = 1
-                    event.save()
+                    event.save(ip = request.META.get('REMOTE_ADDR', None))
                     startdate = event_form.cleaned_data['startdate']
                     enddate = event_form.cleaned_data.get( 'enddate', False )
                     Event.save_startdate_enddate( event, startdate, enddate )
@@ -777,6 +776,7 @@ def event_show_all( request, event_id ): # {{{1
     >>> Client().get(reverse('event_show_all',
     ...         kwargs={'event_id': e.id,})).status_code
     200
+    >>> e.delete()
     """
     if isinstance(event_id, str) or isinstance(event_id, unicode):
         event_id = int(event_id)
@@ -793,8 +793,10 @@ def event_show_all( request, event_id ): # {{{1
     title = ""
     if event.city:
         title += event.city
+        if event.country:
+            title += ', '
     if event.country:
-        title += " (" + event.country + ")"
+        title += unicode( event.countryname )
     # we put it in the cache in context_processors.py:
     current_site = cache.get( 'SITE_NAME', Site.objects.get_current().name )
     title += " - " + event.title + " | " + current_site
@@ -804,7 +806,7 @@ def event_show_all( request, event_id ): # {{{1
     if rec:
         # doesn't work. TODO: why? maybe because using a relation ?
         #recurrences = Event.objects.defer('description', 'creation_time',
-        #        'modification_time', 'starttime', 'endtime', 'tags', 'postcode',
+        #        'modification_time', 'starttime', 'endtime', 'tags',
         #        'address', 'coordinates')
         #recurrences = recurrences.filter( _recurring__master = rec.master)
         recurrences = Event.objects.filter( _recurring__master = rec.master)
@@ -881,6 +883,7 @@ def event_show_raw( request, event_id ): # {{{1
     >>> Client().get(reverse('event_show_raw',
     ...         kwargs={'event_id': e.id,})).status_code
     200
+    >>> e.delete()
     """
     try:
         event = Event.objects.get( pk = event_id )
@@ -1526,6 +1529,7 @@ def list_filters_my( request ): # {{{1
 #    >>> client.get(reverse('list_events_of_user',
 #    ...         kwargs={'username': u.username,})).status_code
 #    200
+#    >>> e.delete()
 #    """
 #    if ( ( not request.user.is_authenticated() ) or
 #            ( request.user.id is None ) ):
@@ -1573,6 +1577,7 @@ def list_events_my( request ): # {{{1
     True
     >>> client.get(reverse('list_events_my')).status_code
     200
+    >>> e.delete()
     """
     events = get_list_or_404( Event, user = request.user )
     return render_to_response( 'list_events_my.html',
@@ -1602,38 +1607,14 @@ def main( request, status_code=200 ):# {{{1
                     event = Event(
                             user_id = request.user.id,
                             title = cleaned_data['title'],
-                            tags = cleaned_data['tags'], )
+                            tags = cleaned_data['tags'],
+                            address = cleaned_data['where'], )
                     if cleaned_data['when'].has_key('starttime'):
                         event.starttime = cleaned_data['when']['starttime']
                     if cleaned_data['when'].has_key('endtime'):
                         event.endtime = cleaned_data['when']['endtime']
-                    addresses = search_address( cleaned_data['where'] )
-                    if addresses and len( addresses ) == 1:
-                        address = addresses.values()[0]
-                        event.address = addresses.keys()[0]
-                        if address.has_key( 'longitude' ) and \
-                                address.has_key( 'latitude' ):
-                            event.coordinates = Point(
-                                    float( address['longitude'] ),
-                                    float( address['latitude'] ) )
-                        if address.has_key( 'country' ):
-                            event.country = address['country']
-                        if address.has_key( 'postcode' ):
-                            event.postcode = address['postcode']
-                        if address.has_key( 'city' ):
-                            event.city = address['city']
-                        timezone = search_timezone(
-                                address['latitude'],
-                                address['longitude'] )
-                        if timezone:
-                            event.timezone = timezone
-                    else:
-                        #FIXME: deal with more than one address, none or general
-                        # coordinates like e.g. pointing to the center of
-                        # city/country
-                        event.address = cleaned_data['where']
                     with revision:
-                        event.save()
+                        event.save(ip = request.META.get('REMOTE_ADDR', None))
                         event.startdate = cleaned_data['when']['startdate']
                         if cleaned_data['when'].has_key('enddate'):
                             event.enddate = cleaned_data['when']['enddate']
@@ -1663,12 +1644,11 @@ def main( request, status_code=200 ):# {{{1
     eventdates = EventDate.objects.select_related( depth=1 ).defer(
             'event__description', 'event__coordinates',
             'event__creation_time', 'event__modification_time',
-            'event__postcode', 'event__address').filter(
+            'event__address').filter(
             eventdate_date__gte = today )
     eventdates = add_start( eventdates )
     eventdates = add_end( eventdates )
-    paginator = Paginator( eventdates, settings.MAX_EVENTS_ON_ROOT_PAGE,
-            allow_empty_first_page = False )
+    paginator = Paginator(eventdates, settings.MAX_EVENTS_ON_ROOT_PAGE)
     # Make sure page request is an int. If not, deliver first page.
     try:
         page_nr = int(request.GET.get('page', '1'))
@@ -1914,6 +1894,7 @@ def group_view(request, group_id): # {{{2
     200
     >>> 'event in group' in response.content
     True
+    >>> e.delete()
     """
     group = get_object_or_404( Group, id = group_id )
     if ( request.user.is_authenticated() and 
@@ -2011,6 +1992,7 @@ def ICalForSearch( request, query ): # {{{2
     >>> Client().get(reverse('search_ical',
     ...         kwargs={'query': 'berlin',})).status_code
     200
+    >>> e.delete()
     """
     # TODO: add test checking that an event with two dates is not a duplicate
     try:
@@ -2042,6 +2024,7 @@ def ICalForEvent( request, event_id ): # {{{2
     >>> Client().get( reverse( 'event_show_ical',
     ...         kwargs={'event_id': e.id,})).status_code
     200
+    >>> e.delete()
     """
     event = get_object_or_404( Event, id = event_id )
     elist = [event,]
@@ -2068,6 +2051,7 @@ def ICalForGroup( request, group_id ): # {{{2
     >>> client.get(reverse('list_events_group_ical',
     ...         kwargs={'group_id': g.id,})).status_code
     200
+    >>> e.delete()
     """
     group = get_object_or_404(Group, pk = group_id)
     today = datetime.date.today()
@@ -2113,6 +2097,7 @@ def _ical_http_response_from_event_list( elist, filename, calname = None ):#{{{2
 #     ...         start = datetime.date.today() )
 #     >>> Client().get(reverse('all_events_text')).status_code
 #     200
+#     >>> e.delete()
 #     """
 #     # TODO: stream it, see https://code.djangoproject.com/ticket/7581
 #     elist = Event.objects.all()

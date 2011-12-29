@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
@@ -66,7 +66,7 @@ MAX_EVENTS_ON_ROOT_PAGE = 20
 PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
 
 # =============================================================================
-# GeoIP and GEONAME settings {{{1
+# GeoIP, GEONAME and django-countries settings {{{1
 # =============================================================================
 # see # http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
 
@@ -445,24 +445,6 @@ SYNONYMS = (
     ( u'^', u'acronym' ),
     ( u'ac', u'acronym' ),
     ( u'acro', u'acronym' ),
-    ( u'country', u'country' ),         # country \
-    ( u'\\', u'country' ),
-    ( u'co', u'country' ),
-    ( u'coun', u'country' ),
-    ( u'nation', u'country' ),
-    ( u'nati', u'country' ),
-    ( u'na', u'country' ),
-    ( u'city', u'city' ),               # city /
-    ( u'/', u'city' ),
-    ( u'ci', u'city' ),
-    ( u'town', u'city' ),
-    ( u'to', u'city' ),
-    ( u'postcode', u'postcode' ),       # postcode .
-    ( u'.', u'postcode' ),
-    ( u'po', u'postcode' ),
-    ( u'zip', u'postcode' ),
-    ( u'zi', u'postcode' ),
-    ( u'code', u'postcode' ),
     ( u'address', u'address' ),         # address ,
     ( u',', u'address' ),
     ( u'ad', u'address' ),

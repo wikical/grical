@@ -134,10 +134,7 @@ You can optionally include more data in the submission. Example::
     urls:
         code    http://example.com
         web    http://example.com
-    address: Gleimstr. 6
-    postcode: 10439
-    city: Berlin
-    country: DE
+    address: Gleimstr. 6, Berlin 10439, DE
     coordinates: 52.55247, 13.40364
     deadlines:
         2009-11-01    visitor tickets

@@ -149,6 +149,10 @@ general forms and for event_form */
     clear: both;
 }
 
+.flag {
+    vertical-align: baseline ;
+}
+
 .label {
     float: left;
     margin-right: 1em;
@@ -512,12 +516,14 @@ legend {
 }
 
 /* complete event form */
+#event_form #title {
+    margin: 0.5em;
+}
 #event_form input#id_title {
     font-size: 150%;
     font-weight: bold;
-    margin: 0.5em 1em 1em 0.5em;
     padding: 0.2em;
-    width: 95%;
+    width: 98%;
     font-style: italic;
 }
 #event_form #id_description {
@@ -756,7 +762,7 @@ legend {
 .map_legend li {
     margin: 0.5em;
 }
-.map_legend img {
+.map_legend .marker {
     bottom: -4px;
     position: relative;
     vertical-align: text-bottom;

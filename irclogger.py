@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 
 # GPL {{{1

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
@@ -39,7 +39,7 @@ from gridcalendar.events.models import Event, EventDate
 from gridcalendar.events.utils import search_name
 
 # regexes {{{1
-DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d\d)-(\d\d)\b', re.UNICODE ) #{{{2
+DATE_REGEX = re.compile( r'\b(\d\d\d\d)-(\d?\d)-(\d?\d)\b', re.UNICODE ) #{{{2
 COORDINATES_REGEX = re.compile( #{{{2
         r'\s*([+-]?\s*\d+(?:\.\d*)?)\s*[,;:+| ]\s*([+-]?\s*\d+(?:\.\d*)?)' )
 EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', re.UNICODE) #{{{2
@@ -94,8 +94,9 @@ class GeoLookupError( Exception ): # {{{1
 def location_restriction( queryset, query ): #{{{1
     """ returns a tuple (a queryset an a string ) restricting ``queryset`` with
     the locations of ``query`` and removing them from ``query`` """
+    # TODO: also accept continent codes: AF,AS,EU,NA,OC,SA,AN
     for loc in LOCATION_REGEX.findall(query):
-        if loc[11]:
+        if loc[11]: # name or name,name
             # name given, which can have a city, a comma and a country
             city, country = CITY_COUNTRY_RE.findall( loc[11] )[0]
             if not country:
@@ -110,24 +111,45 @@ def location_restriction( queryset, query ): #{{{1
                         Q( event__city__iexact = city ) | Q(
                             event__country__iexact = city ) )
             else:
-                if queryset.model == Event:
-                    queryset = queryset.filter(
-                       city__iexact = city, country__iexact = country )
+                result = search_name( city + ', ' + country )
+                if result:
+                    coordinates = getattr(result, 'coordinates', None)
                 else:
-                    queryset = queryset.filter(
-                       event__city__iexact = city,
-                       event__country__iexact = country )
-        elif loc[8]:
-            point = search_name( loc[8] )
-            if not point:
+                    coordinates = None
+                if queryset.model == Event:
+                    if coordinates:
+                        # example: ...coordinates__distance_lte=(pnt, D(km=7)))
+                        distance = { settings.DISTANCE_UNIT_DEFAULT:
+                                settings.CITY_RADIUS, }
+                        queryset = queryset.filter(
+                           Q( city__iexact=city, country__iexact=country ) |
+                           Q( coordinates__distance_lte =
+                            ( coordinates, D( **distance ) ) ) )
+                    else:
+                        queryset = queryset.filter(
+                           city__iexact = city, country__iexact = country )
+                else:
+                    if coordinates:
+                        queryset = queryset.filter(
+                           Q( event__city__iexact = city,
+                               event__country__iexact = country ) |
+                           Q( event__coordinates__distance_lte =
+                                ( coordinates, D( **distance ) ) ) )
+                    else:
+                        queryset = queryset.filter(
+                           event__city__iexact = city,
+                           event__country__iexact = country )
+        elif loc[8]: # name + distance + optional unit
+            result = search_name( loc[8] )
+            if not result:
                 raise GeoLookupError()
+            point = result['coordinates']
             if loc[10]:
                 distance = {loc[10]: loc[9],}
             else:
                 distance = { settings.DISTANCE_UNIT_DEFAULT: loc[9],}
             # example: ...filter(coordinates__distance_lte=(pnt, D(km=7)))
             if queryset.model == Event:
-                #assert False, unicode(point) + " " + unicode(distance)
                 queryset = queryset.filter(
                         coordinates__distance_lte =
                             ( point, D( **distance ) ) )
@@ -144,10 +166,12 @@ def location_restriction( queryset, query ): #{{{1
                 distance = { settings.DISTANCE_UNIT_DEFAULT: loc[6],}
             if queryset.model == Event:
                 queryset = queryset.filter(
+                        exact = True,
                         coordinates__distance_lte =
                             ( point, D( **distance ) ) )
             else:
                 queryset = queryset.filter(
+                        event__exact = True,
                         event__coordinates__distance_lte =
                             ( point, D( **distance ) ) )
         elif loc[0]:
@@ -161,9 +185,11 @@ def location_restriction( queryset, query ): #{{{1
                 (lng2,lat2), (lng1,lat2), (lng1, lat1)) )
             if queryset.model == Event:
                 queryset = queryset.filter(
+                        exact = True,
                         coordinates__within = rectangle )
             else:
                 queryset = queryset.filter(
+                        event__exact = True,
                         event__coordinates__within = rectangle )
         else:
             pass
@@ -318,7 +344,7 @@ def search_events( query, related = True, model = Event ): #{{{1
             queryset = EventDate.objects.select_related( depth=1 ).defer(
                 'event__description', 'event__coordinates',
                 'event__creation_time', 'event__modification_time',
-                'event__postcode', 'event__address')
+                'event__address')
         else:
             queryset = Event.objects.all()
         # single events

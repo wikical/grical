@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 # gpl {{{1
 #############################################################################
@@ -29,12 +29,13 @@ from difflib import HtmlDiff, unified_diff
 import datetime
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
+import httplib
+import json
 import re
 import sys
 import time
 import urllib
 import urllib2
-import httplib
 from xml.etree.ElementTree import fromstring
 from xml.parsers.expat import ExpatError
 
@@ -48,7 +49,7 @@ from django.core.mail import mail_admins
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
-from settings import GEONAMES_USERNAME, GEONAMES_URL
+from settings import GEONAMES_USERNAME, GEONAMES_URL, ADMINS
 from gridcalendar.events.tasks import save_in_caches
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
@@ -60,13 +61,117 @@ from gridcalendar.events.tasks import save_in_caches
 # TODO: count and avoid transgressions of the geonames terms of use, which
 # seems to be 2000 credits hourly
 
+def search_coordinates( lat, lon ): # {{{1
+    # doc {{{2
+    """ returns a dictionary with the keys 'address', 'city' and 'country'
+    using the nominatim API.
+    
+    Example of a query::
+
+        http://nominatim.openstreetmap.org/reverse?format=json&lat=52.5487429714954&lon=-1.81602098644987&zoom=18&addressdetails=1
+
+    Result::
+
+        {u'address':{
+                  u'city': u'City of Birmingham',
+                  u'country': u'United Kingdom',
+                  u'country_code': u'gb',
+                  u'county': u'West Midlands',
+                  u'house_number': u'137',
+                  u'postcode': u'B72 1LH',
+                  u'road': u'Pilkington Avenue',
+                  u'state': u'England',
+                  u'state_district': u'West Midlands',
+                  u'suburb': u'Castle Vale'},
+         u'display_name': u'137, Pilkington Avenue, Castle Vale, City of Birmingham, West Midlands, England, B72 1LH, United Kingdom',
+         u'lat': u'52.5487800131654',
+         u'licence': u'Data Copyright OpenStreetMap Contributors, Some Rights Reserved. CC-BY-SA 2.0.',
+         u'lon': u'-1.81626922291265',
+         u'osm_id': u'90394420',
+         u'osm_type': u'way',
+         u'place_id': u'2061235282'}
+
+
+    Another example::
+
+        http://nominatim.openstreetmap.org/reverse?format=json&lat=52.553984&lon=13.406737&zoom=18&addressdetails=1
+
+    Result::
+
+        { "place_id":"4440878",
+          "licence":"Data Copyright OpenStreetMap Contributors, Some Rights Reserved. CC-BY-SA 2.0.",
+          "osm_type":"node",
+          "osm_id":"431391169",
+          "lat":"52.55382",
+          "lon":"13.4064759",
+          "display_name":"Racket-Profis, Bornholmer Straße, Prenzlauer Berg, Pankow, Städt. Kita Kreuzgraben 13, Berlin, Stadt, Pankow, Berlin, 10439",
+          "address":{
+                "shop":"Racket-Profis",
+                "road":"Bornholmer Straße",
+                "suburb":"Prenzlauer Berg",
+                "city_district":"Pankow",
+                "city":"Städt. Kita Kreuzgraben 13",
+                "county":"Berlin, Stadt",
+                "region":"Pankow",
+                "state":"Berlin",
+                "boundary":"10439",
+                "country_code":"de"}}
+
+    >>> r = search_coordinates( 52.548972, 13.40932 )['address']
+    >>> assert 'Kopenhagener' in r and 'Berlin' in r, r
+    """
+    # body {{{2
+    response_text = ""
+    try:
+        lat = float( lat )
+        lon = float( lon )
+        conn = httplib.HTTPConnection( "nominatim.openstreetmap.org",
+                timeout=10 )
+        params = '&format=json' + \
+                 '&zoom=18' + \
+                 '&addressdetails=1' + \
+                 '&email=' + ADMINS[0][1] + \
+                 '&lat=' + str(lat) + \
+                 '&lon=' + str(lon)
+        url_sufix = "/reverse?" + params
+        conn.request( "GET", url_sufix )
+        conn.sock.settimeout( 10.0 )
+        response = conn.getresponse()
+        response_text = response.read()
+        dic = json.loads( response_text )
+        # TODO: use other APIs like
+        # http://www.geonames.org/export/reverse-geocoding.html
+        # when the response is not satisfactory
+        # TODO: Take care that not more than one query per second is sent to
+        # OSM because of the terms of use (maybe using celery)
+        to_return = dict()
+        to_return['address'] = dic.get('display_name', None)
+        if dic.has_key('address'):
+            address = dic['address']
+            # city
+            if address.has_key('city'):
+                to_return['city'] = address['city']
+            else:
+                to_return['city'] = None
+            # country
+            if address.has_key('country_code'):
+                to_return['country'] = address['country_code'].upper()
+            else:
+                to_return['country'] = None
+        else:
+            to_return['city'] = None
+            to_return['country'] = None
+        return to_return
+    except:
+        return None
+
 def search_address( data, ip = None ): # {{{1
     """ uses nominatim.openstreetmap.org and a Google API to get the geo-data
     of the address ``data`` (unicode)
 
     It returns a dictionary with long addresses (formatted addresses) as keys
     and a dictionary as values. The later dictionary has the keys:
-    ``longitude``, ``latitude``, ``postcode``, ``country`` and ``city``.
+    ``longitude``, ``latitude``, ``country`` and ``city``.
 
     >>> import math
     >>> import time
@@ -93,21 +198,23 @@ def search_address( data, ip = None ): # {{{1
     >>> len ( result )
     1
     """
-    result_google = search_address_google( data )
-    if result_google and len( result_google ) == 1:
-        return result_google
-    # result_google is not good enough, we try now OSM
+    # TODO the returned addresses must be sorted by relevance (the output of
+    # the external APIs already provides a relevance number)
     result_osm = search_address_osm( data )
     if result_osm and len( result_osm ) == 1:
         return result_osm
-    # result_osm is not good enough either, we try now using the IP of the user
-    # for geo-location
+    # result_osm is not good enough, we try now Google
+    result_google = search_address_google( data )
+    if result_google and len( result_google ) == 1:
+        return result_google
+    # result_google is not good enough either, we try now using the IP of the
+    # user for geo-location
     if ip:
         geoip = GeoIP()
         # we try adding the country (from the IP) if not already given
         last_item = data[data.rfind(',')+1:].strip().upper()
-        # TODO: include translations, GeoNames.org
-        from models import COUNTRIES
+        # TODO GEO: include translations, GeoNames.org
+        from gridcalendar.events.models import COUNTRIES
         country_codes = [ val[0].upper() for val in COUNTRIES ]
         country_names = [ val[1].upper() for val in COUNTRIES ]
         country_code = None
@@ -152,6 +259,35 @@ def search_address( data, ip = None ): # {{{1
         return result_osm
     if result_google:
         return result_google
+    return None
+
+def search_country_code( name ): #{{{1
+    """ returns the country code uppercase of a country code or of a country
+    name accepting different languages
+    
+    >>> r = search_country_code( 'de' )
+    >>> assert r == 'DE', r
+    >>> r = search_country_code( 'gERmany' )
+    >>> assert r == 'DE', r
+    >>> r = search_country_code( 'Deutschland' )
+    >>> assert r == 'DE', r
+    """
+    # next line needed because len(django_countries.fields.Country) produces an
+    # error, and `name` can be of that type
+    if not name:
+        return None
+    name = unicode( name )
+    if len( name ) == 2:
+        return name.upper()
+    from gridcalendar.events.models import COUNTRIES
+    for code_country in COUNTRIES:
+        if code_country[1].lower == name.lower():
+            return code_country[0]
+    # TODO GEO: before using an external API check for translations already
+    # done for the package django_countries
+    result = search_name( name )
+    if result:
+        return result['country']
     return None
 
 def search_address_google( data, country_code = None ): # {{{1
@@ -285,8 +421,6 @@ def search_address_google( data, country_code = None ): # {{{1
                 types = [value.text for value in component.findall('type')]
                 if 'locality' in types:
                     pdic['city'] = component.findtext('long_name')
-                elif 'postal_code' in types:
-                    pdic['postcode'] = component.findtext('long_name')
                 elif 'country' in types:
                     pdic['country'] = component.findtext('short_name').upper()
             value = place.findtext('formatted_address')
@@ -370,14 +504,19 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
 # TODO cache API searches and download the data of geonames to use when running
 # out of allowed queries
 def search_name( name, use_cache = True ): # {{{1
-    """ it uses the geonames API returning a ``Point`` with the most relevant
-    location given e.g. ``London,GB``
+    """ it uses the geonames API returning a dictionary with:
+
+    - 'coordinates': a ``Point`` with the most relevant location given e.g.
+      ``London,GB``
+    - 'city'
+    - 'country'
 
     As of April 2011, the restrictions are 2000 queries per hour and 30.000 per day.
     See http://www.geonames.org/export/
     
-    Example query:
-    ``http://api.geonames.org/search?q=london,ca&maxRows=1&username=demo``
+    Example query::
+
+        http://api.geonames.org/search?q=london,ca&maxRows=1&username=demo
 
     Result::
 
@@ -395,11 +534,33 @@ def search_name( name, use_cache = True ): # {{{1
             <fcode>PPL</fcode>
           </geoname>
         </geonames>
+
+    Another example with German names of city and country 
+    (München = Munich, Deutschland = Germany)::
+
+        http://api.geonames.org/search?q=M%C3%BCnchen,Deutschland&maxRows=1&username=demo
+
+    Result::
+
+        <geonames style="MEDIUM">
+          <totalResultsCount>97</totalResultsCount>
+          <geoname>
+            <toponymName>München</toponymName>
+            <name>Munich</name>
+            <lat>48.13743</lat>
+            <lng>11.57549</lng>
+            <geonameId>2867714</geonameId>
+            <countryCode>DE</countryCode>
+            <countryName>Germany</countryName>
+            <fcl>P</fcl>
+            <fcode>PPLA</fcode>
+          </geoname>
+        </geonames>
     
-    >>> p = search_name( u'london,ca', use_cache=False )
-    >>> unicode(p.x)
+    >>> response = search_name( u'london,ca', use_cache=False )
+    >>> unicode(response['coordinates'].x)
     u'-81.23304'
-    >>> unicode(p.y)
+    >>> unicode(response['coordinates'].y)
     u'42.98339'
     """
     query = urllib.quote( name.encode('utf-8'), safe=',' )
@@ -435,6 +596,8 @@ def search_name( name, use_cache = True ): # {{{1
         lat = float( geonames[0].find('lat').text )
         # if no lng, no text and an AttributeError is raised:
         lng = float( geonames[0].find('lng').text )
+        city = geonames[0].find('name').text
+        country = geonames[0].find('countryCode').text
     except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
             IndexError, AttributeError ) as err:
         if use_cache:
@@ -450,12 +613,16 @@ def search_name( name, use_cache = True ): # {{{1
                 'time: %s\nsearch query: %s\nerror: %s' % \
                     ( str(datetime.datetime.now()), name, str(err) ) )
         return None
-    point = Point( lng, lat )
+    coordinates = Point( lng, lat )
+    to_return = dict( (
+        ('coordinates', coordinates),
+        ('city', city),
+        ('country', country) ) )
     if use_cache:
         # we save it fast in memcached before saving it slowly in all caches
-        cache.set( cache_key, point )
-        save_in_caches.delay( cache_key, point )
-    return point
+        cache.set( cache_key, to_return )
+        save_in_caches.delay( cache_key, to_return )
+    return to_return
 
 def search_address_osm( data ): # {{{1
     """ uses nominatim.openstreetmap.org to look up for ``data``.
@@ -513,14 +680,19 @@ def search_address_osm( data ): # {{{1
     >>> result['country']
     'DE'
     """
+    # NOTE: unfortunately the API doesn't seem very consistent when looking up
+    # cities. See the output of e.g.:
+    # http://nominatim.openstreetmap.org/search?q=Munich,+DE&format=xml&addressdetails=1
+    # http://nominatim.openstreetmap.org/search?q=München,+DE&format=xml&addressdetails=1
+    # TODO: better use the json format (instead of xml) and the json library:
+    # import json ; data = json.loads( response_text )
     try:
         address = urllib.quote( data.encode('utf-8') )
-        params = ''.join( [
-            '&format=xml',
-            '&polygon=0',
-            '&addressdetails=1',
-            '&email=office@gridmind.org',
-            '&limit=10', ] )
+        params = '&format=xml' \
+            '&polygon=0' \
+            '&addressdetails=1' \
+            '&email=' + ADMINS[0][1] + \
+            '&limit=10'
         conn = httplib.HTTPConnection( "nominatim.openstreetmap.org",
                 timeout=10 )
         # see http://wiki.openstreetmap.org/wiki/Nominatim
@@ -530,7 +702,6 @@ def search_address_osm( data ): # {{{1
         conn.sock.settimeout( 10.0 )
         response = conn.getresponse()
         response_text = response.read()
-        # FIXME: use a thread
         doc = fromstring( response_text ) # can throw a ExpatError
         # a dictionary with a display_name as unicode keys and values as
         # dictionaries of field names and values
@@ -549,9 +720,6 @@ def search_address_osm( data ): # {{{1
             value = place.find('country_code')
             if value is not None:
                 pdic['country'] = value.text.upper()
-            value = place.find('postcode')
-            if value is not None:
-                pdic['postcode'] = value.text
             value = place.get('display_name')
             if value:
                 if len( value ) > len( data ):

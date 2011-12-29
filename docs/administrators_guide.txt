@@ -161,8 +161,8 @@ consult your PostgreSQL and PostGIS documentation.
 Then you need to create a database user and a database (we use
 ``gridcalendar_user`` and ``gridcalendar_db`` in the examples below).
 GridCalendar will be connecting to the database as that user. The user
-should not be a super user, not be allowed to create databases, and
-not be allowed to create more users.
+should not be a super user, not be allowed to create databases (unless
+you intend to run the tests), and not be allowed to create more users.
 
 .. admonition:: Example: creating a database in GNU
 
@@ -269,7 +269,7 @@ that this only listens to the localhost; if you want it to listen on
 all interfaces, use ``0.0.0.0:8088`` instead.
 
 To use GridCalendar in production, you need to setup a web server such
-as apache. This is described in detail in `Deploying Django`_.
+as Apache_. This is described in detail in `Deploying Django`_.
 
 .. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
 
@@ -300,19 +300,18 @@ Miscellaneous
 
    #. You can run a web test server with ``python manage.py testserver``
 
-   #. To run the tests, issue ``python manage.py tests``. If you see an error saying that 404.html
-      could not been found, you need to set ``DEBUG`` to ``False`` before running the tests
+   #. To run the tests, issue ``python manage.py test --failfast --settings=gridcalendar.settings_for_tests events``.
 
 #. To parse events submitted as emails to an imap server, modify the proper section of
    ``settings_local.py`` and add to a cron file::
 
      cd /usr/local/gridcalendar ; python /usr/local/gridcalendar/manage.py imap
 
-#. For Apache as the webserver
+#. For Apache_ as the webserver
    
-    #. Install Apache and the package ``libapache2-mod-wsgi``
+    #. Install Apache_ and the package ``libapache2-mod-wsgi``
       
-    #. For an Apache Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
+    #. For an Apache_ Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
 
         <VirtualHost *:80>
             ServerName gridcalendar.net
@@ -333,9 +332,16 @@ Miscellaneous
         
         </VirtualHost>
 
-#. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and make sure Apache can read it::
+#. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and
+make sure the web server can read it::
 
         ln -s /usr/local/gridcalendar/media /var/www/gridcalendar.net/m/
+
+#. Install `famfamfam-flag-gif`_ and make a symbokic link named ``flags`` to the directory
+containing the flags. Example::
+
+        cd media
+        ln -s /usr/share/flags/countries/16x11 flags
 
 #. The same for ``favicon.ico``::
 
@@ -343,7 +349,7 @@ Miscellaneous
 
 #. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
-#. If Apache is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
+#. If Apache_ is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
 
         MaxRequestsPerChild 1
    
@@ -537,3 +543,5 @@ __ https://docs.djangoproject.com/en/dev/topics/http/sessions/#clearing-the-sess
 
 .. _nginx: https://secure.wikimedia.org/wikipedia/en/wiki/Nginx
 .. _uwsgi: http://projects.unbit.it/uwsgi/
+.. _Apache: https://en.wikipedia.org/wiki/Apache_HTTP_Server
+.. _famfamfam-flag-gif: http://packages.debian.org/de/stable/famfamfam-flag-gif

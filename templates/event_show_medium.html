@@ -43,8 +43,8 @@
         {% if event.city %}
             {% if event.country %}
                 <span class="city">
-                    {# it must be all in one line to avoid breaking the line #}
-                    <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>&nbsp;(<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)</span>
+                    {# NOTE: it must be all in one line to avoid breaking the line #}
+                    <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>,&nbsp;<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></span>
             {% else %}
                 <span class="city">
                     <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
@@ -52,9 +52,8 @@
             {% endif %}
         {% else %}
             {% if event.country %}
-                <span class="country">
-                    (<a href='{% urlsearch country=event.country %}'>{{ event.country|capfirst }}</a>)
-                </span>
+                {# NOTE: it must be all in one line to avoid breaking the line #}
+                <span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></span>
             {% endif %}
         {% endif %}
 

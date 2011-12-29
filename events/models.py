@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # GPL {{{1
 #############################################################################
@@ -65,10 +65,11 @@ import reversion
 from reversion import revision
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
-from gridcalendar.events.utils import ( validate_year, search_name,
-        search_address, search_timezone, text_diff, validate_tags_chars )
 from gridcalendar.events.tasks import (
         log_using_celery, notify_users_when_wanted )
+from gridcalendar.events.utils import ( validate_year, search_name,
+        search_coordinates, search_address, search_timezone,
+        search_country_code, text_diff, validate_tags_chars )
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -327,6 +328,7 @@ COUNTRIES = (
     ( 'ZM', _( u'Zambia' ) ),
     ( 'ZW', _( u'Zimbabwe' ) ),
  )
+
 
 # TIMEZONES {{{1
 # data from: ``from pytz import common_timezones`` at Wed Oct 12 2011
@@ -772,15 +774,12 @@ starttime: 10:00
 enddate: 2010-12-30
 endtime: 18:00
 timezone: Europe/Berlin
+address: Gleimstr. 6, Berlin 10439, Germany
+coordinates: 52.55247, 13.40364
 tags: calendar software open-source gridmind gridcalendar
 urls:
     code    http://example.com
     web    http://example.org
-address: Gleimstr. 6
-postcode: 10439
-city: Berlin
-country: DE
-coordinates: 52.55247, 13.40364
 dates:
     2009-11-01    visitor tickets
     2010-10-01    call for papers
@@ -825,17 +824,19 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             validators = [validate_tags_chars] )
     country = models.CharField( _( u'Country' ), blank = True, null = True,
             max_length = 2, choices = COUNTRIES )
-    city = models.CharField( 
-            _( u'City' ), blank = True, null = True, max_length = 50 )
-    postcode = models.CharField( _( u'Postcode' ), blank = True, null = True,
-            max_length = 16 )
-    address = models.CharField( _( u'Address' ), blank = True,
+    address = models.CharField( _( u'Location' ), blank = True,
             null = True, max_length = 200,
             help_text = _( u'Complete address including city and country. ' \
-                u'Example:<br />Malmöer Str. 6, Berlin, DE' ) )
+                u'Example:<br />Malmöer Str. 6, Berlin, 10439, Germany' ) )
+    city = models.CharField( _( u'City' ),
+            editable = True, blank = True, null = True, max_length = 50 )
     coordinates = models.PointField( _('Coordinates'),
             editable = False, blank=True, null=True )
     """ used for calculating events within a distance to a point """
+    exact = models.NullBooleanField( _('exact coordinates'),
+            editable = False, blank=True, null=True )
+    """ indicates if the coordinates are exact or not, when not exact they
+    should point to the center of the city """
     description = models.TextField(
             _( u'Description' ), blank = True, null = True,
             help_text = _( u'For formating use <a href="http://docutils.' \
@@ -865,7 +866,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def _set_longitude(self, value): self.coordinates.x = value
     longitude = property(_get_longitude, _set_longitude)
 
-    # startdate, enddate {{{3
+    # startdate, enddate properties {{{3
     # NOTE: we use (and create if needed) instance properties as a kind of
     # cache, otherwise e.g. sorting a list of events by startdate or enddate
     # would be very expensive
@@ -880,19 +881,22 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         return self.startdate_cache
     def _set_startdate(self, value):
         try:
-            eventdate = self.dates.get(eventdate_name='start')
-        except EventDate.DoesNotExist:
-            if value:
-                self.dates.create(
-                        eventdate_name='start', 
-                        eventdate_date=value )
-        else:
+            eventdate = self.dates.get( eventdate_name = 'start' )
             if value:
                 eventdate.eventdate_date = value
                 eventdate.save()
+                self.startdate_cache = eventdate.eventdate_date
             else:
                 eventdate.delete()
-        self.startdate_cache = value
+                self.startdate_cache = None
+        except EventDate.DoesNotExist:
+            if value:
+                new_eventdate = self.dates.create(
+                        eventdate_name='start', 
+                        eventdate_date = value )
+                self.startdate_cache = new_eventdate.eventdate_date
+            else:
+                self.startdate_cache = None
     startdate = property(_get_startdate, _set_startdate)
     def _get_enddate(self):
         if hasattr(self, 'enddate_cache') and self.enddate_cache:
@@ -906,19 +910,31 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def _set_enddate(self, value):
         try:
             eventdate = self.dates.get(eventdate_name='end')
-        except EventDate.DoesNotExist:
-            if value:
-                self.dates.create(
-                        eventdate_name='end', 
-                        eventdate_date=value )
-        else:
             if value:
                 eventdate.eventdate_date = value
                 eventdate.save()
+                self.enddate_cache = eventdate.eventdate_date
             else:
                 eventdate.delete()
-        self.enddate_cache = value
+                self.enddate_cache = None
+        except EventDate.DoesNotExist:
+            if value:
+                new_eventdate = self.dates.create(
+                        eventdate_name='end', 
+                        eventdate_date=value )
+                self.enddate_cache = new_eventdate.eventdate_date
+            else:
+                self.enddate_cache = None
     enddate = property(_get_enddate, _set_enddate)
+
+    # read only countryname property {{{3
+    @property
+    def countryname(self):
+        if self.country:
+            for code_country in COUNTRIES:
+                if code_country[0] == self.country:
+                    return code_country[1]
+        return None
 
     # read only upcomingdate property {{{3
     @property
@@ -1012,28 +1028,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # FIXME: include a different color-palette for past events:
         return 0
 
-    def complete_address( self ):
-        """ it returns a string separating by comma and space
-        :attr:`Event.address`, :attr:`Event.city`, 
-        :attr:`Event.postcode` and :attr:`Event.country`
-
-        NOTE: we use the order ``address, city, postcode, country`` because the
-        nominatim API of OpenStreetMap works only with this order at the moment
-        (Thu Dec  8 17:31:12 CET 2011)
-        """
-        address = u""
-        if self.address:
-            address += self.address
-        if self.city and not self.city.lower() in address.lower():
-            address += ", " + self.city
-        if self.postcode and not self.postcode.lower() in address.lower():
-            address += ", " + self.postcode
-        if self.country and not self.country.lower() in address.lower():
-            address += ", " + self.country
-
     def update_timezone( self ):
         """ recalculate and save self.timezone according to self.coordinates,
-        self.address, self.city and self.country
+        self.address
 
         If returns True if a timezone was found and saved, False otherwise.
 
@@ -1050,8 +1047,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         True
         >>> assert event.timezone == timezone
         >>> event.timezone = None
-        >>> event.city = None
-        >>> event.country = None
         >>> event.address = None
         >>> event.coordinates = Point( longitude, latitude )
         >>> event.save()
@@ -1069,34 +1064,25 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         # either no coordinates or they didn't help. We try with the complete
         # address
         if self.address:
-            locations = search_address( self.complete_address() )
+            locations = search_address( self.address )
             if locations:
                 location = locations.items()[0][1]
                 timezone = search_timezone(
-                        location['latitude'], location['longitude'] )
+                        float(location['latitude']),
+                        float(location['longitude']) )
                 if timezone:
                     self.timezone = timezone
                     self.save()
                     return True
-        # We try with the country (and city) only
-        if self.country:
-            if self.city:
-                locations = search_address( self.country + ', ' + self.city )
-            else:
-                locations = search_address( self.country )
-        else:
-            if self.city:
-                locations = search_address( self.city )
-            else:
-                return False
-        if locations:
-            location = locations.items()[0][1]
-            timezone = search_timezone(
-                location['latitude'], location['longitude'] )
-            if timezone:
-                self.timezone = timezone
-                self.save()
-                return True
+            # we try with Geonames API
+            result = search_name( self.address )
+            if result:
+                point = result['point']
+                timezone = search_timezone( point.y, point.x )
+                if timezone:
+                    self.timezone = timezone
+                    self.save()
+                    return True
         return False
         
     def icalendar( self, ical = None ): #{{{3
@@ -1113,6 +1099,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         ...  u'CATEGORIES:calendar,software,open-source,gridmind,gridcalendar\\r\\n')
         >>> event.delete()
         """
+        # NOTE: rfc5545 specifies CRLF for new lines
         if ical is None:
             ical = vobject.iCalendar()
             ical.add('METHOD').value = 'PUBLISH' # IE/Outlook needs this
@@ -1136,17 +1123,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             vevent.add('DTSTART').value = self.startdate
         if self.tags:
             vevent.add('CATEGORIES').value = self.tags.split(u' ')
-        location = ""
-        # rfc5545 specifies CRLF for new lines:
         if self.address:
-            location = self.address + " "
-        if self.postcode:
-            location = location + self.postcode + " "
-        if self.city:
-            location = location + self.city + " "
-        if self.country:
-            location = location + self.country + " "
-        vevent.add('LOCATION').value = location
+            vevent.add('LOCATION').value = self.address
         vevent.add('UID').value = \
                 Site.objects.get_current().name + u'-' + \
                 hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
@@ -1355,25 +1333,148 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             if recurrences.count() == 1:
                 recurrences.delete()
 
+    def complete_geo_data( self, ip ): #{{{3
+        # docs & tests {{{4
+        """ try to complete missing data from and in `city`, `country`,
+        `coordinates`, `address`, `timezone` and `exact`, returning True if
+        something completed, False otherwise.
+
+        ``ip`` is used for guessing (with GeoIP) the city or country when e.g.
+        they are missing from the `address`.
+
+        This function is called inside :meth:`Event.save`
+
+        >>> today = datetime.date.today()
+        >>> e1 = Event.objects.create( title="cgd1",
+        ...     address=u'Malmöer Str. 6, Berlin, Germany' )
+        >>> assert e1.coordinates
+        >>> assert e1.city == 'Berlin', e1.city
+        >>> assert e1.country == 'DE', e1.country
+        >>> assert e1.timezone == 'Europe/Berlin', e1.timezone
+        >>> e1.delete()
+        >>> e2 = Event.objects.create( title="cgd2",
+        ...     city='Berlin', country='DE' )
+        >>> assert e2.coordinates
+        >>> assert e2.address
+        >>> assert e2.timezone == 'Europe/Berlin'
+        >>> e2.delete()
+        >>> e3 = Event.objects.create( title="cgd3",
+        ...     coordinates = Point( 13.40932, 52.548972 ) )
+        >>> assert e3.city
+        >>> assert e3.country
+        >>> assert e3.address
+        >>> assert e3.timezone == 'Europe/Berlin'
+        >>> e3.delete()
+        """
+        something_completed = False
+        if (self.address or self.city or self.country) and not self.coordinates:#{{{4
+            if self.address:
+                try_with_address = True
+            else:
+                try_with_address = False
+            if self.city or self.country:
+                try_with_city_country = True
+            else:
+                try_with_city_country = False
+            while try_with_address or try_with_city_country:
+                if try_with_address:
+                    try_with_address = False
+                    data = self.address
+                else:
+                    assert try_with_city_country
+                    try_with_city_country = False
+                    data = ""
+                    if self.city:
+                        data = self.city
+                        if self.country:
+                            data += ", " + self.country
+                    else:
+                        assert self.country
+                        data = self.country
+                    if not self.address:
+                        # BTW we add some address if we have nothing
+                        self.address = data
+                result = search_name( data )
+                if result:
+                    something_completed = True
+                    self.coordinates = result['coordinates']
+                    if not self.city:
+                        self.city = result['city']
+                    if not self.country:
+                        self.country = result['country']
+                    # search_name works only for cities and countries but not for
+                    # complete addresses. We use this fact and set exact to False
+                    self.exact = False
+                else:
+                    result = search_address( data, ip = ip )
+                    if result:
+                        something_completed = True
+                        result = result.values()[0]
+                        self.coordinates = Point(
+                                float(result['longitude']),
+                                float(result['latitude']) )
+                        if not self.city:
+                            self.city = result['city']
+                        if not self.country:
+                            self.country = result['country']
+                        self.exact = True
+        if self.coordinates and not (self.address and self.city and self.country):#{{{4
+            result = search_coordinates( self.latitude, self.longitude )
+            if result:
+                something_completed = True
+                if not self.address:
+                    self.address = result['address']
+                if not self.city:
+                    self.city = result['city']
+                if not self.country:
+                    self.country = result['country']
+        if not self.timezone:#{{{4
+            timezone = None
+            if self.coordinates:
+                timezone = search_timezone( self.latitude, self.longitude )
+            # TODO GEO: Use other APIs to get timezone from city/country like
+            # http://www.worldweatheronline.com/time-zone-api.aspx
+            if timezone:
+                something_completed = True
+                self.timezone = timezone
+        if self.country:
+            # asures that the country name is the 2-letters-iso-code
+            self.country = search_country_code( self.country )
+        return something_completed
+
     def save( self, *args, **kwargs ): #{{{3
-        """ Marks an event as new or not (for :meth:`Event.post_save`),
-        update the master of a recurrence if appropiate, and deletes caches of
-        properties.
+        """ Marks an event as new or not (for :meth:`Event.post_save`), deals
+        with address data, update the master of a recurrence if appropiate, and
+        deletes caches of properties.
         """
         try:
-            Event.objects.get( id = self.id )
-            self.not_new = True # Event.post_save uses this
+            old = Event.objects.get( id = self.id )
+            self.is_new = False # Event.post_save uses this
+            self.version = self.version + 1
         except Event.DoesNotExist:
-            pass
+            self.is_new = True
+            old = None
         if self.recurring:
             master = self.recurring.master
             if self.startdate < master.startdate:
                 # self is going to be the new master of the serie. The master
-                # is by convention the first event of a serie.
+                # is always the first event of a serie.
                 master.recurrences.all().update( master = self )
             events = Event.objects.filter( _recurring__master = master)
             events.exclude( pk = self.pk ).update( version = F('version') + 1 )
-        self.version = self.version + 1
+        # dealing with the address data
+        if kwargs.has_key('ip'):
+            ip = kwargs.pop('ip')
+        else:
+            ip = None
+        if old and old.coordinates and self.coordinates and (
+                old.latitude != self.latitude or
+                old.longitude != self.longitude ):
+            # if coordinates have changed, we can assume that the user has
+            # entered exact coordinates
+            self.exact = True
+        self.complete_geo_data( ip )
+        self.country = search_country_code( self.country )
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
         # deletes caches
@@ -1393,7 +1494,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if event.recurring:
             # this event is an instance of a serie of recurring events
             return
-        if hasattr(event, "not_new") and event.not_new:
+        if hasattr(event, "is_new") and not event.is_new:
             return
         notify_users_when_wanted.delay( event = event )
 
@@ -1454,17 +1555,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns an example of an event as unicode
         
         >>> from django.utils.encoding import smart_str
+        >>> import time
         >>> example = Event.example()
         >>> event,l = Event.parse_text(example)
-        >>> assert smart_str(example) == event.as_text()
-        >>> event.delete()
-        >>> text = example.replace(u'DE', u'Germany')
-        >>> event,l = Event.parse_text(text)
-        >>> assert (smart_str(example) == event.as_text())
-        >>> event.delete()
-        >>> text = text.replace(u'Germany', u'de')
-        >>> event,l = Event.parse_text(text)
-        >>> assert (smart_str(example) == event.as_text())
+        >>> assert smart_str(example) == event.as_text(), event.as_text()
         >>> event.delete()
         """
         return EXAMPLE
@@ -1505,9 +1599,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'timezone':
                 if self.timezone:
                     to_return += keyword + ": " + self.timezone + "\n"
-            elif keyword == u'country':
-                if self.country:
-                    to_return += keyword + ": " + self.country + "\n"
             elif keyword == u'coordinates':
                 if self.coordinates:
                     to_return += u"coordinates: %s, %s\n" % (
@@ -1522,12 +1613,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'address':
                 if self.address:
                     to_return += keyword + u": " + self.address + u"\n"
-            elif keyword == u'city':
-                if self.city:
-                    to_return += keyword + u": " + self.city + u"\n"
-            elif keyword == u'postcode':
-                if self.postcode:
-                    to_return += keyword + u": " +  self.postcode + u"\n"
             elif keyword == u'urls':
                 urls = EventUrl.objects.filter( event = self.id )
                 if urls and len( urls ) > 0:
@@ -1588,19 +1673,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> s[u'acronym']
         u'GriCal'
         >>> s[u'address']
-        u'Gleimstr. 6'
-        >>> s[u'city']
-        u'Berlin'
-        >>> s[u'country']
-        u'DE'
+        u'Gleimstr. 6, Berlin 10439, Germany'
         >>> s[u'enddate']
         u'2010-12-30'
         >>> s[u'endtime']
         u'18:00'
         >>> s[u'coordinates']
         u'52.55247, 13.40364'
-        >>> s[u'postcode']
-        u'10439'
         >>> s[u'startdate']
         u'2010-12-29'
         >>> s[u'starttime']
@@ -1740,17 +1819,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             user = User.objects.get(id = user_id)
         else:
             user = None
-        # Check if the country is in Englisch (instead of the international
-        # short two-letter form) and replace it. TODO: check in other
-        # languages (from translations) but taking care of colisions
-        if simple_fields.has_key(u'country'):
-            for names in COUNTRIES:
-                long_name = names[1].lower()
-                short_name = names[0].lower()
-                parsed = simple_fields[u'country'].lower()
-                if parsed == long_name or parsed == short_name:
-                    simple_fields['country'] = names[0]
-                    break
+        # convert country names to country code if needed
+        if simple_fields.has_key('country'):
+            simple_fields['country'] = \
+                    search_country_code( simple_fields['country'] )
         # creates an event with a form
         from gridcalendar.events.forms import EventForm
         if event_id == None :
@@ -1932,11 +2004,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names = [unicode(f.name) for f in Event._meta.fields]
         field_names.append(u'startdate')
         field_names.append(u'enddate')
-        field_names.remove(u"id")
-        field_names.remove(u"user")
+        field_names.remove(u"city")
+        field_names.remove(u"country")
         field_names.remove(u"creation_time")
-        field_names.remove(u"modification_time")
         field_names.remove(u"description")
+        field_names.remove(u"exact")
+        field_names.remove(u"id")
+        field_names.remove(u"modification_time")
+        field_names.remove(u"user")
         field_names.remove(u"version")
         return tuple(field_names)
  
@@ -1955,18 +2030,19 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         Notice that 'recurrences' can be present in the input text
         representation, but it is not present in the output text
         representation.
+
+        Some Poka-yoke code follows.
  
-        >>> gpl_len = len(Event.get_priority_list())  # 17
-        >>> gsf_len = len(Event.get_simple_fields())  # 13
-        >>> gcf_len = len(Event.get_complex_fields()) #  5 recurring not in gpl
+        >>> gpl_len = len(Event.get_priority_list())  # 14
+        >>> gsf_len = len(Event.get_simple_fields())  # 10
+        >>> gcf_len = len(Event.get_complex_fields()) #  5 (recurring not in gpl
         >>> assert(gpl_len + 1 == gsf_len + gcf_len)
         >>> synonyms_values_set = set(Event.get_synonyms().values())
         >>> assert(gpl_len + 1  == len(synonyms_values_set))
         """
         return ( u"acronym", u"title", u"startdate", u"starttime", u"enddate",
-                u"endtime", u"timezone", u"tags", u"urls", u"address",
-                u"postcode", u"city", u"country", u"coordinates", u"dates",
-                u"sessions", u"description" )
+                u"endtime", u"timezone", u"address", u"coordinates",u"tags",
+                u"urls", u"dates", u"sessions", u"description" )
  
     @staticmethod # def get_synonyms(): {{{3
     def get_synonyms():
@@ -1992,12 +2068,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> field_names_set.remove('creation_time')
         >>> field_names_set.remove('modification_time')
         >>> field_names_set.remove('version')
+        >>> field_names_set.remove('city')
+        >>> field_names_set.remove('country')
+        >>> field_names_set.remove('exact')
         >>> field_names_set.add('startdate')
         >>> field_names_set.add('enddate')
-        >>> assert field_names_set == synonyms_values_set
+        >>> assert field_names_set == synonyms_values_set, field_names_set
         """
         if settings.DEBUG:
-            # ensure you don't override a key
+            # ensure you don't override a key (Poka-yoke code)
             def add( dictionary, key, value ):
                 """ assert that the key is not already there """
                 assert not dictionary.has_key( key ), key
@@ -2251,6 +2330,7 @@ class ExtendedUser(User): # {{{1
     >>> event.startdate = datetime.date.today()
     >>> calendar = Calendar.objects.create(event = event, group = group2)
     >>> assert euser.has_groups_with_coming_events()
+    >>> event.delete()
     """
     class Meta: # {{{2
         proxy = True
@@ -2294,8 +2374,8 @@ class EventUrl( models.Model ): # {{{1
     Code example: getting all events with more than one url:
     >>> from gridcalendar.events.models import Event
     >>> from django.contrib.gis.db.models import Count
-    >>> urls_numbers = Event.objects.annotate(Count('urls'))
-    >>> gt1 = filter(lambda x: x.urls__count > 1, urls_numbers)
+    >>> urls_numbers = Event.objects.annotate(urls_nr=Count('urls'))
+    >>> events_with_more_than_1_url = urls_numbers.filter(urls_nr__gte=2)
     """
     event = models.ForeignKey( Event, related_name = 'urls' )
     url_name = models.CharField( _( u'URL Name' ), blank = False, null = False,

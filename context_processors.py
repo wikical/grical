@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 """ Adds variables to all templates """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 #############################################################################

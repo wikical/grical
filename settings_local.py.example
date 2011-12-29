@@ -46,9 +46,14 @@ IMAP_SSL = False
 # GeoNames.org. You need to register here http://www.geonames.org/login and
 # then activate the use of the API in your account.
 GEONAMES_USERNAME = 'your_geonames.org_password'
+GEONAMES_URL = 'https://secure.geonames.net/'
 
 # Default value for distance unit, possible values are: 'km' and 'mi'
 DISTANCE_UNIT_DEFAULT = 'km' # alternative: 'mi'
+
+# events within this radius of the center of city are considered to be in the
+# city. DISTANCE_UNIT_DEFAULT is the unit.
+CITY_RADIUS = 50
 
 # ======================================================================
 # debug settings
@@ -120,7 +125,7 @@ LOG_PIPE_GID = 33
 # IRC
 # ======================================================================
 
-# to log events changes ( see PIPE_TO_LOG_TO ) to a IRC channel, run the script
+# to log events changes ( see LOG_PIPE ) to a IRC channel, run the script
 # irclogger.py
 
 IRC_NETWORK = 'irc.freenode.net'

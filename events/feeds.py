@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 # gpl {{{1
 #############################################################################
@@ -55,10 +55,10 @@ class EventsFeed(Feed): # {{{1
         return item.modification_time
 
     def item_description(self, item):
-        description = _( u'start: %(date)s' ) % \
+        description = _( u'start date: %(date)s' ) % \
                 {'date': item.startdate.isoformat()}
         if item.upcomingdate != item.startdate:
-            description += "    " +  _('upcoming: %(date)s') % \
+            description += "    " +  _('upcoming date: %(date)s') % \
                 {'date': item.upcomingdate.isoformat()}
         return description
         # one could return the event as text with something like:

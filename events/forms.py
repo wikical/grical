@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # GPL {{{1
 #############################################################################
@@ -61,7 +61,7 @@ class DatePicker(forms.DateInput):
     """
     # NOTE: the form in which this widget is used will add all media
     # definitions of all its widgets. Remember to add that media definition of
-    # the form in the template with:
+    # the form in the template with eg::
     # {% block extraheaders %}
     #     {{ form.media }}
     # {% endblock %}
@@ -377,24 +377,39 @@ class EventForm(forms.ModelForm): # {{{1
     startdate = DateExtendedField( required = True )
     enddate = DateExtendedField( required = False )
     coordinates = CoordinatesField( max_length = 26, required = False )
+    class Media:
+        js = (
+            'js/jquery.timepicker.min.js',
+            'js/timepicker.js',
+        )
+        css = {
+            'all': (
+                'css/jquery.timepicker.css',
+            ),
+        }
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
         self.fields.keyOrder = ['title', 'acronym', 'startdate', 'starttime',
-            'enddate', 'endtime', 'timezone', 'tags', 'country', 'city',
-            'postcode', 'address', 'coordinates', 'description']
+            'enddate', 'endtime', 'timezone', 'tags', 'city', 'country',
+            'address', 'coordinates', 'description']
         self.fields['startdate'].label = _(u'Start date')
         self.fields['enddate'].label = _(u'End date')
         self.fields['address'].widget = forms.Textarea()
+        self.fields['starttime'].widget.attrs.update( {'class': 'timePicker', } )
+        self.fields['endtime'].widget.attrs.update( {'class': 'timePicker', } )
         if kwargs.has_key('instance'):
             # not a new event
             # We use a custom field called 'coordinates' for
             # showing/editing/entering latitude and longitude stored in
-            # Event.coordinates (which is a Point). We populate now
-            # 'coordinates' with the values of event.coordinates
+            # Event.coordinates (which is a Point).
+            # If Event.exact is false, the coordinates (if present) are
+            # pointing to the center of the city and we don't display them.
+            # Otherwise we populate 'coordinates' with the values of
+            # Event.coordinates
             instance = kwargs['instance']
             coordinates_value = u''
-            if instance.coordinates:
+            if instance.coordinates and instance.exact:
                 coordinates_value += str( instance.coordinates.y ) + ', ' + \
                         str( instance.coordinates.x )
             if coordinates_value:
@@ -423,9 +438,11 @@ class EventForm(forms.ModelForm): # {{{1
                         float(coordinates['longitude']),
                         float(coordinates['latitude']) )
             else:
-                self.instance.coordinates = None
+                if self.instance.exact:
+                    self.instance.coordinates = None
         else:
-            self.instance.coordinates = None
+            if self.instance.exact:
+                self.instance.coordinates = None
         # checks uniqueness of title and startdate
         title = self.cleaned_data.get("title", None)
         startdate = self.cleaned_data.get("startdate", None)
@@ -483,21 +500,33 @@ class SimplifiedEventForm( forms.ModelForm ): # {{{1
     web = URLFieldExtended(
             verify_exists=True,
             max_length = get_field_attr( 'EventURL', 'url', 'max_length' ) )
+    class Media:
+        js = (
+            'js/jquery.min.js',
+            'js/jquery-ui.min.js',
+            'js/datepicker.js',
+        )
+        css = {
+            'all': (
+                'css/jquery-ui.css',
+            )
+        }
+    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
+        model = Event
+        fields = ('title', 'tags',)
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'Title')
         #self.fields['title'].widget = forms.Textarea()
         self.fields['where'].label = _(u'Where')
         self.fields['when'].label = _(u'When')
+        self.fields['when'].widget.attrs.update({'class':'datePicker',})
         self.fields['tags'].label = _(u'Tags or Topics')
         #self.fields['where'].help_text = \
         #        _(u'Example: Malmöer Str. 6, Berlin, DE')
         #self.fields['when'].help_text = \
         #        _(u"Examples: '25 Oct 2006', '2010-02-27', " \
         #        "'2010-02-27 11:00', '2010-02-27 11:00-13:00'")
-    class Meta:  # pylint: disable-msg=C0111,W0232,R0903
-        model = Event
-        fields = ('title', 'tags',)
     def clean( self ):
         """ checks that there is no other event with the same name and start
         date """

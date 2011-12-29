@@ -58,7 +58,7 @@ map.setCenter (
         {% for event in page.object_list %}
             <li>
                 {% if event.coordinates %}
-                    <img src="{{ MEDIA_URL }}markers/color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}.png"
+                    <img class="marker" src="{{ MEDIA_URL }}markers/color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}.png"
                         alt="color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}" />
                 {% endif %}
                 {% include "event_show_small.html" %}

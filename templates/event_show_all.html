@@ -72,37 +72,35 @@
             </div>
         </div>
 
-        {% if event.address or event.postcode or event.city or event.country or event.coordinates %}
+        {% if event.address or event.city or event.country or event.coordinates %}
             <div class="item">
                 <img class="icon" src="{{ MEDIA_URL }}venue-icon.png" alt="{% trans 'where' %}" />
                 <div class="data">
                     {% if event.address %}
                         {{ event.address }}
-                        {% if event.postcode or event.city or event.country or event.coordinates %}
+                        {% if event.coordinates and event.exact %}
                             &nbsp; &#8212; &nbsp;
                         {% endif %}
-                    {% endif %}
-                    {% if event.postcode %}
-                        {{ event.postcode }}
-                        {% if event.city or event.country or event.coordinates %}
-                            &nbsp; &#8212; &nbsp;
+                    {% else %}
+                        {# we only display city and/or country if no address present, because the address should contain the city and the country #}
+                        {% if event.city %}
+                            <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
+                            {% if event.country %}
+                                &nbsp;, &nbsp;
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                    {% if event.city %}
-                        <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
-                        {% if event.country or event.coordinates %}
-                            &nbsp; &#8212; &nbsp;
+                        {% if event.country %}
+                            <span class="field_country">
+                                <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>
+                            </span>
                         {% endif %}
                     {% endif %}
                     {% if event.country %}
-                        <span class="field_country">
-                            <a href="{% urlsearch country=event.country %}">{{ event.country|capfirst }}</a>
-                        </span>
-                        {% if event.coordinates %}
-                            &nbsp; &#8212; &nbsp;
-                        {% endif %}
+                        <a href='{% urlsearch country=event.country %}'>
+                            <img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" />
+                        </a>
                     {% endif %}
-                    {% if event.coordinates %}
+                    {% if event.coordinates and event.exact %}
                         {{ event.coordinates.y }}, {{ event.coordinates.x }}
                         (&nbsp;<a href="http://www.openstreetmap.org/?mlat={{ event.coordinates.y }}&amp;mlon={{ event.coordinates.x }}&amp;zoom=15&amp;layers=B000FTF">OpenStreetMap</a>,&nbsp;<a href="http://maps.google.com?q={{ event.coordinates.y }},{{ event.coordinates.x }}">Google</a>&nbsp;)
                     {% endif %}
@@ -192,7 +190,7 @@
             </fieldset>
         {% endif %}
 
-        {% if event.coordinates %}
+        {% if event.coordinates and event.exact %}
             <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
             <div id="map" class="smallmap"></div>
             <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
