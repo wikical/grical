@@ -29,6 +29,9 @@ import calendar
 from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 import datetime
 from datetime import timedelta
+import os.path
+import unicodedata
+
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from docutils import core
@@ -36,10 +39,7 @@ from docutils import ApplicationError
 from docutils.parsers.rst import roles, nodes
 from docutils.parsers.rst.roles import set_classes
 from docutils.writers.html4css1 import Writer
-import re
-import sys
 import vobject
-import unicodedata
 import yaml
 
 from django.conf import settings
@@ -47,9 +47,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models import Q, F, DateField
+from django.contrib.gis.db.models import F, DateField
 from django.contrib.sites.models import Site
-from django.core import serializers
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
@@ -57,19 +56,17 @@ from django.db.models.query import QuerySet
 from django.db import transaction, IntegrityError
 # from django.core.exceptions import ValidationError
 from django.forms import ValidationError
-from django.forms.models import inlineformset_factory, ModelForm
-from django.http import ( HttpResponseRedirect, HttpResponse, Http404,
-        HttpResponseForbidden, HttpResponseBadRequest )
+from django.forms.models import inlineformset_factory
+from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
-from django.template import RequestContext, Context, loader
+from django.template import RequestContext, loader
 from django.utils import simplejson
 from django.utils.encoding import smart_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_page
 
-from tagging.models import Tag, TaggedItem
 from reversion import revision
 from reversion.models import Version, Revision
 
@@ -79,7 +76,7 @@ from gridcalendar.events.forms import (
     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
 from gridcalendar.events.models import ( 
     Event, EventUrl, EventSession, EventDate, Filter, Group, Recurrence,
-    Membership, GroupInvitation, ExtendedUser, Calendar, RevisionInfo,
+    Membership, GroupInvitation, Calendar, RevisionInfo,
     add_start, add_end, add_upcoming )
 from gridcalendar.events.utils import html_diff
 from gridcalendar.events.tables import EventTable
@@ -99,8 +96,8 @@ def help_page( request ): # {{{1
     >>> Client().get(reverse('help')).status_code
     200
     """
-    usage_text = open( settings.PROJECT_ROOT + '/USAGE.TXT', 'r' ).read()
-    about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    usage_text = open(os.path.join(settings.PROJECT_ROOT, 'USAGE.TXT')).read()
+    about_text = open(os.path.join(settings.PROJECT_ROOT, 'ABOUT.TXT')).read()
     return render_to_response( 'help.html', {
             'title': Site.objects.get_current().name + " - " + _( 'help' ),
             'usage_text': usage_text,
@@ -1659,7 +1656,7 @@ def main( request, status_code=200 ):# {{{1
         page = paginator.page( page_nr )
     except ( EmptyPage, InvalidPage ):
         page = paginator.page( paginator.num_pages )
-    about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    about_text = open(os.path.join(settings.PROJECT_ROOT, 'ABOUT.TXT')).read()
     # We generate the response with a custom status code. Reason: our custom
     # handler404 and handler500 returns the main page with a custom error
     # message and we return also the proper html status code
