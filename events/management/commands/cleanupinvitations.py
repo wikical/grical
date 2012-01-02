@@ -37,5 +37,8 @@ class Command(NoArgsCommand):
     help = "Delete expired group invitations from the database"
 
     def handle_noargs(self, **options):
-        """ Executes the action. """
+        """ Executes the action, or do nothing if settings.READ_ONLY is True.
+        """
+        if settings.READ_ONLY == True:
+            return
         GroupInvitation.objects.delete_expired_invitations()

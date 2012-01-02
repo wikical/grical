@@ -57,7 +57,7 @@ from gridcalendar.events.models import Event, RevisionInfo
 # first possible value of the Content-Language header. If not present default
 # to English
 
-class Command( NoArgsCommand ): # {{{1
+class Command(NoArgsCommand): # {{{1
     """ A management command which parses mails from imap server..
     """
 
@@ -65,7 +65,7 @@ class Command( NoArgsCommand ): # {{{1
 
     mailbox = None
 
-    def __init__( self, *args, **kwargs ): # {{{2
+    def __init__(self, *args, **kwargs): # {{{2
         if settings.IMAP_SSL:
             self.mailbox = IMAP4_SSL( settings.IMAP_SERVER )
         else:
@@ -87,8 +87,11 @@ class Command( NoArgsCommand ): # {{{1
         else:
             return nr_list
 
-    def handle_noargs( self, **options ): # {{{2
-        """ Executes the action. """
+    def handle_noargs(self, **options): # {{{2
+        """ Executes the action or do nothing if settings.READ_ONLY is True.
+        """
+        if settings.READ_ONLY == True:
+            return
         self.parse()
 
     def parse( self ): # {{{2

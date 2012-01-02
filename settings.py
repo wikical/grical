@@ -41,6 +41,9 @@ except NameError:
 # specific GridCalendar settings {{{1
 # =============================================================================
 
+# Stop using the write database. When True, users cannot enter/modify data
+READ_ONLY = os.path.exists(os.path.join(PROJECT_ROOT, "READ_ONLY"))
+
 # limits for number of events/dates
 DEFAULT_LIMIT = 50
 VIEWS_MAX_LIMITS = {

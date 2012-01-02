@@ -70,6 +70,7 @@ from django.views.decorators.cache import cache_page
 from reversion import revision
 from reversion.models import Version, Revision
 
+from gridcalendar.events.decorators import only_if_write_enabled
 from gridcalendar.events.forms import ( 
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
     CalendarForm, EventSessionForm, DateExtendedField,
@@ -118,8 +119,10 @@ def legal_notice( request ): # {{{1
                     ' - ' + _( 'legal notice' ),
             }, context_instance = RequestContext( request ) )
 
+# def event_edit_recurrences( request, event_id ): # {{{1
 @login_required
-def event_edit_recurrences( request, event_id ): # {{{1
+@only_if_write_enabled
+def event_edit_recurrences( request, event_id ):
     event = get_object_or_404( Event, pk = event_id )
     if event.enddate:
         messages.error( request, _("it was tried to edit recurrences of " \
@@ -303,7 +306,9 @@ def event_edit_recurrences( request, event_id ): # {{{1
     return HttpResponseRedirect( reverse( 'event_show_all',
             kwargs = {'event_id': event.id} ) )
 
-def event_edit( request, event_id = None ): # {{{1
+# def event_edit( request, event_id = None ): {{{1
+@only_if_write_enabled
+def event_edit( request, event_id = None ):
     """ view to edit or create an event as a form
 
     >>> from django.test import Client
@@ -503,7 +508,9 @@ def _change_recurrences( user, event, events ): # {{{1
                 revision.add_meta( RevisionInfo,
                         as_text = smart_unicode( rec.as_text() ) )
 
-def event_new_raw( request, template_event_id = None ): # {{{1
+# def event_new_raw( request, template_event_id = None ): {{{1
+@only_if_write_enabled
+def event_new_raw( request, template_event_id = None ):
     """ View to create an event as text
     
     If a ``template_event_id`` is given, the preliminary text is the text form
@@ -581,7 +588,9 @@ def event_new_raw( request, template_event_id = None ): # {{{1
         transaction.savepoint_rollback(sid)
         raise
 
-def event_edit_raw( request, event_id ): # {{{1
+# def event_edit_raw( request, event_id ): {{{1
+@only_if_write_enabled
+def event_edit_raw( request, event_id ):
     """ View to edit an event as text.
 
     >>> from django.test import Client
@@ -944,8 +953,10 @@ def event_history( request, event_id ): # {{{1
     return render_to_response( 'event_history.html',
             templates, context_instance = RequestContext( request ) )
 
+# def event_revert( request, revision_id, event_id ): {{{1
 @login_required
-def event_revert( request, revision_id, event_id ): # {{{1
+@only_if_write_enabled
+def event_revert( request, revision_id, event_id ):
     event = get_object_or_404( Event, pk = event_id )
     version_nr = event.version
     revision = get_object_or_404( Revision, pk = revision_id )
@@ -963,7 +974,9 @@ def event_revert( request, revision_id, event_id ): # {{{1
     return HttpResponseRedirect( reverse(
             'event_show_all', kwargs = {'event_id': event.id,} ) )
 
+# def event_delete( request, event_id ): {{{1
 @login_required
+@only_if_write_enabled
 def event_delete( request, event_id ):
     event = get_object_or_404( Event, pk = event_id )
     user = request.user
@@ -1067,9 +1080,11 @@ def event_deleted( request, event_id ): # {{{1
     return render_to_response( 'event_deleted.html',
             templates, context_instance = RequestContext( request ) )
 
+# def event_undelete( request, event_id ): {{{1
 @login_required
+@only_if_write_enabled
 @revision.create_on_success
-def event_undelete( request, event_id ): # {{{1
+def event_undelete(request, event_id):
     if request.user.is_authenticated():
         revision.user = request.user
     try:
@@ -1354,8 +1369,10 @@ def search( request, query = None, view = 'boxes' ): # {{{1
             context,
             context_instance = RequestContext( request ) )
 
+# def filter_save( request ): {{{1
 @login_required
-def filter_save( request ): # {{{1
+@only_if_write_enabled
+def filter_save( request ):
     """ Saves a new filter
 
     >>> from django.test import Client
@@ -1399,8 +1416,10 @@ def filter_save( request ): # {{{1
                 'a valid method for saving a filter') )
         return main( request )
 
+# def filter_edit( request, filter_id ): {{{1
 @login_required
-def filter_edit( request, filter_id ): # {{{1
+@only_if_write_enabled
+def filter_edit( request, filter_id ):
     """ View to edit a filter
 
     >>> from django.test import Client
@@ -1449,8 +1468,10 @@ def filter_edit( request, filter_id ): # {{{1
         return render_to_response( 'filter_edit.html',
                 templates, context_instance = RequestContext( request ) )
 
+# def filter_drop( request, filter_id ): {{{1
 @login_required
-def filter_drop( request, filter_id ): # {{{1
+@only_if_write_enabled
+def filter_drop( request, filter_id ):
     """ Delete a filter if the user is the owner 
 
     >>> from django.test import Client

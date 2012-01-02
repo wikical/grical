@@ -36,6 +36,10 @@ class Command( NoArgsCommand ): # {{{1
     help = "add RevisionInfo provided there is only one version for each event"
     @transaction.commit_on_success # see http://docs.djangoproject.com/en/1.3/topics/db/transactions/#controlling-transaction-management-in-views
     def handle_noargs( self, **options ): # {{{2
+        """ Executes the action or do nothing if settings.READ_ONLY is True.
+        """
+        if settings.READ_ONLY == True:
+            return
         events = Event.objects.all()
         count = 0
         for event in events:

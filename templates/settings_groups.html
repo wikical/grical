@@ -2,10 +2,12 @@
     {% for group in USER.get_groups %}
         <li>
             <a href="{% url group_view group.id %}">{{ group.name }}</a>
-            &nbsp;
-            <a href="{% url group_quit group.id %}">quit</a>
-            &nbsp;
-            <a href="{% url group_invite group.id %}">invite</a>
+            {% if not READ_ONLY %}
+                &nbsp;
+                <a href="{% url group_quit group.id %}">quit</a>
+                &nbsp;
+                <a href="{% url group_invite group.id %}">invite</a>
+            {% endif %}
             &nbsp;
             <a href="{% url list_events_group_ical group.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>
             &nbsp;

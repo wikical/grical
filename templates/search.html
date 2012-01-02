@@ -41,13 +41,15 @@
                 {% endblocktrans %}
             {% endif %}
         {% endif %}
-        {% if USER.is_authenticated %}
-            <form style="display:inline" action="{% url filter_save %}" method="POST">{% csrf_token %}
-                <input type="hidden" size="60" name="q" value="{{ query }}">
-                <input type="submit" value="{% trans "Save as a filter" %}">
-            </form>
-        {% else %}
-            {# people said this is too much {% trans "(if you were logged in, you could save this search as a filter)" %} #}
+        {% if not READ_ONLY %}
+            {% if USER.is_authenticated %}
+                <form style="display:inline" action="{% url filter_save %}" method="POST">{% csrf_token %}
+                    <input type="hidden" size="60" name="q" value="{{ query }}">
+                    <input type="submit" value="{% trans "Save as a filter" %}">
+                </form>
+            {% else %}
+                {# people said this is too much {% trans "(if you were logged in, you could save this search as a filter)" %} #}
+            {% endif %}
         {% endif %}
     </span>
 {% endblock %}

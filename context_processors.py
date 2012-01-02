@@ -70,5 +70,6 @@ def global_template_vars(request):
     vars_dic['MEDIA_URL'] = settings.MEDIA_URL
     # TODO: think on the trick to get the user out of a signed Django-1.4 cookie
     vars_dic['USER'] = get_user()
+    vars_dic['READ_ONLY'] = settings.READ_ONLY
     # return
     return vars_dic

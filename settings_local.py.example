@@ -1,9 +1,10 @@
-################################ ##############################
-# example of a settings_local.py YOU NEED TO MODIFY SOME VALUES
-################################ ##############################
+######################################
+# example of a settings_local.py
+# YOU NEED TO MODIFY SOME VALUES BELOW
+######################################
 
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 """ configuration file for local installations of the source tree """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
 
@@ -15,14 +16,17 @@ from subprocess import Popen, PIPE
 PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 
 # generate version number from hg tip
-proc = Popen(
-        'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
-        shell = True, stdin = PIPE, stdout = PIPE )
-tip = proc.communicate()[0]
-VERSION = '0.6' + tip
+try:
+    proc = Popen(
+            'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
+            shell = True, stdin = PIPE, stdout = PIPE )
+    tip = proc.communicate()[0]
+except:
+    tip = ""
+VERSION = '0.9' + tip
 
 # Make this random and unique; and don't share it with anybody.
-SECRET_KEY = 'e82b5;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
+SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 
 # host IP
 try:
@@ -45,7 +49,7 @@ IMAP_SSL = False
 # This is used for getting the coordinates from a location using the API of
 # GeoNames.org. You need to register here http://www.geonames.org/login and
 # then activate the use of the API in your account.
-GEONAMES_USERNAME = 'your_geonames.org_password'
+GEONAMES_USERNAME = 'your_geonames.org_username'
 GEONAMES_URL = 'https://secure.geonames.net/'
 
 # Default value for distance unit, possible values are: 'km' and 'mi'

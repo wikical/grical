@@ -5,12 +5,15 @@
         <li>
             <a href="{% url search_query fil.query|urlencode|iriencode %}">{{ fil.name }}</a>
             &nbsp;
+            {# TODO: cache #}
             ({{ fil.matches_count }})
-            &nbsp;
-            <a href="{% url filter_edit fil.id %}">edit</a>
-            &nbsp;
-            <a href="{% url filter_drop fil.id %}">delete</a>
-            {% comment %}FIXME{% endcomment %}
+            {% if not READ_ONLY %}
+                &nbsp;
+                <a href="{% url filter_edit fil.id %}">edit</a>
+                &nbsp;
+                <a href="{% url filter_drop fil.id %}">delete</a>
+                {% comment %}FIXME{% endcomment %}
+            {% endif %}
         </li>
     {% endfor %}
 </ul>
