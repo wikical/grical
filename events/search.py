@@ -48,6 +48,8 @@ EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', re.UNICODE) #{{{2
 GROUP_REGEX = re.compile(r'(?:^|\s)!([-\w]+)\b', re.UNICODE) #{{{2
 TAG_REGEX = re.compile(r'(?:^|\s)#([-\w]+)\b', re.UNICODE) #{{{2
 SPACE_REGEX = re.compile(r'\s+', re.UNICODE) #{{{2
+# CONTINENT_REGEX {{{2
+CONTINENT_REGEX = re.compile(r'(?:^|\s)@@(\w\w)\b', re.UNICODE) #{{{2
 # LOCATION_REGEX {{{2
 # the regex start with @ and has 4 alternatives, examples:
 # 52.1234,-0.1234+300km
@@ -90,11 +92,40 @@ class GeoLookupError( Exception ): # {{{1
     """ exception raises when no coordinates can be looked up for a given name
     """
     pass
+class ContinentLookupError( Exception ): # {{{1
+    """ exception raises when no continent can be looked up for a given name
+    """
+    pass
+
+def continent_restriction( queryset, query ): #{{{1
+    """ returns a tuple (a queryset an a string ) restricting ``queryset`` with
+    the continent of ``query`` and removing them from ``query`` """
+    for loc in CONTINENT_REGEX.findall(query):
+        from gridcalendar.data.models import (ContinentBorder,
+                CONTINENT_COUNTRIES)
+        continent = loc.upper()
+        try:
+            mpoly = ContinentBorder.objects.get(code=continent).mpoly
+            # TODO: also use names in different languages using
+            # data.models.CONTINENTS
+            # Example: @@europa
+        except ContinentBorder.DoesNotExist:
+            raise ContinentLookupError()
+        countries = CONTINENT_COUNTRIES[continent]
+        if queryset.model == Event:
+            queryset = queryset.filter(
+                    Q(coordinates__contained = mpoly) |
+                    Q(country__in = countries))
+        else:
+            queryset = queryset.filter(
+                    Q(event__coordinates__contained = mpoly) |
+                    Q(event__country__in = countries))
+        query = CONTINENT_REGEX.sub("", query)
+    return queryset, query
 
 def location_restriction( queryset, query ): #{{{1
     """ returns a tuple (a queryset an a string ) restricting ``queryset`` with
     the locations of ``query`` and removing them from ``query`` """
-    # TODO: also accept continent codes: AF,AS,EU,NA,OC,SA,AN
     for loc in LOCATION_REGEX.findall(query):
         if loc[11]: # name or name,name
             # name given, which can have a city, a comma and a country
@@ -364,6 +395,10 @@ def search_events( query, related = True, model = Event ): #{{{1
                 queryset = queryset.filter(
                         event__calendar__group__name__iexact = group_name)
         query = GROUP_REGEX.sub("", query)
+        # continents
+        # NOTE: continent_restriction (@@) must be before (@) because of the
+        # similar regexes
+        queryset, query = continent_restriction( queryset, query )
         # locations
         queryset, query = location_restriction( queryset, query )
         # tags

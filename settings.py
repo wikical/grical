@@ -153,6 +153,7 @@ SEND_BROKEN_LINK_EMAILS = True
 # at the end additional applications are conditionaly added
 INSTALLED_APPS = (
     'gridcalendar.accounts',
+    'gridcalendar.data',
     'gridcalendar.events',
     'django.contrib.auth',
     'django.contrib.contenttypes',
