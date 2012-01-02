@@ -24,7 +24,7 @@
 
     <!-- see http://en.wikipedia.org/wiki/Favicon -->
     <link rel="apple-touch-icon" href="{{ MEDIA_URL }}icon-apple-57x57.png" />
-    {{ form.media }}
+    {% if form.media %}{{ form.media }}{% endif %}
     {% block extraheaders %}{% endblock %}
     <!--
     <script type="text/javascript" src="{{ MEDIA_URL }}javascript/external.js"></script>
@@ -42,8 +42,12 @@
         |&nbsp;<a href="{% url settings %}">{% trans "settings" %}</a>
         |&nbsp;<a href="{% url auth_logout %}">{% trans "logout" %}</a>
     {% else %}
-        <a href="{% url registration_register %}">{% trans "Sign&nbsp;up" %}</a>
-        |&nbsp;<a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
+        {% if not READ_ONLY %}
+            <a href="{% url registration_register %}">{% trans "Sign&nbsp;up" %}</a>
+            |&nbsp;<a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
+        {% else %}
+            <a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
+        {% endif %}
     {% endif %}
     |&nbsp;<a href="{% url help %}">{% trans "help" %}</a>
     |&nbsp;<a href="{% url legal_notice %}">{% trans "legal&nbsp;notice" %}</a>

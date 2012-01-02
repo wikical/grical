@@ -25,11 +25,13 @@
         <li><a href="{% url list_groups_my %}">{% trans "Groups" %}</a></li>
         {% include "settings_groups.html" %}
     {% endif %}
-    <li>{% trans "Options" %}</li>
-    <ul>
-        <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
-        <li><a href="{% url group_new %}">{% trans "Create a new group" %}</a></li>
-    <ul>
+    {% if not READ_ONLY %}
+        <li>{% trans "Options" %}</li>
+        <ul>
+            <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
+            <li><a href="{% url group_new %}">{% trans "Create a new group" %}</a></li>
+        <ul>
+    {% endif %}
 </ul>
 
 {% endblock %}

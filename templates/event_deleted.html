@@ -14,13 +14,15 @@
     </pre>
 </p>
 
-<p>
-{% if USER.is_authenticated %}
-    <a href="{% url event_undelete event_id %}">{% trans 'You can undelete it.' %}</a>
-{% else %}
-    {% trans "If you were logged-in, you could undelete this event" %}
+{% if not READ_ONLY %}
+    <p>
+    {% if USER.is_authenticated %}
+        <a href="{% url event_undelete event_id %}">{% trans 'You can undelete it.' %}</a>
+    {% else %}
+        {% trans "If you were logged-in, you could undelete this event" %}
+    {% endif %}
+    </p>
 {% endif %}
-</p>
 
 <div class="event_history">
     {% if revisions_diffs %}

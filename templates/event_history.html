@@ -13,12 +13,14 @@
             <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
             &nbsp;|&nbsp;
             <a href="{% url event_show_all event.id %}">{% trans "show" %}</a>
-            &nbsp;|&nbsp;
-            <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
-            &nbsp;|&nbsp;
-            <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
-            &nbsp;|&nbsp;
-            <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+            {% if not READ_ONLY %}
+                &nbsp;|&nbsp;
+                <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+                &nbsp;|&nbsp;
+                <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+                &nbsp;|&nbsp;
+                <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+            {% endif %}
         </div>
 
         <h1>{% trans "History of: " %} {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}</h1>
