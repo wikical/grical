@@ -82,6 +82,9 @@
                 <div class="data">
                     {% if event.address %}
                         {{ event.address }}
+                        {% if event.country %}
+                            <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></a>
+                        {% endif %}
                         {% if event.coordinates and event.exact %}
                             &nbsp; &#8212; &nbsp;
                         {% endif %}
@@ -91,18 +94,18 @@
                             <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
                             {% if event.country %}
                                 &nbsp;, &nbsp;
+                                <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></a>
                             {% endif %}
                         {% endif %}
                         {% if event.country %}
                             <span class="field_country">
                                 <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>
                             </span>
+                            <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></a>
                         {% endif %}
-                    {% endif %}
-                    {% if event.country %}
-                        <a href='{% urlsearch country=event.country %}'>
-                            <img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" />
-                        </a>
+                        {% if event.coordinates and event.exact %}
+                            &nbsp; &#8212; &nbsp;
+                        {% endif %}
                     {% endif %}
                     {% if event.coordinates and event.exact %}
                         {{ event.coordinates.y }}, {{ event.coordinates.x }}
