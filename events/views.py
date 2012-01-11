@@ -217,7 +217,7 @@ def event_edit_recurrences( request, event_id ):
                     dates__eventdate_date = parse(new_iso).date(),
                     dates__eventdate_name = 'start' ).exists():
                 messages.error( request,
-                    _( u'if was not possible to save the recurrences '
+                    _( u'it was not possible to save the recurrences '
                         'because there is already an event on the '
                         '%(date_in_iso_format)s with the same title.' ) % \
                                 {'date_in_iso_format': new_iso,} )
