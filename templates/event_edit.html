@@ -27,6 +27,7 @@
                     {% endif %}
                     {% if not field.auto_id = "id_title" and not field.auto_id = "id_coordinates" and not field.auto_id = "id_description" %}
                         <div class="label-field-helptext">
+                            {{ field.errors.as_ul }}
                             {{ field.label_tag }}
                             {{ field.as_widget }}<br />
                             <div class="helptext">{{ field.help_text|safe }}</div>
@@ -56,6 +57,7 @@
                     {{ field.label_tag }}<br />
                     <div class="helptext">{{ field.help_text|safe }}</div>
                     {{ field }}
+                    {{ field.errors.as_ul }}
                 {% endwith %}
             </div>
         </div>
