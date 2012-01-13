@@ -142,39 +142,34 @@ def location_restriction( queryset, query ): #{{{1
                         Q( event__city__iexact = city ) | Q(
                             event__country__iexact = city ) )
             else:
-                result = search_name( city + ', ' + country )
-                if result:
-                    coordinates = getattr(result, 'coordinates', None)
-                else:
-                    coordinates = None
+                point = search_name( city + ', ' + country )
                 if queryset.model == Event:
-                    if coordinates:
+                    if point:
                         # example: ...coordinates__distance_lte=(pnt, D(km=7)))
                         distance = { settings.DISTANCE_UNIT_DEFAULT:
                                 settings.CITY_RADIUS, }
                         queryset = queryset.filter(
                            Q( city__iexact=city, country__iexact=country ) |
                            Q( coordinates__distance_lte =
-                            ( coordinates, D( **distance ) ) ) )
+                            ( point, D( **distance ) ) ) )
                     else:
                         queryset = queryset.filter(
                            city__iexact = city, country__iexact = country )
                 else:
-                    if coordinates:
+                    if point:
                         queryset = queryset.filter(
                            Q( event__city__iexact = city,
                                event__country__iexact = country ) |
                            Q( event__coordinates__distance_lte =
-                                ( coordinates, D( **distance ) ) ) )
+                                ( point, D( **distance ) ) ) )
                     else:
                         queryset = queryset.filter(
                            event__city__iexact = city,
                            event__country__iexact = country )
         elif loc[8]: # name + distance + optional unit
-            result = search_name( loc[8] )
-            if not result:
+            point = search_name( loc[8] )
+            if not point:
                 raise GeoLookupError()
-            point = result['coordinates']
             if loc[10]:
                 distance = {loc[10]: loc[9],}
             else:
