@@ -145,6 +145,8 @@ def location_restriction( queryset, query ): #{{{1
                 result = search_name( city + ', ' + country )
                 if result:
                     point = result.get('coordinates', None)
+                else:
+                    point = None
                 distance = { settings.DISTANCE_UNIT_DEFAULT:
                         settings.CITY_RADIUS, }
                 if queryset.model == Event:
@@ -172,6 +174,8 @@ def location_restriction( queryset, query ): #{{{1
             result = search_name( loc[8] )
             if result:
                 point = result.get('coordinates', None)
+            else:
+                point = None
             if not point:
                 raise GeoLookupError()
             if loc[10]:
