@@ -1463,10 +1463,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             events = Event.objects.filter( _recurring__master = master)
             events.exclude( pk = self.pk ).update( version = F('version') + 1 )
         # dealing with the address data
-        if kwargs.has_key('ip'):
-            ip = kwargs.pop('ip')
-        else:
-            ip = None
+        ip = kwargs.pop('ip', None)
         if old and old.coordinates and self.coordinates and (
                 old.latitude != self.latitude or
                 old.longitude != self.longitude ):
