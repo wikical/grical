@@ -25,13 +25,6 @@ IMAP_SSL = False
 GEONAMES_USERNAME = 'your_geonames.org_username'
 GEONAMES_URL = 'https://secure.geonames.net/'
 
-# Default value for distance unit, possible values are: 'km' and 'mi'
-DISTANCE_UNIT_DEFAULT = 'km' # alternative: 'mi'
-
-# events within this radius of the center of city are considered to be in the
-# city. DISTANCE_UNIT_DEFAULT is the unit.
-CITY_RADIUS = 50
-
 # ======================================================================
 # debug settings
 # ======================================================================
