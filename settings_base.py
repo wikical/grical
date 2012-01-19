@@ -57,10 +57,6 @@ assert ( DEFAULT_RECURRING_DURATION_IN_DAYS <= MAX_DAYS_IN_FUTURE )
 # TODO: use a user parameter and a button to show the next ones
 MAX_EVENTS_ON_ROOT_PAGE = 20
 
-# used to generate the PROID field of iCalendars, see
-# http://tools.ietf.org/html/rfc5545
-PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
-
 REPLY_TO = None
 
 # generate version number from hg tip
@@ -72,6 +68,10 @@ try:
 except:
     tip = ""
 VERSION = '0.9' + tip
+
+# used to generate the PROID field of iCalendars, see
+# http://tools.ietf.org/html/rfc5545
+PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
 
 # =============================================================================
 # GeoIP, GEONAME and django-countries settings {{{1
