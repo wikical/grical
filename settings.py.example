@@ -4,15 +4,12 @@
 from settings_base import *
 from settings_debug import * # Include this when debugging
 
-import os
-import socket
-from subprocess import Popen, PIPE
-
 # Make this random and unique; and don't share it with anybody.
 SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 
 # host IP
 try:
+    import socket
     HOST_IP = socket.gethostbyname(socket.gethostname())
 except:
     HOST_IP = "127.0.0.1"
@@ -46,27 +43,11 @@ CITY_RADIUS = 50
 # debug settings
 # ======================================================================
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
-
 # http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
 # Also used by the toolbar middleware, see
 # /usr/share/doc/python-django-debug-toolbar/README.Debian and
 # /usr/share/doc/python-django-debug-toolbar/README.rst.gz
 INTERNAL_IPS = ('127.0.0.1',)
-
-if DEBUG:
-    TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
-
-# ======================================================================
-# cache settings
-# ======================================================================
-# http://docs.djangoproject.com/en/dev/topics/cache/
-
-# CACHE_BACKEND = 'locmem://'
-# CACHE_MIDDLEWARE_KEY_PREFIX = '%s_' % PROJECT_NAME
-# CACHE_MIDDLEWARE_SECONDS = 600
-
 
 # ======================================================================
 # email and error-notify settings
@@ -77,8 +58,6 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
-USERNAMES_TO_MAIL_WHEN_DEBUGGING = ('ivan',)
 
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to

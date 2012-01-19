@@ -1,7 +1,8 @@
 from settings_base import *
 
 DEBUG = True
-
+TEMPLATE_DEBUG = True
+TEMPLATE_STRING_IF_INVALID = 'STRING_NOT_SET'
 MIDDLEWARE_CLASSES = (MIDDLEWARE_CLASSES[0], 
                       'debug_toolbar.middleware.DebugToolbarMiddleware'
                      ) + MIDDLEWARE_CLASSES[1:]
