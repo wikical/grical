@@ -7,13 +7,6 @@ from settings_debug import * # Include this when debugging
 # Make this random and unique; and don't share it with anybody.
 SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 
-# host IP
-try:
-    import socket
-    HOST_IP = socket.gethostbyname(socket.gethostname())
-except:
-    HOST_IP = "127.0.0.1"
-
 # ======================================================================
 # imap settings for getting events as emails
 # ======================================================================
