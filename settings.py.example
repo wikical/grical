@@ -1,12 +1,8 @@
-######################################
-# example of a settings_local.py
-# YOU NEED TO MODIFY SOME VALUES BELOW
-######################################
-
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 """ configuration file for local installations of the source tree """
 # vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+
+from settings_base import *
+from settings_debug import * # Include this when debugging
 
 import os
 import socket
