@@ -21,38 +21,8 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-# ======================================================================
-# geonames settings
-# ======================================================================
-
 # This is used for getting the coordinates from a location using the API of
 # GeoNames.org. You need to register here http://www.geonames.org/login and
 # then activate the use of the API in your account.
 GEONAMES_USERNAME = 'your_geonames.org_username'
 GEONAMES_URL = 'https://secure.geonames.net/'
-
-
-# ======================================================================
-# LOG PIPE
-# ======================================================================
-
-# If this value is not False, events changes will be logged to this pipe
-# Make sure it is writtable
-# Use LOG_PIPE=False when testing
-LOG_PIPE = '/tmp/gricallogpipe-dev'
-# LOG_PIPE = False
-# the group id. Should be group id of the proccess running Django
-LOG_PIPE_GID = 33
-
-# ======================================================================
-# IRC
-# ======================================================================
-
-# to log events changes ( see LOG_PIPE ) to a IRC channel, run the script
-# irclogger.py
-
-IRC_NETWORK = 'irc.freenode.net'
-IRC_PORT = 6667
-IRC_CHANNEL = '#test'
-IRC_NICK = 'test'
-IRC_NAME = 'test'
