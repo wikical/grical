@@ -8,9 +8,6 @@ import os
 import socket
 from subprocess import Popen, PIPE
 
-# absolute path to this directory
-PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
-
 # Make this random and unique; and don't share it with anybody.
 SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 

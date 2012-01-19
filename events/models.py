@@ -1127,7 +1127,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             vevent.add('LOCATION').value = self.address
         vevent.add('UID').value = \
                 Site.objects.get_current().name + u'-' + \
-                hashlib.md5(settings.PROJECT_ROOT).hexdigest() + u'-' \
+                hashlib.md5(settings.PROGRAM_DIR).hexdigest() + u'-' \
                 + unicode(self.id) + u'@' + \
                 Site.objects.get_current().domain
         # calculate DTEND

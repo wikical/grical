@@ -28,13 +28,14 @@ import os
 import djcelery
 
 DEBUG = False
+PROGRAM_DIR = os.path.dirname(__file__)
 
 # =============================================================================
 # specific GridCalendar settings {{{1
 # =============================================================================
 
 # Stop using the write database. When True, users cannot enter/modify data
-READ_ONLY = os.path.exists(os.path.join(PROJECT_ROOT, "READ_ONLY"))
+READ_ONLY = os.path.exists(os.path.join(PROGRAM_DIR, "READ_ONLY"))
 
 # limits for number of events/dates
 DEFAULT_LIMIT = 50
@@ -65,7 +66,7 @@ REPLY_TO = None
 # generate version number from hg tip
 try:
     proc = Popen(
-            'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
+            'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROGRAM_DIR,
             shell = True, stdin = PIPE, stdout = PIPE )
     tip = proc.communicate()[0]
 except:
@@ -204,7 +205,7 @@ TEMPLATE_DIRS = (
     # "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join( PROJECT_ROOT, "templates" ),
+    os.path.join( PROGRAM_DIR, "templates" ),
  )
 
 TEMPLATE_LOADERS = (
@@ -266,7 +267,7 @@ USE_I18N = True
 USE_L10N = False
 
 SITE_ID = 1
-MEDIA_ROOT = os.path.join( PROJECT_ROOT, "media" )
+MEDIA_ROOT = os.path.join( PROGRAM_DIR, "media" )
 MEDIA_URL = '/m/'
 ADMIN_MEDIA_PREFIX = '/m/admin/'
 ROOT_URLCONF = 'urls'
