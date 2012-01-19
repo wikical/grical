@@ -41,3 +41,4 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.Loader',
 )
 CACHES['default']['KEY_PREFIX'] = 'debug'
+INTERNAL_IPS = ('127.0.0.1',)
