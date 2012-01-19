@@ -3,7 +3,7 @@ syntax: glob
 *.pyc
 .*.swp
 *.bak
-settings_local.py
+settings.py
 docs/_build
 
 syntax: regexp
