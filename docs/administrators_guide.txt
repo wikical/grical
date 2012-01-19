@@ -259,6 +259,7 @@ Run the following to initialize the database and create the necessary
 database tables for GridCalendar::
 
     python manage.py syncdb
+    python manage.py createcachetable cache
 
 Also copy or symlink the jQuery and jQuery UI files to the
 :file:`media/js` and :file:`media/css` directories. For example, in
