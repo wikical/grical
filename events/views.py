@@ -97,8 +97,8 @@ def help_page( request ): # {{{1
     >>> Client().get(reverse('help')).status_code
     200
     """
-    usage_text = open(os.path.join(settings.PROJECT_ROOT, 'USAGE.TXT')).read()
-    about_text = open(os.path.join(settings.PROJECT_ROOT, 'ABOUT.TXT')).read()
+    usage_text = open(os.path.join(settings.PROGRAM_DIR, 'USAGE.TXT')).read()
+    about_text = open(os.path.join(settings.PROGRAM_DIR, 'ABOUT.TXT')).read()
     return render_to_response( 'help.html', {
             'title': Site.objects.get_current().name + " - " + _( 'help' ),
             'usage_text': usage_text,
@@ -795,7 +795,7 @@ def event_show_all( request, event_id ): # {{{1
         event = Event.objects.get( pk = event_id )
     except Event.DoesNotExist:
         return event_does_not_exist( request, event_id, 'event_show_all' )
-    # about_text = open( settings.PROJECT_ROOT + '/ABOUT.TXT', 'r' ).read()
+    # about_text = open( settings.PROGRAM_DIR + '/ABOUT.TXT', 'r' ).read()
     title = ""
     if event.city:
         title += event.city
@@ -1677,7 +1677,7 @@ def main( request, status_code=200 ):# {{{1
         page = paginator.page( page_nr )
     except ( EmptyPage, InvalidPage ):
         page = paginator.page( paginator.num_pages )
-    about_text = open(os.path.join(settings.PROJECT_ROOT, 'ABOUT.TXT')).read()
+    about_text = open(os.path.join(settings.PROGRAM_DIR, 'ABOUT.TXT')).read()
     # We generate the response with a custom status code. Reason: our custom
     # handler404 and handler500 returns the main page with a custom error
     # message and we return also the proper html status code
