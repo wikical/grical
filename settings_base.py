@@ -73,6 +73,16 @@ VERSION = '0.9' + tip
 # http://tools.ietf.org/html/rfc5545
 PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
 
+# imap settings for getting events as emails
+IMAP_SERVER = ''
+IMAP_LOGIN = ''
+IMAP_PASSWD = ''
+IMAP_SSL = False
+
+# used for messages sent. You can set it to None to avoid emails having the
+# header reply-to
+REPLY_TO = None
+
 # =============================================================================
 # GeoIP, GEONAME and django-countries settings {{{1
 # =============================================================================

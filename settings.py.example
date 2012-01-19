@@ -8,14 +8,6 @@ from settings_debug import * # Include this when debugging
 SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 
 # ======================================================================
-# imap settings for getting events as emails
-# ======================================================================
-IMAP_SERVER = ''
-IMAP_LOGIN = ''
-IMAP_PASSWD = ''
-IMAP_SSL = False
-
-# ======================================================================
 # geonames settings
 # ======================================================================
 
@@ -34,23 +26,6 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
-# used for messages sent. You can set it to None to avoid emails having the
-# header reply-to
-REPLY_TO = 'None'
-
-DEFAULT_FROM_EMAIL = ''
-SERVER_EMAIL = ''
-EMAIL_SUBJECT_PREFIX = ''
-
-EMAIL_HOST = '127.0.0.1'
-EMAIL_PORT = 25
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_USE_TLS = False
-
-# see http://docs.djangoproject.com/en/dev/howto/error-reporting/
-SEND_BROKEN_LINK_EMAILS = True
 
 # ======================================================================
 # LOG PIPE
