@@ -11,16 +11,6 @@ from subprocess import Popen, PIPE
 # absolute path to this directory
 PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 
-# generate version number from hg tip
-try:
-    proc = Popen(
-            'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
-            shell = True, stdin = PIPE, stdout = PIPE )
-    tip = proc.communicate()[0]
-except:
-    tip = ""
-VERSION = '0.9' + tip
-
 # Make this random and unique; and don't share it with anybody.
 SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 
