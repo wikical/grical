@@ -7,6 +7,15 @@ from settings_debug import * # Include this when debugging
 # Make this random and unique; and don't share it with anybody.
 SECRET_KEY = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$'
 
+DATABASES = {  
+    'default': {  
+         'ENGINE': 'django.contrib.gis.db.backends.postgis',
+         'NAME': 'testbed',
+         'USER': 'tester',           
+         'PASSWORD': 'a_password',
+     }
+}
+
 # ======================================================================
 # geonames settings
 # ======================================================================
@@ -52,15 +61,3 @@ IRC_CHANNEL = '#test'
 IRC_NICK = 'test'
 IRC_NAME = 'test'
 
-# ======================================================================
-# database settings
-# ======================================================================
-
-DATABASES = {  
-    'default': {  
-         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'testbed',
-         'USER': 'tester',           
-         'PASSWORD': 'a_password',
-     }
-}
