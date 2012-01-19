@@ -82,6 +82,13 @@ GEOIP_PATH = '/usr/share/GeoIP'
 GEONAMES_URL = 'http://api.geonames.org/'
 GEONAMES_USERNAME = 'demo'
 
+# Default value for distance unit, possible values are: 'km' and 'mi'
+DISTANCE_UNIT_DEFAULT = 'km' # alternative: 'mi'
+
+# events within this radius of the center of city are considered to be in the
+# city. DISTANCE_UNIT_DEFAULT is the unit.
+CITY_RADIUS = 50
+
 # =============================================================================
 # test settings {{{1
 # =============================================================================
