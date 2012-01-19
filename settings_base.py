@@ -83,6 +83,8 @@ IMAP_SSL = False
 # header reply-to
 REPLY_TO = None
 
+LOG_PIPE = False
+
 # =============================================================================
 # GeoIP, GEONAME and django-countries settings {{{1
 # =============================================================================
