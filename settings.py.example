@@ -103,6 +103,7 @@ SEND_BROKEN_LINK_EMAILS = True
 
 # If this value is not False, events changes will be logged to this pipe
 # Make sure it is writtable
+# Use LOG_PIPE=False when testing
 LOG_PIPE = '/tmp/gricallogpipe-dev'
 # LOG_PIPE = False
 # the group id. Should be group id of the proccess running Django
