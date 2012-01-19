@@ -221,7 +221,7 @@ def search_address( data, ip = None ): # {{{1
         if ( last_item not in country_codes ) and \
                 ( last_item not in country_names ):
             country_code = geoip.country_code_by_addr( ip )
-            if country_code and country_code != '':
+            if country_code:
                 data_extended = data + u", " + country_code
                 # OpenStreetMap doesn't want more than one query per second
                 time.sleep(1)
@@ -230,26 +230,27 @@ def search_address( data, ip = None ): # {{{1
                     return result_osm
                 # OpenStreetMap couldn't help, we try Google again with the
                 # country code
-                result_google = search_address_google( data, country_code )
+                result_google = search_address_google( data_extended )
                 if result_google and len( result_google ) == 1:
                     return result_google
         # the country didn't help. We try also the city.
         region_data = geoip.region_by_addr( ip )
-        if region_data and region_data['city'].lower() not in data.lower():
-            if country_code:
-                data_extended = data + ', ' + region_data['city'] + ', ' + \
-                    country_code
-            else:
-                data_extended = data + ', ' + region_data['city']
-            # we try again with Google
-            result_google = search_address_google( data_extended )
-            if result_google and len( result_google ) == 1:
-                return result_google
-            # we try again with OSM
-            time.sleep(1)
-            result_osm = search_address_osm( data_extended )
-            if result_osm and len( result_osm ) == 1:
-                return result_osm
+        if region_data:
+            city = smart_unicode(region_data['city'], encoding='ISO-8859-1')
+            if city.lower() not in data.lower():
+                if country_code:
+                    data_extended = data + ', ' + city + ', ' + country_code
+                else:
+                    data_extended = data + ', ' + city
+                # we try again with Google
+                result_google = search_address_google( data_extended )
+                if result_google and len( result_google ) == 1:
+                    return result_google
+                # we try again with OSM
+                time.sleep(1)
+                result_osm = search_address_osm( data_extended )
+                if result_osm and len( result_osm ) == 1:
+                    return result_osm
     # nothing worked out :( we return the smaller of both, otherwise None
     if result_osm:
         if result_google:
@@ -290,7 +291,7 @@ def search_country_code( name ): #{{{1
         return result['country']
     return None
 
-def search_address_google( data, country_code = None ): # {{{1
+def search_address_google(data): # {{{1
     """ loop up using The Google Geocoding API
 
     Returns the same as ``search_address_osm``
@@ -390,11 +391,7 @@ def search_address_google( data, country_code = None ): # {{{1
     try:
         address = urllib.quote( data.encode('utf-8') )
         conn = httplib.HTTPConnection( "maps.googleapis.com", timeout=10 )
-        if country_code:
-            url_sufix = "//maps/api/geocode/xml?address=" + address + \
-                    "&sensor=false&region=" + country_code.lower()
-        else:
-            url_sufix = "//maps/api/geocode/xml?address=" + address + \
+        url_sufix = "//maps/api/geocode/xml?address=" + address + \
                     "&sensor=false"
         conn.request( "GET", url_sufix )
         conn.sock.settimeout( 10.0 )
