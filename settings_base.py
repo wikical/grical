@@ -62,6 +62,16 @@ PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
 
 REPLY_TO = None
 
+# generate version number from hg tip
+try:
+    proc = Popen(
+            'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROJECT_ROOT,
+            shell = True, stdin = PIPE, stdout = PIPE )
+    tip = proc.communicate()[0]
+except:
+    tip = ""
+VERSION = '0.9' + tip
+
 # =============================================================================
 # GeoIP, GEONAME and django-countries settings {{{1
 # =============================================================================
