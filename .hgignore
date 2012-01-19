@@ -3,6 +3,7 @@ syntax: glob
 *.pyc
 .*.swp
 *.bak
+*.orig
 settings.py
 docs/_build
 
