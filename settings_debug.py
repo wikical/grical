@@ -1,9 +1,10 @@
 DEBUG = True
 
-MIDDLEWARE_CLASSES.insert(1,
-                'debug_toolbar.middleware.DebugToolbarMiddleware', )
+MIDDLEWARE_CLASSES = tuple(list(MIDDLEWARE_CLASSES).insert(1,
+                'debug_toolbar.middleware.DebugToolbarMiddleware'))
 MIDDLEWARE_CLASSES += (
     'gridcalendar.middlewares.ProfileMiddleware', )
+INSTALLED_APPS = ('debug_toolbar',) + INSTALLED_APPS
 DEBUG_TOOLBAR_PANELS = (
     'debug_toolbar.panels.version.VersionDebugPanel',
     'debug_toolbar.panels.timer.TimerDebugPanel',
