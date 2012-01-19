@@ -332,10 +332,11 @@ IRC
 
 GridCalendar can log into an IRC channel. To use the IRC logger,
 configure the :data:`IRC_NETWORK`, :data:`IRC_PORT`, :data:`IRC_NICK`,
-:data:`IRC_NAME` and :data:`IRC_CHANNEL` and :data:`LOG_PIPE`
-configuration settings; the latter is a pipe where GridCalendar writes
-information and which is read by the IRC logger. Start the IRC logger
-with::
+:data:`IRC_NAME`, :data:`IRC_CHANNEL`, :data:`LOG_PIPE` and
+:data:`LOG_PIPE_GID` configuration settings; :data:`LOG_PIPE` is a
+pipe where GridCalendar writes information and which is read by the
+IRC logger; :data:`LOG_PIPE_GID` is the group id as which the pipe
+should be written. Start the IRC logger with::
 
    python manage.py irclogger
 
