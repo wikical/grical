@@ -4,6 +4,7 @@
 # GPL {{{1
 #############################################################################
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2012 Jose Garrido <jose.garrido ät arcor.com>
 #
 # This file is part of GridCalendar.
 # 
@@ -181,100 +182,223 @@ class DatesTimesField(forms.Field): # {{{1
 
     >>> dt = DatesTimesField()
     >>> d = dt.to_python('2010-01-25')
-    >>> d = dt.to_python('2010-1-25')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> d = dt.to_python('25-1-2010')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> d = dt.to_python('25.1.2010')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> d = dt.to_python('1/25/2010')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
     >>> d = dt.to_python('2010-01-25 2010-01-26')
-    >>> d = dt.to_python('2010-1-25 2010-1-26')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['enddate'] == datetime.date(2010,1,26)
     >>> d = dt.to_python('2010-01-25 10:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(10,00)
     >>> d = dt.to_python('2010-1-25 1:00')
-    >>> d = dt.to_python('2010-01-25 10:00 2010-01-26 18:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(1,00)
     >>> d = dt.to_python('2010-1-25 1:00 2010-1-26 2:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(1,00)
+    >>> assert d['enddate'] == datetime.date(2010,1,26)
+    >>> assert d['endtime'] == datetime.time(2,00)
     >>> d = dt.to_python('2010-01-25 10:00 11:00')
-    >>> d = dt.to_python('2010-1-25 8:00 9:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(10,00)
+    >>> assert d['endtime'] == datetime.time(11,00)
+    >>> d = dt.to_python('January 23-24 2012')
+    >>> assert d['startdate'] == datetime.date(2012,1,23)
+    >>> assert d['enddate'] == datetime.date(2012,1,24)
+    >>> d = dt.to_python('2010-1-25 1:00 2010-1-26 2:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(1,00)
+    >>> assert d['enddate'] == datetime.date(2010,1,26)
+    >>> assert d['endtime'] == datetime.time(2,00 )
     >>> d = dt.to_python('2010-01-25 10:00-11:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(10,00)
+    >>> assert d['endtime'] == datetime.time(11,00)
     >>> d = dt.to_python('2010-1-25 8:00-9:00')
+    >>> assert d['startdate'] == datetime.date(2010,1,25)
+    >>> assert d['starttime'] == datetime.time(8,00)
+    >>> assert d['endtime'] == datetime.time(9,00)
     >>> d = dt.to_python('25 October, 2006')
+    >>> assert d['startdate'] == datetime.date(2006,10,25)
+    >>> d = dt.to_python('1/1/2000 1/2/2000')
+    >>> assert d['startdate'] == datetime.date(2000, 1, 1)
+    >>> assert d['enddate'] == datetime.date(2000, 1, 2)
+    >>> d = dt.to_python('4.-20.12.2012')
+    >>> assert d['startdate'] == datetime.date(2012,12,4)
+    >>> assert d['enddate'] == datetime.date(2012,12,20)
+    >>> d = dt.to_python('28.9.-5.10.2012 13:00 15:00')
+    >>> assert d['startdate'] == datetime.date(2012,9,28)
+    >>> assert d['enddate'] == datetime.date(2012,10,5)
+    >>> assert d['starttime'] == datetime.time(13,00)
+    >>> assert d['endtime'] == datetime.time(15,00) 
+    >>> d = dt.to_python('28.9.2011-13.10.2011 13:30 15:30')
+    >>> assert d['startdate'] == datetime.date(2011,9,28)
+    >>> assert d['enddate'] == datetime.date(2011,10,13)
+    >>> assert d['starttime'] == datetime.time(13,30)
+    >>> assert d['endtime'] == datetime.time(15,30)
+    >>> d = dt.to_python('January 23-24 2012')
+    >>> assert d['startdate'] == datetime.date(2012,1,23)
+    >>> assert d['enddate'] == datetime.date(2012,1,24)
     """
+    REGEX_LIST = [
+                        #yyyy-mm-dd
+        re.compile(r'^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*$', re.UNICODE),
+                        #dd.mm.yyyy
+        re.compile(r'^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*$', re.UNICODE),
+                        #mm/dd/yyyy
+        re.compile(r'^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*$', re.UNICODE),
+                         #yyyy-mm-dd, yyyy-mm-dd 
+        re.compile(r"""
+                    ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
+                     \s*(?P<end_year>\d\d\d\d)\s*[-/]\s*(?P<end_month>\d?\d)\s*[-/]\s*(?P<end_day>\d?\d)\s*$""", re.UNICODE | re.X),
+                         #dd.mm.yyyy, dd.mm.yyyy
+        re.compile(r"""
+                    ^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<end_day>\d?\d)\s*[.-]\s*(?P<end_month>\d?\d)\s*[.-]\s*(?P<end_year>\d\d\d\d)\s*$""",re.UNICODE | re.X),
+                         #mm/dd/yyyy, mm/dd/yyyy
+        re.compile(r"""
+                    ^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<end_month>\d?\d)\s*/\s*(?P<end_day>\d?\d)\s*/\s*(?P<end_year>\d\d\d\d)\s*$""", re.UNICODE |re.X),
+                        #yyyy-mm-dd, hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #dd.mm.yyyy, hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #mm/dd/yyyy, hh:mm 
+        re.compile(r"""
+                     ^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #hh.mm, yyyy-mm-dd
+        re.compile(r"""
+                    ^\s*(?P<start_hour>\d?\d)\s*[.h:]?\s*(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*$""",re.UNICODE|re.X),
+                        #yyyy-mm-dd, hh:mm,hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #dd.mm.yyyy hh:mm-hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #mm/dd/yyyy hhhmm - hhhmm
+        re.compile(r"""
+                     ^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #yyyy-mm-dd yyyy-mm-dd hh:mm hh:mm   
+        re.compile(r"""
+                    ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
+                     \s*(?P<end_year>\d\d\d\d)\s*[-/]\s*(?P<end_month>\d?\d)\s*[-/]\s*(?P<end_day>\d?\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #yyyy-mm-dd hh:mm yyyy-mm-dd hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_year>\d\d\d\d)\s*[-/]\s*(?P<end_month>\d?\d)\s*[-/]\s*(?P<end_day>\d?\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #mm/dd/yyyy mm/dd/yyyy hh:mm hh:mm
+        re.compile(r"""
+                     ^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<end_month>\d?\d)\s*/\s*(?P<end_day>\d?\d)\s*/\s*(?P<end_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        # dd.mm.yyyy - dd.mm.yyyy hh:mm hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<end_day>\d?\d)\s*[.-]\s*(?P<end_month>\d?\d)\s*[.-]\s*(?P<end_year>\d\d\d\d)\s*[,-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+                        #yyyy-mm-dd-dd
+        re.compile(r"""
+                    ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
+                     \s*(?P<end_day>\d?\d)\s*$""", re.UNICODE | re.X),
+                        #dd.-dd.mm.yyyy 
+        re.compile(r"""
+                    ^\s*(?P<start_day>\d?\d)\s*[.-]-\s*(?P<end_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]
+                     \s*(?P<start_year>\d\d\d\d)\s*$""", re.UNICODE | re.X ),
+                        #dd.mm-dd.mm.yyyy hh:mm hh:mm
+        re.compile(r"""
+                    ^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]-\s*(?P<end_day>\d?\d)\s*[.-]
+                     \s*(?P<end_month>\d?\d)\s*[.-]\s*(?P<end_year>\d\d\d\d)\s*[.-]?
+                     \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
+                     \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
+
+        ]
+
     def to_python(self, value):
         """ returns a dictionary with four values: startdate, enddate,
         starttime, endtime """
         if value:
-            value = value.strip()
-        re_d = \
-            re.compile( r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s*$', re.UNICODE )
-        re_d_d = \
-            re.compile(
-                r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s+(\d\d\d\d-\d?\d-\d?\d)\s*$',
-                    re.UNICODE)
-        re_d_t = \
-            re.compile(r'^\s*(\d\d\d\d-\d?\d-\d?\d)\s+(\d?\d:\d\d)\s*$',
-                    re.UNICODE)
-        re_d_t_d_t = \
-            re.compile(r"""
-                ^\s*(\d\d\d\d-\d?\d-\d?\d)
-                \s+(\d?\d:\d\d)
-                \s+(\d\d\d\d-\d?\d-\d?\d)
-                \s+(\d?\d:\d\d)\s*$""", re.UNICODE | re.X )
-        re_d_t_t = \
-            re.compile(r"""
-                ^\s*(\d\d\d\d-\d?\d-\d?\d)
-                \s+(\d?\d:\d\d)
-                \s+(\d?\d:\d\d)\s*$""", re.UNICODE | re.X )
-        re_d_t_t =   re.compile( r"""
-            ^\s*(\d\d\d\d-\d?\d-\d?\d) # beginning, optional spaces, start date
-             \s+(\d?\d:\d\d)          # start time after one ore more spaces
-             (?:(?:\s+)|(?:\s*-\s*)) # one or more spaces, alternatively -
-             (\d?\d:\d\d)\s*$         # end time before optional spaces""",
-            re.UNICODE | re.X )
+            value = value.strip()    #removes the spaces
+        else:
+            return { 'startdate':
+                    forms.DateField( required = self.required ).clean( value ) }
         try:
-            matcher = re_d.match( value )
-            if matcher:
-                return {'startdate': _date(matcher.group(1)),}
-            matcher = re_d_d.match( value )
-            if matcher:
-                return {'startdate': _date(matcher.group(1)),
-                        'enddate': _date(matcher.group(2))}
-            matcher = re_d_t.match(value)
-            if matcher:
-                return {'startdate': _date(matcher.group(1)),
-                        'starttime': _time(matcher.group(2))}
-            matcher = re_d_t_d_t.match(value)
-            if matcher:
-                return {'startdate': _date(matcher.group(1)),
-                        'starttime': _time(matcher.group(2)),
-                        'enddate': _date(matcher.group(3)),
-                        'endtime': _time(matcher.group(4))}
-            matcher = re_d_t_t.match(value)
-            if matcher:
-                return {'startdate': _date(matcher.group(1)),
-                        'starttime': _time(matcher.group(2)),
-                        'endtime': _time(matcher.group(3))}
+            for regex in self.REGEX_LIST:
+                matcher = regex.match( value )
+                if matcher:
+                    to_return = {}
+                    values = matcher.groupdict()
+                    if values.has_key('start_year') & values.has_key('start_day') :
+                        to_return['startdate'] = datetime.date(
+                                                    int(values['start_year']),
+                                                    int(values['start_month']),
+                                                    int( values['start_day']))
+                    elif values.has_key('start_day') :
+                        to_return['startdate'] = datetime.date(
+                                                    int(values['end_year']),
+                                                    int(values['start_month']),
+                                                    int(values['start_day']))
+                    if values.has_key('start_hour'):
+                        to_return['starttime'] = datetime.time(
+                                                    int(values['start_hour']),
+                                                    int(values['start_min']))
+                    if values.has_key('end_year') & values.has_key('end_day'):
+                        to_return['enddate'] = datetime.date (
+                                                    int(values['end_year']),
+                                                    int(values['end_month']),
+                                                    int(values['end_day']))
+                    elif values.has_key('end_day'):
+                        to_return['enddate'] = datetime.date(
+                                                    int(values['start_year']),
+                                                    int(values['start_month']),
+                                                    int(values['end_day']))
+                    if values.has_key('end_hour'):
+                        to_return ['endtime'] = datetime.time(
+                                                    int(values['end_hour']),
+                                                    int(values['end_min']))
+                    return to_return
         except (TypeError, ValueError), e:
             pass
         except forms.ValidationError, e:
             # the validationError comes from utils.validate_year and the error
             # message is translated
             raise e
-        # No matches, we try now dateutil.parser.parse without and with custom
-        # parseinfos
+        # No matches, we try custom regex and dateutil.parser.parse without and
+        # with custom parseinfos
         if value: # we need this here because parse('') returns today
-            parseinfos = [ None, GermanParserInfo, SpanishParserInfo ]
-            for parseinfo in parseinfos:
-                try:
-                    if not parseinfo:
-                        dati = parse( value )
-                    else:
-                        dati = parse( value, parserinfo = parseinfo() )
-                    if dati.hour==0 and dati.minute==0 and not " 00" in value:
-                        # time was not specified
-                        return { 'startdate': dati.date(), }
-                    # time was specified
-                    return  { 'startdate': dati.date(),
-                              'starttime': dati.time(), }
-                except ValueError:
-                    pass
-        # No matches. We try now DateField
-        # TODO: try DateField with different language settings, and also
-        # DateTimeField
+            #Month dd-dd yyyy
+            regex = re.compile(r'^(?P<month>\w+)\s*(?P<start_day>\w+)\.?-(?P<end_day>\w+)\.?\s*(?P<year>\w+)\s*$')
+            found = regex.match(value)
+            if found:
+                startdate = parseDateTime(found.group('year')+r' '+found.group('month')+r' '+ found.group('start_day'))
+                enddate = parseDateTime(found.group('year')+r' '+found.group('month')+r' '+found.group('end_day') )
+                if startdate and enddate:
+                    return {'startdate': startdate['startdate'], 'enddate': enddate['startdate']}
+            dati = parseDateTime(value)
+                      
+         # No matches. We try now DateField
         return { 'startdate':
                 forms.DateField( required = self.required ).clean( value ) }
 
@@ -287,6 +411,24 @@ class DatesTimesField(forms.Field): # {{{1
         if value.has_key('starttime') and value.has_key('endtime'):
             if value['starttime'] > value['endtime']:
                 raise forms.ValidationError( _('end time is before start time') )
+
+def parseDateTime(value): # {{{1
+    parseinfos = [ None, GermanParserInfo, SpanishParserInfo ]
+    for parseinfo in parseinfos:
+        try:
+            if not parseinfo:
+                dati = parse( value )
+            else:
+                dati = parse( value, parserinfo = parseinfo() )
+            if dati.hour==0 and dati.minute==0 and not " 00" in value:
+                # time was not specified
+                return { 'startdate': dati.date(), }
+            # time was specified
+            return  { 'startdate': dati.date(),
+                      'starttime': dati.time(), }
+        except ValueError:
+            dati = None
+    return dati
 
 class DateExtendedField(DatesTimesField): # {{{1
     def __init__(self, *args, **kwargs):
