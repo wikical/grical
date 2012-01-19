@@ -26,16 +26,6 @@ GEONAMES_USERNAME = 'your_geonames.org_username'
 GEONAMES_URL = 'https://secure.geonames.net/'
 
 # ======================================================================
-# debug settings
-# ======================================================================
-
-# http://docs.djangoproject.com/en/dev/ref/settings/#internal-ips
-# Also used by the toolbar middleware, see
-# /usr/share/doc/python-django-debug-toolbar/README.Debian and
-# /usr/share/doc/python-django-debug-toolbar/README.rst.gz
-INTERNAL_IPS = ('127.0.0.1',)
-
-# ======================================================================
 # email and error-notify settings
 # ======================================================================
 
