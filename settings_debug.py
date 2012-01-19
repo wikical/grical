@@ -1,7 +1,10 @@
+from settings_base import *
+
 DEBUG = True
 
-MIDDLEWARE_CLASSES = tuple(list(MIDDLEWARE_CLASSES).insert(1,
-                'debug_toolbar.middleware.DebugToolbarMiddleware'))
+MIDDLEWARE_CLASSES = (MIDDLEWARE_CLASSES[0], 
+                      'debug_toolbar.middleware.DebugToolbarMiddleware'
+                     ) + MIDDLEWARE_CLASSES[1:]
 MIDDLEWARE_CLASSES += (
     'gridcalendar.middlewares.ProfileMiddleware', )
 INSTALLED_APPS = ('debug_toolbar',) + INSTALLED_APPS
