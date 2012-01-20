@@ -1067,9 +1067,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             locations = search_address( self.address )
             if locations:
                 location = locations.items()[0][1]
-                timezone = search_timezone(
-                        float(location['latitude']),
-                        float(location['longitude']) )
+                if location.has_key('latitude') and \
+                        location.has_key('longitude'):
+                    timezone = search_timezone(
+                            float(location['latitude']),
+                            float(location['longitude']))
                 if timezone:
                     self.timezone = timezone
                     self.save()
@@ -1410,12 +1412,14 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     if result:
                         something_completed = True
                         result = result.values()[0]
-                        self.coordinates = Point(
-                                float(result['longitude']),
-                                float(result['latitude']) )
-                        if not self.city:
+                        if result.has_key('longitude') and \
+                                result.has_key('latitude'):
+                            self.coordinates = Point(
+                                    float(result['longitude']),
+                                    float(result['latitude']) )
+                        if not self.city and result.has_key('city'):
                             self.city = result['city']
-                        if not self.country:
+                        if not self.country and result.has_key('country'):
                             self.country = result['country']
                         self.exact = True
         if self.coordinates and not (self.address and self.city and self.country):#{{{4
