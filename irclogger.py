@@ -30,6 +30,7 @@ import irclib
 import os
 import time
 import thread
+import sys
 
 from django.core.management import setup_environ
 import settings
@@ -42,8 +43,18 @@ setup_environ( settings )
 # creates the pipe and set appropiate permissions
 if not os.path.exists( settings.LOG_PIPE ):
     os.mkfifo( settings.LOG_PIPE )
-os.chmod( settings.LOG_PIPE, 0660 )
-os.chown( settings.LOG_PIPE, os.geteuid(), settings.LOG_PIPE_GID )
+try:
+    os.chmod( settings.LOG_PIPE, 0660 )
+except OSError:
+    # http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+    sys.stderr.write(__file__ + ":permissions warning: couldn't change"
+        "06660 permissions of " + settings.LOG_PIPE)
+try:
+    os.chown( settings.LOG_PIPE, os.geteuid(), settings.LOG_PIPE_GID )
+except OSError:
+    # http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+    sys.stderr.write(__file__ + ":permissions warning: couldn't change"
+        "the group of " + settings.LOG_PIPE)
 # Create an IRC object
 # irclib.DEBUG = settings.DEBUG
 irclib.DEBUG = True
