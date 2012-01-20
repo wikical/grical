@@ -57,8 +57,6 @@ assert ( DEFAULT_RECURRING_DURATION_IN_DAYS <= MAX_DAYS_IN_FUTURE )
 # TODO: use a user parameter and a button to show the next ones
 MAX_EVENTS_ON_ROOT_PAGE = 20
 
-REPLY_TO = None
-
 # generate version number from hg tip
 try:
     from subprocess import Popen, PIPE
