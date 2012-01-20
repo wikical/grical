@@ -39,9 +39,8 @@ import django.forms as forms
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
-from gridcalendar.settings_local import DEBUG
-from gridcalendar.events.models import (Event, EventUrl, EventDate,
-        EventSession, Filter, Group, Membership )
+from gridcalendar.events.models import (Event, EventSession, Filter, Group,
+                                                                   Membership)
 from gridcalendar.events.search import COORDINATES_REGEX
 from gridcalendar.events.utils import ( validate_year, validate_event_exists,
         GermanParserInfo, SpanishParserInfo )
