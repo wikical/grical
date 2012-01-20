@@ -61,6 +61,7 @@ REPLY_TO = None
 
 # generate version number from hg tip
 try:
+    from subprocess import Popen, PIPE
     proc = Popen(
             'cd %s ; hg tip --template ".{rev} {date|isodate}"' % PROGRAM_DIR,
             shell = True, stdin = PIPE, stdout = PIPE )
