@@ -434,7 +434,7 @@ containing the flags. Example::
     update django_site set domain='gridcalendar.net' where id=1 ;
     update django_site set name='Grid Calendar' where id=1 ;
 
-#. **Emails**: the system gets and sends emails. See the ``settings_local.py`` file for the settings
+#. **Emails**: the system gets and sends emails. See the settings files for the settings
    of it.
 
     #. Group invitations are sent with the sender (``from`` header) set to the user
