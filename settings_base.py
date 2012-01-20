@@ -167,8 +167,6 @@ INSTALLED_APPS = (
     'djcelery',
     'oembed',
  )
-if DEBUG:
-    INSTALLED_APPS = ( 'debug_toolbar', ) + INSTALLED_APPS
 
 # at the end additional middleware are conditionaly added
 MIDDLEWARE_CLASSES = (
