@@ -1,0 +1,12 @@
+settings.py
+docs/_build
+
+syntax: glob
+*.pyc
+.*.swp
+*.bak
+*.orig
+
+syntax: regexp
+(.*/)?\#[^/]*\#$
+.*\~
