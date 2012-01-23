@@ -227,6 +227,11 @@ form li {
     text-decoration: none;
 }
 
+.options {
+    font-size: 0.8em;
+    text-align: right;
+}
+
 /*
  * event medium format (used in main page and box-search-results)
  */
@@ -252,10 +257,6 @@ form li {
     padding: 0.5em;
     border-radius: 0 0 0.5em 0.5em;
 }
-.event_medium .options {
-    font-size: 0.8em;
-    text-align: right;
-}
 .event_medium .tags {
     font-size: 0.8em;
     line-height: 2em;
@@ -277,10 +278,6 @@ form li {
 /*
  * event history
  */
-.event_history .options {
-    font-size: 0.8em;
-    text-align: right;
-}
 .event_history .diff_chg {
     color: blue ;
     font-weight:bold;
