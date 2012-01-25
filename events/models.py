@@ -1028,25 +1028,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         If returns True if a timezone was found and saved, False otherwise.
 
         When more than one timezone is found, it uses the most important one.
-
-        >>> event, l = Event.parse_text(EXAMPLE)
-        >>> timezone = event.timezone
-        >>> latitude = event.latitude
-        >>> longitude = event.longitude
-        >>> event.coordinates = None
-        >>> event.timezone = None
-        >>> event.save()
-        >>> event.update_timezone()
-        True
-        >>> assert event.timezone == timezone
-        >>> event.timezone = None
-        >>> event.address = None
-        >>> event.coordinates = Point( longitude, latitude )
-        >>> event.save()
-        >>> event.update_timezone()
-        True
-        >>> assert event.timezone == timezone
-        >>> event.delete()
         """
         if self.coordinates:
             timezone = search_timezone( self.latitude, self.longitude )
