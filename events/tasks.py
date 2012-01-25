@@ -27,20 +27,13 @@
 from celery.decorators import task
 
 from django.contrib.auth.models import User
-from django.contrib.comments import Comment
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.core.cache import cache, get_cache
-from django.core.mail import send_mail, BadHeaderError, EmailMessage
-from django.core.urlresolvers import reverse
+from django.core.mail import send_mail, BadHeaderError
 from django.template.loader import render_to_string
-from django.utils import translation
-from django.utils.encoding import smart_str, smart_unicode
+from django.utils.encoding import smart_str
 from django.utils.translation import ugettext_lazy as _
-
-from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
-
-from gridcalendar import settings
+from django.conf import settings
 
 # NOTE: if tasks are supposed to use translations, you need to pass a language
 # parameter to the celery task and add to it:

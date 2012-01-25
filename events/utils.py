@@ -43,13 +43,11 @@ from django.core.cache import cache, get_cache
 from django.core.mail import mail_admins
 from django.contrib.gis.geos import Point
 from django.contrib.gis.utils import GeoIP
-from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-from django.core.mail import mail_admins
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
+from django.conf import settings
 
-from settings import GEONAMES_USERNAME, GEONAMES_URL, ADMINS
 from gridcalendar.events.tasks import save_in_caches
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
@@ -130,7 +128,7 @@ def search_coordinates( lat, lon ): # {{{1
         params = '&format=json' + \
                  '&zoom=18' + \
                  '&addressdetails=1' + \
-                 '&email=' + ADMINS[0][1] + \
+                 '&email=' + settings.ADMINS[0][1] + \
                  '&lat=' + str(lat) + \
                  '&lon=' + str(lon)
         url_sufix = "/reverse?" + params
@@ -456,8 +454,8 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
             # we want to be sure that it is saved in all caches
             save_in_caches.delay( cache_key, cache_value )
             return cache_value
-    url = GEONAMES_URL + 'timezone?lat=%s&lng=%s&username=%s' % \
-            ( str(lat), str(lng), GEONAMES_USERNAME )
+    url = settings.GEONAMES_URL + 'timezone?lat=%s&lng=%s&username=%s' % \
+            ( str(lat), str(lng), settings.GEONAMES_USERNAME )
     try:
         # FIXME: check for API limit reached
         response = urllib2.urlopen( url, timeout = 10 )
@@ -575,8 +573,8 @@ def search_name( name, use_cache = True ): # {{{1
             # we want to be sure that it is saved in all caches
             save_in_caches.delay( cache_key, cache_value )
             return cache_value
-    url = GEONAMES_URL + 'search?q=%s&maxRows=1&username=%s' % \
-            ( query, GEONAMES_USERNAME )
+    url = settings.GEONAMES_URL + 'search?q=%s&maxRows=1&username=%s' % \
+            ( query, settings.GEONAMES_USERNAME )
     try:
         response_text = None
         response = urllib2.urlopen( url, timeout = 10 )
@@ -688,7 +686,7 @@ def search_address_osm( data ): # {{{1
         params = '&format=xml' \
             '&polygon=0' \
             '&addressdetails=1' \
-            '&email=' + ADMINS[0][1] + \
+            '&email=' + settings.ADMINS[0][1] + \
             '&limit=10'
         conn = httplib.HTTPConnection( "nominatim.openstreetmap.org",
                 timeout=10 )

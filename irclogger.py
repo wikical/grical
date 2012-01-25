@@ -33,7 +33,7 @@ import thread
 import sys
 
 from django.core.management import setup_environ
-import settings
+from django.conf import settings
 setup_environ( settings )
 
 # FIXME: avoid loosing the conection to freenet because of Excess Flood
