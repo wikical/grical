@@ -85,6 +85,8 @@ def suite(): #{{{1
         EventsWebTestCase ))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         complete_geo_dataTestCase ))
+    tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
+        update_timezoneTestCase ))
     return tests
 
 # there is a bug in WebTest which have been solved by TestCase but not for
@@ -621,3 +623,25 @@ class complete_geo_dataTestCase(TestCase):           # {{{1
         self.assertEquals(self.e1.timezone, 'Europe/Berlin')
         self.assertEquals(self.e2.timezone, 'Europe/Berlin')
         self.assertEquals(self.e3.timezone, 'Europe/Berlin')
+
+class update_timezoneTestCase(TestCase):           # {{{1
+
+    @skipIf(settings.GEONAMES_USERNAME in ('', 'demo'),
+                                "set GEONAMES_USERNAME to a valid value")
+    def test_conditionally(self):
+        event, l = Event.parse_text(EXAMPLE)
+        timezone = event.timezone
+        latitude = event.latitude
+        longitude = event.longitude
+        event.coordinates = None
+        event.timezone = None
+        event.save()
+        self.assert_(event.update_timezone())
+        self.assertEquals(event.timezone, timezone)
+        event.timezone = None
+        event.address = None
+        event.coordinates = Point(longitude, latitude)
+        event.save()
+        self.assert_(event.update_timezone())
+        self.assertEquals(event.timezone, timezone)
+        event.delete()
