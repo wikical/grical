@@ -28,15 +28,14 @@
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext as _
-
-from gridcalendar.settings import READ_ONLY
+from django.conf import settings
 
 def only_if_write_enabled(func):
     """decorator for view functions that disable the view and redirects to the
     main page if ``settings.READ_ONLY`` is True
     """
     def closure(request, *args, **kwargs):
-        if READ_ONLY:
+        if settings.READ_ONLY:
             messages.info(request, _("Currently it is not possible to enter" \
                     " or edit any data. Please wait a few minutes and then " \
                     "try again."))

@@ -30,16 +30,14 @@ import datetime
 from django.contrib.sites.models import Site
 from django.http import Http404
 from django.utils.translation import ugettext as _
-from django.contrib.gis.db.models import Q
 from django.contrib.syndication.views import Feed
 from django.core.urlresolvers import reverse
+from django.conf import settings
 
-from gridcalendar.settings import FEED_SIZE, SITE_ID
-from gridcalendar.events.models import ( Event, Filter, Group,
-        ExtendedUser, add_upcoming )
+from gridcalendar.events.models import ( Event, Group, add_upcoming )
 from gridcalendar.events.search import search_events
 
-SITE_DOMAIN = Site.objects.get(id = SITE_ID).domain
+SITE_DOMAIN = Site.objects.get(id = settings.SITE_ID).domain
 
 class EventsFeed(Feed): # {{{1
     """ rss feed for a list of events """
@@ -72,7 +70,7 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
             {'domain': SITE_DOMAIN,}
     link = "/r/upcoming"
     description = _("Next %(count)s upcoming events." \
-            % {"count": FEED_SIZE}, )
+            % {"count": settings.FEED_SIZE}, )
 
     def items( self ):
         """ items """
@@ -81,7 +79,7 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
         # TODO: test that this really works, ie it returns future events (and
         # not past events, and not repetitions) sorted by upcoming
         elist = add_upcoming(elist.distinct()).order_by('upcoming')
-        return elist[0:FEED_SIZE]
+        return elist[0:settings.FEED_SIZE]
 
 class LastAddedEventsFeed(EventsFeed): # {{{1
     """ Feed with the last `settings.FEED_SIZE` added events """
@@ -90,12 +88,12 @@ class LastAddedEventsFeed(EventsFeed): # {{{1
             {'domain': SITE_DOMAIN,}
     link = "/r/upcoming"
     description = _("Last %(count)s added events." \
-            % {"count": FEED_SIZE}, )
+            % {"count": settings.FEED_SIZE}, )
 
     def items( self ):
         """ items """
         elist = Event.objects.all().order_by('-creation_time')
-        return elist[0:FEED_SIZE]
+        return elist[0:settings.FEED_SIZE]
 
 class SearchEventsFeed(EventsFeed): # {{{1
     """ feed for the result of a search """
@@ -121,7 +119,7 @@ class SearchEventsFeed(EventsFeed): # {{{1
         """ items """
         # TODO: restrict the querysearch in the search to the values needed
         return add_upcoming( search_events( obj )
-                ).order_by('upcoming').distinct()[0:FEED_SIZE]
+                ).order_by('upcoming').distinct()[0:settings.FEED_SIZE]
 
 class GroupEventsFeed(EventsFeed): # {{{1
     """ feed with the events of a group """
