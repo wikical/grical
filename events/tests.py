@@ -657,5 +657,5 @@ class geoapiTestCase(TestCase):           # {{{1
                                 "set GEONAMES_USERNAME to a valid value")
     def test_search_name(self):
         response = utils.search_name( u'london,ca', use_cache=False )
-        self.assertAlmostEquals(response['coordinates'].x, -81.23304)
-        self.assertAlmostEquals(response['coordinates'].y, -42.98339)
+        self.assertAlmostEquals(response['coordinates'].x, -81.23304, places=5)
+        self.assertAlmostEquals(response['coordinates'].y,  42.98339, places=5)
