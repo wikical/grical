@@ -86,7 +86,7 @@ def suite(): #{{{1
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         complete_geo_dataTestCase ))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
-        update_timezoneTestCase ))
+        geoapiTestCase ))
     return tests
 
 # there is a bug in WebTest which have been solved by TestCase but not for
@@ -624,11 +624,11 @@ class complete_geo_dataTestCase(TestCase):           # {{{1
         self.assertEquals(self.e2.timezone, 'Europe/Berlin')
         self.assertEquals(self.e3.timezone, 'Europe/Berlin')
 
-class update_timezoneTestCase(TestCase):           # {{{1
+class geoapiTestCase(TestCase):           # {{{1
 
     @skipIf(settings.GEONAMES_USERNAME in ('', 'demo'),
                                 "set GEONAMES_USERNAME to a valid value")
-    def test_conditionally(self):
+    def test_update_timezone(self):
         event, l = Event.parse_text(EXAMPLE)
         timezone = event.timezone
         latitude = event.latitude
@@ -645,3 +645,17 @@ class update_timezoneTestCase(TestCase):           # {{{1
         self.assert_(event.update_timezone())
         self.assertEquals(event.timezone, timezone)
         event.delete()
+
+    @skipIf(settings.GEONAMES_USERNAME in ('', 'demo'),
+                                "set GEONAMES_USERNAME to a valid value")
+    def test_search_country_code(self):
+        self.assertEquals(utils.search_country_code('de'), 'DE')
+        self.assertEquals(utils.search_country_code('gERmany'), 'DE')
+        self.assertEquals(utils.search_country_code('Deutschland'), 'DE')
+
+    @skipIf(settings.GEONAMES_USERNAME in ('', 'demo'),
+                                "set GEONAMES_USERNAME to a valid value")
+    def test_search_name(self):
+        response = utils.search_name( u'london,ca', use_cache=False )
+        self.assertAlmostEquals(response['coordinates'].x, -81.23304)
+        self.assertAlmostEquals(response['coordinates'].y, -42.98339)
