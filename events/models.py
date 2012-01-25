@@ -26,12 +26,9 @@
 # imports {{{1
 import datetime
 import hashlib
-from itertools import chain
 import pytz
 import random
 import re
-from re import UNICODE
-from smtplib import SMTPConnectError
 
 import vobject
 
@@ -42,27 +39,23 @@ from django.contrib.comments.signals import comment_was_posted
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models
 from django.contrib.gis.db.models import Q, F
-from django.contrib.gis.geos import Point, Polygon
-from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
+from django.contrib.gis.geos import Point
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail, BadHeaderError, EmailMessage
+from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.db.models import Min
-from django.db.models.signals import \
-        pre_save, post_save, pre_delete, post_delete
+from django.db.models.signals import post_save, post_delete
 from django.forms import DateField
 from django.template.loader import render_to_string
-from django.utils import translation
 from django.utils.encoding import smart_str, smart_unicode
 from django.utils.translation import ugettext_lazy as _
 # FIXME from gridcalendar.events.decorators import autoconnect
 
 from tagging.fields import TagField
-from tagging.models import Tag, TaggedItem
+from tagging.models import Tag
 import reversion
-from reversion import revision
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from gridcalendar.events.tasks import (
@@ -1345,28 +1338,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         they are missing from the `address`.
 
         This function is called inside :meth:`Event.save`
-
-        >>> today = datetime.date.today()
-        >>> e1 = Event.objects.create( title="cgd1",
-        ...     address=u'Malmöer Str. 6, Berlin, Germany' )
-        >>> assert e1.coordinates
-        >>> assert e1.city == 'Berlin', e1.city
-        >>> assert e1.country == 'DE', e1.country
-        >>> assert e1.timezone == 'Europe/Berlin', e1.timezone
-        >>> e1.delete()
-        >>> e2 = Event.objects.create( title="cgd2",
-        ...     city='Berlin', country='DE' )
-        >>> assert e2.coordinates
-        >>> assert e2.address
-        >>> assert e2.timezone == 'Europe/Berlin'
-        >>> e2.delete()
-        >>> e3 = Event.objects.create( title="cgd3",
-        ...     coordinates = Point( 13.40932, 52.548972 ) )
-        >>> assert e3.city
-        >>> assert e3.country
-        >>> assert e3.address
-        >>> assert e3.timezone == 'Europe/Berlin'
-        >>> e3.delete()
         """
         something_completed = False
         if (self.address or self.city or self.country) and not self.coordinates:#{{{4
