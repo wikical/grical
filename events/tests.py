@@ -49,10 +49,12 @@ import vobject
 from time import time
 
 from django.contrib.auth.models import User
-from django.db import transaction, connection
 from django.test import TestCase # WebTest is a subclass of TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
+from django.conf import settings
+from django.utils.unittest import skipIf
+from django.contrib.gis.geos import Point
 from registration.models import RegistrationProfile
 
 # the reason for this package is well explained at
@@ -81,6 +83,8 @@ def suite(): #{{{1
         EventsTestCase ))
     tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
         EventsWebTestCase ))
+    tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
+        complete_geo_dataTestCase ))
     return tests
 
 # there is a bug in WebTest which have been solved by TestCase but not for
@@ -587,3 +591,33 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     # TODO: test that a notification email is sent to all members of a group
     # when a new event is added to the group. See class Membership in
     # events/models.py
+    
+
+class complete_geo_dataTestCase(TestCase):           # {{{1
+
+    def setUp(self):
+        self.e1 = Event.objects.create(title="cgd1",
+            address=u'Malmöer Str.  6, Berlin, Germany' )
+        self.e2 = Event.objects.create(title="cgd2",
+            city='Berlin', country='DE')
+        self.e3 = Event.objects.create(title="cgd3",
+                coordinates=Point(13.40932, 52.548972))
+
+    def test_unconditionally(self):
+        self.assertEquals(self.e1.city, 'Berlin')
+        self.assertEquals(self.e2.city, 'Berlin')
+        self.assertEquals(self.e3.city, 'Berlin')
+        self.assertEquals(self.e1.country, 'DE')
+        self.assertEquals(self.e2.country, 'DE')
+        self.assertEquals(self.e3.country, 'DE')
+        self.assert_(self.e1.coordinates)
+        self.assert_(self.e2.coordinates)
+        self.assert_(self.e2.address)
+        self.assert_(self.e3.address)
+
+    @skipIf(settings.GEONAMES_USERNAME in ('', 'demo'),
+                                "set GEONAMES_USERNAME to a valid value")
+    def test_conditionally(self):
+        self.assertEquals(self.e1.timezone, 'Europe/Berlin')
+        self.assertEquals(self.e2.timezone, 'Europe/Berlin')
+        self.assertEquals(self.e3.timezone, 'Europe/Berlin')
