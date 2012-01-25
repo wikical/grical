@@ -263,13 +263,6 @@ def search_address( data, ip = None ): # {{{1
 def search_country_code( name ): #{{{1
     """ returns the country code uppercase of a country code or of a country
     name accepting different languages
-    
-    >>> r = search_country_code( 'de' )
-    >>> assert r == 'DE', r
-    >>> r = search_country_code( 'gERmany' )
-    >>> assert r == 'DE', r
-    >>> r = search_country_code( 'Deutschland' )
-    >>> assert r == 'DE', r
     """
     # next line needed because len(django_countries.fields.Country) produces an
     # error, and `name` can be of that type
@@ -551,12 +544,6 @@ def search_name( name, use_cache = True ): # {{{1
             <fcode>PPLA</fcode>
           </geoname>
         </geonames>
-    
-    >>> response = search_name( u'london,ca', use_cache=False )
-    >>> unicode(response['coordinates'].x)
-    u'-81.23304'
-    >>> unicode(response['coordinates'].y)
-    u'42.98339'
     """
     query = urllib.quote( name.encode('utf-8'), safe=',' )
     if use_cache:
