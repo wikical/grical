@@ -53,8 +53,8 @@ from django.utils.encoding import smart_str, smart_unicode
 from django.utils.translation import ugettext_lazy as _
 # FIXME from grical.events.decorators import autoconnect
 
-from tagging.fields import TagField
-from tagging.models import Tag
+from grical.tagging.fields import TagField
+from grical.tagging.models import Tag
 import grical
 from grical.reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 

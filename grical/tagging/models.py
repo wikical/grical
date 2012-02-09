@@ -13,9 +13,9 @@ from django.db import connection, models
 from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
 
-from tagging import settings
-from tagging.utils import calculate_cloud, get_tag_list, get_queryset_and_model, parse_tag_input
-from tagging.utils import LOGARITHMIC
+from grical.tagging import settings
+from grical.tagging.utils import calculate_cloud, get_tag_list, get_queryset_and_model, parse_tag_input
+from grical.tagging.utils import LOGARITHMIC
 
 qn = connection.ops.quote_name
 

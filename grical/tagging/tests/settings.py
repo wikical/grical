@@ -22,6 +22,6 @@ elif test_engine == "postgresql_psycopg2":
 
 INSTALLED_APPS = (
     'django.contrib.contenttypes',
-    'tagging',
-    'tagging.tests',
+    'grical.tagging',
+    'grical.tagging.tests',
 )
