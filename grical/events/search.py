@@ -33,7 +33,7 @@ from django.contrib.gis.measure import D # D is a shortcut for Distance
 from django.contrib.gis.geos import Point, Polygon
 from django.conf import settings
 
-from tagging.models import Tag, TaggedItem
+from grical.tagging.models import Tag, TaggedItem
 
 from grical.events.models import Event, EventDate
 from grical.events.utils import search_name

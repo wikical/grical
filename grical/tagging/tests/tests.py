@@ -4,12 +4,12 @@ import os
 from django import forms
 from django.db.models import Q
 from django.test import TestCase
-from tagging.forms import TagField
-from tagging import settings
-from tagging.models import Tag, TaggedItem
-from tagging.tests.models import Article, Link, Perch, Parrot, FormTest
-from tagging.utils import calculate_cloud, edit_string_for_tags, get_tag_list, get_tag, parse_tag_input
-from tagging.utils import LINEAR
+from grical.tagging.forms import TagField
+from grical.tagging import settings
+from grical.tagging.models import Tag, TaggedItem
+from grical.tagging.tests.models import Article, Link, Perch, Parrot, FormTest
+from grical.tagging.utils import calculate_cloud, edit_string_for_tags, get_tag_list, get_tag, parse_tag_input
+from grical.tagging.utils import LINEAR
 
 #############
 # Utilities #
