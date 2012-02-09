@@ -108,7 +108,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/a/accounts/login/'
 LOGOUT_URL = '/a/accounts/logout/'
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-failure-view
-CSRF_FAILURE_VIEW = 'accounts.views.csrf_failure'
+CSRF_FAILURE_VIEW = 'grical.accounts.views.csrf_failure'
 
 # =============================================================================
 # localization settings {{{1
