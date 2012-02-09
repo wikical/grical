@@ -1,5 +1,6 @@
 settings.py
 docs/_build
+docs/html
 
 syntax: glob
 *.pyc
