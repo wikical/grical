@@ -533,7 +533,7 @@ class EventForm(forms.ModelForm): # {{{1
         # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
         self.fields.keyOrder = ['title', 'acronym', 'startdate', 'starttime',
             'enddate', 'endtime', 'timezone', 'tags', 'city', 'country',
-            'address', 'coordinates', 'description']
+            'address', 'exact', 'coordinates', 'description']
         self.fields['startdate'].label = _(u'Start date')
         self.fields['enddate'].label = _(u'End date')
         self.fields['address'].widget = forms.Textarea()
@@ -550,7 +550,7 @@ class EventForm(forms.ModelForm): # {{{1
             # Event.coordinates
             instance = kwargs['instance']
             coordinates_value = u''
-            if instance.coordinates and instance.exact:
+            if instance.coordinates:
                 coordinates_value += str( instance.coordinates.y ) + ', ' + \
                         str( instance.coordinates.x )
             if coordinates_value:

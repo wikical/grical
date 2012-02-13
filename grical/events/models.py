@@ -60,7 +60,7 @@ from grical.reversion.models import Version, Revision, VERSION_ADD, VERSION_DELE
 
 from grical.events.tasks import (
         log_using_celery, notify_users_when_wanted )
-from grical.events.utils import ( validate_year, search_name,
+from grical.events.utils import (exact_as_bool_str,  validate_year, search_name,
         search_coordinates, search_address, search_timezone,
         search_country_code, text_diff, validate_tags_chars )
 
@@ -767,7 +767,10 @@ starttime: 10:00
 enddate: 2010-12-30
 endtime: 18:00
 timezone: Europe/Berlin
+city: Berlin
+country: DE
 address: Gleimstr. 6, Berlin 10439, Germany
+exact: True
 coordinates: 52.55247, 13.40364
 tags: calendar software open-source gridmind gridcalendar
 urls:
@@ -826,10 +829,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     coordinates = models.PointField( _('Coordinates'),
             editable = False, blank=True, null=True )
     """ used for calculating events within a distance to a point """
-    exact = models.NullBooleanField( _('exact coordinates'),
-            editable = False, blank=True, null=True )
-    """ indicates if the coordinates are exact or not, when not exact they
-    should point to the center of the city """
+    exact = models.NullBooleanField(_('exact coordinates'),
+            editable = True, blank=True, null=True,
+            help_text = _(u'Indicates if the coordinates point to the exact '
+                'location, or just to some near point within '
+                'the same city or town'))
+    # in forms 'exact' is a select field with the values '1', '2' and '3' for
+    # Unknown, Yes and No respectively
     description = models.TextField(
             _( u'Description' ), blank = True, null = True,
             help_text = _( u'For formating use <a href="http://docutils.' \
@@ -1320,6 +1326,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
         This function is called inside :meth:`Event.save`
         """
+        # we test worldwide
+        if self.address:
+            together_address = re.sub(r'[_\s-]+', '', self.address.lower(),
+                    re.UNICODE)
+            if together_address == 'ww' or \
+                    together_address == _('worldwide').lower():
+                self.country = 'WW'
+                self.address = unicode(_('worldwide'))
+                return True
+        # no worldwide, trying to complete normal address
         something_completed = False
         if (self.address or self.city or self.country) and not self.coordinates:#{{{4
             if self.address:
@@ -1403,14 +1419,16 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         with address data, update the master of a recurrence if appropiate, and
         deletes caches of properties.
         """
-        try:
-            old = Event.objects.get( id = self.id )
+        assert not settings.READ_ONLY
+        if Event.objects.filter( id = self.id ).exists():
             self.is_new = False # Event.post_save uses this
             self.version = self.version + 1
-        except Event.DoesNotExist:
+        else:
             self.is_new = True
-            old = None
         if self.recurring:
+            if self.enddate:
+                raise RuntimeError(
+                        'events with recurrences cannot have an enddate')
             master = self.recurring.master
             if self.startdate < master.startdate:
                 # self is going to be the new master of the serie. The master
@@ -1418,20 +1436,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 master.recurrences.all().update( master = self )
             events = Event.objects.filter( _recurring__master = master)
             events.exclude( pk = self.pk ).update( version = F('version') + 1 )
-        # dealing with the address data
-        if old and (not old.coordinates) and self.coordinates:
-            # if coordinates have been added, we can assume that the user has
-            # entered exact coordinates
-            self.exact = True
-        if old and old.coordinates and self.coordinates and \
-                    (old.latitude != self.latitude or
-                    old.longitude != self.longitude):
-            # if coordinates have changed, we can assume that the user has
-            # entered exact coordinates
-            self.exact = True
-        ip = kwargs.pop('ip', None)
-        if not old:
-            self.complete_geo_data(ip)
+        # dealing with the country name
         self.country = search_country_code( self.country )
         # Call the "real" save() method:
         super( Event, self ).save( *args, **kwargs )
@@ -1557,6 +1562,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'timezone':
                 if self.timezone:
                     to_return += keyword + ": " + self.timezone + "\n"
+            elif keyword == u'exact':
+                if self.exact is not None:
+                    to_return += u"exact: " + unicode(self.exact) + "\n"
             elif keyword == u'coordinates':
                 if self.coordinates:
                     to_return += u"coordinates: %s, %s\n" % (
@@ -1568,6 +1576,12 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             elif keyword == u'tags':
                 if self.tags:
                     to_return += keyword + u": " + self.tags + "\n"
+            elif keyword == u'city':
+                if self.city:
+                    to_return += keyword + u": " + self.city + u"\n"
+            elif keyword == u'country':
+                if self.country:
+                    to_return += keyword + u": " + self.country + u"\n"
             elif keyword == u'address':
                 if self.address:
                     to_return += keyword + u": " + self.address + u"\n"
@@ -1781,6 +1795,9 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if simple_fields.has_key('country'):
             simple_fields['country'] = \
                     search_country_code( simple_fields['country'] )
+        # convert exact to the proper value
+        if simple_fields.has_key('exact'):
+            simple_fields['exact'] = exact_as_bool_str(simple_fields['exact'])
         # creates an event with a form
         from grical.events.forms import EventForm
         if event_id == None :
@@ -1962,11 +1979,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names = [unicode(f.name) for f in Event._meta.fields]
         field_names.append(u'startdate')
         field_names.append(u'enddate')
-        field_names.remove(u"city")
-        field_names.remove(u"country")
         field_names.remove(u"creation_time")
         field_names.remove(u"description")
-        field_names.remove(u"exact")
         field_names.remove(u"id")
         field_names.remove(u"modification_time")
         field_names.remove(u"user")
@@ -1991,16 +2005,17 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
         Some Poka-yoke code follows.
  
-        >>> gpl_len = len(Event.get_priority_list())  # 14
-        >>> gsf_len = len(Event.get_simple_fields())  # 10
+        >>> gpl_len = len(Event.get_priority_list())  # 17
+        >>> gsf_len = len(Event.get_simple_fields())  # 13
         >>> gcf_len = len(Event.get_complex_fields()) #  5 (recurring not in gpl
         >>> assert(gpl_len + 1 == gsf_len + gcf_len)
         >>> synonyms_values_set = set(Event.get_synonyms().values())
         >>> assert(gpl_len + 1  == len(synonyms_values_set))
         """
-        return ( u"acronym", u"title", u"startdate", u"starttime", u"enddate",
-                u"endtime", u"timezone", u"address", u"coordinates",u"tags",
-                u"urls", u"dates", u"sessions", u"description" )
+        return (u"acronym", u"title", u"startdate", u"starttime", u"enddate",
+                u"endtime", u"timezone", u"city", u"country", u"address",
+                u"exact", u"coordinates", u"tags", u"urls", u"dates",
+                u"sessions", u"description")
  
     @staticmethod # def get_synonyms(): {{{3
     def get_synonyms():
@@ -2026,9 +2041,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> field_names_set.remove('creation_time')
         >>> field_names_set.remove('modification_time')
         >>> field_names_set.remove('version')
-        >>> field_names_set.remove('city')
-        >>> field_names_set.remove('country')
-        >>> field_names_set.remove('exact')
         >>> field_names_set.add('startdate')
         >>> field_names_set.add('enddate')
         >>> assert field_names_set == synonyms_values_set, field_names_set

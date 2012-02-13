@@ -59,6 +59,27 @@ from grical.events.tasks import save_in_caches
 # TODO: count and avoid transgressions of the geonames terms of use, which
 # seems to be 2000 credits hourly
 
+def exact_as_bool_str(value):
+    """ converts `value` to the String `True`, `False` or `Unknown`, raising a
+    `ValidationError` with a message mentioning the field `exact` if not
+    possible
+    """
+    if value is True or value is False:
+        return str(value)
+    # Translator: this is a short form for 'yes'
+    yes_short = _('y')
+    # Translator: this is a short form for 'no'
+    no_short = _('n')
+    true_values = (_('true'), '1', _('yes'), yes_short, _('exact'))
+    false_values = (_('false'), '0', 'no', no_short, _('inexact'))
+    if value.strip().lower() in true_values:
+        return str(True)
+    if value.strip().lower() in false_values:
+        return str(False)
+    raise ValidationError(_('value of field exact was not one of: '
+            '%(comma_separated_list)s') %
+            {'comma_separated_list': ', '.join(true_values + false_values)})
+
 def search_coordinates( lat, lon ): # {{{1
     # doc {{{2
     """ returns a dictionary with the keys 'address', 'city' and 'country'

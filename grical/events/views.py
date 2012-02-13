@@ -397,7 +397,7 @@ def event_edit( request, event_id = None ):
                         event.version = event.version + 1
                     else:
                         event.version = 1
-                    event.save(ip = request.META.get('REMOTE_ADDR', None))
+                    event.save()
                     startdate = event_form.cleaned_data['startdate']
                     enddate = event_form.cleaned_data.get( 'enddate', False )
                     Event.save_startdate_enddate( event, startdate, enddate )
@@ -1632,7 +1632,7 @@ def main( request, status_code=200 ):# {{{1
                     if cleaned_data['when'].has_key('endtime'):
                         event.endtime = cleaned_data['when']['endtime']
                     with revision:
-                        event.save(ip = request.META.get('REMOTE_ADDR', None))
+                        event.save()
                         event.startdate = cleaned_data['when']['startdate']
                         if cleaned_data['when'].has_key('enddate'):
                             event.enddate = cleaned_data['when']['enddate']
