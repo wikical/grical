@@ -330,11 +330,17 @@ SYNONYMS = (
     ( u'^', u'acronym' ),
     ( u'ac', u'acronym' ),
     ( u'acro', u'acronym' ),
+    ( u'city', u'city' ),               # city
+    ( u'town', u'city' ),
+    ( u'country', u'country' ),         # country
+    ( u'state', u'country' ),
     ( u'address', u'address' ),         # address ,
     ( u',', u'address' ),
     ( u'ad', u'address' ),
     ( u'addr', u'address' ),
     ( u'street', u'address' ),
+    ( u'exact', u'exact' ),             # exact
+    ( u'exact coordinates', u'exact' ),
     ( u'coordinates', u'coordinates' ), # coordinates |
     ( u'|', u'coordinates' ),
     ( u'point', u'coordinates' ),
