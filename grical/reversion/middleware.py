@@ -1,7 +1,7 @@
 """Middleware used by Reversion."""
 
 
-import reversion
+import grical.reversion as reversion
 
 
 class RevisionMiddleware(object):

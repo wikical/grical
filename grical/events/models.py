@@ -1937,7 +1937,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 pk__in = [ es.pk for es in event_sessions_to_save ] ).delete()
             del complex_fields[u'sessions']
         # recurrences {{{5
-        from forms import DatesTimesField
+        from grical.events.forms import DatesTimesField
         dates_times_list = list()
         if complex_fields.has_key(u'recurrences'):
             for text_date in complex_fields[u'recurrences'][1:]:

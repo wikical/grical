@@ -491,7 +491,7 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
         if use_cache:
             save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
-    from models import TIMEZONES
+    from grical.events.models import TIMEZONES
     found = False
     for group in TIMEZONES:
         for tup in group[1]:
