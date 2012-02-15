@@ -10,7 +10,7 @@ SECRET_KEY = '(a#%@bhr23!af9875tybca(_a.13524fgav@#$a1ybkdzlfrq$'
 DATABASES = {  
     'default': {  
          'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'development',
+         'NAME': 'dev',
          'USER': 'development',           
          'PASSWORD': 'testingthings',
      }
