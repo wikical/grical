@@ -1113,20 +1113,21 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 + unicode(self.id) + u'@' + \
                 Site.objects.get_current().domain
         # calculate DTEND
-        if self.enddate:
-            enddate = self.enddate
-        else:
-            enddate = self.startdate
-        if self.endtime:
-            date_time = datetime.datetime.combine(
-                    enddate, self.endtime )
-            if self.timezone:
-                timezone = pytz.timezone( self.timezone )
-                loc_dt = timezone.localize( date_time )
-                date_time = loc_dt.astimezone( pytz.utc )
-            vevent.add('DTEND').value = date_time
-        else:
-            vevent.add('DTEND').value = enddate
+        if self.enddate and self.enddate != self.startdate:
+            # rfc2445 (iCalendar) indicates that:
+            # - DTEND can be omitted when equals DTSTART
+            # - DTEND specifies the non-inclusive end of the event
+            enddate = self.enddate + datetime.timedelta(days=1)
+            if self.endtime:
+                date_time = datetime.datetime.combine(
+                        enddate, self.endtime )
+                if self.timezone:
+                    timezone = pytz.timezone( self.timezone )
+                    loc_dt = timezone.localize( date_time )
+                    date_time = loc_dt.astimezone( pytz.utc )
+                vevent.add('DTEND').value = date_time
+            else:
+                vevent.add('DTEND').value = enddate
         # calculate DESCRIPTION
         if self.description: vevent.add('DESCRIPTION').value = self.description
         # see rfc5545 3.8.7.2. Date-Time Stamp
