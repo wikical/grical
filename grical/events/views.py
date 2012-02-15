@@ -69,7 +69,6 @@ from django.views.decorators.cache import cache_page
 
 from grical.reversion import revision
 from grical.reversion.models import Version, Revision
-
 from grical.events.decorators import only_if_write_enabled
 from grical.events.forms import ( 
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
@@ -1632,6 +1631,8 @@ def main( request, status_code=200 ):# {{{1
                     if cleaned_data['when'].has_key('endtime'):
                         event.endtime = cleaned_data['when']['endtime']
                     with revision:
+                        event.complete_geo_data(
+                                request.META.get('REMOTE_ADDR', None))
                         event.save()
                         event.startdate = cleaned_data['when']['startdate']
                         if cleaned_data['when'].has_key('enddate'):
