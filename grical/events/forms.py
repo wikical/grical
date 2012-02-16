@@ -579,11 +579,9 @@ class EventForm(forms.ModelForm): # {{{1
                         float(coordinates['longitude']),
                         float(coordinates['latitude']) )
             else:
-                if self.instance.exact:
-                    self.instance.coordinates = None
-        else:
-            if self.instance.exact:
                 self.instance.coordinates = None
+        else:
+            self.instance.coordinates = None
         # checks uniqueness of title and startdate
         title = self.cleaned_data.get("title", None)
         startdate = self.cleaned_data.get("startdate", None)
