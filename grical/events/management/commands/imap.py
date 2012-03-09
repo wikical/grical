@@ -67,7 +67,8 @@ class Command(NoArgsCommand): # {{{1
 
     def __init__(self, *args, **kwargs): # {{{2
         if settings.IMAP_SSL:
-            self.mailbox = IMAP4_SSL( settings.IMAP_SERVER )
+            self.mailbox = IMAP4_SSL(
+                    host = settings.IMAP_SERVER, port = settings.IMAP_PORT)
         else:
             self.mailbox = IMAP4( settings.IMAP_SERVER )
         self.mailbox.login( settings.IMAP_LOGIN, settings.IMAP_PASSWD )
