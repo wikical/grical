@@ -1094,8 +1094,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if self.starttime:
             date_time = datetime.datetime.combine(
                     self.startdate, self.starttime )
-            if not self.timezone:
-                self.update_timezone()
             if self.timezone:
                 timezone = pytz.timezone( self.timezone )
                 loc_dt = timezone.localize( date_time )
