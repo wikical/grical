@@ -1,0 +1,23 @@
+{% load i18n %}
+{% load urlsearch %}
+{% load cache %}
+
+{% cache 2592000 event_show_small event.id event.version %}
+    <span class="field_dates">
+      {% if event.upcomingdate != event.startdate and event.upcomingdate != event.enddate %}
+      ( {{ event.upcomingdate }} )
+      {% endif %}
+      {{ event.startdate }} {% if event.enddate %} : {{ event.enddate }} {% endif %}
+    </span>
+    <span class="field_title"><a href="{% url event_show_all event.id %}"> {{ event.title }} </a></span>
+    {% if event.acro %} <span class="field_acro">( {{ event.acro }} )</span> {% endif %}
+    {% if event.city or country %}@{% endif %}
+    {% if event.city %}
+        <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>{% if event.country %},{% endif %}
+    {% endif %}
+    {% if event.country %}
+        <span class="field_country">
+            <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" />
+        </span>
+    {% endif %}
+{% endcache %}
