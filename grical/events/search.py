@@ -47,6 +47,7 @@ EVENT_REGEX = re.compile(r'(?:^|\s)=(\d+)\b', re.UNICODE) #{{{2
 # ['1234', '234', '34']
 GROUP_REGEX = re.compile(r'(?:^|\s)!([-\w]+)\b', re.UNICODE) #{{{2
 TAG_REGEX = re.compile(r'(?:^|\s)#([-\w]+)\b', re.UNICODE) #{{{2
+EXCLUSION_REGEX = re.compile(r'(?:^|\s)-([#@]?[-\w]+)\b', re.UNICODE) #{{{2
 SPACE_REGEX = re.compile(r'\s+', re.UNICODE) #{{{2
 # CONTINENT_REGEX {{{2
 CONTINENT_REGEX = re.compile(r'(?:^|\s)@@(\w\w)\b', re.UNICODE) #{{{2
@@ -121,6 +122,68 @@ def continent_restriction( queryset, query ): #{{{1
                     Q(event__coordinates__contained = mpoly) |
                     Q(event__country__in = countries))
         query = CONTINENT_REGEX.sub("", query)
+    return queryset, query
+
+def exclusion( queryset, query ): #{{{1
+    """ returns a tuple (a queryset an a string ) restricting ``queryset``
+    excluding events if ``query`` contains expressions starting with ``-``
+    """
+    for word in EXCLUSION_REGEX.findall(query):
+        if queryset.model == Event:
+            if word[0] == '#':
+                if len(word) == 1:
+                    # it is only '-#', we exclude all tagged events
+                    exclusion_q = Q(tags__isnull = False)
+                else:
+                    exclusion_q = Q(tags__icontains = word[1:])
+            elif word[0] == '@':
+                if len(word) == 1:
+                    # it is only '-@', we exclude all located events
+                    exclusion_q = \
+                            Q(city__isnull = False) | \
+                            Q(country__isnull = False) | \
+                            Q(coordinates__isnull = False) | \
+                            Q(address__isnull = False)
+                else:
+                    exclusion_q = \
+                            Q(city__icontains = word[1:]) | \
+                            Q(country__icontains = word[1:])
+            else:
+                exclusion_q = \
+                    Q(title__icontains = word) | \
+                    Q(city__icontains = word) | \
+                    Q(country__iexact = word) | \
+                    Q(acronym__icontains = word) | \
+                    Q(tags__icontains = word)
+        else:
+            assert queryset.model == EventDate
+            if word[0] == '#':
+                if len(word) == 1:
+                    # it is only '-#', we exclude all tagged events
+                    exclusion_q = Q(event__tags__isnull = False)
+                else:
+                    exclusion_q = Q(event__tags__icontains = word[1:])
+            elif word[0] == '@':
+                if len(word) == 1:
+                    # it is only '-@', we exclude all located events
+                    exclusion_q = \
+                            Q(event__city__isnull = False) | \
+                            Q(event__country__isnull = False) | \
+                            Q(event__coordinates__isnull = False) | \
+                            Q(event__address__isnull = False)
+                else:
+                    exclusion_q = \
+                            Q(event__city__icontains = word[1:]) | \
+                            Q(event__country__icontains = word[1:])
+            else:
+                exclusion_q = \
+                    Q(event__title__icontains = word) | \
+                    Q(event__city__icontains = word) | \
+                    Q(event__country__iexact = word) | \
+                    Q(event__acronym__icontains = word) | \
+                    Q(event__tags__icontains = word)
+        queryset = queryset.exclude(exclusion_q)
+        query = EXCLUSION_REGEX.sub("", query)
     return queryset, query
 
 def location_restriction( queryset, query ): #{{{1
@@ -381,6 +444,8 @@ def search_events( query, related = True, model = Event ): #{{{1
                 'event__address')
         else:
             queryset = Event.objects.all()
+        # exclusion
+        queryset, query = exclusion(queryset, query)
         # single events
         for event_id in events_match:
             if model == Event:
