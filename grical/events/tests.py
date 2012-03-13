@@ -67,6 +67,7 @@ import urllib2
 from grical.events import models, views, forms, utils
 from grical.events.models import ( Event, Group, Filter, Membership,
         Calendar, GroupInvitation, ExtendedUser, EventDate, EXAMPLE )
+from grical.events.search import search_events
 
 def suite(): #{{{1
     """ returns a TestSuite naming the tests explicitly 
@@ -549,6 +550,25 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                                       kwargs = {'query':'berlin',} ) )
         # TODO: text for a no match also
         event.delete()
+
+    def test_search_exclusion( self ): # {{{2
+        "test for search exclusion syntax"
+        event1 = Event.objects.create(title = 'test exclusion',
+                tags = 'Ausschluss Einbeziehung')
+        event1.startdate = datetime.date.today()
+        event2 = Event.objects.create(title = 'test #Ausschluss',
+                tags = 'Einbeziehung')
+        event2.startdate = datetime.date.today()
+        # we test that -# exclude tags but not titles
+        queryset = search_events('-#Ausschluss')
+        assert event1.id not in [event.id for event in queryset]
+        assert event2.id in [event.id for event in queryset]
+        # we test that - excludes titles and tags
+        queryset = search_events('-Ausschluss')
+        assert event1.id not in [event.id for event in queryset]
+        assert event2.id not in [event.id for event in queryset]
+        event1.delete()
+        event2.delete()
 
     def test_valid_html( self ): # {{{2
         """ validates html with validator.w3.org """
