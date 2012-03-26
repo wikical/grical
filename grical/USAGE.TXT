@@ -203,27 +203,16 @@ __ http://code.grical.org/wiki/OnAPI
 GriCalDroid (Android App)
 -------------------------
 
-We have an Android__ App that displays upcoming events from GriCal on an OSM__ map.
+We have an Android__ app that allows to search and displays the result as a
+list, on a map or in a calendar.
 
 __ http://en.wikipedia.org/wiki/Android_(operating_system)
-__ http://en.wikipedia.org/wiki/OpenStreetMap
 
-
-To use GriCalDroid, follow the next steps:
-
-- `Download GriCalDroid`__ to your phone and install it.
+To use GriCalDroid, `Download GriCalDroid`__ to your phone and install it.
 
 .. image:: /m/GriCalDroid_url_qrcode.png
 
 __ /m/GriCalDroid.apk
-
-- Download into your phone one or more of `the maps available`__.
-
-.. image:: /m/maps_of_mapsforge_url_qrcode.png
-
-__ ftp://ftp.mapsforge.org/
-
-- Activate them in the settings of GriCalDroid.
 
 
 More help
