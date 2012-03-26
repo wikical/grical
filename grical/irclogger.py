@@ -32,9 +32,10 @@ import time
 import thread
 import sys
 
-from django.core.management import setup_environ
-from django.conf import settings
-setup_environ( settings )
+#from django.core.management import setup_environ
+#from django.conf import settings
+#setup_environ( settings )
+import grical.settings as settings
 
 # FIXME: avoid loosing the conection to freenet because of Excess Flood
 
