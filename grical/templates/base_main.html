@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load humanize %}
+
+{% block extraheaders %}
+<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url upcoming_events_rss %}" />
+{%endblock extraheaders %}
+
+{% block container %}
+
+    {% if not READ_ONLY %}
+        <div id="simplified_container">
+            <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
+                <form action="" method="post">{% csrf_token %}
+                    <fieldset>
+                        <legend>{% trans "Submit an event" %}</legend>
+                        {{ form.non_field_errors }}
+                        {% for field in form.visible_fields %}
+                            {# Include the hidden fields in the form #}
+                            {% if forloop.first %}
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            {% endif %}
+                            <div class="field">
+                                {% if field.errors %}
+                                    {{ field.label_tag }}<br />
+                                    {{ field.errors }}
+                                    {{ field }}
+                                {% else %}
+                                    {{ field.label_tag }}:&nbsp;{{ field }}{% if field.help_text %}&nbsp;<div class="help_text">{{ field.help_text }}</div>{% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div id="simplified_submit">
+                            <input type="submit" value="{% trans "Submit" %}" />
+                        </div>
+                    </fieldset>
+                </form>
+
+                <div id="alternatives">
+                    {% trans "Alternatively:" %}
+                    <a href="{% url event_new %}">{% trans "extended form" %}</a>, 
+                    <a href="{% url event_new_raw %}">{% trans "textarea" %}</a>
+                    <br />
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+
+    {% with eventdates=page.object_list %}
+        {% include "boxes.html" %}
+    {% endwith %}
+
+    {% include "pagination.html" %}
+
+{% endblock %}

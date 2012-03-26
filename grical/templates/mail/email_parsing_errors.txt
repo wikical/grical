@@ -1,0 +1,37 @@
+{% load i18n %}
+{% autoescape off %}
+{% if errors_dict %}
+{% blocktrans count errors_dict|length as counter %}
+An email you submitted to {{ site_name }} contained one error:
+{% plural %}
+An email you submitted to {{ site_name }} contained {{ counter }} errors:
+{% endblocktrans %}
+{% for field_errors_pairs in errors_dict.items %}
+    {% blocktrans with field_errors_pairs.0 as field %}
+    Field {{ field }} is not correct:
+    {% endblocktrans %}
+    {% for error in field_errors_pairs.1 %}
+        {% blocktrans with error as err %}
+        Error found: {{ err }}
+        {% endblocktrans %}
+    {% endfor %}
+{% endfor %}
+
+{% else %}
+{% blocktrans count errors_list|length as counter %}
+An email you submitted to {{ site_name }} contained one error:
+{% plural %}
+An email you submitted to {{ site_name }} contained {{ counter }} errors:
+{% endblocktrans %}
+{% for error in errors_list %}
+{{ error }}
+{% endfor %}
+{% endif %}
+        
+--
+{% blocktrans %}Your {{ site_name }} team{% endblocktrans %}
+http://{{ site_domain }}
+
+{% trans "========== original message sent by you: ==========" %}
+{{ original_message }}
+{% endautoescape %}
