@@ -52,7 +52,7 @@ SPACE_REGEX = re.compile(r'\s+', re.UNICODE) #{{{2
 # CONTINENT_REGEX {{{2
 CONTINENT_REGEX = re.compile(r'(?:^|\s)@@(\w\w)\b', re.UNICODE) #{{{2
 # LOCATION_REGEX {{{2
-# the regex starts optionally with @ (last alternative compulsory)
+# the regex starts optionally with @ (in last 2 alternatives compulsory)
 # and has 4 alternatives, examples:
 # 52.1234,-0.1234+300km
 # 52.1234,-0.1234,53.1234,-0.2345
@@ -81,7 +81,7 @@ LOCATION_REGEX = re.compile(r"""
             (\d+)               #   [6] distance (optional +)
             \s*                 #   optionally spaces
             (km|mi)?            #   [7] optional unit
-        )|@?(?:                 # or a name, +, distance and opt. unit
+        )|@(?:                 # or a name, +, distance and opt. unit
             ([^+]+)             #   [8] name
             \+(\d+)             #   [9] distance
             (km|mi)?            #   [10] optional unit
