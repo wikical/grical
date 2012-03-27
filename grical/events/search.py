@@ -52,14 +52,14 @@ SPACE_REGEX = re.compile(r'\s+', re.UNICODE) #{{{2
 # CONTINENT_REGEX {{{2
 CONTINENT_REGEX = re.compile(r'(?:^|\s)@@(\w\w)\b', re.UNICODE) #{{{2
 # LOCATION_REGEX {{{2
-# the regex start with @ and has 4 alternatives, examples:
+# the regex starts optionally with @ (last alternative compulsory)
+# and has 4 alternatives, examples:
 # 52.1234,-0.1234+300km
 # 52.1234,-0.1234,53.1234,-0.2345
 # london+50mi
 # berlin
 LOCATION_REGEX = re.compile(r"""
-        @(?:                    # loc regex starts with @
-        (?:                     # four floats separated by ,
+        @?(?:                   # four floats separated by ,
             ([+-]?\d+           #   [0] one or more digits
                 (?:\.\d*)?)     #   optionally . or . and decimals
             ,
@@ -71,21 +71,23 @@ LOCATION_REGEX = re.compile(r"""
             ,
             ([+-]?\d+           #   [3] one or more digits
                 (?:\.\d*)?)     #   optionally . or . and decimals
-        )|(?:                   # or float,float+int and opt. a unit
+        )|@?(?:                 # or float,float+int and opt. a unit
             ([+-]?\d+           #   [4] one or more digits
                 (?:\.\d*)?)     #   optionally . or . and decimals
             ,\s*                #   spaces because some people copy/paste
             ([+-]?\d+           #   [5] one or more digits
                 (?:\.\d*)?)     #   optionally . or . and decimals
-            \+(\d+)             #   [6] distance
+            \s*[ +]             #   optionally spaces or +
+            (\d+)               #   [6] distance (optional +)
+            \s*                 #   optionally spaces
             (km|mi)?            #   [7] optional unit
-        )|(?:                   # or a name, +, distance and opt. unit
+        )|@?(?:                 # or a name, +, distance and opt. unit
             ([^+]+)             #   [8] name
             \+(\d+)             #   [9] distance
             (km|mi)?            #   [10] optional unit
-        )|(                     # or just a name
+        )|@(                    # or just a name (@ is compulsory)
             .+                  #   [11]
-        ))""", re.UNICODE | re.X )
+        )""", re.UNICODE | re.X )
 # CITY_COUNTRY_RE : city, country (optional) #{{{2
 CITY_COUNTRY_RE = re.compile(r'\s*([^,]+)(?:,\s*(.+))?')
 
@@ -263,12 +265,10 @@ def location_restriction( queryset, query ): #{{{1
                 distance = { settings.DISTANCE_UNIT_DEFAULT: loc[6],}
             if queryset.model == Event:
                 queryset = queryset.filter(
-                        exact = True,
                         coordinates__distance_lte =
                             ( point, D( **distance ) ) )
             else:
                 queryset = queryset.filter(
-                        event__exact = True,
                         event__coordinates__distance_lte =
                             ( point, D( **distance ) ) )
         elif loc[0]:
