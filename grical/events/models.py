@@ -2087,7 +2087,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
 if not reversion.is_registered( Event ): # {{{1
     reversion.register( Event, format = "yaml", # TODO: use custom serializer
-            follow=[ "urls_set", "sessions_set", "dates_set" ] )
+            follow=["urls", "sessions", "dates"])
 
 class RevisionInfo( models.Model ): # {{{1
     """ used to store additional info in revisions """
