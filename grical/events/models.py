@@ -55,8 +55,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from grical.tagging.fields import TagField
 from grical.tagging.models import Tag
-import grical
-from grical.reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
+import reversion
+from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
 from grical.events.tasks import (
         log_using_celery, notify_users_when_wanted )
@@ -2085,8 +2085,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         cal_entry = Calendar.objects.get( event = self, group = group )
         cal_entry.delete()
 
-if not grical.reversion.is_registered( Event ): # {{{1
-    grical.reversion.register( Event, format = "yaml", # TODO: use custom serializer
+if not reversion.is_registered( Event ): # {{{1
+    reversion.register( Event, format = "yaml", # TODO: use custom serializer
             follow=[ "urls_set", "sessions_set", "dates_set" ] )
 
 class RevisionInfo( models.Model ): # {{{1
@@ -2432,8 +2432,8 @@ class EventUrl( models.Model ): # {{{1
             raise ValidationError( errors )
         return urls
 
-if not grical.reversion.is_registered( EventUrl ): # {{{1
-    grical.reversion.register(EventUrl, format = "yaml" )
+if not reversion.is_registered( EventUrl ): # {{{1
+    reversion.register(EventUrl, format = "yaml" )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 #class EventDateManager( models.Manager ): # {{{1
@@ -2641,8 +2641,8 @@ class EventDate( models.Model ): # {{{1
             raise ValidationError( errors )
         return names_dates
 
-if not grical.reversion.is_registered( EventDate ): # {{{1
-    grical.reversion.register( EventDate, format = 'yaml' )
+if not reversion.is_registered( EventDate ): # {{{1
+    reversion.register( EventDate, format = 'yaml' )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 #class EventSessionManager( models.Manager ): # {{{1
@@ -2783,8 +2783,8 @@ class EventSession( models.Model ): # {{{1
             raise ValidationError( errors )
         return sessions.values()
 
-if not grical.reversion.is_registered( EventSession ): # {{{1
-    grical.reversion.register(EventSession, format = 'yaml' )
+if not reversion.is_registered( EventSession ): # {{{1
+    reversion.register(EventSession, format = 'yaml' )
     # see https://github.com/etianen/django-reversion/wiki/Low-Level-API
 
 # class EventHistoryManager( models.Manager ): # {{{1

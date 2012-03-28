@@ -67,8 +67,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_page
 
-from grical.reversion import revision
-from grical.reversion.models import Version, Revision
+from reversion import revision
+from reversion.models import Version, Revision
 from grical.events.decorators import only_if_write_enabled
 from grical.events.forms import ( 
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,

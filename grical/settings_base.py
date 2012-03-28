@@ -161,7 +161,7 @@ INSTALLED_APPS = (
     'django.contrib.gis',
     'grical.tagging',
     'registration',
-    'grical.reversion',
+    'reversion',
     'django.contrib.markup', # used for rendering ReStructuredText
     'grical.contact_form',
     'djcelery',

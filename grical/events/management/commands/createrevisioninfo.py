@@ -27,7 +27,7 @@ from django.core.management.base import NoArgsCommand
 from django.db import transaction
 from django.utils.encoding import smart_unicode
 
-from grical.reversion.models import Version
+from reversion.models import Version
 
 from grical.events.models import Event, RevisionInfo
 

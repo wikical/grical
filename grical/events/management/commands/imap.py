@@ -47,7 +47,7 @@ from django.core.management.base import NoArgsCommand
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
-from grical.reversion import revision
+from reversion import revision
 
 from grical.events.models import Event, RevisionInfo
 
