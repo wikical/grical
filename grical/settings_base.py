@@ -27,8 +27,8 @@
 import os
 import djcelery
 
-DEBUG = False
-PROGRAM_DIR = os.path.dirname(__file__)
+DEBUG = False #{{{1
+PROGRAM_DIR = os.path.dirname(__file__) #{{{1
 
 # =============================================================================
 # specific GridCalendar settings {{{1
@@ -259,6 +259,16 @@ BROKER_VHOST = "/"
 # Ask in the ml or irc
 # [1] http://django-celery.readthedocs.org/en/latest/introduction.html
 # [2] http://stackoverflow.com/questions/7483728/django-celery-consumer-connection-error-111-when-running-python-manage-py-cel
+
+# =============================================================================
+# south
+# =============================================================================
+
+# see
+# http://south.aeracode.org/docs/unittests.html#south-s-own-unit-tests
+# https://groups.google.com/group/south-users/browse_thread/thread/7d74579b624cd53c
+SOUTH_TESTS_MIGRATE = False
+SKIP_SOUTH_TESTS = True
 
 # =============================================================================
 # i18n and url settings {{{1
