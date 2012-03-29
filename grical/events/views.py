@@ -965,6 +965,7 @@ def event_revert( request, revision_id, event_id ):
     assert unicode(event.id) in [ version.object_id for version in
             revision.version_set.all() ]
     revision.revert()
+    event = get_object_or_404( Event, pk = event_id )
     event.version = version_nr + 1
     event.save()
     # TODO: implement reversion of a reversion. Ask the makers of the
