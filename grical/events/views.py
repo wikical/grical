@@ -67,6 +67,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_page
 
+import reversion
 from reversion import revision
 from reversion.models import Version, Revision
 from grical.events.decorators import only_if_write_enabled
@@ -747,8 +748,7 @@ def event_does_not_exist( request, event_id, redirect_url ): # {{{1
     """ if event_id was deleted it shows event redirection or deleted page,
     otherwise raises 404 """
     try:
-        deleted_version = Version.objects.get_deleted_object(
-                Event, object_id = event_id )
+        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     revision_meta = deleted_version.revision.revisioninfo_set.all()
@@ -1046,9 +1046,9 @@ def event_deleted( request, event_id ): # {{{1
     """ inform the user the event has been deleted, show a link of a redirect
     if present and, if the user is authenticated, allow undeleting the event.
     """
+    import reversion
     try:
-        deleted_version = Version.objects.get_deleted_object( Event,
-                object_id = event_id )
+        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     # checking if the event is realy deleted
@@ -1088,8 +1088,7 @@ def event_undelete(request, event_id):
     if request.user.is_authenticated():
         revision.user = request.user
     try:
-        deleted_version = Version.objects.get_deleted_object( Event,
-                object_id = event_id )
+        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     # TODO ask the user for a reason for the undeletion
