@@ -1246,6 +1246,12 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         search_result = search_result.order_by( 'upcoming' )
     else:
         search_result = search_result.order_by( 'upcoming' )
+    # page_nr {{{3
+    # Make sure page request is an int. If not, deliver first page.
+    try:
+        page_nr = int(request.GET.get('page', '1'))
+    except ValueError:
+        page_nr = 1
     # limit {{{3
     # views can have a max limit, which is stored in the dictionary
     # settings.views_max_limits
@@ -1261,7 +1267,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if limit > max_limit:
         limit = max_limit
     if view not in ('table', 'map', 'boxes', 'calendars'):
-        search_result = search_result[0:limit]
+        search_result = search_result[(page_nr - 1) * limit : page_nr * limit]
         # for the others we use a paginator later on
     # views
     if view in ('json', 'yaml', 'xml'):
@@ -1341,11 +1347,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                 context,
                 context_instance = RequestContext( request ) )
     if view in ( 'boxes', 'map', 'calendars', 'table' ):
-        # Make sure page request is an int. If not, deliver first page.
-        try:
-            page_nr = int(request.GET.get('page', '1'))
-        except ValueError:
-            page_nr = 1
         paginator = Paginator( search_result, limit)
         try:
             page = paginator.page( page_nr )
