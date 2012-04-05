@@ -1068,12 +1068,16 @@ def event_deleted( request, event_id ): # {{{1
             Version.objects.get_for_object_reference( Event, event_id ) ]
     revisions.reverse()
     revs_diffs = revisions_diffs( revisions )
+    if revision.user:
+        username = revision.user.username
+    else:
+        username = None
     templates = {
             'title': _( "deleted event %(event_nr)s" ) % \
                     {'event_nr': deleted_version.object_id,},
             'revision': revision,
             'revisioninfo': revisioninfo,
-            'username': revision.user.username,
+            'username': username,
             'deleted_version': deleted_version,
             'event_id': event_id,
             'revisions_diffs': revs_diffs }
