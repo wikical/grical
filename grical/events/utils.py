@@ -572,9 +572,10 @@ def search_name( name, use_cache = True ): # {{{1
         cache_key =  'search_name__' +  query
         db_cache = get_cache('db')
         # we try the memcached cache (see settings.CACHES)
-        if cache.has_key( cache_key ):
-            cache_value = cache.get( cache_key )
-        elif db_cache.has_key( cache_key ):
+        # there is however a limit of 250 chars for the memcached key
+        if len(cache_key) <= 250 and cache.has_key(cache_key):
+            cache_value = cache.get(cache_key)
+        if not cache_value and db_cache.has_key( cache_key ):
             # we try the db cache
             cache_value = db_cache.get( cache_key )
         if cache_value:
