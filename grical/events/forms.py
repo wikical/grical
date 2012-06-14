@@ -521,16 +521,6 @@ class EventForm(forms.ModelForm): # {{{1
     startdate = DateExtendedField( required = True )
     enddate = DateExtendedField( required = False )
     coordinates = CoordinatesField( max_length = 26, required = False )
-    class Media:
-        js = (
-            'js/jquery.timepicker.min.js',
-            'js/timepicker.js',
-        )
-        css = {
-            'all': (
-                'css/jquery.timepicker.css',
-            ),
-        }
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
