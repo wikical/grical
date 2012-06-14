@@ -67,6 +67,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_page
 
+import reversion
 from reversion import revision
 from reversion.models import Version, Revision
 from grical.events.decorators import only_if_write_enabled
@@ -747,8 +748,7 @@ def event_does_not_exist( request, event_id, redirect_url ): # {{{1
     """ if event_id was deleted it shows event redirection or deleted page,
     otherwise raises 404 """
     try:
-        deleted_version = Version.objects.get_deleted_object(
-                Event, object_id = event_id )
+        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     revision_meta = deleted_version.revision.revisioninfo_set.all()
@@ -1046,9 +1046,9 @@ def event_deleted( request, event_id ): # {{{1
     """ inform the user the event has been deleted, show a link of a redirect
     if present and, if the user is authenticated, allow undeleting the event.
     """
+    import reversion
     try:
-        deleted_version = Version.objects.get_deleted_object( Event,
-                object_id = event_id )
+        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     # checking if the event is realy deleted
@@ -1068,12 +1068,16 @@ def event_deleted( request, event_id ): # {{{1
             Version.objects.get_for_object_reference( Event, event_id ) ]
     revisions.reverse()
     revs_diffs = revisions_diffs( revisions )
+    if revision.user:
+        username = revision.user.username
+    else:
+        username = None
     templates = {
             'title': _( "deleted event %(event_nr)s" ) % \
                     {'event_nr': deleted_version.object_id,},
             'revision': revision,
             'revisioninfo': revisioninfo,
-            'username': revision.user.username,
+            'username': username,
             'deleted_version': deleted_version,
             'event_id': event_id,
             'revisions_diffs': revs_diffs }
@@ -1088,8 +1092,7 @@ def event_undelete(request, event_id):
     if request.user.is_authenticated():
         revision.user = request.user
     try:
-        deleted_version = Version.objects.get_deleted_object( Event,
-                object_id = event_id )
+        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     # TODO ask the user for a reason for the undeletion
@@ -1247,6 +1250,12 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         search_result = search_result.order_by( 'upcoming' )
     else:
         search_result = search_result.order_by( 'upcoming' )
+    # page_nr {{{3
+    # Make sure page request is an int. If not, deliver first page.
+    try:
+        page_nr = int(request.GET.get('page', '1'))
+    except ValueError:
+        page_nr = 1
     # limit {{{3
     # views can have a max limit, which is stored in the dictionary
     # settings.views_max_limits
@@ -1262,7 +1271,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if limit > max_limit:
         limit = max_limit
     if view not in ('table', 'map', 'boxes', 'calendars'):
-        search_result = search_result[0:limit]
+        search_result = search_result[(page_nr - 1) * limit : page_nr * limit]
         # for the others we use a paginator later on
     # views
     if view in ('json', 'yaml', 'xml'):
@@ -1342,11 +1351,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                 context,
                 context_instance = RequestContext( request ) )
     if view in ( 'boxes', 'map', 'calendars', 'table' ):
-        # Make sure page request is an int. If not, deliver first page.
-        try:
-            page_nr = int(request.GET.get('page', '1'))
-        except ValueError:
-            page_nr = 1
         paginator = Paginator( search_result, limit)
         try:
             page = paginator.page( page_nr )
