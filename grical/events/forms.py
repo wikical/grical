@@ -396,7 +396,8 @@ class DatesTimesField(forms.Field): # {{{1
                 if startdate and enddate:
                     return {'startdate': startdate['startdate'], 'enddate': enddate['startdate']}
             dati = parseDateTime(value)
-                      
+            if dati:
+                return dati
          # No matches. We try now DateField
         return { 'startdate':
                 forms.DateField( required = self.required ).clean( value ) }
@@ -408,8 +409,10 @@ class DatesTimesField(forms.Field): # {{{1
             if value['startdate'] > value['enddate']:
                 raise forms.ValidationError( _('end date is before start date') )
         if value.has_key('starttime') and value.has_key('endtime'):
-            if value['starttime'] > value['endtime']:
-                raise forms.ValidationError( _('end time is before start time') )
+            if (not value.has_key('enddate')) or \
+                    value['enddate'] == value['startdate']:
+                if value['starttime'] > value['endtime']:
+                    raise forms.ValidationError( _('end time is before start time') )
 
 def parseDateTime(value): # {{{1
     parseinfos = [ None, GermanParserInfo, SpanishParserInfo ]
@@ -611,7 +614,9 @@ class EventForm(forms.ModelForm): # {{{1
             raise forms.ValidationError( 
                     _('endtime without starttime is not allowed') )
         if starttime and endtime and endtime < starttime:
-            raise forms.ValidationError( _('endtime must be after starttime') )
+            if (not enddate) or enddate == startdate:
+                raise forms.ValidationError(
+                        _('endtime must be after starttime'))
         return self.cleaned_data
 
 same_title_day_validation_error = forms.ValidationError(
