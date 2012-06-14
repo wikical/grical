@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<p>{% blocktrans with event.title as title %}
+<i>{{ title }}</i><br />
+can be added to:{% endblocktrans %}</p>
+
+<form action="" method="post">{% csrf_token %}
+    {{ form }}
+    <input type="submit" value={% trans "Add" %}>
+</form>
+
+{% endblock %}

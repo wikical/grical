@@ -1,0 +1,13 @@
+grical/settings.py
+docs/_build
+docs/html
+
+syntax: glob
+*.pyc
+.*.swp
+*.bak
+*.orig
+
+syntax: regexp
+(.*/)?\#[^/]*\#$
+.*\~
