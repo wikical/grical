@@ -42,6 +42,7 @@ import datetime
 from datetime import timedelta
 import re
 import httplib
+import pytz
 import urllib
 import string
 from random import choice
@@ -65,8 +66,8 @@ from MultipartPostHandler import MultipartPostHandler
 import urllib2
 
 from grical.events import models, views, forms, utils
-from grical.events.models import ( Event, Group, Filter, Membership,
-        Calendar, GroupInvitation, ExtendedUser, EventDate, EXAMPLE )
+from grical.events.models import ( Event, Group, Membership, TIMEZONES,
+        Calendar, GroupInvitation, EventDate, EXAMPLE )
 from grical.events.search import search_events
 
 def suite(): #{{{1
@@ -290,6 +291,18 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         response = conn.getresponse()
         result = response.read()
         self.assertTrue( 'Congratulations!' in result, result )
+
+    def test_timezone_consistency(self): # {{{2
+        tz_in_settings = []
+        for continent_data in TIMEZONES:
+            for name_trans in continent_data[1]:
+                tz_in_settings.append(name_trans[0])
+        tz_in_settings_set = set(tz_in_settings)
+        common_timezones_set =  set(pytz.common_timezones)
+        difference1 = tz_in_settings_set.difference(common_timezones_set)
+        assert not difference1, difference1
+        difference2 = common_timezones_set.difference(tz_in_settings_set)
+        assert not difference2, difference2
 
     def test_valid_user_activation(self): # {{{2
         """ tests account creation throw web """
