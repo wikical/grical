@@ -1688,7 +1688,7 @@ def main( request, status_code=200 ):# {{{1
     # handler404 and handler500 returns the main page with a custom error
     # message and we return also the proper html status code
     template = loader.get_template('base_main.html')
-    context = RequestContext( request, dict =
+    context = RequestContext( request,
             {
                 'title': Site.objects.get_current().name,
                 'form': event_form,
