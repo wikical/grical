@@ -214,14 +214,4 @@ To use GriCalDroid, `Download GriCalDroid`__ to your phone and install it.
 
 __ /m/GriCalDroid.apk
 
-
-More help
----------
-
-If you need more help, you can contact our mailing list at ``grical ät gridmind.org`` or try our IRC
-(`what is IRC?`_) channel `irc://irc.freenode.net/calendar`__
-
-__ irc://irc.freenode.net/calendar
-
-.. _what is IRC?: http://en.wikipedia.org/wiki/Internet_Relay_Chat
 .. _ReStructuredText: http://en.wikipedia.org/wiki/ReStructuredText
