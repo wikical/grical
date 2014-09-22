@@ -166,7 +166,7 @@ INSTALLED_APPS = (
     'grical.contact_form',
     'djcelery',
     'oembed',
-    'south',
+    #'south',
  )
 
 # at the end additional middleware are conditionaly added
