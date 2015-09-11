@@ -544,7 +544,7 @@ class EventForm(forms.ModelForm): # {{{1
             instance = kwargs['instance']
             coordinates_value = u''
             if instance.coordinates:
-                coordinates_value += str( instance.coordinates.y ) + ', ' + \
+                coordinates_value += str( instance.coordinates.y ) + u', ' + \
                         str( instance.coordinates.x )
             if coordinates_value:
                 self.fields['coordinates'].initial = coordinates_value

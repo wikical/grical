@@ -1,0 +1,49 @@
+# Grical python requirements for production
+# The Puppet manifests may be listing more debian packages as requirements
+# (python-gdal is one of them).
+
+#-e git+https://github.com/wikical/django.git@issue20401-1.6#egg=django
+#django==1.5.11
+django==1.3.7
+django-registration==0.7
+django-tagging==0.3.1
+django-tables==0.2
+django-compressor==1.3
+django-celery==3.0.10
+django-ajax-selects==1.2.5
+django-simple-captcha==0.4.0
+six==1.5.2  # Required by django-simple-captcha, django-statici18n, and others
+django-statici18n==1.1
+oauth2==1.5.211
+python-social-auth==0.1.23
+oauthlib==0.6.1           # Required by python-social-auth
+requests-oauthlib==0.4.0  # Required by python-social-auth
+docutils==0.10
+south==0.8.1
+cssmin==0.1.4  # Used for CSS minification
+slimit==0.8.1  # Used for Javascript minification
+celery==3.0.16
+python-dateutil==1.5 # Required by celery
+billiard==2.7.3.22   # Required by celery
+kombu==2.5.7         # Required by celery
+anyjson==0.3.3       # Required by kombu
+amqp==1.0.13         # Required by kombu
+django-appconf==0.6
+python-twitter==1.1
+icalendar==3.6.1
+pytz==2012c
+requests==2.2.1
+django-oembed==0.1
+django-reversion==1.5.4
+python-memcached==1.53
+vobject==0.8.1c
+pyyaml==3.11
+#pillow==2.3.0  # We temporarily still use PIL until we make grical compatible
+                # with pillow. Should be one or two weeks from now.
+                # A.X. 2014-14-31
+
+# Admin stuff, used on production
+celerymon==1.0.3
+statsd==2.0.1
+django-statsd-mozilla==0.3.8.7
+psutil==0.7.0  # Used by uwsgi monitoring

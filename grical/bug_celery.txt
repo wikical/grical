@@ -1,0 +1,5 @@
+modified code in
+
+settings_base
+events/models
+events/utils
