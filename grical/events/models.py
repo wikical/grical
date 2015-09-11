@@ -58,8 +58,8 @@ from grical.tagging.models import Tag
 import reversion
 from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
 
-from grical.events.tasks import (
-        log_using_celery, notify_users_when_wanted )
+#from grical.events.tasks import (
+        #log_using_celery, notify_users_when_wanted )
 from grical.events.utils import (exact_as_bool_str,  validate_year, search_name,
         search_coordinates, search_address, search_timezone,
         search_country_code, text_diff, validate_tags_chars )
@@ -1463,7 +1463,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return
         if hasattr(event, "is_new") and not event.is_new:
             return
-        notify_users_when_wanted.delay( event = event )
+        #notify_users_when_wanted.delay( event = event )
 
     @staticmethod # def save_startdate_enddate(event, startdate, enddate) {{{3
     def save_startdate_enddate( event, startdate, enddate ):
@@ -3511,11 +3511,11 @@ if settings.LOG_PIPE and not settings.DEBUG:
         # comment {{{3
         if kwargs['sender'] == Comment:
             comment = kwargs['comment']
-            log_using_celery.delay( u'http://%(site)s%(comment_url)s\n' \
-                '*** %(comment)s ***\n' % {
-                    'site': site,
-                    'comment_url': comment.get_absolute_url(),
-                    'comment': comment.comment, } )
+            #log_using_celery.delay( u'http://%(site)s%(comment_url)s\n' \
+            #    '*** %(comment)s ***\n' % {
+            #        'site': site,
+            #        'comment_url': comment.get_absolute_url(),
+            #        'comment': comment.comment, } )
         # event created/updated {{{3
         elif kwargs['sender'] == RevisionInfo:
             revision_info = kwargs['instance']
@@ -3546,14 +3546,14 @@ if settings.LOG_PIPE and not settings.DEBUG:
                     text += diff
                 else:
                     text += smart_unicode( event.as_text() )
-            log_using_celery.delay( text )
+            #log_using_celery.delay( text )
         # event deleted {{{3
         elif kwargs['sender'] == Event:
             event = kwargs['instance']
             deleted_url = reverse( 'event_deleted',
                     kwargs={'event_id': event.id,} )
-            log_using_celery.delay( u'http://%(site)s%(deleted_url)s\n' % {
-                'site': unicode( site ), 'deleted_url': deleted_url, } )
+            #log_using_celery.delay( u'http://%(site)s%(deleted_url)s\n' % {
+            #    'site': unicode( site ), 'deleted_url': deleted_url, } )
         #  Revision, used to log undeletions {{{3
         elif kwargs['sender'] == Version:
             version = kwargs['instance']
@@ -3576,9 +3576,9 @@ if settings.LOG_PIPE and not settings.DEBUG:
                     if ver.type == VERSION_DELETE:
                         history_url = reverse( 'event_history',
                             kwargs={'event_id': version.object_id,} )
-                        log_using_celery.delay(
-                            u'http://%(site)s%(history_url)s\n' % {
-                            'site': site, 'history_url': history_url, } )
+                        #log_using_celery.delay(
+                        #    u'http://%(site)s%(history_url)s\n' % {
+                        #    'site': site, 'history_url': history_url, } )
                     return
                 previous = revision
     # connecting to signals {{{2

@@ -48,7 +48,7 @@ from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 from django.conf import settings
 
-from grical.events.tasks import save_in_caches
+#from grical.events.tasks import save_in_caches
 
 # TODO: avoid transgression of OpenStreetMap and Google terms of use. E.g.
 # OpenStreetMap doesn't want more than one query per second
@@ -466,7 +466,7 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
             cache_value = db_cache.get( cache_key )
         if cache_value:
             # we want to be sure that it is saved in all caches
-            save_in_caches.delay( cache_key, cache_value )
+            #save_in_caches.delay( cache_key, cache_value )
             return cache_value
     url = settings.GEONAMES_URL + 'timezone?lat=%s&lng=%s&username=%s' % \
             ( str(lat), str(lng), settings.GEONAMES_USERNAME )
@@ -475,7 +475,8 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
         response = urllib2.urlopen( url, timeout = 10 )
         if not response:
             if use_cache:
-                save_in_caches.delay( cache_key, None, timeout = 300 )
+                pass
+                #save_in_caches.delay( cache_key, None, timeout = 300 )
             return None
         response_text = response.read()
         doc = fromstring( response_text ) # can raise a ExpatError
@@ -485,11 +486,13 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
             IndexError, AttributeError ) as err:
         # TODO: log the err
         if use_cache:
-            save_in_caches.delay( cache_key, None, timeout = 300 )
+            pass
+            #save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
     if not timezoneId:
         if use_cache:
-            save_in_caches.delay( cache_key, None, timeout = 300 )
+            pass
+            #save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
     from grical.events.models import TIMEZONES
     found = False
@@ -501,12 +504,13 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
     if not found:
         # TODO: log the error
         if use_cache:
-            save_in_caches.delay( cache_key, None, timeout = 300 )
+            pass
+            #save_in_caches.delay( cache_key, None, timeout = 300 )
         return None
     if use_cache:
         # we save it fast in memcached before saving it slowly in all caches
         cache.set( cache_key, timezoneId )
-        save_in_caches.delay( cache_key, timezoneId )
+        #save_in_caches.delay( cache_key, timezoneId )
         # TODO: test that we recognize the timezoneId and log if not
     return timezoneId
 
@@ -580,7 +584,7 @@ def search_name( name, use_cache = True ): # {{{1
             cache_value = db_cache.get( cache_key )
         if cache_value:
             # we want to be sure that it is saved in all caches
-            save_in_caches.delay( cache_key, cache_value )
+            #save_in_caches.delay( cache_key, cache_value )
             return cache_value
     url = settings.GEONAMES_URL + 'search?q=%s&maxRows=1&username=%s' % \
             ( query, settings.GEONAMES_USERNAME )
@@ -589,7 +593,8 @@ def search_name( name, use_cache = True ): # {{{1
         response = urllib2.urlopen( url, timeout = 10 )
         if not response:
             if use_cache:
-                save_in_caches.delay( cache_key, None, timeout = 300 )
+                #save_in_caches.delay( cache_key, None, timeout = 300 )
+                pass
             return None
         response_text = response.read()
         doc = fromstring( response_text ) # can raise a ExpatError
@@ -605,7 +610,8 @@ def search_name( name, use_cache = True ): # {{{1
     except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
             IndexError, AttributeError ) as err:
         if use_cache:
-            save_in_caches.delay( cache_key, None, timeout = 300 )
+            pass
+            #save_in_caches.delay( cache_key, None, timeout = 300 )
         if response_text and 'the daily limit of' in response_text:
             mail_admins(
                 'URGENT: geonames limit reached',
@@ -625,7 +631,7 @@ def search_name( name, use_cache = True ): # {{{1
     if use_cache:
         # we save it fast in memcached before saving it slowly in all caches
         cache.set( cache_key, to_return )
-        save_in_caches.delay( cache_key, to_return )
+        #save_in_caches.delay( cache_key, to_return )
     return to_return
 
 def search_address_osm( data ): # {{{1

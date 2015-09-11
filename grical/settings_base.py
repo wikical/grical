@@ -25,7 +25,7 @@
 
 # imports {{{1
 import os
-import djcelery
+#import djcelery
 
 DEBUG = False #{{{1
 PROGRAM_DIR = os.path.dirname(__file__) #{{{1
@@ -164,7 +164,7 @@ INSTALLED_APPS = (
     'reversion',
     'django.contrib.markup', # used for rendering ReStructuredText
     'grical.contact_form',
-    'djcelery',
+    #'djcelery',
     'oembed',
     #'south',
  )
@@ -247,7 +247,7 @@ CACHES = {
 
 # http://django-celery.readthedocs.org/en/latest/getting-started/first-steps-with-django.html
 # TODO: create a proper user for production
-djcelery.setup_loader()
+#djcelery.setup_loader()
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
 BROKER_USER = "guest"
