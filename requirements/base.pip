@@ -1,0 +1,33 @@
+# Grical python requirements for production
+# The Puppet manifests may be listing more debian packages as requirements
+# (python-gdal is one of them).
+
+django==1.8.14
+django-registration==0.7
+django-tables==1.2.6
+django-compressor==2.1
+django-celery==3.1.17
+six==1.10.0  # Required by django-simple-captcha, django-statici18n, and others
+docutils==0.12
+celery==3.1.24 # Last stable 3.x
+python-dateutil==2.4.2
+# FIXME: Upgrading dateutil from 2.4.2 to 2.5.3 made some ISO
+# datestring parsing to fail confusing month for day, maybe some
+# locale issue. Investigate and restore the newer version when
+# possible.
+kombu==3.0.33        # Required by celery
+icalendar==3.10
+pytz==2016.6.1
+# requests==2.11.1 # UNUSED
+django-oembed==0.1.3
+django-reversion==1.10.2 # Version 2.x seems to have many uncompatible
+# changes, keeping the latest 1.x
+python-memcached==1.58
+vobject==0.9.3
+pyyaml==3.12
+
+# Admin stuff, used on production
+celerymon==1.0.3
+statsd==2.1.2
+django-statsd-mozilla==0.3.16
+psutil==4.3.1  # Used by uwsgi monitoring

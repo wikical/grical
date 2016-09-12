@@ -28,20 +28,20 @@
 # imports {{{1
 from django.utils.translation import ugettext as _
 
-from django_tables import MemoryTable, Column
+from django_tables2 import Table, Column
 
-class EventTable(MemoryTable): # {{{1
+class EventTable(Table): # {{{1
     upcoming = Column( verbose_name = _( u"upcoming") )
-    start = Column( verbose_name = _( u"start date" ), sortable = True,
+    start = Column( verbose_name = _( u"start date" ), orderable = True,
             default = '' )
-    end = Column( verbose_name = _( u"end date" ), sortable = True,
+    end = Column( verbose_name = _( u"end date" ), orderable = True,
             default = '')
     city = Column( verbose_name = _( u"city" ), default = '' )
     country = Column( verbose_name = _( "country" ), default = '' )
     title = Column( verbose_name = _( "title" ) )
     tags = Column(
-            verbose_name = _( "tags" ), sortable = False, default = '' )
-    id = Column( sortable = False, visible = False )
+            verbose_name = _( "tags" ), orderable = False, default = '' )
+    id = Column( orderable = False, visible = False )
 
     @staticmethod
     def convert(event_list): # {{{2
