@@ -159,6 +159,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.comments',
     'django.contrib.gis',
+    'django_tables2',
     'grical.tagging',
     'registration',
     'reversion',

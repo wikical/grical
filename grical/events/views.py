@@ -6,17 +6,17 @@
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
-# 
+#
 # GridCalendar is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
@@ -71,11 +71,11 @@ import reversion
 from reversion import revision
 from reversion.models import Version, Revision
 from grical.events.decorators import only_if_write_enabled
-from grical.events.forms import ( 
+from grical.events.forms import (
     SimplifiedEventForm, EventForm, FilterForm, AlsoRecurrencesForm,
     CalendarForm, EventSessionForm, DateExtendedField,
     NewGroupForm, InviteToGroupForm, AddEventToGroupForm, DeleteEventForm )
-from grical.events.models import ( 
+from grical.events.models import (
     Event, EventUrl, EventSession, EventDate, Filter, Group, Recurrence,
     Membership, GroupInvitation, Calendar, RevisionInfo,
     add_start, add_end, add_upcoming )
@@ -91,7 +91,7 @@ views = [_('table'), _('map'), _('boxes'), _('calendars'),]
 def help_page( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
     USAGE.TXT
-    
+
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> Client().get(reverse('help')).status_code
@@ -181,8 +181,8 @@ def event_edit_recurrences( request, event_id ):
             months.append( mark_safe( smart_unicode(
                 calendar_form.formatmonth( date.year, date.month) ) ) )
             templates = { 'months': months, 'event': master,
-                'title': _('editing recurrences of the event: %s' % unicode(
-                    master) ) }
+                'title': _('editing recurrences of the event: %(master)s')% {
+                    'master': unicode(master)} }
         return render_to_response( 'event_edit_recurrences.html', templates,
                 context_instance = RequestContext( request ) )
     # request.method = POST
