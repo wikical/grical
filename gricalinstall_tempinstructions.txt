@@ -1,0 +1,57 @@
+cp settings-example.py settings.py
+
+
+# Create a container to work
+
+cd ~/wikical/provisionize
+./provisionize.sh --only-create grical
+
+echo "/home/$USER/grical home/$USER/grical none bind,create=dir 0 0" >~/.local/share/lxc/grical/fstab
+echo "lxc.mount = /home/$USER/.local/share/lxc/grical/fstab" >> ~/.local/share/lxc/grical/config
+
+# Restart container
+lxc-stop -n grical
+lxc-start -n grical -d
+
+# Login to container
+
+ssh root@grical
+
+# Install postgresql 9.5
+
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
+apt-get update
+apt-get install postgresql postgresql-contrib postgis
+apt-get install postgresql-server-dev-9.5
+
+# Install several packages
+
+apt-get install python-geoip
+apt-get install build-essential python-dev python-pip
+apt-get install geoip-database-contrib
+
+# Create database, db user, etc
+
+su postgres
+psql
+then type:
+CREATE EXTENSION IF NOT EXISTS postgis;
+Exit psql with Ctrl+D
+
+Run:
+`createuser --pwprompt --no-createdb --no-createrole --no-superuser grical_user`
+password: "grical_password"
+Run:
+`createdb --owner grical_user -T template1 grical_db`
+logout as postgres
+`exit`
+
+# Install pip packages
+
+(always as grical root)
+cd /home/yourusername/grical/requirements/
+pip install -r base.pip
+
+
+

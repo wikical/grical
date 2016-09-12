@@ -155,15 +155,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'django.contrib.databrowse',
     'django.contrib.admindocs',
-    'django.contrib.comments',
+    'django_comments',
     'django.contrib.gis',
     'django_tables2',
     'grical.tagging',
-    'registration',
+#    'registration',
     'reversion',
-    'django.contrib.markup', # used for rendering ReStructuredText
+    'markup_deprecated', # used for rendering ReStructuredText
     'grical.contact_form',
     #'djcelery',
     'oembed',

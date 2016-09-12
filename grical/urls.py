@@ -23,10 +23,10 @@
 """ Main urls definition file. """
 # imports {{{1
 from django.conf import settings
-from django.conf.urls.defaults import ( patterns, include, url, handler500,
-        handler404 )
-from django.contrib import admin, databrowse
-from django.conf.urls.defaults import * # pylint: disable-msg=W0401,W0614,W0614
+from django.conf.urls import ( patterns, include, url, handler500,
+        handler404)
+from django.contrib import admin
+from django.conf.urls import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:
 # http://code.djangoproject.com/ticket/5350
 
@@ -34,11 +34,6 @@ from grical.events import views
 
 # registrations {{{1
 admin.autodiscover()
-# databrowse.site.register(Event)
-# databrowse.site.register(Group)
-# databrowse.site.register(EventUrl)
-# databrowse.site.register(EventSession)
-# databrowse.site.register(EventDeadline)
 
 # handler404 and handler500 {{{1
 handler404 = views.handler404
@@ -49,7 +44,6 @@ urlpatterns = patterns( '', # pylint: disable-msg=C0103
     ( r'^a/admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
     #(r'^a/admin/(.*)', admin.site.root),
     ( r'^a/admin/', admin.site.urls ),
-    ( r'^a/db/(.*)', databrowse.site.root ),
     ( r'^a/accounts/', include( 'registration.urls' ) ),
     ( r'^a/accounts/logout/$',
         'django.contrib.auth.views.logout', {'next_page': '/'} ),
@@ -58,7 +52,7 @@ urlpatterns = patterns( '', # pylint: disable-msg=C0103
 # comments / feedback
 # see http://docs.djangoproject.com/en/1.3/ref/contrib/comments/
 urlpatterns += patterns( '',
-        (r'^c/comments/', include('django.contrib.comments.urls')),
+        (r'^c/comments/', include('django_comments.urls')),
         (r'^c/feedback/', include('grical.contact_form.urls')),
  )
 

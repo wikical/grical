@@ -7,9 +7,12 @@ SECRET_KEY = 'fiwj{34gj90gjdsg.s9t8t9sggejis0e94gjsd4#&bkd;k4lg$'
 DATABASES = {
     'default': {
          'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'grical',
-         'USER': 'grical',
+         'ATOMIC_REQUESTS': True,
+         'NAME': 'grical_db',
+         'USER': 'grical_user',
          'PASSWORD': 'grical_password',
+         'HOST': 'localhost',
+         'PORT': 5432
      }
 }
 
