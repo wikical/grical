@@ -34,8 +34,8 @@ import vobject
 
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
-from django.contrib.comments import Comment
-from django.contrib.comments.signals import comment_was_posted
+from django_comments.models import Comment
+from django_comments.signals import comment_was_posted
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models
 from django.contrib.gis.db.models import Q, F
