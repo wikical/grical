@@ -4,14 +4,14 @@
     <ul>
         {% for group in groups %}
             <li>
-                <a href="{% url list_events_group_ical g.id %}">
+                <a href="{% url "list_events_group_ical" g.id  %}">
                     <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>&nbsp;
-                <a href="{% url list_events_group_rss g.id %}">
+                <a href="{% url "list_events_group_rss" g.id  %}">
                     <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></a>&nbsp;
-                <a href="{% url group_view g.id %}">{{ group.name }}</a> ({{ group.future_events_count }})
+                <a href="{% url "group_view" g.id  %}">{{ group.name }}</a> ({{ group.future_events_count }})
                 {% if not READ_ONLY %}
-                    | <a href="{% url group_quit g.id %}">quit</a> |
-                    | <a href="{% url group_invite g.id %}">invite</a> |
+                    | <a href="{% url "group_quit" g.id  %}">quit</a> |
+                    | <a href="{% url "group_invite" g.id  %}">invite</a> |
                 {% endif %}
             </li>
             <ul>
@@ -29,7 +29,7 @@
 
 {% if user.username %}
     {% if not READ_ONLY %}
-        <p align="right"><a href="{% url group_new %}">{% trans "Create a new group" %}</a></p>
+        <p align="right"><a href="{% url "group_new"  %}">{% trans "Create a new group" %}</a></p>
     {% endif %}
     <h2 align="center">{% trans "Coming events in my groups" %}</h2>
     {% if group_events %}
@@ -38,7 +38,7 @@
             {% for event in g.el %}
                 <p>
                     <div class="field">
-                        <a href="{% url event_show_all event.id %}">{{ event.title }}</a><br />
+                        <a href="{% url "event_show_all" event.id  %}">{{ event.title }}</a><br />
                         <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
                         </span>
                     </div>
@@ -54,6 +54,6 @@
     <h2>{% trans "What is GridCalendar?" %}</h2>
     {{ about_text|restructuredtext }}
     {% if not READ_ONLY %}
-        <p><a href="{% url registration_register %}">{% trans "Create an account now" %}</a></p>
+        <p><a href="{% url "registration_register"  %}">{% trans "Create an account now" %}</a></p>
     {% endif %}
 {% endif %}

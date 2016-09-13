@@ -8,7 +8,7 @@
     {% endblocktrans %}
 </p>
 <p>
-    <a href="{% url group_view group.id %}">
+    <a href="{% url "group_view" group.id  %}">
         {% blocktrans with group.name as group_name %}
         You can now visit the {{ group_name }}'s group page.
         {% endblocktrans %}

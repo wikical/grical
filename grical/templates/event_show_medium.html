@@ -9,9 +9,9 @@
 
     <div class="title" style="color: {{ event.fg_color }}; background-color: {{ event.bg_color }}">
         <span class="ical_logo">
-            <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
         </span>
-        <a href="{% url event_show_all event.id %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
+        <a href="{% url "event_show_all" event.id  %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
     </div>
 
     <div class="content">

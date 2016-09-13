@@ -18,18 +18,18 @@
         <li>{% trans "Last login:" %} {{user.last_login}}</li>
     </ul>
     {% if USER.has_filters %}
-        <li><a href="{% url list_filters_my %}">{% trans "Filters" %}</a></li>
+        <li><a href="{% url "list_filters_my"  %}">{% trans "Filters" %}</a></li>
         {% include "settings_filters.html" %}
     {% endif %}
     {% if USER.has_groups %}
-        <li><a href="{% url list_groups_my %}">{% trans "Groups" %}</a></li>
+        <li><a href="{% url "list_groups_my"  %}">{% trans "Groups" %}</a></li>
         {% include "settings_groups.html" %}
     {% endif %}
     {% if not READ_ONLY %}
         <li>{% trans "Options" %}</li>
         <ul>
-            <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
-            <li><a href="{% url group_new %}">{% trans "Create a new group" %}</a></li>
+            <li><a href="{% url "auth_password_change"  %}">{% trans "Change password" %}</a></li>
+            <li><a href="{% url "group_new"  %}">{% trans "Create a new group" %}</a></li>
         <ul>
     {% endif %}
 </ul>

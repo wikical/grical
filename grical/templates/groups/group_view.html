@@ -4,7 +4,7 @@
 {% block container %}
 
 {% block extraheaders %}
-    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url list_events_group_rss group.id %}" />
+    <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url "list_events_group_rss" group.id  %}" />
 {%endblock extraheaders %}
 
 <h1>
@@ -13,12 +13,12 @@
     {% endblocktrans %}
 </h1>
 <p>
-    <a href="{% url list_events_group_rss group.id %}">
+    <a href="{% url "list_events_group_rss" group.id  %}">
         <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
         Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
 </p>
 <p>
-    <a href="{% url list_events_group_ical group.id %}">
+    <a href="{% url "list_events_group_ical" group.id  %}">
         <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
         Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
 </p>

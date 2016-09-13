@@ -177,10 +177,10 @@
 {% comment %}
 <div class="info">
     {% if event_id %}
-        <a href="{% url event_edit_raw event_id %}">{% trans "edit as text" %}</a>
+        <a href="{% url "event_edit_raw" event_id  %}">{% trans "edit as text" %}</a>
     {% else %}
         {# user is creating a new event, not editing a old event #}
-        <a href="{% url event_new_raw %}">{% trans "edit as text" %}</a>
+        <a href="{% url "event_new_raw"  %}">{% trans "edit as text" %}</a>
     {% endif %}
     ({% trans "Warning: unsaved changes in the form above will be lost" %})
 </div>

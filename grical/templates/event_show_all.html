@@ -17,11 +17,11 @@
         <div class="header">
             <div id="title">
                 <span class="ical_logo">
-                  <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+                  <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
                 </span>
                 {% if event.recurring %}
                     <span class="ical_logo">
-                        <a href="{% url event_show_recurrences_ical event.id %}">
+                        <a href="{% url "event_show_recurrences_ical" event.id  %}">
                             <img alt="ICAL recurrences" src="{{ MEDIA_URL }}icalrecurrencesicon.png" /></a>
                     </span>
                 {% endif %}
@@ -29,22 +29,22 @@
             </div>
             <div class="options">
                 {% if not READ_ONLY %}
-                    <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+                    <a href="{% url "event_edit" event.id  %}">{% trans "edit" %}</a>
                     &nbsp;|&nbsp;
-                    <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit&nbsp;as&nbsp;text" %}</span></a>
+                    <a href="{% url "event_edit_raw" event.id  %}"><span class="field_link">{% trans "edit&nbsp;as&nbsp;text" %}</span></a>
                     &nbsp;|&nbsp;
                 {% endif %}
-                <a href="{% url event_history event.id %}">{% trans "history" %}</a>
+                <a href="{% url "event_history" event.id  %}">{% trans "history" %}</a>
                 {% if not READ_ONLY %}
                     &nbsp;|&nbsp;
-                    <a href="{% url event_new_copyraw event.id %}">{% trans "copy&nbsp;as&nbsp;text" %}</a>
+                    <a href="{% url "event_new_copyraw" event.id  %}">{% trans "copy&nbsp;as&nbsp;text" %}</a>
                     {% if user.is_authenticated %}
                         &nbsp;|&nbsp;
-                        <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+                        <a href="{% url "group_add_event" event.id  %}">{% trans "add to group" %}</a>
                         &nbsp;|&nbsp;
-                        <a href="{% url event_edit_recurrences event.id %}">{% trans "recurrences" %}</a>
+                        <a href="{% url "event_edit_recurrences" event.id  %}">{% trans "recurrences" %}</a>
                         &nbsp;|&nbsp;
-                        <a href="{% url event_delete event.id %}">{% trans "delete" %}</a>
+                        <a href="{% url "event_delete" event.id  %}">{% trans "delete" %}</a>
                     {% endif %}
                 {% endif %}
             </div>
@@ -52,7 +52,7 @@
 
         <div class="item">
             <!--
-            <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
             &nbsp;|&nbsp;
             -->
             <img class="icon" alt="ICAL" src="{{ MEDIA_URL }}dates-icon.png" />
@@ -263,7 +263,7 @@
         {% if user.is_authenticated %}
             {% render_comment_form for event %}
         {% else %}
-            <p><a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>
+            <p><a href="{% url "auth_login"  %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>
             {# TODO: redirect user to the position to add a comment to this event after logging in #}
         {% endif %}
     {% endif %}

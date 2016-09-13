@@ -10,16 +10,16 @@
 
     <div class="event_history">
         <div class="options">
-            <a href="{% url event_show_ical event.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
             &nbsp;|&nbsp;
-            <a href="{% url event_show_all event.id %}">{% trans "show" %}</a>
+            <a href="{% url "event_show_all" event.id  %}">{% trans "show" %}</a>
             {% if not READ_ONLY %}
                 &nbsp;|&nbsp;
-                <a href="{% url event_edit event.id %}">{% trans "edit" %}</a>
+                <a href="{% url "event_edit" event.id  %}">{% trans "edit" %}</a>
                 &nbsp;|&nbsp;
-                <a href="{% url event_edit_raw event.id %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+                <a href="{% url "event_edit_raw" event.id  %}"><span class="field_link">{% trans "edit as text" %}</span></a>
                 &nbsp;|&nbsp;
-                <a href="{% url group_add_event event.id %}">{% trans "add to group" %}</a>
+                <a href="{% url "group_add_event" event.id  %}">{% trans "add to group" %}</a>
             {% endif %}
         </div>
 
@@ -34,7 +34,7 @@
             {% if diff %}
                 <h2> {{ revision.date_created.isoformat }}</h2>
                 {% if USER.is_authenticated %}
-                    <p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="{% url event_revert revision.id event.id %}">
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="{% url "event_revert" revision.id event.id  %}">
                         {% trans "Revert event to the left version" %}</a></p>
                 {% endif %}
                 {{ diff|safe }} {# FIXME: when creating the html diff ensure escaping #}
