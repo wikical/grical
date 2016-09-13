@@ -36,7 +36,7 @@ apt-get install geoip-database-contrib mercurial
 su postgres
 psql
 then type:
-CREATE EXTENSION IF NOT EXISTS postgis;
+`CREATE EXTENSION IF NOT EXISTS postgis;`
 Exit psql with Ctrl+D
 
 Run:
@@ -44,6 +44,12 @@ Run:
 password: "grical_password"
 Run:
 `createdb --owner grical_user -T template1 grical_db`
+We need also to create extension postgis for grical_db
+`psql -d grical_db`
+then run in psql:
+`CREATE EXTENSION IF NOT EXISTS postgis`
+Exit psql with Ctrl+D
+
 logout as postgres
 `exit`
 
@@ -54,6 +60,7 @@ cd /home/yourusername/grical/requirements/
 pip install -r base.pip
 
 
+python manage.py createcachetable cache
 
 
 Discussion

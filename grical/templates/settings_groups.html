@@ -1,17 +1,17 @@
 <ul>
     {% for group in USER.get_groups %}
         <li>
-            <a href="{% url group_view group.id %}">{{ group.name }}</a>
+            <a href="{% url "group_view" group.id  %}">{{ group.name }}</a>
             {% if not READ_ONLY %}
                 &nbsp;
-                <a href="{% url group_quit group.id %}">quit</a>
+                <a href="{% url "group_quit" group.id  %}">quit</a>
                 &nbsp;
-                <a href="{% url group_invite group.id %}">invite</a>
+                <a href="{% url "group_invite" group.id  %}">invite</a>
             {% endif %}
             &nbsp;
-            <a href="{% url list_events_group_ical group.id %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>
+            <a href="{% url "list_events_group_ical" group.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>
             &nbsp;
-            <a href="{% url list_events_group_rss group.id %}"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
+            <a href="{% url "list_events_group_rss" group.id  %}"><img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></a>
         </li>
     {% endfor %}
 </ul>

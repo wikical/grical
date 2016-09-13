@@ -4,7 +4,7 @@
 <span class="field_dates">
   {{ event.start }}
 </span>
-<span class="field_title"><a href="{% url event_show_all event.id %}"> {{ event.title }} </a></span>
+<span class="field_title"><a href="{% url "event_show_all" event.id  %}"> {{ event.title }} </a></span>
 {% if event.acro %} <span class="field_acro">( {{ event.acro }} )</span> {% endif %}
 {% if event.city or country %}@{% endif %}
 {% if event.city %}

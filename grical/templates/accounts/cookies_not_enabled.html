@@ -11,7 +11,7 @@ are requeired for the operation you have tried. Please enable.
 </p>
 
 <p>
-{% url contact_form as contact_form_url %}
+{% url "contact_form" as contact_form_url  %}
 {% blocktrans %}
 If the error persists after enabling cookies, please
 <a href="{{ contact_form_url }}">contact us</a>.

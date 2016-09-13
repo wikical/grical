@@ -43,7 +43,7 @@
         {% endif %}
         {% if not READ_ONLY %}
             {% if USER.is_authenticated %}
-                <form style="display:inline" action="{% url filter_save %}" method="POST">{% csrf_token %}
+                <form style="display:inline" action="{% url "filter_save"  %}" method="POST">{% csrf_token %}
                     <input type="hidden" size="60" name="q" value="{{ query }}">
                     <input type="submit" value="{% trans "Save as a filter" %}">
                 </form>
