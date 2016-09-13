@@ -20,9 +20,8 @@ python-dateutil==2.4.2
 kombu==3.0.33        # Required by celery
 icalendar==3.10
 pytz==2016.6.1
-# requests==2.11.1 # UNUSED
 django-oembed==0.1.3
-django-reversion==1.6.5 # Version 2.x seems to have many uncompatible
+django-reversion==2.0.6
 # changes, keeping the latest 1.x
 psycopg2==2.6.2 # TODO: check timefyme configuration, possibly use Ubuntu package
 python-memcached==1.58

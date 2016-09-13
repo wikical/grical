@@ -9,8 +9,10 @@ from grical.tagging.models import Tag
 from grical.tagging.utils import parse_tag_input
 
 class TagAdminForm(forms.ModelForm):
+
     class Meta:
         model = Tag
+        fields = ('id', 'name')
 
     def clean_name(self):
         value = self.cleaned_data['name']
@@ -19,8 +21,8 @@ class TagAdminForm(forms.ModelForm):
             raise forms.ValidationError(_('Multiple tags were given.'))
         elif len(tag_names[0]) > settings.MAX_TAG_LENGTH:
             raise forms.ValidationError(
-                _('A tag may be no more than %s characters long.') %
-                    settings.MAX_TAG_LENGTH)
+                _('A tag may be no more than %(count)s characters long.') %
+                    {'count': settings.MAX_TAG_LENGTH})
         return value
 
 class TagField(forms.CharField):
@@ -35,6 +37,6 @@ class TagField(forms.CharField):
         for tag_name in parse_tag_input(value):
             if len(tag_name) > settings.MAX_TAG_LENGTH:
                 raise forms.ValidationError(
-                    _('Each tag may be no more than %s characters long.') %
-                        settings.MAX_TAG_LENGTH)
+                    _('Each tag may be no more than %(count)s characters long.') %
+                    {'count': settings.MAX_TAG_LENGTH})
         return value

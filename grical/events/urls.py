@@ -25,8 +25,8 @@
 """ URLs """
 
 # imports {{{1
-from django.conf.urls.defaults import *
-from django.views.generic.simple import redirect_to
+from django.conf.urls import *
+from django.views.generic.base import RedirectView
 
 from grical.events import views
 from grical.events.feeds import (
@@ -108,12 +108,12 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 # ^t tags urls {{{1
 urlpatterns += patterns( '',                 # pylint: disable-msg=C0103
     url( r'^t/(?P<tag>[\-\w]+)/$',
-        redirect_to, {'url': '/s/?query=#%(tag)s/'} ) )
+        RedirectView.as_view(url='/s/?query=#%(tag)s/') ) )
 
 # ^l locations urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^l/(?P<location>.+)/$' ,
-        redirect_to, {'url': '/s/?query=@%(location)s/'} ) )
+        RedirectView.as_view(url='/s/?query=@%(location)s/') ) )
 
 # ^g groups urls {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103

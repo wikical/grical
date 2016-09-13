@@ -56,7 +56,10 @@ from django.utils.translation import ugettext_lazy as _
 from grical.tagging.fields import TagField
 from grical.tagging.models import Tag
 import reversion
-from reversion.models import Version, Revision, VERSION_ADD, VERSION_DELETE
+from reversion.models import Version, Revision
+# Following fields as Version.type are deprecated, are used only when
+# LOG_TO_PIPE.
+#from reversion.models import VERSION_ADD, VERSION_DELETE
 
 #from grical.events.tasks import (
         #log_using_celery, notify_users_when_wanted )
@@ -1979,7 +1982,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def get_simple_fields():
         """ returns a tuple of names of user-editable fields (of events) which
         have only one line in the input text representation of an Event.
-        """ 
+        """
         field_names = [unicode(f.name) for f in Event._meta.fields]
         field_names.append(u'startdate')
         field_names.append(u'enddate')
@@ -1990,7 +1993,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         field_names.remove(u"user")
         field_names.remove(u"version")
         return tuple(field_names)
- 
+
     @staticmethod # def get_necessary_fields(): {{{3
     def get_necessary_fields():
         """ returns a tuple of names of the necessary filed fields of an event.
@@ -2002,13 +2005,13 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """ returns a tuple of names of fields in the order they
         should appear when showing an event as a text, i.e. in the output text
         representation of an Event.
-        
+
         Notice that 'recurrences' can be present in the input text
         representation, but it is not present in the output text
         representation.
 
         Some Poka-yoke code follows.
- 
+
         >>> gpl_len = len(Event.get_priority_list())  # 17
         >>> gsf_len = len(Event.get_simple_fields())  # 13
         >>> gcf_len = len(Event.get_complex_fields()) #  5 (recurring not in gpl
@@ -2020,7 +2023,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 u"endtime", u"timezone", u"city", u"country", u"address",
                 u"exact", u"coordinates", u"tags", u"urls", u"dates",
                 u"sessions", u"description")
- 
+
     @staticmethod # def get_synonyms(): {{{3
     def get_synonyms():
         """Returns a dictionay with names (strings) and the fields (strings)
@@ -2278,7 +2281,7 @@ class Recurrence( models.Model ): #{{{1
 
 class ExtendedUser(User): # {{{1
     """ Some aditional funtions to users
-    
+
     It uses the django proxy-models approach, see
     http://docs.djangoproject.com/en/1.2/topics/db/models/#proxy-models
 
@@ -2590,8 +2593,9 @@ class EventDate( models.Model ): # {{{1
                 date = date_field.clean( lines[0].strip() )
             except:
                 raise ValidationError(
-                        _(u"default date (deadline) is not a valid date: %s") %
-                        lines[0].strip() )
+                        _(u"default date (deadline) is not a valid date: "
+                            "%(date)s") %
+                        {'date': lines[0].strip()} )
             names_dates['deadline'] = date
         field_p = re.compile(r"^\s+(\d\d\d\d)-(\d?\d)-(\d?\d)\s+(.*?)\s*$")
         if len(lines) > 1:
@@ -3501,6 +3505,9 @@ class Session: #{{{1
                 " " + unicode(self.end.strftime( "%H:%M" )) + \
                 " " + unicode(self.name)
 
+#
+# FIXME: LOG_PIPE is defunct because of incompatible changes in
+# django_reversion
 # LOG to a pipe {{{1
 # it is recommended in the Django documentation to connect to signals in
 # models.py. That is why this code is here.
@@ -3510,7 +3517,8 @@ if settings.LOG_PIPE and not settings.DEBUG:
         site = Site.objects.get_current().domain
         # comment {{{3
         if kwargs['sender'] == Comment:
-            comment = kwargs['comment']
+            pass
+            # comment = kwargs['comment']
             #log_using_celery.delay( u'http://%(site)s%(comment_url)s\n' \
             #    '*** %(comment)s ***\n' % {
             #        'site': site,
@@ -3549,9 +3557,10 @@ if settings.LOG_PIPE and not settings.DEBUG:
             #log_using_celery.delay( text )
         # event deleted {{{3
         elif kwargs['sender'] == Event:
-            event = kwargs['instance']
-            deleted_url = reverse( 'event_deleted',
-                    kwargs={'event_id': event.id,} )
+            pass
+            # event = kwargs['instance']
+            # deleted_url = reverse( 'event_deleted',
+            #         kwargs={'event_id': event.id,} )
             #log_using_celery.delay( u'http://%(site)s%(deleted_url)s\n' % {
             #    'site': unicode( site ), 'deleted_url': deleted_url, } )
         #  Revision, used to log undeletions {{{3

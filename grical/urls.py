@@ -44,7 +44,7 @@ urlpatterns = patterns( '', # pylint: disable-msg=C0103
     ( r'^a/admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
     #(r'^a/admin/(.*)', admin.site.root),
     ( r'^a/admin/', admin.site.urls ),
-    ( r'^a/accounts/', include( 'registration.urls' ) ),
+    ( r'^a/accounts/', include( 'registration.backends.default.urls' ) ),
     ( r'^a/accounts/logout/$',
         'django.contrib.auth.views.logout', {'next_page': '/'} ),
  )

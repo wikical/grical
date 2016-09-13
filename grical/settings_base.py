@@ -148,25 +148,24 @@ INSTALLED_APPS = (
     'grical.accounts',
     'grical.data',
     'grical.events',
+    'django.contrib.sites',
+    'registration',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'django.contrib.humanize',
     'django.contrib.sessions',
-    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django_comments',
     'django.contrib.gis',
     'django_tables2',
     'grical.tagging',
-#    'registration',
     'reversion',
     'markup_deprecated', # used for rendering ReStructuredText
     'grical.contact_form',
     #'djcelery',
     'oembed',
-    #'south',
  )
 
 # at the end additional middleware are conditionaly added
@@ -177,11 +176,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # NOTE: everything below the TransactionMiddleware is managed by it ,with
-    # the exception of CacheMiddleware, UpdateCacheMiddleware, and
-    # FetchFromCacheMiddleware; as explained in the Dajngo documentation:
-    # https://docs.djangoproject.com/en/1.3/topics/db/transactions/
-    'django.middleware.transaction.TransactionMiddleware',
     # NOTE next middleware not used because in events.views.edit_event (among
     # other places) sometimes we create many revisions.
     # 'reversion.middleware.RevisionMiddleware',

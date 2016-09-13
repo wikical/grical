@@ -3,7 +3,7 @@
 {% load humanize %}
 
 {% block extraheaders %}
-<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url upcoming_events_rss %}" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url 'upcoming_events_rss' %}" />
 {%endblock extraheaders %}
 
 {% block container %}
@@ -40,8 +40,8 @@
 
                 <div id="alternatives">
                     {% trans "Alternatively:" %}
-                    <a href="{% url event_new %}">{% trans "extended form" %}</a>, 
-                    <a href="{% url event_new_raw %}">{% trans "textarea" %}</a>
+                    <a href="{% url 'event_new' %}">{% trans "extended form" %}</a>, 
+                    <a href="{% url 'event_new_raw' %}">{% trans "textarea" %}</a>
                     <br />
                 </div>
 

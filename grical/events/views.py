@@ -61,14 +61,13 @@ from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import ( render_to_response, get_object_or_404,
         get_list_or_404 )
 from django.template import RequestContext, loader
-from django.utils import simplejson
 from django.utils.encoding import smart_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_page
 
+import json
 import reversion
-from reversion import revision
 from reversion.models import Version, Revision
 from grical.events.decorators import only_if_write_enabled
 from grical.events.forms import (
@@ -224,7 +223,7 @@ def event_edit_recurrences( request, event_id ):
                 transaction.savepoint_rollback(sid)
                 return HttpResponseRedirect( reverse( 'event_show_all',
                         kwargs = {'event_id': event.id} ) )
-            with revision:
+            with reversion.create_revision:
                 if request.user.is_authenticated():
                     revision.user = request.user
                 new_master = event.clone( user = revision.user,
@@ -512,7 +511,7 @@ def _change_recurrences( user, event, events ): # {{{1
 @only_if_write_enabled
 def event_new_raw( request, template_event_id = None ):
     """ View to create an event as text
-    
+
     If a ``template_event_id`` is given, the preliminary text is the text form
     of the event with that id.
 
@@ -1087,7 +1086,7 @@ def event_deleted( request, event_id ): # {{{1
 # def event_undelete( request, event_id ): {{{1
 @login_required
 @only_if_write_enabled
-@revision.create_on_success
+@reversion.create_revision
 def event_undelete(request, event_id):
     if request.user.is_authenticated():
         revision.user = request.user
@@ -1295,7 +1294,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
             jsonp = request.GET['jsonp']
         else:
             jsonp = None
-        # needed to handle some types of objects that simplejson don't handle
+        # needed to handle some types of objects that json don't handle
         def handler(obj):
             if hasattr(obj, 'isoformat'):
                 return obj.isoformat()
@@ -1307,15 +1306,15 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         # needed because the django serializers doesn't work with extra
         # fields which are in the queryset but not in the model, see
         # https://code.djangoproject.com/ticket/5711
-        data = simplejson.dumps(
+        data = json.dumps(
                 event_list_dict, indent = 2, ensure_ascii=False,
                 default = handler )
         if jsonp:
             data = jsonp + '(' + data + ')'
-            mimetype = "application/javascript"
+            content_type = "application/javascript"
         else:
-            mimetype = "application/json"
-        return HttpResponse( mimetype = mimetype, content = data )
+            content_type = "application/json"
+        return HttpResponse( content_type = content_type, content = data )
     if view == 'xml': # {{{3
         # TODO: use a proper xml library for performance
         data = loader.render_to_string(
@@ -1324,11 +1323,11 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                     'events': event_list_dict,
                     'VERSION': settings.VERSION
                 } )
-        return HttpResponse( mimetype = 'application/xml', content = data )
+        return HttpResponse( content_type = 'application/xml', content = data )
     if view == 'yaml': # {{{3
         # TODO: fix POINT output
         data = yaml.dump( event_list_dict )
-        return HttpResponse( mimetype = 'application/x-yaml', content = data )
+        return HttpResponse( content_type = 'application/x-yaml', content = data )
     # views table, map, boxes or calendars {{{3
     # variables to be passed to the html templates
     context = dict()
@@ -1665,7 +1664,7 @@ def main( request, status_code=200 ):# {{{1
         event_form = SimplifiedEventForm()
     # calculates events to show {{{2
     today = datetime.date.today()
-    eventdates = EventDate.objects.select_related( depth=1 ).defer(
+    eventdates = EventDate.objects.select_related().defer(
             'event__description', 'event__coordinates',
             'event__creation_time', 'event__modification_time',
             'event__address').filter(
@@ -1698,7 +1697,7 @@ def main( request, status_code=200 ):# {{{1
             } )
     return HttpResponse(
             content = template.render( context ),
-            mimetype="text/html",
+            content_type="text/html",
             status = status_code )
 
 @login_required
@@ -2101,7 +2100,7 @@ def _ical_http_response_from_event_list( elist, filename, calname = None ):#{{{2
             event.icalendar(ical)
         icalstream = ical.serialize()
     response = HttpResponse( icalstream, 
-            mimetype = 'text/calendar;charset=UTF-8' )
+            content_type = 'text/calendar;charset=UTF-8' )
     filename = unicodedata.normalize('NFKD', filename).encode('ascii','ignore')
     filename = filename.replace(' ','_')
     if not filename[-4:] == '.ics':
@@ -2126,7 +2125,7 @@ def _ical_http_response_from_event_list( elist, filename, calname = None ):#{{{2
 #     # TODO: stream it, see https://code.djangoproject.com/ticket/7581
 #     elist = Event.objects.all()
 #     text = Event.list_as_text( elist )
-#     response = HttpResponse( text, mimetype = 'text/text;charset=UTF-8' )
+#     response = HttpResponse( text, content_type = 'text/text;charset=UTF-8' )
 #     filename =  Site.objects.get_current().name + '_' + \
 #             datetime.datetime.now().isoformat() + '.txt'
 #     response['Filename'] = filename
