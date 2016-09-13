@@ -29,8 +29,6 @@ from calendar import HTMLCalendar # TODO use LocaleHTMLCalendar
 from dateutil.parser import parse
 import re
 import datetime
-import urllib2
-import urlparse
 
 from django.db import models
 from django.contrib.gis.geos import Point

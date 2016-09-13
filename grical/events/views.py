@@ -347,12 +347,14 @@ def event_edit( request, event_id = None ):
     # delete the entry, but the inlineformset shows an error telling that the
     # fields are required, change it. Notice that the user can delete with the
     # delete check box, but deleting all fields data should also work.
-    event_urls_factory = inlineformset_factory( 
-            Event, EventUrl, extra = 4, can_delete = can_delete, )
-    event_deadlines_factory = inlineformset_factory( 
+    event_urls_factory = inlineformset_factory(
+            Event, EventUrl, extra = 4, can_delete = can_delete,
+            fields=('url_name', 'url'))
+    event_deadlines_factory = inlineformset_factory(
             Event, EventDate, extra = 4, can_delete = can_delete,
-            formfield_callback = replace_date_with_date_extended )
-    event_sessions_factory = inlineformset_factory( 
+            formfield_callback = replace_date_with_date_extended,
+            fields=('eventdate_name', 'eventdate_date'))
+    event_sessions_factory = inlineformset_factory(
             Event, EventSession, extra = 4, can_delete = can_delete,
             formfield_callback = replace_date_with_date_extended,
             form = EventSessionForm )
@@ -1586,7 +1588,7 @@ def list_filters_my( request ): # {{{1
 @login_required
 def list_events_my( request ): # {{{1
     """ View that lists the events the logged-in user is the owner of
- 
+
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
     >>> from django.contrib.auth.models import User
@@ -1607,7 +1609,7 @@ def list_events_my( request ): # {{{1
 
 def main( request, status_code=200 ):# {{{1
     """ main view
-    
+
     >>> from django.test import Client
     >>> c = Client()
     >>> r = c.get('/')
@@ -1621,45 +1623,39 @@ def main( request, status_code=200 ):# {{{1
         # {{{2
         event_form = SimplifiedEventForm( request.POST )
         if event_form.is_valid():
-            with transaction.commit_manually():
+            with transaction.atomic():
                 cleaned_data = event_form.cleaned_data
                 # create a new entry and saves the data
-                try:
-                    event = Event(
-                            user_id = request.user.id,
-                            title = cleaned_data['title'],
-                            tags = cleaned_data['tags'],
-                            address = cleaned_data['where'], )
-                    if cleaned_data['when'].has_key('starttime'):
-                        event.starttime = cleaned_data['when']['starttime']
-                    if cleaned_data['when'].has_key('endtime'):
-                        event.endtime = cleaned_data['when']['endtime']
-                    with revision:
-                        event.complete_geo_data(
-                                request.META.get('REMOTE_ADDR', None))
-                        event.save()
-                        event.startdate = cleaned_data['when']['startdate']
-                        if cleaned_data['when'].has_key('enddate'):
-                            event.enddate = cleaned_data['when']['enddate']
-                        # create the url data
-                        event.urls.create( url_name = "web",
-                                url = cleaned_data['web'] )
-                        if request.user.is_authenticated():
-                            revision.user = request.user
-                        revision.add_meta( RevisionInfo,
-                                as_text = smart_unicode( event.as_text() ) )
-                except:
-                    transaction.rollback()
-                    raise
-                else:
-                    transaction.commit()
-                    messages.info( request, _( u'Event successfully saved. ' \
-                            'Optionally you can add more information about the ' \
-                            'event now.' ) )
-                    # TODO: is redirect the proper way? or better submit to another
-                    # view?
-                    return HttpResponseRedirect( reverse( 'event_edit',
-                            kwargs = {'event_id': str( event.id )} ) )
+                event = Event(
+                        user_id = request.user.id,
+                        title = cleaned_data['title'],
+                        tags = cleaned_data['tags'],
+                        address = cleaned_data['where'], )
+                if cleaned_data['when'].has_key('starttime'):
+                    event.starttime = cleaned_data['when']['starttime']
+                if cleaned_data['when'].has_key('endtime'):
+                    event.endtime = cleaned_data['when']['endtime']
+                with reversion.create_revision():
+                    event.complete_geo_data(
+                            request.META.get('REMOTE_ADDR', None))
+                    event.save()
+                    event.startdate = cleaned_data['when']['startdate']
+                    if cleaned_data['when'].has_key('enddate'):
+                        event.enddate = cleaned_data['when']['enddate']
+                    # create the url data
+                    event.urls.create( url_name = "web",
+                            url = cleaned_data['web'] )
+                    if request.user.is_authenticated():
+                        reversion.set_user(request.user)
+                    reversion.add_meta( RevisionInfo,
+                            as_text = smart_unicode( event.as_text() ) )
+                messages.info( request, _( u'Event successfully saved. ' \
+                        'Optionally you can add more information about the ' \
+                        'event now.' ) )
+                # TODO: is redirect the proper way? or better submit to another
+                # view?
+                return HttpResponseRedirect( reverse( 'event_edit',
+                        kwargs = {'event_id': str( event.id )} ) )
     else: # {{{2
         event_form = SimplifiedEventForm()
     # calculates events to show {{{2
