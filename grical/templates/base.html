@@ -39,20 +39,20 @@
         {% blocktrans with user.username as username %}
             Logged&nbsp;in&nbsp;as&nbsp;{{ username }}
         {% endblocktrans %}
-        |&nbsp;<a href="{% url settings %}">{% trans "settings" %}</a>
-        |&nbsp;<a href="{% url auth_logout %}">{% trans "logout" %}</a>
+        |&nbsp;<a href="{% url 'settings' %}">{% trans "settings" %}</a>
+        |&nbsp;<a href="{% url 'auth_logout' %}">{% trans "logout" %}</a>
     {% else %}
         {% if not READ_ONLY %}
-            <a href="{% url registration_register %}">{% trans "Sign&nbsp;up" %}</a>
-            |&nbsp;<a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
+            <a href="{% url 'registration_register' %}">{% trans "Sign&nbsp;up" %}</a>
+            |&nbsp;<a href="{% url 'auth_login' %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
         {% else %}
-            <a href="{% url auth_login %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
+            <a href="{% url 'auth_login' %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
         {% endif %}
     {% endif %}
-    |&nbsp;<a href="{% url help %}">{% trans "help" %}</a>
-    |&nbsp;<a href="{% url legal_notice %}">{% trans "legal&nbsp;notice" %}</a>
+    |&nbsp;<a href="{% url 'help' %}">{% trans "help" %}</a>
+    |&nbsp;<a href="{% url 'legal_notice' %}">{% trans "legal&nbsp;notice" %}</a>
     <br />
-    <form id="search" action="{% url search %}">
+    <form id="search" action="{% url 'search' %}">
         <div id="search_form">
             <input maxlength="2048" size="40" name="query" value="{{ query }}" />&nbsp;<input type="submit" value="{% trans "Search" %}" />
             {% if current_view %}
@@ -136,7 +136,7 @@
             <a href="http://flattr.com/thing/85499/GridCalendar-Community-Calendar">
                 <img src="{{ MEDIA_URL }}flattr-badge-large.png" alt="Flattr this" /></a>
         </li>
-        <li><a href="{% url contact_form %}">{% trans "feedback" %}</a></li>
+        <li><a href="{% url 'contact_form' %}">{% trans "feedback" %}</a></li>
       </ul>
     </div>
     <div class="title">{% trans "Software" %}</div>
@@ -162,8 +162,8 @@
     <div class="title">{% trans "RSS feeds" %}</div>
     <div class="info">
         <ul>
-            <li> <a href="{% url upcoming_events_rss %}">{% trans "upcoming RSS feed" %}</a></li>
-            <li> <a href="{% url lastadded_events_rss %}">{% trans "last added RSS feed" %}</a></li>
+            <li> <a href="{% url 'upcoming_events_rss' %}">{% trans "upcoming RSS feed" %}</a></li>
+            <li> <a href="{% url 'lastadded_events_rss' %}">{% trans "last added RSS feed" %}</a></li>
         </ul>
     </div>
     <div class="title">{% trans "Using" %}</div>

@@ -7,17 +7,17 @@
 # Copyright 2012 Jose Garrido <jose.garrido ät arcor.com>
 #
 # This file is part of GridCalendar.
-# 
+#
 # GridCalendar is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
@@ -80,74 +80,6 @@ class DatePicker(forms.DateInput):
             )
         }
 
-class URLValidatorExtended( validators.URLValidator ): # {{{1
-    """ Like ``URLValidation`` but adding support to HTTP Basic Auth.
-    See https://code.djangoproject.com/ticket/9791 """
-    def __call__( self, value ):
-        try:
-            return super( URLValidatorExtended, self ).__call__( value )
-        except forms.ValidationError, err:
-            # we check now http basic auth
-            url = urlparse.urlsplit( value )
-            if url.scheme.lower() != "http" and url.scheme.lower() != "https":
-                raise forms.ValidationError(
-                    _( u"Only http and https are supported" ) )
-            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
-            if url.netloc.find('@') >= 0:
-                user = url.username
-                passwd = url.password
-                url = list(url)
-                url[1] = url[1].split('@')[1]
-                urlf = urlparse.urlunsplit(url)
-                passman.add_password( None, urlf.split("//")[1], user, passwd )
-            else:
-                raise err
-            authhandler = urllib2.HTTPBasicAuthHandler(passman)
-            opener = urllib2.build_opener(authhandler)
-            urllib2.install_opener(opener)
-            headers = {
-                "Accept": "text/xml,application/xml,application/xhtml+xml," \
-                        "text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
-                "Accept-Language": "en-us,en;q=0.5",
-                "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
-                "Connection": "close",
-                "User-Agent": self.user_agent,
-            }
-            # TODO: try first a HEAD request, see Django code of URLValidator
-            try:
-                req = urllib2.Request( urlf, headers = headers )
-                f = urllib2.urlopen( req, timeout = 10 )
-            except urllib2.HTTPError, e:
-                raise forms.ValidationError(
-                        _( u"Couldn't get URL %(url)s: %(error)s" ) % 
-                        { 'url': value, 'error': e} )
-            except urllib2.URLError, e:
-                raise forms.ValidationError(
-                    "Couldn't connect to %s: %s" %
-                        _( u"Couldn't connect to %(url)s: %(error)s" ) % 
-                        { 'url': u[1], 'error':e.reason } )
-
-class URLFieldExtended(forms.CharField): #{{{1
-    """ like URLFiled but adding support for in-URL basic AUTH, see
-        http://code.djangoproject.com/ticket/9791 """
-    default_error_messages = {
-        'invalid': _(u'Enter a valid URL.'),
-        'invalid_link': _(u'This URL appears to be a broken link.'),
-    }
-    def __init__(self, verify_exists=False,
-            validator_user_agent=validators.URL_VALIDATOR_USER_AGENT,
-            *args, **kwargs):
-        super(URLFieldExtended, self).__init__( *args, **kwargs )
-        self.validators.append( URLValidatorExtended(
-            verify_exists=verify_exists,
-            validator_user_agent=validator_user_agent ) )
-
-    def to_python(self, value):
-        value = value.strip()
-        url = urlparse.urlsplit( value )
-        if not url.scheme:
-            value = 'http://' + value
-        return super( URLFieldExtended, self ).to_python( value )
 
 class DatesTimesField(forms.Field): # {{{1
     """ processes one or two dates and optionally one or two times, returning a
@@ -487,12 +419,15 @@ class EventSessionForm( forms.ModelForm ):
         self.fields['session_starttime'].widget.format = '%H:%M'
         self.fields['session_endtime'].widget.format = '%H:%M'
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
+        fields = ('event', 'session_name', 'session_date', 'session_starttime',
+                'session_endtime')
         model = EventSession
 
 class FilterForm(forms.ModelForm): # {{{1
     """ ModelForm using Filter excluding `user` """
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Filter
+        fields = ('user', 'query', 'name', 'email')
         widgets = { 'user' : forms.HiddenInput(), }
     # TODO: change the error displayed when the name already exists:
     # "Filter with this User and Name already exists."
@@ -555,7 +490,11 @@ class EventForm(forms.ModelForm): # {{{1
         self.fields['endtime'].widget.format = '%H:%M'
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        exclude = ('coordinates',) # excludes the model field 'coordinates'
+#        TODO: Maybe specifying settings is not needed, just to test the case
+#        "coordinates" was excluded (maybe because it was model field?)
+        fields = ('startdate', 'enddate', 'acronym', 'title', 'starttime',
+                'endtime', 'timezone', 'tags', 'country', 'address', 'city',
+                'exact', 'description', 'coordinates')
     def clean( self ):
         """ it adds the value of coordinates to the Event instance,
         checks that there is no other event with the same name and start
@@ -601,7 +540,7 @@ class EventForm(forms.ModelForm): # {{{1
         starttime = self.cleaned_data.get("starttime", None)
         endtime = self.cleaned_data.get("endtime", None)
         if endtime and not starttime:
-            raise forms.ValidationError( 
+            raise forms.ValidationError(
                     _('endtime without starttime is not allowed') )
         if starttime and endtime and endtime < starttime:
             if (not enddate) or enddate == startdate:
@@ -631,8 +570,7 @@ class SimplifiedEventForm( forms.ModelForm ): # {{{1
             max_length = get_field_attr( 'Event', 'address', 'max_length'),
             required = False )
     when = DatesTimesField()
-    web = URLFieldExtended(
-            verify_exists=True,
+    web = forms.URLField(
             max_length = get_field_attr( 'EventURL', 'url', 'max_length' ) )
     class Media:
         js = (

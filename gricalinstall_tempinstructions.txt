@@ -29,7 +29,7 @@ apt-get install postgresql-server-dev-9.5
 
 apt-get install python-geoip
 apt-get install build-essential python-dev python-pip
-apt-get install geoip-database-contrib
+apt-get install geoip-database-contrib mercurial
 
 # Create database, db user, etc
 
@@ -54,4 +54,9 @@ cd /home/yourusername/grical/requirements/
 pip install -r base.pip
 
 
+
+
+Discussion
+----------
+<ogai> stefanos_, would be nice you just copy the travis-ci config of dsc for grical, and create an account in travis-ci if needed using admin@gridmind.org
 

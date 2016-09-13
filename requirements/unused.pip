@@ -16,6 +16,7 @@
 
 # south==0.8.1 # Replaced by Django>1.7
 
+# requests==2.11.1 # UNUSED
 # cssmin==0.1.4  # Used for CSS minification # UNUSED
 # slimit==0.8.1  # Used for Javascript minification # UNUSED
 # billiard==2.7.3.22   # Required by celery # Most probably celery will setup if needed

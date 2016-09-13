@@ -42,7 +42,7 @@ from xml.parsers.expat import ExpatError
 from django.core.cache import cache, get_cache
 from django.core.mail import mail_admins
 from django.contrib.gis.geos import Point
-from django.contrib.gis.utils import GeoIP
+from django.contrib.gis.geoip import GeoIP
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
