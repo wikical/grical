@@ -84,7 +84,7 @@ CONTINENT_COUNTRIES = {
 class CountryBorder(models.Model): # {{{1
     """ contains multi polygons for each iso2 country code and for continent
     codes
-    
+
     The data has been generated following the instructions on
     https://docs.djangoproject.com/en/1.3/ref/contrib/gis/tutorial/
     and dropping the non-needed columns from the database.
@@ -108,7 +108,7 @@ class ContinentBorder(models.Model): # {{{1
     The multi-polygons for the continents has been created with::
 
         from data.models import *
-       
+
         for continent, countries in CONTINENT_COUNTRIES.items():
             p = CountryBorder.objects.get(code=countries[0]).mpoly
             for country in countries[1:]:

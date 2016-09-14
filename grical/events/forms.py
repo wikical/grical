@@ -32,7 +32,6 @@ import datetime
 
 from django.db import models
 from django.contrib.gis.geos import Point
-from django.core import validators
 import django.forms as forms
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
@@ -181,7 +180,7 @@ class DatesTimesField(forms.Field): # {{{1
         re.compile(r'^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*$', re.UNICODE),
                         #mm/dd/yyyy
         re.compile(r'^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*$', re.UNICODE),
-                         #yyyy-mm-dd, yyyy-mm-dd 
+                         #yyyy-mm-dd, yyyy-mm-dd
         re.compile(r"""
                     ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
                      \s*(?P<end_year>\d\d\d\d)\s*[-/]\s*(?P<end_month>\d?\d)\s*[-/]\s*(?P<end_day>\d?\d)\s*$""", re.UNICODE | re.X),
@@ -201,7 +200,7 @@ class DatesTimesField(forms.Field): # {{{1
         re.compile(r"""
                     ^\s*(?P<start_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]\s*(?P<start_year>\d\d\d\d)\s*[,-]?
                      \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*$""", re.UNICODE | re.X),
-                        #mm/dd/yyyy, hh:mm 
+                        #mm/dd/yyyy, hh:mm
         re.compile(r"""
                      ^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*[,-]?
                      \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*$""", re.UNICODE | re.X),
@@ -224,7 +223,7 @@ class DatesTimesField(forms.Field): # {{{1
                      ^\s*(?P<start_month>\d?\d)\s*/\s*(?P<start_day>\d?\d)\s*/\s*(?P<start_year>\d\d\d\d)\s*[,-]?
                      \s*(?P<start_hour>\d?\d)[.h:]?(?P<start_min>\d\d)\s*[,-]?
                      \s*(?P<end_hour>\d?\d)[.h:]?(?P<end_min>\d\d)\s*$""", re.UNICODE | re.X),
-                        #yyyy-mm-dd yyyy-mm-dd hh:mm hh:mm   
+                        #yyyy-mm-dd yyyy-mm-dd hh:mm hh:mm
         re.compile(r"""
                     ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
                      \s*(?P<end_year>\d\d\d\d)\s*[-/]\s*(?P<end_month>\d?\d)\s*[-/]\s*(?P<end_day>\d?\d)\s*[,-]?
@@ -252,7 +251,7 @@ class DatesTimesField(forms.Field): # {{{1
         re.compile(r"""
                     ^\s*(?P<start_year>\d\d\d\d)\s*[-/]\s*(?P<start_month>\d?\d)\s*[-/]\s*(?P<start_day>\d?\d)\s*[,-]?
                      \s*(?P<end_day>\d?\d)\s*$""", re.UNICODE | re.X),
-                        #dd.-dd.mm.yyyy 
+                        #dd.-dd.mm.yyyy
         re.compile(r"""
                     ^\s*(?P<start_day>\d?\d)\s*[.-]-\s*(?P<end_day>\d?\d)\s*[.-]\s*(?P<start_month>\d?\d)\s*[.-]
                      \s*(?P<start_year>\d\d\d\d)\s*$""", re.UNICODE | re.X ),

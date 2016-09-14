@@ -30,7 +30,6 @@ has changed. Another option is to touch the wsgi/django.wsgi file. """
 
 import os
 import sys
-import time
 import signal
 import threading
 import atexit

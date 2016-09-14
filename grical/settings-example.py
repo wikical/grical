@@ -77,26 +77,3 @@ EMAIL_PORT = 587
 # see http://docs.djangoproject.com/en/dev/howto/error-reporting/
 SEND_BROKEN_LINK_EMAILS = True
 
-# ======================================================================
-# LOG PIPE
-# ======================================================================
-
-# If this value is not False, events changes will be logged to this pipe
-# Make sure it is writtable
-LOG_PIPE = '/tmp/gricallogpipe'
-# LOG_PIPE = False
-# the group id. Should be group id of the proccess running Django
-LOG_PIPE_GID = 33
-
-# ======================================================================
-# IRC
-# ======================================================================
-
-# to log events changes ( see LOG_PIPE ) to a IRC channel, run the script
-# irclogger.py
-
-IRC_NETWORK = 'irc.freenode.net'
-IRC_PORT = 6667
-IRC_CHANNEL = '#gridcalendar'
-IRC_NICK = 'gricalrobot'
-IRC_NAME = 'grical.org log robot'

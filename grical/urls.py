@@ -23,8 +23,7 @@
 """ Main urls definition file. """
 # imports {{{1
 from django.conf import settings
-from django.conf.urls import ( patterns, include, url, handler500,
-        handler404)
+from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.conf.urls import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:

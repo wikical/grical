@@ -25,13 +25,13 @@
 
 # imports {{{1
 from celery.decorators import task
+from smtplib import SMTPConnectError
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.cache import cache, get_cache
 from django.core.mail import send_mail, BadHeaderError
 from django.template.loader import render_to_string
-from django.utils.encoding import smart_str
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 
@@ -41,16 +41,6 @@ from django.conf import settings
 #     language and translation.activate( language )
 #     ...
 #     translation.activate( prev_language )
-
-# @task() def write_to_pipe( text ): # {{{1
-@task()
-def log_using_celery( text ):
-    with open(settings.LOG_PIPE, 'a') as pipe:
-        text = smart_str( text, encoding='utf-8', errors='ignore' )
-        lines = text.splitlines()
-        pipe.write( lines[0] + '\n' )
-        lines = map( lambda line: '    %s\n' % line, lines[1:] )
-        pipe.write( ''.join( lines ) )
 
 @task() # save_in_caches {{{1
 def save_in_caches( key, value, timeout = None ):

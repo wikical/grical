@@ -66,7 +66,8 @@ try:
     tip = proc.communicate()[0]
 except:
     tip = ""
-VERSION = '0.9' + tip
+from . import VERSION as GRICAL_VERSION
+VERSION = '.'.join(GRICAL_VERSION) + tip
 
 # used to generate the PROID field of iCalendars, see
 # http://tools.ietf.org/html/rfc5545
@@ -81,8 +82,6 @@ IMAP_SSL = False
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to
 REPLY_TO = None
-
-LOG_PIPE = False
 
 # =============================================================================
 # GeoIP, GEONAME and django-countries settings {{{1

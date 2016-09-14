@@ -6,7 +6,7 @@ from django.utils.translation import ugettext as _
 from django.views.generic.list_detail import object_list
 
 from tagging.models import Tag, TaggedItem
-from tagging.utils import get_tag, get_queryset_and_model
+from tagging.utils import get_tag
 
 def tagged_object_list(request, queryset_or_model=None, tag=None,
         related_tags=False, related_tag_counts=True, **kwargs):
@@ -40,7 +40,7 @@ def tagged_object_list(request, queryset_or_model=None, tag=None,
 
     tag_instance = get_tag(tag)
     if tag_instance is None:
-        raise Http404(_('No Tag found matching "%s".') % tag)
+        raise Http404(_('No Tag found matching "%(tag)s".') % {'tag': tag})
     queryset = TaggedItem.objects.get_by_model(queryset_or_model, tag_instance)
     if not kwargs.has_key('extra_context'):
         kwargs['extra_context'] = {}
