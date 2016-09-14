@@ -40,7 +40,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator
 from django.db.models import Min
 from django.db.models.signals import post_save
 from django.forms import DateField
@@ -2402,12 +2402,9 @@ class EventUrl( models.Model ): # {{{1
                             _('found more than one url with the same name: ' \
                                     u'%(name)s') % {'name': name} )
                 urls[name] = field_m.group(2)
-        # we now check each url using the validators of this class and
-        # events.forms.URLValidatorExtended
         errors = []
         url_validators = EventUrl._meta.get_field_by_name('url')[0].validators
-        from grical.events.forms import URLValidatorExtended
-        url_validators.append( URLValidatorExtended() )
+        url_validators.append(URLValidator())
         url_name_validators = \
                 EventUrl._meta.get_field_by_name('url_name')[0].validators
         for url_name, url in urls.items():
