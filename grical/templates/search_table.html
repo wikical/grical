@@ -41,15 +41,17 @@
             </th>
         {% endfor %}
     </tr>
-    {% for event in events_table.rows %}
-        <tr class="{% cycle 'odd' 'even' %}">
-            <td>{{ event.upcoming }}</td>
-            <td>{{ event.start }}</td>
-            <td>{{ event.end }}</td>
-            <td>{% if event.city %}{{ event.city }}{% endif %}</td>
-            <td>{% if event.country %}{{ event.country }}{% endif %}</td>
-            <td><a href="{% url "event_show_all" event.id  %}">{{ event.title }}</a></td>
-            <td>{% if event.tags %} {{ event.tags }}{% endif %}</td>
-        </tr>
+    {% for row in events_table.rows %}
+        {% with event=row.record %}
+            <tr class="{% cycle 'odd' 'even' %}">
+                <td>{{ event.upcoming }}</td>
+                <td>{{ event.start }}</td>
+                <td>{{ event.end }}</td>
+                <td>{% if event.city %}{{ event.city }}{% endif %}</td>
+                <td>{% if event.country %}{{ event.country }}{% endif %}</td>
+                <td><a href="{% url "event_show_all" event.id  %}">{{ event.title }}</a></td>
+                <td>{% if event.tags %} {{ event.tags }}{% endif %}</td>
+            </tr>
+        {% endwith %}
     {% endfor %}
 </table>
