@@ -275,7 +275,7 @@ def event_edit_recurrences( request, event_id ):
                 dates__eventdate_date = date_iso,
                 _recurring__master = master )
         with reversion.create_revision():
-            request.user.is_authenticated() and reversion.create_user(
+            request.user.is_authenticated() and reversion.set_user(
                     request.user)
             info_dict = {}
             info_dict['reason'] = unicode( _('deleted from recurrences') )
