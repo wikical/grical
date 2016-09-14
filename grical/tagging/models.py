@@ -1,20 +1,14 @@
 """
 Models and managers for generic tagging.
 """
-# Python 2.3 compatibility
-try:
-    set
-except NameError:
-    from sets import Set as set
-
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, models
-from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
 
 from grical.tagging import settings
-from grical.tagging.utils import calculate_cloud, get_tag_list, get_queryset_and_model, parse_tag_input
+from grical.tagging.utils import (calculate_cloud, get_tag_list,
+        get_queryset_and_model, parse_tag_input)
 from grical.tagging.utils import LOGARITHMIC
 
 qn = connection.ops.quote_name
@@ -59,9 +53,11 @@ class TagManager(models.Manager):
         """
         tag_names = parse_tag_input(tag_name)
         if not len(tag_names):
-            raise AttributeError(_('No tags were given: "%s".') % tag_name)
+            raise AttributeError(_('No tags were given: "%(name)s".') % {
+                'name': tag_name})
         if len(tag_names) > 1:
-            raise AttributeError(_('Multiple tags were given: "%s".') % tag_name)
+            raise AttributeError(_('Multiple tags were given: "%(name)s".') % {
+                'name': tag_name})
         tag_name = tag_names[0]
         if settings.FORCE_LOWERCASE_TAGS:
             tag_name = tag_name.lower()
@@ -511,5 +507,5 @@ class TaggedItem(models.Model):
                 obj.natural_key() )
     natural_key.dependencies = ['tagging.tag', 'contenttypes.contenttype']
     # TODO: possible to dinamically add the dependency of object_id ?
-    
+
     # TODO: check what happens with the TaggedItem of an event if it is deleted

@@ -44,12 +44,10 @@ import cPickle
 from cStringIO import StringIO
 from decimal import Decimal
 import hotshot, hotshot.stats
-import pprint
 import sys
 import tempfile
 
 from django.conf import settings
-from django.core.exceptions import MiddlewareNotUsed
 from django.db import connection, reset_queries
 from django.http import HttpResponse
 from django.utils import html
@@ -95,14 +93,15 @@ def render_queries(queries, sort):
         for query in queries:
             print >>output, " %8s %s" % (query["time"], query["sql"])
         return output
-    if sort == 'time':
-        def sorter(x, y):
+
+    def sorter(x, y):
+        if sort == 'time':
             return cmp(x[1][1], y[1][1])
-    elif sort == 'queries':
-        def sorter(x, y):
+        elif sort == 'queries':
             return cmp(x[1][0], y[1][0])
-    else:
-        raise RuntimeError("Unknown sort: %s" % sort)
+        else:
+            raise RuntimeError("Unknown sort: %s" % sort)
+
     print >>output, "  queries     time query"
     results = {}
     for query in queries:

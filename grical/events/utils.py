@@ -6,17 +6,17 @@
 # Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
 #
 # This file is part of GridCalendar.
-# 
+#
 # GridCalendar is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
@@ -32,7 +32,6 @@ from dateutil.relativedelta import relativedelta
 import httplib
 import json
 import re
-import sys
 import time
 import urllib
 import urllib2
@@ -84,7 +83,7 @@ def search_coordinates( lat, lon ): # {{{1
     # doc {{{2
     """ returns a dictionary with the keys 'address', 'city' and 'country'
     using the nominatim API.
-    
+
     Example of a query::
 
         http://nominatim.openstreetmap.org/reverse?format=json&lat=52.5487429714954&lon=-1.81602098644987&zoom=18&addressdetails=1
@@ -309,7 +308,7 @@ def search_address_google(data): # {{{1
     Returns the same as ``search_address_osm``
 
     See:
-    
+
     - http://code.google.com/apis/maps/documentation/geocoding/
     - http://code.google.com/intl/en/apis/maps/documentation/geocoding/
 
@@ -482,8 +481,8 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
         doc = fromstring( response_text ) # can raise a ExpatError
         timezone = doc.findall( 'timezone' )[0]
         timezoneId = timezone.find('timezoneId').text
-    except ( urllib2.HTTPError, urllib2.URLError, ExpatError,
-            IndexError, AttributeError ) as err:
+    except (urllib2.HTTPError, urllib2.URLError, ExpatError,
+            IndexError, AttributeError):
         # TODO: log the err
         if use_cache:
             pass
@@ -526,7 +525,7 @@ def search_name( name, use_cache = True ): # {{{1
 
     As of April 2011, the restrictions are 2000 queries per hour and 30.000 per day.
     See http://www.geonames.org/export/
-    
+
     Example query::
 
         http://api.geonames.org/search?q=london,ca&maxRows=1&username=demo
@@ -548,7 +547,7 @@ def search_name( name, use_cache = True ): # {{{1
           </geoname>
         </geonames>
 
-    Another example with German names of city and country 
+    Another example with German names of city and country
     (München = Munich, Deutschland = Germany)::
 
         http://api.geonames.org/search?q=M%C3%BCnchen,Deutschland&maxRows=1&username=demo
@@ -764,7 +763,7 @@ def validate_tags_chars( value ): # {{{1
 def validate_year( value ): # {{{1
     """ it validates ``value.year`` newer than 1900 and less than 2 years from
     now.
-    
+
     ``date`` and ``datetime`` have this property.
 
     Event dates which are more than two years in the future are very likely to

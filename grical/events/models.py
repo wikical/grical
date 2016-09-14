@@ -29,43 +29,31 @@ import hashlib
 import pytz
 import random
 import re
-
+import reversion
 import vobject
 
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
-from django_comments.models import Comment
-from django_comments.signals import comment_was_posted
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models
 from django.contrib.gis.db.models import Q, F
 from django.contrib.gis.geos import Point
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
-from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.db.models import Min
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save
 from django.forms import DateField
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str, smart_unicode
 from django.utils.translation import ugettext_lazy as _
-# FIXME from grical.events.decorators import autoconnect
 
 from grical.tagging.fields import TagField
 from grical.tagging.models import Tag
-import reversion
-from reversion.models import Version, Revision
-# Following fields as Version.type are deprecated, are used only when
-# LOG_TO_PIPE.
-#from reversion.models import VERSION_ADD, VERSION_DELETE
 
-#from grical.events.tasks import (
-        #log_using_celery, notify_users_when_wanted )
-from grical.events.utils import (exact_as_bool_str,  validate_year, search_name,
-        search_coordinates, search_address, search_timezone,
-        search_country_code, text_diff, validate_tags_chars )
+from grical.events.utils import (exact_as_bool_str,  validate_year,
+        search_name, search_coordinates, search_address, search_timezone,
+        search_country_code, validate_tags_chars)
 
 # COUNTRIES {{{1
 # TODO: use instead a client library from http://www.geonames.org/ accepting
@@ -809,10 +797,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     acronym = models.CharField( _( u'Acronym' ), max_length = 20, blank = True,
             null = True, help_text = _( u'Example: 26C3' ) )
     title = models.CharField( _( u'Title' ), max_length = 200, blank = False )
-    starttime = models.TimeField( 
+    starttime = models.TimeField(
             _( u'Start time' ), blank = True, null = True,
             help_text = _(u'Example: 18:00') )
-    endtime = models.TimeField( 
+    endtime = models.TimeField(
             _( u'End time' ), blank = True, null = True,
             help_text = _(u'Example: 19:00') )
     # max_length in the line below was calculated with:
@@ -894,7 +882,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         except EventDate.DoesNotExist:
             if value:
                 new_eventdate = self.dates.create(
-                        eventdate_name='start', 
+                        eventdate_name='start',
                         eventdate_date = value )
                 self.startdate_cache = new_eventdate.eventdate_date
             else:
@@ -922,7 +910,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         except EventDate.DoesNotExist:
             if value:
                 new_eventdate = self.dates.create(
-                        eventdate_name='end', 
+                        eventdate_name='end',
                         eventdate_date=value )
                 self.enddate_cache = new_eventdate.eventdate_date
             else:
@@ -973,7 +961,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def tags_separated_by_comma(self): #{{{3
         """ returns the list of tags separated by commas as unicode string """
         return self.tags.replace(' ',',')
-    
+
     def contains( self, date ):
         """ returns True if the event happens in ``date`` or ``date`` is an
         event date. """
@@ -982,11 +970,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     def fg_color(self):
         from grical.events.views import bg_color, fg_color
         return "rgb(%d, %d, %d)" % fg_color( bg_color( self.title ) )
-    
+
     def bg_color(self):
-        from grical.events.views import bg_color, fg_color
+        from grical.events.views import bg_color
         return "rgb(%d, %d, %d)" % bg_color( self.title )
-    
 
     def color_nr(self, #{{{3
             days_colors = {84:9, 56:8, 28:7, 14:6, 7:5, 3:4, 2:3, 1:2, 0:1}):
@@ -1069,7 +1056,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                     self.save()
                     return True
         return False
-        
+
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
 
@@ -1080,7 +1067,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> event,l = Event.parse_text(EXAMPLE)
         >>> ical = event.icalendar()
         >>> ical = vobject.readOne(ical.serialize())
-        >>> assert (ical.vevent.categories.serialize() == 
+        >>> assert (ical.vevent.categories.serialize() == \
         ...  u'CATEGORIES:calendar,software,open-source,gridmind,gridcalendar\\r\\n')
         >>> event.delete()
         """
@@ -1161,7 +1148,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     recurring = property( _get_recurring, _set_recurring )
 
     def clone( self, user, except_models = [], recurrence=True, **kwargs ):#{{{3
-        """ Makes, saves and return a deep clone of the event as an 
+        """ Makes, saves and return a deep clone of the event as an
         event of the user ``user``, and stores from which event the clone was
         made of in the table defined in :class:`Recurrence` (unless the
         parameter ``recurrence`` is False)
@@ -1172,7 +1159,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         If ``self`` has a master in :class:`Recurrence`, the master
         of the returned clone in :class:`Recurrence` will be set to the same
         master.
-        
+
         This method makes a clone of all related objects, and relates them to
         the new created clone, except for the models in ``except_models``,
         which are ignored.
@@ -1207,7 +1194,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         for field in simple_fields_in_Event:
             if kwargs.has_key( field ):
                 setattr( clone, field, kwargs[field] )
-            else: 
+            else:
                 setattr( clone, field, getattr(self, field) )
         # Dealing now with :attr:`Event.description` which is not returned by
         # :meth:`Event.get_simple_fields`
@@ -1222,7 +1209,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         for field in ('startdate', 'enddate'):
             if kwargs.has_key( field ):
                 setattr( clone, field, kwargs[field] )
-            else: 
+            else:
                 setattr( clone, field, getattr(self, field) )
         # dealing with recurrence
         if recurrence:
@@ -1256,28 +1243,31 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
                 # all models with a reference to Event to have a method called
                 # ``clone`` with two parameters: an event (to reference to) and
                 # a user
-                new_obj =  obj.clone( clone, user ) 
+                new_obj =  obj.clone( clone, user )
                 if new_obj: # some clone methods return None,thus the check
                     new_objs.append( new_obj )
         # TODO: if DEBUG is False when running the tests, this code is not
         # executed. Make that this code is always executed when running the
         # tests
-        if settings.DEBUG:
-            # we check that there are no references to the old objects in
-            # the new objects.
-            field_keys = []
-            for model in [mod.__class__ for mod in new_objs]:
-                for field in model._meta.fields: # pylint: disable-msg=W0212
-                    if isinstance( field, models.ForeignKey ) and \
-                            field.rel.to in related_models:
-                        field_keys.append( field )
-            for obj in new_objs:
-                for field_key in field_keys:
-                    if hasattr( ojb, "%s_id" % field_key.name ):
-                        field_key_value = getattr( obj, "%s_id" % field_key.name )
-                        if field_key_value in collected_objs[field_key.rel.to]:
-                            raise RuntimeError( str(field_key_value) + " " +
-                                    str(field_key) )
+        # FIXME: Following code commented-out, `collected_objs` is not defined
+        # anywhere. Stefanos 2016-09-14 11:47:36+03:00
+        # if settings.DEBUG:
+        #     # we check that there are no references to the old objects in
+        #     # the new objects.
+        #     field_keys = []
+        #     for model in [mod.__class__ for mod in new_objs]:
+        #         for field in model._meta.fields: # pylint: disable-msg=W0212
+        #             if isinstance( field, models.ForeignKey ) and \
+        #                     field.rel.to in related_models:
+        #                 field_keys.append( field )
+
+        #     for obj in new_objs:
+        #         for field_key in field_keys:
+        #             if hasattr(obj, "%s_id" % field_key.name):
+        #                 field_key_value = getattr( obj, "%s_id" % field_key.name )
+        #                 if field_key_value in collected_objs[field_key.rel.to]:
+        #                     raise RuntimeError( str(field_key_value) + " " +
+        #                             str(field_key) )
         return clone
 
     def set_tags( self, tags ): #{{{3
@@ -1523,7 +1513,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     @staticmethod # def example(): {{{3
     def example():
         """ returns an example of an event as unicode
-        
+
         >>> from django.utils.encoding import smart_str
         >>> import time
         >>> example = Event.example()
@@ -2052,16 +2042,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> field_names_set.add('enddate')
         >>> assert field_names_set == synonyms_values_set, field_names_set
         """
-        if settings.DEBUG:
-            # ensure you don't override a key (Poka-yoke code)
-            def add( dictionary, key, value ):
-                """ assert that the key is not already there """
+        def add(dictionary, key, value):
+            if settings.DEBUG:
+                # assert that the key is not already there
                 assert not dictionary.has_key( key ), key
                 dictionary[key] = value
-        else:
-            def add( dictionary, key, value ):
-                """ add a pair to the dictionary """
-                dictionary[key] = value
+                return
+            # add a pair to the dictionary
+            dictionary[key] = value
+
         # NOTE: if you modify the following dictionary, update
         # http://code.gridcalendar.net/wiki/DataFormats
         # and the online documentation under e.g. gridcalendar.net/h/
@@ -2228,7 +2217,7 @@ class Recurrence( models.Model ): #{{{1
             # http://code.djangoproject.com/ticket/10227
             related_name = '_recurring',
             verbose_name = _('event') )
-            
+
     master = models.ForeignKey( Event,
             related_name = 'recurrences',
             verbose_name = _('master'), )
@@ -2347,7 +2336,7 @@ class ExtendedUser(User): # {{{1
 
 class EventUrl( models.Model ): # {{{1
     """ stores urls of events
-    
+
     Code example: getting all events with more than one url:
     >>> from grical.events.models import Event
     >>> from django.contrib.gis.db.models import Count
@@ -2452,9 +2441,9 @@ if not reversion.is_registered( EventUrl ): # {{{1
 
 class EventDate( models.Model ): # {{{1
     """ stores dates for events """
-    eventdate_name = models.CharField( 
+    eventdate_name = models.CharField(
             _( u'Name' ), blank = False, null = False,
-            max_length = 80, help_text = _( 
+            max_length = 80, help_text = _(
             "Example: call for papers" ) )
     eventdate_date = models.DateField( _( u'Date' ), blank = False,
             null = False, db_index = True, validators = [validate_year] )
@@ -2561,7 +2550,7 @@ class EventDate( models.Model ): # {{{1
     #def natural_key( self ):
     #    return ( self.eventdate_name, self.event.natural_key() )
     #natural_key.dependencies = ['events.event']
-    
+
     def __unicode__( self ): # {{{2
         return unicode( self.eventdate_date ) + u'    ' + self.eventdate_name
 
@@ -2665,15 +2654,15 @@ class EventSession( models.Model ): # {{{1
     # TODO: check when submitting that session_dates are within the limits of
     # start and end dates of the event.
     event = models.ForeignKey( Event, related_name = 'sessions' )
-    session_name = models.CharField( 
+    session_name = models.CharField(
             _( u'Session name' ), blank = False, null = False, max_length = 80,
             help_text = _( u"Example: day 2 of the conference" ) )
-    session_date = models.DateField( 
+    session_date = models.DateField(
             _( u'Session day' ), blank = False, null = False,
             validators = [validate_year] )
-    session_starttime = models.TimeField( 
+    session_starttime = models.TimeField(
             _( u'Session start time' ), blank = False, null = False )
-    session_endtime = models.TimeField( 
+    session_endtime = models.TimeField(
             _( u'Session end time' ), blank = False, null = False )
 
     #objects = EventSessionManager()
@@ -2723,7 +2712,6 @@ class EventSession( models.Model ): # {{{1
         if len ( lines ) < 2:
             raise ValidationError(
                     _(u"there is no sessions data") )
-        syns = Event.get_synonyms()
         # session's names as keys, Session instances as values
         sessions = dict()
         errors = list()
@@ -2742,7 +2730,7 @@ class EventSession( models.Model ): # {{{1
             else:
                 name = field_m.group(8)
                 if sessions.has_key(name):
-                    errors.append( 
+                    errors.append(
                         _(u'the following session name appers more than once:' \
                         u' %(name)s') % {'name': name} )
                 else:
@@ -2801,7 +2789,7 @@ if not reversion.is_registered( EventSession ): # {{{1
 #         return self.get(
 #                 modification_time = modification_time,
 #                 user = User.objects.get( username = username ) )
-# 
+#
 # class EventHistory( models.Model ): # {{{1
 #     user = models.ForeignKey( User,
 #             unique = False, verbose_name = _( u'User' ) )
@@ -2934,7 +2922,7 @@ class GroupManager( models.Manager ): # {{{1
 
 class Group( models.Model ): # {{{1
     """ groups of users and events
-        
+
     >>> from django.contrib.auth.models import User
     >>> from events.models import Event, Group, Membership
     >>> from datetime import timedelta
@@ -3067,7 +3055,7 @@ class Group( models.Model ): # {{{1
 
         The parameter *user* can be an instance of User or the id number of a
         user.
-        
+
         >>> from django.contrib.auth.models import User
         >>> from events.models import Event, Group, Membership
         >>> now = datetime.datetime.now().isoformat()
@@ -3128,7 +3116,7 @@ class Group( models.Model ): # {{{1
         """ Returns a dictionary whose keys are groups and its values are non
         empty lists of maximal *limit* events of the group with at least one
         date in the future
-        
+
         FIXME: add test.
         """
         to_return = {}
@@ -3159,17 +3147,17 @@ class Group( models.Model ): # {{{1
 
 class Membership( models.Model ): # {{{1
     """Relation between users and groups."""
-    user = models.ForeignKey( 
+    user = models.ForeignKey(
             User,
             verbose_name = _( u'User' ),
             related_name = 'membership' ) # name of the reverse relationship
     # the name 'groups' instead of mygroups is not possible because the default
     # User model in django already has a relation called 'groups'
-    group = models.ForeignKey( 
+    group = models.ForeignKey(
             Group,
             verbose_name = _( u'Group' ),
             related_name = 'membership' ) # name of the reverse relationship
-    is_administrator = models.BooleanField( 
+    is_administrator = models.BooleanField(
             _( u'Is administrator' ), default = True )
     """Not used at the moment. All members of a group are administrators.
     """ # pylint: disable-msg=W0105
@@ -3177,11 +3165,11 @@ class Membership( models.Model ): # {{{1
             _( u'New event notification' ), default = True )
     """If True a notification email should be sent to the user when a new event
     is added to the group""" # pylint: disable-msg=W0105
-    new_member_email = models.BooleanField( 
+    new_member_email = models.BooleanField(
             _( u'New member notification' ), default = True )
     """If True a notification email should be sent to the user when a new
     member is added to the group""" # pylint: disable-msg=W0105
-    date_joined = models.DateField( 
+    date_joined = models.DateField(
             _( u'date_joined' ), editable = False, auto_now_add = True )
     class Meta: # pylint: disable-msg=C0111,W0232,R0903
         unique_together = ( "user", "group" )
@@ -3192,9 +3180,9 @@ class Calendar( models.Model ): # {{{1
     """Relation between events and groups."""
     event = models.ForeignKey( Event, verbose_name = _( u'Event' ),
             related_name = 'calendar' )
-    group = models.ForeignKey( 
+    group = models.ForeignKey(
             Group, verbose_name = _( u'Group' ), related_name = 'calendar' )
-    date_added = models.DateField( 
+    date_added = models.DateField(
             _( u'Date added' ), editable = False, auto_now_add = True )
 
     def clone( self, event, user ):
@@ -3281,7 +3269,7 @@ class GroupInvitationManager( models.Manager ): # {{{1
                         member_list[0].activation_key = self.model.ACTIVATED
                     return False
                 else:
-                    member = Membership( 
+                    member = Membership(
                             user = guest, group = group,
                             is_administrator = as_administrator )
                     member.activation_key = self.model.ACTIVATED
@@ -3324,7 +3312,7 @@ class GroupInvitationManager( models.Manager ): # {{{1
         """
         salt = hashlib.sha1( str( random.random() ) ).hexdigest()[:5]
         activation_key = hashlib.sha1( salt + guest.username ).hexdigest()
-        self.create( 
+        self.create(
                 host = host, guest = guest, group = group,
                 as_administrator = as_administrator,
                 activation_key = activation_key )
@@ -3339,7 +3327,7 @@ class GroupInvitationManager( models.Manager ): # {{{1
         # Email subject *must not* contain newlines
         subject = ''.join( subject.splitlines() )
 
-        message = render_to_string( 
+        message = render_to_string(
                 'groups/invitation_email.txt',
                 { 'activation_key': activation_key,
                   'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS,
@@ -3398,17 +3386,17 @@ class GroupInvitation( models.Model ): # {{{1
     """
     ACTIVATED = u"ALREADY_ACTIVATED"
 
-    host = models.ForeignKey( 
+    host = models.ForeignKey(
             User, related_name = "host", verbose_name = _( u'host' ) )
-    guest = models.ForeignKey( 
+    guest = models.ForeignKey(
             User, related_name = "guest", verbose_name = _( u'host' ) )
-    group = models.ForeignKey( 
+    group = models.ForeignKey(
             Group, verbose_name = _( u'group' ) )
-    as_administrator = models.BooleanField( 
+    as_administrator = models.BooleanField(
             _( u'as administrator' ), default = True )
-    activation_key = models.CharField( 
+    activation_key = models.CharField(
             _( u'activation key' ), max_length = 40 )
-    issue_date = models.DateField( 
+    issue_date = models.DateField(
             _( u'issue_date' ), editable = False, auto_now_add = True )
 
     # see http://docs.djangoproject.com/en/1.0/topics/db/managers/
@@ -3505,105 +3493,3 @@ class Session: #{{{1
                 " " + unicode(self.end.strftime( "%H:%M" )) + \
                 " " + unicode(self.name)
 
-#
-# FIXME: LOG_PIPE is defunct because of incompatible changes in
-# django_reversion
-# LOG to a pipe {{{1
-# it is recommended in the Django documentation to connect to signals in
-# models.py. That is why this code is here.
-if settings.LOG_PIPE and not settings.DEBUG:
-    def write_to_pipe( **kwargs ): # {{{2
-        from grical.events.models import Event, RevisionInfo
-        site = Site.objects.get_current().domain
-        # comment {{{3
-        if kwargs['sender'] == Comment:
-            pass
-            # comment = kwargs['comment']
-            #log_using_celery.delay( u'http://%(site)s%(comment_url)s\n' \
-            #    '*** %(comment)s ***\n' % {
-            #        'site': site,
-            #        'comment_url': comment.get_absolute_url(),
-            #        'comment': comment.comment, } )
-        # event created/updated {{{3
-        elif kwargs['sender'] == RevisionInfo:
-            revision_info = kwargs['instance']
-            revision = revision_info.revision
-            event_content_type = ContentType.objects.get_for_model( Event )
-            text = u''
-            # in a revision there can be more than one event, e.g. when
-            # recurring events are introduced with a text form.
-            for event_version in revision.version_set.filter(
-                    content_type = event_content_type ):
-                try:
-                    event = Event.objects.get( pk = event_version.object_id )
-                except Event.DoesNotExist:
-                    # this happens when an event has been deleted
-                    return
-                event_url = event.get_absolute_url()
-                # TODO: optimize the next code to hit the db less
-                text += u'http://%(site)s%(event_url)s\n' % {
-                        'site': site, 'event_url': event_url }
-                revisions = [ version.revision for version in
-                    Version.objects.get_for_object( event ) ]
-                if len( revisions ) > 1:
-                    rev_info_old = revisions[-2].revisioninfo_set.all()
-                    rev_info_new = revisions[-1].revisioninfo_set.all()
-                    diff = text_diff(
-                            rev_info_old[0].as_text,
-                            rev_info_new[0].as_text )
-                    text += diff
-                else:
-                    text += smart_unicode( event.as_text() )
-            #log_using_celery.delay( text )
-        # event deleted {{{3
-        elif kwargs['sender'] == Event:
-            pass
-            # event = kwargs['instance']
-            # deleted_url = reverse( 'event_deleted',
-            #         kwargs={'event_id': event.id,} )
-            #log_using_celery.delay( u'http://%(site)s%(deleted_url)s\n' % {
-            #    'site': unicode( site ), 'deleted_url': deleted_url, } )
-        #  Revision, used to log undeletions {{{3
-        elif kwargs['sender'] == Version:
-            version = kwargs['instance']
-            # undeletions have version.type = VERSION_ADD and the version
-            # before has version.type = VERSION_DELETE
-            if not version.type == VERSION_ADD:
-                return
-            event_content_type = ContentType.objects.get_for_model( Event )
-            revision_list = Revision.objects.filter(
-                   version__object_id = version.object_id,
-                   version__content_type = event_content_type )
-            revision_list = revision_list.order_by( '-date_created' )
-            if len( revision_list ) < 2:
-                return
-            previous = None
-            for revision in revision_list:
-                if previous and previous == version.revision:
-                    ver = revision.version_set.get(
-                            content_type = event_content_type )
-                    if ver.type == VERSION_DELETE:
-                        history_url = reverse( 'event_history',
-                            kwargs={'event_id': version.object_id,} )
-                        #log_using_celery.delay(
-                        #    u'http://%(site)s%(history_url)s\n' % {
-                        #    'site': site, 'history_url': history_url, } )
-                    return
-                previous = revision
-    # connecting to signals {{{2
-    post_save.connect( write_to_pipe,
-            sender = RevisionInfo,
-            #weak = False,
-            dispatch_uid = 'pipe_logger_revisioninfo' )
-    comment_was_posted.connect( write_to_pipe,
-            sender = Comment,
-            #weak = False,
-            dispatch_uid = 'pipe_logger_comment' )
-    post_delete.connect( write_to_pipe,
-            sender = Event,
-            #weak = False,
-            dispatch_uid = 'pipe_logger_event_deleted' )
-    post_save.connect( write_to_pipe,
-            sender = Version,
-            #weak = False,
-            dispatch_uid = 'pipe_logger_undeleted' )

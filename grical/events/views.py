@@ -223,13 +223,13 @@ def event_edit_recurrences( request, event_id ):
                 transaction.savepoint_rollback(sid)
                 return HttpResponseRedirect( reverse( 'event_show_all',
                         kwargs = {'event_id': event.id} ) )
-            with reversion.create_revision:
-                if request.user.is_authenticated():
-                    revision.user = request.user
-                new_master = event.clone( user = revision.user,
+            with reversion.create_revision():
+                request.user.is_authenticated() and reversion.set_user(
+                        request.user)
+                new_master = event.clone(user = request.user,
                         except_models = [EventDate, EventSession],
                         startdate = parse(dates_iso_in_form[0]).date() )
-                revision.add_meta( RevisionInfo,
+                reversion.add_meta(RevisionInfo,
                         as_text = smart_unicode( new_master.as_text() ) )
                 added_counter += 1
         # We get and update recurrences with the old master
@@ -254,13 +254,13 @@ def event_edit_recurrences( request, event_id ):
                 transaction.savepoint_rollback(sid)
                 return HttpResponseRedirect( reverse( 'event_show_all',
                         kwargs = {'event_id': event.id} ) )
-            with revision:
-                if request.user.is_authenticated():
-                    revision.user = request.user
+            with reversion.create_revision():
+                request.user.is_authenticated() and reversion.set_user(
+                        request.user)
                 clone = master.clone( user = request.user,
                         except_models = [EventDate, EventSession],
                         startdate = parse(date_iso).date() )
-                revision.add_meta( RevisionInfo,
+                reversion.add_meta( RevisionInfo,
                         as_text = smart_unicode( clone.as_text() ) )
                 added_counter += 1
         else:
@@ -274,14 +274,14 @@ def event_edit_recurrences( request, event_id ):
                 dates__eventdate_name = 'start',
                 dates__eventdate_date = date_iso,
                 _recurring__master = master )
-        with revision:
-            if request.user.is_authenticated():
-                revision.user = request.user
+        with reversion.create_revision():
+            request.user.is_authenticated() and reversion.create_user(
+                    request.user)
             info_dict = {}
             info_dict['reason'] = unicode( _('deleted from recurrences') )
             info_dict['redirect'] = master.id
             info_dict['as_text'] = smart_unicode( dele.as_text() )
-            revision.add_meta( RevisionInfo, **info_dict )
+            reversion.add_meta( RevisionInfo, **info_dict )
             dele.delete()
             deleted_counter += 1
     # if any changes were made, we update the event.version to disable the
@@ -294,13 +294,14 @@ def event_edit_recurrences( request, event_id ):
     if not event.pk:
         messages.info( request,
                 _( u'An event and all its recurrences has been ' \
-                'successfully deleted, the title was: %s' )% event.title )
+                'successfully deleted, the title was: %(title)s' )% {
+                    'title': event.title })
         transaction.savepoint_commit(sid)
         return HttpResponseRedirect( reverse('main') )
     # TODO: plurarize the message correctly (quantities can be 0 or 1 or more)
     messages.info( request,
-            _( u'%d recurrences added, %d recurrences deleted' ) %
-            ( added_counter, deleted_counter ) )
+            _(u'%(added)s recurrences added, %(deleted)s recurrences deleted')%
+            {'added': added_counter, 'deleted': deleted_counter} )
     transaction.savepoint_commit(sid)
     return HttpResponseRedirect( reverse( 'event_show_all',
             kwargs = {'event_id': event.id} ) )
@@ -391,9 +392,9 @@ def event_edit( request, event_id = None ):
                 # FIXME: don't allow to save an event with enddate != startdate
                 # and recurrences
                 # TODO: do nothing if nothing has changed
-                with revision:
-                    if request.user.is_authenticated():
-                        revision.user = request.user
+                with reversion.create_revision():
+                    request.user.is_authenticated() and reversion.set_user(
+                            request.user)
                     if event.version:
                         event.version = event.version + 1
                     else:
@@ -405,7 +406,7 @@ def event_edit( request, event_id = None ):
                     formset_url.save()
                     formset_session.save()
                     formset_deadline.save()
-                    revision.add_meta( RevisionInfo,
+                    reversion.add_meta( RevisionInfo,
                             as_text = smart_unicode( event.as_text() ) )
                 # change recurrences if appropiate
                 if event_recurring:
@@ -467,9 +468,8 @@ def _change_recurrences( user, event, events ): # {{{1
     for rec in events:
         assert rec.recurring.master == event.recurring.master
         something_changed = False
-        with revision:
-            if user and user.is_authenticated():
-                revision.user = user
+        with reversion.create_revision():
+            user.is_authenticated() and reversion.set_user(user)
             for field in Event.get_simple_fields():
                 if field in ['startdate', 'enddate']:
                     continue
@@ -506,7 +506,7 @@ def _change_recurrences( user, event, events ): # {{{1
             if something_changed:
                 rec.version = rec.version + 1
                 rec.save()
-                revision.add_meta( RevisionInfo,
+                reversion.add_meta( RevisionInfo,
                         as_text = smart_unicode( rec.as_text() ) )
 
 # def event_new_raw( request, template_event_id = None ): {{{1
@@ -540,17 +540,17 @@ def event_new_raw( request, template_event_id = None ):
     event_textarea = request.POST['event_astext']
     try:
         sid = transaction.savepoint()
-        with revision:
-            if request.user.is_authenticated():
-                revision.user = request.user
+        with reversion.create_revision():
+            request.user.is_authenticated() and reversion.set_user(
+                    request.user)
             event, dates_times_list = \
                     Event.parse_text(event_textarea, None, request.user.id)
-            revision.add_meta( RevisionInfo,
+            reversion.add_meta( RevisionInfo,
                     as_text = smart_unicode( event.as_text() ) )
         for dates_times in dates_times_list:
-            with revision:
+            with reversion.create_revision():
                 if request.user.is_authenticated():
-                    revision.user = request.user
+                    reversion.set_user(request.user)
                     clone = event.clone( user = request.user,
                             except_models = [EventDate, EventSession],
                             **dates_times )
@@ -558,7 +558,7 @@ def event_new_raw( request, template_event_id = None ):
                     clone = event.clone( user = None,
                             except_models = [EventDate, EventSession],
                             **dates_times )
-                revision.add_meta( RevisionInfo,
+                reversion.add_meta( RevisionInfo,
                         as_text = smart_unicode( clone.as_text() ) )
         transaction.savepoint_commit(sid)
         messages.success( request, _( u'event saved' ) )
@@ -598,7 +598,7 @@ def event_edit_raw( request, event_id ):
     >>> from django.core.urlresolvers import reverse
     >>> from grical.events.models import Event
     >>> import datetime
-    >>> e = Event.objects.create( title = 'eer_test', tags = 'berlin' )
+    >>> e = Event.objects.create(title = 'eer_test', tags = 'berlin')
     >>> e.startdate = datetime.date.today()
     >>> transaction.commit()
     >>> Client().get(reverse('event_edit_raw',
@@ -647,25 +647,25 @@ def event_edit_raw( request, event_id ):
         if event_recurring and not also_recurrences_form.is_valid():
             raise ValidationError(_(u'Please select to which ' \
                     'recurring events changes should be applied'))
-        with revision:
-            if request.user.is_authenticated():
-                revision.user = request.user
+        with reversion.create_revision():
+            request.user.is_authenticated() and reversion.set_user(
+                    request.user)
             event, dates_times_list = Event.parse_text(
                     event_textarea, event_id, request.user.id )
-            revision.add_meta( RevisionInfo,
+            reversion.add_meta(RevisionInfo,
                     as_text = smart_unicode( event.as_text() ) )
         for dates_times in dates_times_list:
-            with revision:
+            with reversion.create_revision():
                 if request.user.is_authenticated():
-                    revision.user = request.user
+                    reversion.set_user(request.user)
                     event.clone( user = request.user,
                             except_models = [EventDate, EventSession],
                             **dates_times )
                 else:
-                    clone = event.clone( user = None,
+                    clone = event.clone(user = None,
                             except_models = [EventDate, EventSession],
                             **dates_times )
-                revision.add_meta( RevisionInfo,
+                reversion.add_meta(RevisionInfo,
                         as_text = smart_unicode( clone.as_text() ) )
         if not event_recurring:
             events = None
@@ -903,7 +903,7 @@ def event_show_raw( request, event_id ): # {{{1
     return render_to_response( 'event_show_raw.html',
             templates, context_instance = RequestContext( request ) )
 
-def revisions_diffs( revisions ): # {{{1
+def revisions_diffs(revisions): # {{{1
     """ from a list of revisions create a list of tuples with a revision and a
     html text of the diff """
     revisions_diffs = []
@@ -980,7 +980,6 @@ def event_revert( request, revision_id, event_id ):
 @only_if_write_enabled
 def event_delete( request, event_id ):
     event = get_object_or_404( Event, pk = event_id )
-    user = request.user
     recurring = event.recurring
     if recurring:
         master = recurring.master
@@ -1020,9 +1019,9 @@ def event_delete( request, event_id ):
                 else:
                     raise RuntimeError()
             for dele in events:
-                with revision:
-                    if request.user.is_authenticated():
-                        revision.user = request.user
+                with reversion.create_revision():
+                    request.user.is_authenticated() and reversion.set_user(
+                            request.user)
                     info_dict = {}
                     reason = form.cleaned_data['reason']
                     if reason:
@@ -1031,7 +1030,7 @@ def event_delete( request, event_id ):
                     if redirect:
                         info_dict['redirect'] = redirect
                     info_dict['as_text'] = smart_unicode( dele.as_text() )
-                    revision.add_meta( RevisionInfo, **info_dict )
+                    reversion.add_meta( RevisionInfo, **info_dict )
                     dele.delete()
             messages.success( request, _('Event %(event_id)s deleted.') % \
                     {'event_id': event_id,} )
@@ -1090,10 +1089,10 @@ def event_deleted( request, event_id ): # {{{1
 @only_if_write_enabled
 @reversion.create_revision
 def event_undelete(request, event_id):
-    if request.user.is_authenticated():
-        revision.user = request.user
+    request.user.is_authenticated() and reversion.set_user(request.user)
     try:
-        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
+        deleted_version = Version.objects. \
+                get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     # TODO ask the user for a reason for the undeletion
@@ -1114,7 +1113,7 @@ def event_undelete(request, event_id):
                 dates__eventdate_name = start )
     except Event.DoesNotExist:
         deleted_revision.revert()
-        revision.add_meta( RevisionInfo, as_text = as_text )
+        reversion.add_meta( RevisionInfo, as_text = as_text )
         equal = False
     if not equal:
         messages.info( request, _('Event has been successfully undeleted.') )
@@ -1168,7 +1167,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     >>> Client().get(reverse('search_query_view',
     ...         kwargs={'query': 'test', 'view': 'calendars'})).status_code
     200
- 
+
     >>> Client().get(reverse('search'), {'query': '#berlin',}).status_code
     200
     >>> response = Client().get(reverse('search'), {'query': '#berlinn',})
@@ -1195,7 +1194,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     if (not query) and (view != 'json'):
         # When a client ask for json, html should not be the response
         # TODO: test what happens for empty query with json, xml and yaml
-        messages.error( request, 
+        messages.error(request,
             _( u"A search was submitted without a query string" ) )
         return main( request )
     if view == 'rss': # {{{3
@@ -1222,13 +1221,13 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     except (ValueError, GeoLookupError) as err: # TODO: catch other errors
         if isinstance( err, ValueError ):
             # this can happen for instance when a date is malformed like 2011-01-32
-            messages.error( request, 
+            messages.error( request,
                     _( u"The search is malformed: %(error_message)s" ) %
                     {'error_message': err.args[0]} )
         if isinstance( err, GeoLookupError ):
             # this can happen when the external API runs out of allowed request
             # limit
-            messages.error( request, 
+            messages.error( request,
                     _( u"The lookup of the coordinates of the name was not"
                         " possible. You can try using the coordinates instead."
                         " Example: @52.12,13.23+500km" ) )
@@ -1477,7 +1476,7 @@ def filter_edit( request, filter_id ):
 @login_required
 @only_if_write_enabled
 def filter_drop( request, filter_id ):
-    """ Delete a filter if the user is the owner 
+    """ Delete a filter if the user is the owner
 
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
@@ -2107,7 +2106,7 @@ def _ical_http_response_from_event_list( elist, filename, calname = None ):#{{{2
 
 # def all_events_text ( request ): #{{{1
 #     """ returns a text file with all events.
-# 
+#
 #     >>> from django.test import Client
 #     >>> from django.core.urlresolvers import reverse
 #     >>> from grical.events.models import Event
@@ -2233,7 +2232,6 @@ class EventsCalendar(HTMLCalendar): #TODO: use LocaleHTMLCalendar
         date2 = datetime.date( self.year, self.month, max( days ) )
         this_year_week = date1.isocalendar()[0:2]
         assert this_year_week == date2.isocalendar()[0:2]
-        today = datetime.date.today()
         text = u''
         text += super(EventsCalendar, self).formatweek(
                 theweek, *args, **kwargs )
