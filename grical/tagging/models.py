@@ -1,7 +1,7 @@
 """
 Models and managers for generic tagging.
 """
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, models
 from django.utils.translation import ugettext_lazy as _
@@ -487,7 +487,7 @@ class TaggedItem(models.Model):
     tag          = models.ForeignKey(Tag, verbose_name=_('tag'), related_name='items')
     content_type = models.ForeignKey(ContentType, verbose_name=_('content type'))
     object_id    = models.PositiveIntegerField(_('object id'), db_index=True)
-    object       = generic.GenericForeignKey('content_type', 'object_id')
+    object       = GenericForeignKey('content_type', 'object_id')
 
     objects = TaggedItemManager()
 

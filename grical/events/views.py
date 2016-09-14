@@ -1758,12 +1758,11 @@ def list_groups_my(request): # {{{2
     302
     """
     # TODO: test also if the user has group(s)
-    user = User(request.user)
-    groups = Group.objects.filter(membership__user=user)
+    groups = Group.objects.filter(membership__user=request.user)
     if len(groups) == 0:
         messages.error( request,
             _("You are not a member of any group") )
-        return main( request )
+        return HttpResponseRedirect(reverse('main'))
     else:
         return render_to_response('groups/list_my.html',
             {'title': 'list my groups', 'groups': groups},
@@ -1795,7 +1794,7 @@ def group_quit(request, group_id, sure = False ): # {{{2
     1
     """
     # TODO: add a test for the case when the user is the last one.
-    user = User(request.user)
+    user = request.user
     group = get_object_or_404( Group, id = group_id, membership__user = user )
     other_members = Membership.objects.filter( group = group).exclude(
             user = user ).count()
