@@ -67,7 +67,7 @@ try:
 except:
     tip = ""
 from . import VERSION as GRICAL_VERSION
-VERSION = '.'.join(GRICAL_VERSION) + tip
+VERSION = '.'.join((str(x) for x in GRICAL_VERSION)) + tip
 
 # used to generate the PROID field of iCalendars, see
 # http://tools.ietf.org/html/rfc5545

@@ -24,6 +24,7 @@ python-dateutil==2.4.2
 pytz==2016.6.1
 python-memcached==1.58
 pyyaml==3.12
+simplejson # oembed requires it or else it fails
 six==1.10.0  # Required by django-simple-captcha, django-statici18n, and others
 vobject==0.9.3
 
