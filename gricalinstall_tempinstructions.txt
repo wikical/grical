@@ -29,7 +29,7 @@ apt-get install postgresql-server-dev-9.5
 
 apt-get install python-geoip
 apt-get install build-essential python-dev python-pip
-apt-get install geoip-database-contrib mercurial
+apt-get install geoip-database-contrib mercurial famfamfam-flag-gif
 
 # Create database, db user, etc
 
