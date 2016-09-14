@@ -60,6 +60,20 @@ cd /home/yourusername/grical/requirements/
 pip install -r base.pip
 
 
+Login as regular user
+----------------------------
+ssh grical
+
+cd grical
+python manage.py migrate
+
+-Missing set site to grical rather than example com-
+
+Start the dev server
+python manage.py runserver 0.0.0.0:8000
+
+in your browser visit: http://grical:8000
+
 python manage.py createcachetable cache
 
 
