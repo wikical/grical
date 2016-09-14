@@ -438,7 +438,7 @@ def search_events( query, related = True, model = Event ): #{{{1
         else:
             broad = False
         if model == EventDate:
-            queryset = EventDate.objects.select_related( depth=1 ).defer(
+            queryset = EventDate.objects.select_related().defer(
                 'event__description', 'event__coordinates',
                 'event__creation_time', 'event__modification_time',
                 'event__address')

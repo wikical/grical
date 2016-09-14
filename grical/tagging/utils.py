@@ -159,7 +159,7 @@ def get_tag_list(tags):
        * A ``Tag`` ``QuerySet``.
 
     """
-    from tagging.models import Tag
+    from .models import Tag
     if isinstance(tags, Tag):
         return [tags]
     elif isinstance(tags, QuerySet) and tags.model is Tag:

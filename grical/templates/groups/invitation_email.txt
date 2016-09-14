@@ -5,11 +5,11 @@ The invitation was sent by: {{ host }}
 The group to join is: {{ group }}
 
 To accept the invitation click:{% endblocktrans %}
-http://{{site_domain}}{% url group_invite_activate activation_key %}
+http://{{site_domain}}{% url "group_invite_activate" activation_key %}
 
 {% blocktrans %}This need to be done in less than {{ expiration_days }} days.
 
 To deny the invitation simply do nothing{% endblocktrans %}
 
--- 
+--
 http://{{site_domain}}
