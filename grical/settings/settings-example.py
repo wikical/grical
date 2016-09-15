@@ -36,6 +36,13 @@ if not DEBUG:
             ]),
         ]
 
+# This is to not flood console with DEBUG and INFO messages while running tests
+# or in production
+if (not DEBUG or TESTS_RUNNING) and 'handlers' in LOGGING and 'console' in LOGGING['handlers']:
+    LOGGING['handlers']['console']['level'] = 'WARNING'
+if (not DEBUG or TESTS_RUNNING) and 'loggers' in LOGGING and '' in LOGGING['loggers']:
+    LOGGING['loggers']['']['level'] = 'WARNING'
+
 # ======================================================================
 # imap settings for getting events as emails
 # ======================================================================
@@ -60,6 +67,10 @@ GEONAMES_URL = 'https://secure.geonames.net/'
 # email and error-notify settings
 # ======================================================================
 
+# IMPORTANT FIXME
+# Bellow are production settings for grical.org, they should leave from
+# settings-example.py and kept elsewhere
+
 ADMINS = (
 	('stefanos', 'stefanos@gridmind.org'),
 	('ivan', 'ivan@gridmind.org'),
@@ -75,11 +86,14 @@ DEFAULT_FROM_EMAIL = 'noreply@grical.org'
 SERVER_EMAIL = 'noreply@grical.org'
 EMAIL_SUBJECT_PREFIX = '[GriCal.org]'
 
-EMAIL_HOST = '136.243.175.225'
-EMAIL_HOST_USER = 'email_gridmind_org'
-EMAIL_HOST_PASSWORD = 'veeWae4y'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
+# FIXME IMPORTANT
+# Following are production values for grical.org and prove to work, remove from
+# example
+# EMAIL_HOST = '136.243.175.225'
+# EMAIL_HOST_USER = 'email_gridmind_org'
+# EMAIL_HOST_PASSWORD = 'veeWae4y'
+# EMAIL_USE_TLS = True
+# EMAIL_PORT = 587
 
 # old:
 #EMAIL_HOST = 'alpha.gridmind.org'

@@ -83,6 +83,9 @@ IMAP_SSL = False
 # header reply-to
 REPLY_TO = None
 
+EMAIL_HOST = 'localhost'
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # =============================================================================
 # GeoIP, GEONAME and django-countries settings {{{1
 # =============================================================================
@@ -279,6 +282,37 @@ BROKER_VHOST = "/"
 # Ask in the ml or irc
 # [1] http://django-celery.readthedocs.org/en/latest/introduction.html
 # [2] http://stackoverflow.com/questions/7483728/django-celery-consumer-connection-error-111-when-running-python-manage-py-cel
+
+# =============================================================================
+# LOGGING {{{1
+# =============================================================================
+
+LOGGING = {
+    "loggers": {
+        "": {
+            "level": "DEBUG",
+            "propagate": False,
+            "handlers": ["console", ],
+        },
+    },
+    "handlers": {
+        "console": {
+            "formatter": "verbose",
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+        },
+    },
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "%(levelname)s %(message)s",
+        },
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
+        },
+    },
+}
 
 # =============================================================================
 # i18n and url settings {{{1
