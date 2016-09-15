@@ -14,12 +14,12 @@
 </h1>
 <p>
     <a href="{% url "list_events_group_rss" group.id  %}">
-        <img alt="RSS" src="{{MEDIA_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
+        <img alt="RSS" src="{{STATIC_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
         Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
 </p>
 <p>
     <a href="{% url "list_events_group_ical" group.id  %}">
-        <img alt="ICAL" width="16" src="{{MEDIA_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
+        <img alt="ICAL" width="16" src="{{STATIC_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
         Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
 </p>
 <p> {{ group.description|urlize }} </p>

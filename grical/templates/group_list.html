@@ -5,9 +5,9 @@
         {% for group in groups %}
             <li>
                 <a href="{% url "list_events_group_ical" g.id  %}">
-                    <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14"></a>&nbsp;
+                    <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="14"></a>&nbsp;
                 <a href="{% url "list_events_group_rss" g.id  %}">
-                    <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14"></a>&nbsp;
+                    <img alt="RSS" src="{{ STATIC_URL }}rssicon.png" width="14"></a>&nbsp;
                 <a href="{% url "group_view" g.id  %}">{{ group.name }}</a> ({{ group.future_events_count }})
                 {% if not READ_ONLY %}
                     | <a href="{% url "group_quit" g.id  %}">quit</a> |

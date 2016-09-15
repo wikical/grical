@@ -25,10 +25,10 @@
 
 # imports {{{1
 import os
+import sys
 #import djcelery
 
-DEBUG = False #{{{1
-PROGRAM_DIR = os.path.dirname(__file__) #{{{1
+PROGRAM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # =============================================================================
 # specific GridCalendar settings {{{1
@@ -66,7 +66,7 @@ try:
     tip = proc.communicate()[0]
 except:
     tip = ""
-from . import VERSION as GRICAL_VERSION
+from grical import VERSION as GRICAL_VERSION
 VERSION = '.'.join((str(x) for x in GRICAL_VERSION)) + tip
 
 # used to generate the PROID field of iCalendars, see
@@ -132,18 +132,11 @@ FORCE_LOWERCASE_TAGS = True
 ACCOUNT_ACTIVATION_DAYS = 10
 
 # =============================================================================
-# reporting {{{1
-# =============================================================================
-
-# see http://docs.djangoproject.com/en/dev/howto/error-reporting/
-SEND_BROKEN_LINK_EMAILS = True
-
-# =============================================================================
 # application and middleware settings {{{1
 # =============================================================================
 
 # at the end additional applications are conditionaly added
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'grical.accounts',
     'grical.data',
     'grical.events',
@@ -154,6 +147,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.humanize',
     'django.contrib.sessions',
+    'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django_comments',
@@ -165,53 +159,71 @@ INSTALLED_APPS = (
     'grical.contact_form',
     #'djcelery',
     'oembed',
- )
+]
 
 # at the end additional middleware are conditionaly added
-MIDDLEWARE_CLASSES = (
-    'django.middleware.gzip.GZipMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.middleware.common.CommonMiddleware',
+MIDDLEWARE_CLASSES = [
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.common.BrokenLinkEmailsMiddleware',
     # NOTE next middleware not used because in events.views.edit_event (among
     # other places) sometimes we create many revisions.
     # 'reversion.middleware.RevisionMiddleware',
- )
+]
 
-# see http://docs.djangoproject.com/en/1.3/ref/contrib/messages/
-MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+""" https://docs.djangoproject.com/en/1.8/ref/settings/#std:setting-SESSION_ENGINE """
 
-# https://docs.djangoproject.com/en/dev/topics/http/sessions/
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+# =============================================================================
+# TEMPLATES {{{1
+# =============================================================================
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
-    'django.contrib.messages.context_processors.messages',
-    'grical.context_processors.global_template_vars',
- )
-# http://docs.djangoproject.com/en/dev/ref/templates/api/#django-core-context-processors-debug
-#if DEBUG:
-#    TEMPLATE_CONTEXT_PROCESSORS += ( "django.core.context_processors.debug", )
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': ["/wikical/templates",
+                    os.path.join( PROGRAM_DIR, "templates"), ],
+            # Put strings here, like "/home/html/django_templates" or
+            # "C:/www/django/templates". Always use forward slashes,
+            # even on Windows.  Don't forget to use absolute paths,
+            # not relative paths. """
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'debug': True,
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'django.core.context_processors.i18n',
+                'django.core.context_processors.media',
+                'django.core.context_processors.request',
+                'django.core.context_processors.static',
+                'grical.context_processors.global_template_vars',
+            ],
+        },
+    },
+]
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or
-    # "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    os.path.join( PROGRAM_DIR, "templates" ),
- )
+# =============================================================================
+# CACHE {{{1
+# =============================================================================
 
-TEMPLATE_LOADERS = (
-    ('django.template.loaders.cached.Loader', (
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    )),
-)
+TESTS_RUNNING = len(sys.argv) > 1 and sys.argv[1] in ('test', 'jenkins')
+
+if TESTS_RUNNING:
+    # Speed up tests, inspired on:
+    # http://www.daveoncode.com/2013/09/23/effective-tdd-tricks-to-speed-up-django-tests-up-to-10x-faster/
+    PASSWORD_HASHERS = (
+            'django.contrib.auth.hashers.MD5PasswordHasher',)
+
+if TESTS_RUNNING:
+    INSTALLED_APPS = INSTALLED_APPS + ['django.contrib.sessions',]
+
 
 # =============================================================================
 # CACHE {{{1
@@ -235,6 +247,21 @@ CACHES = {
 }
 
 # =============================================================================
+# Static files {{{1
+# =============================================================================
+
+STATIC_URL = "/m/"
+STATIC_ROOT = ""
+STATICFILES_FINDERS = (
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'compressor.finders.CompressorFinder',)
+
+# IMPORTANT: If more than one dir, set the main grica static dir first in
+# order for some development and testing functions to work properly
+STATICFILES_DIRS = [os.path.join(PROGRAM_DIR, "static"), ]
+
+# =============================================================================
 # celery
 # =============================================================================
 
@@ -254,16 +281,6 @@ BROKER_VHOST = "/"
 # [2] http://stackoverflow.com/questions/7483728/django-celery-consumer-connection-error-111-when-running-python-manage-py-cel
 
 # =============================================================================
-# south
-# =============================================================================
-
-# see
-# http://south.aeracode.org/docs/unittests.html#south-s-own-unit-tests
-# https://groups.google.com/group/south-users/browse_thread/thread/7d74579b624cd53c
-SOUTH_TESTS_MIGRATE = False
-SKIP_SOUTH_TESTS = True
-
-# =============================================================================
 # i18n and url settings {{{1
 # =============================================================================
 
@@ -275,9 +292,6 @@ USE_I18N = True
 USE_L10N = False
 
 SITE_ID = 1
-MEDIA_ROOT = os.path.join( PROGRAM_DIR, "media" )
-MEDIA_URL = '/m/'
-ADMIN_MEDIA_PREFIX = '/m/admin/'
 ROOT_URLCONF = 'grical.urls'
 
 # field names and synonyms/translations {{{1

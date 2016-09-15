@@ -10,7 +10,7 @@
 
     <div class="event_history">
         <div class="options">
-            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="16" /></a>
             &nbsp;|&nbsp;
             <a href="{% url "event_show_all" event.id  %}">{% trans "show" %}</a>
             {% if not READ_ONLY %}

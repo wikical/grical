@@ -30,7 +30,7 @@ from dateutil.parser import parse
 import re
 import datetime
 
-from django.db import models
+from django.apps import apps
 from django.contrib.gis.geos import Point
 import django.forms as forms
 from django.contrib.auth.models import User
@@ -556,7 +556,7 @@ def get_field_attr( model, field_name, field_attr ):
     field ``field_name`` """
     # from
     # http://stackoverflow.com/questions/2384436/how-to-introspect-django-model-fields
-    field = models.get_model('events', model)._meta.get_field_by_name(
+    field = apps.get_model('events', model)._meta.get_field_by_name(
             field_name )[0]
     return getattr( field, field_attr )
 

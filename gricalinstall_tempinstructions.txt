@@ -1,83 +1,100 @@
-cp settings-example.py settings.py
+Grical installation mini instructions
+=====================================
 
+Create a container to work
+--------------------------
 
-# Create a container to work
+  cd ~/wikical/provisionize
+  ./provisionize.sh --only-create grical
 
-cd ~/wikical/provisionize
-./provisionize.sh --only-create grical
-
-echo "/home/$USER/grical home/$USER/grical none bind,create=dir 0 0" >~/.local/share/lxc/grical/fstab
-echo "lxc.mount = /home/$USER/.local/share/lxc/grical/fstab" >> ~/.local/share/lxc/grical/config
+  echo "/home/$USER/grical home/$USER/grical none bind,create=dir 0 0" >~/.local/share/lxc/grical/fstab
+  echo "lxc.mount = /home/$USER/.local/share/lxc/grical/fstab" >> ~/.local/share/lxc/grical/config
 
 # Restart container
-lxc-stop -n grical
-lxc-start -n grical -d
+  lxc-stop -n grical
+  lxc-start -n grical -d
 
 # Login to container
 
-ssh root@grical
+  ssh root@grical
 
-# Install postgresql 9.5
+Install postgresql 9.5
+----------------------
 
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
-wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
-apt-get update
-apt-get install postgresql postgresql-contrib postgis
-apt-get install postgresql-server-dev-9.5
+  sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+  wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
+  apt-get update
+  apt-get install postgresql postgresql-contrib postgis
+  apt-get install postgresql-server-dev-9.5
 
-# Install several packages
+Install several packages
+------------------------
 
-apt-get install python-geoip
-apt-get install build-essential python-dev python-pip
-apt-get install geoip-database-contrib mercurial famfamfam-flag-gif
+  apt-get install python-geoip
+  apt-get install build-essential python-dev python-pip
+  apt-get install geoip-database-contrib mercurial famfamfam-flag-gif
 
-# Create database, db user, etc
+Create database, db user, etc
+-----------------------------
 
-su postgres
-psql
-then type:
-`CREATE EXTENSION IF NOT EXISTS postgis;`
+  su postgres
+  psql
+then type in psql:
+  CREATE EXTENSION IF NOT EXISTS postgis;
 Exit psql with Ctrl+D
+(possibly this step is not needed, but the next CREATE EXTENSION is
+needed)
 
 Run:
-`createuser --pwprompt --no-createdb --no-createrole --no-superuser grical_user`
+  createuser --pwprompt --no-createdb --no-createrole --no-superuser grical_user
 password: "grical_password"
 Run:
-`createdb --owner grical_user -T template1 grical_db`
+  createdb --owner grical_user -T template1 grical_db
 We need also to create extension postgis for grical_db
-`psql -d grical_db`
+  psql -d grical_db
 then run in psql:
-`CREATE EXTENSION IF NOT EXISTS postgis`
+  CREATE EXTENSION IF NOT EXISTS postgis
 Exit psql with Ctrl+D
 
 logout as postgres
-`exit`
+  exit
 
 # Install pip packages
 
 (always as grical root)
-cd /home/yourusername/grical/requirements/
-pip install -r base.pip
+  cd /home/yourusername/grical/requirements/
+  pip install -r development.pip
 
+In host machine
+---------------
 
-Login as regular user
-----------------------------
-ssh grical
+  cd ~/grical/grical/settings
+  cp settings-example.py settings.py
 
-cd grical
-python manage.py migrate
+edit settings.py, set `DEBUG = True`
 
--Missing set site to grical rather than example com-
+Login as regular user to grical
+-------------------------------
+  ssh grical
+
+  cd grical
+  python manage.py migrate
+
+  psql -d grical_db -U grical_user -h localhost -p 5432 -c "UPDATE django_site SET (domain, name) = ('grical', 'Grical development')"
+(password is "grical_password")
+
+  python manage.py createcachetable cache
 
 Start the dev server
-python manage.py runserver 0.0.0.0:8000
+  python manage.py runserver 0.0.0.0:8000
 
 in your browser visit: http://grical:8000
 
-python manage.py createcachetable cache
 
 
 Discussion
 ----------
-<ogai> stefanos_, would be nice you just copy the travis-ci config of dsc for grical, and create an account in travis-ci if needed using admin@gridmind.org
+<ogai> stefanos_, would be nice you just copy the travis-ci config of
+dsc for grical, and create an account in travis-ci if needed using
+admin@gridmind.org
 

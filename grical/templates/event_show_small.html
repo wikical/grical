@@ -17,7 +17,7 @@
     {% endif %}
     {% if event.country %}
         <span class="field_country">
-            <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" />
+            <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" />
         </span>
     {% endif %}
 {% endcache %}

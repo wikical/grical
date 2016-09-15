@@ -16,13 +16,13 @@
         <div id="ical_view">
             <a href='{% urlsearch query=query view="ical" %}'>iCalendar</a>
                 <!-- doesn't look nice in IE7 at least
-                <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="14" />iCalendar</a>
+                <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="14" />iCalendar</a>
                 -->
         </div>
         <div id="rss_view">
             <a href='{% urlsearch query=query view="rss" %}'>RSS</a>
                 <!-- doesn't look nice in IE7 at least
-                <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" width="14" />RSS</a>
+                <img alt="RSS" src="{{ STATIC_URL }}rssicon.png" width="14" />RSS</a>
                 -->
         </div>
     </div>
