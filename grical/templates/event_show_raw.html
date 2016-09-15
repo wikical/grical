@@ -5,7 +5,7 @@
 {% block container %}
 
 <span class="event_medium_ical_logo">
-  <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+  <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
 </span>
 
 {% if not READ_ONLY %}

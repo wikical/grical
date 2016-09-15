@@ -9,7 +9,7 @@
 
     <div class="title" style="color: {{ event.fg_color }}; background-color: {{ event.bg_color }}">
         <span class="ical_logo">
-            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
         </span>
         <a href="{% url "event_show_all" event.id  %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
     </div>
@@ -44,7 +44,7 @@
             {% if event.country %}
                 <span class="city">
                     {# NOTE: it must be all in one line to avoid breaking the line #}
-                    <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>,&nbsp;<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></span>
+                    <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>,&nbsp;<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></span>
             {% else %}
                 <span class="city">
                     <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
@@ -53,7 +53,7 @@
         {% else %}
             {% if event.country %}
                 {# NOTE: it must be all in one line to avoid breaking the line #}
-                <span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></span>
+                <span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></span>
             {% endif %}
         {% endif %}
 

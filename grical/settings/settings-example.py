@@ -1,7 +1,7 @@
+DEBUG = False
+
 from settings_base import *
 
-DEBUG = False
-TEMPLATE_DEBUG = False
 SECRET_KEY = 'fiwj{34gj90gjdsg.s9t8t9sggejis0e94gjsd4#&bkd;k4lg$'
 
 DATABASES = {
@@ -15,6 +15,26 @@ DATABASES = {
          'PORT': 5432
      }
 }
+
+if DEBUG:
+    # Won't show if not INTERNAL_IPS defined
+    INTERNAL_IPS = ["127.0.0.1", "10.0.2.2", "10.0.3.1", ]
+    INSTALLED_APPS.insert(0, 'debug_toolbar')
+
+if not DEBUG:
+    for TEMPLATE in TEMPLATES:
+        # When setting custom loaders setting, APP_DIRS should be False
+        # or else exception will raise. See:
+        # https://docs.djangoproject.com/en/1.8/ref/templates/api/
+        TEMPLATE['APP_DIRS'] = False
+        TEMPLATE['OPTIONS']['debug'] = False
+        # https://docs.djangoproject.com/en/1.8/ref/templates/api/#django.template.loaders.cached.Loader
+        TEMPLATE['OPTIONS']['loaders'] = [
+            ('django.template.loaders.cached.Loader', [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ]),
+        ]
 
 # ======================================================================
 # imap settings for getting events as emails
@@ -35,12 +55,6 @@ IMAP_SSL = True
 # then activate the use of the API in your account.
 GEONAMES_USERNAME = 'ogai'
 GEONAMES_URL = 'https://secure.geonames.net/'
-
-# ======================================================================
-# debug settings
-# ======================================================================
-
-TEMPLATE_DEBUG = DEBUG
 
 # ======================================================================
 # email and error-notify settings
@@ -73,7 +87,3 @@ EMAIL_PORT = 587
 #EMAIL_HOST_USER = ''
 #EMAIL_HOST_PASSWORD = ''
 #EMAIL_USE_TLS = False
-
-# see http://docs.djangoproject.com/en/dev/howto/error-reporting/
-SEND_BROKEN_LINK_EMAILS = True
-

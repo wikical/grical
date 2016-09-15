@@ -10,7 +10,7 @@ It holds the main look and feel and uses the variables:
 -------------     ---------------------------------------------------------------------
 LANGUAGE_CODE     is the current user's preferred language, as a string. Example: en-us
 DOMAIN            example: gridcalendar.net
-MEDIA_URL         example: http://gridcalendar.net/media/
+STATIC_URL         example: http://gridcalendar.net/media/
 PROTOCOL          example: https
 title             the title of the page, example: GridCalendar - home
 VERSION           the version of the software, example: 1.0

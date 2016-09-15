@@ -1,5 +1,5 @@
-from django.db.models import get_model
-from django.template import Library, Node, TemplateSyntaxError, Variable, resolve_variable
+from django.apps import apps
+from django.template import Library, Node, TemplateSyntaxError, Variable
 from django.utils.translation import ugettext as _
 
 from grical.tagging.models import Tag, TaggedItem
@@ -14,9 +14,10 @@ class TagsForModelNode(Node):
         self.counts = counts
 
     def render(self, context):
-        model = get_model(*self.model.split('.'))
+        model = apps.get_model(*self.model.split('.'))
         if model is None:
-            raise TemplateSyntaxError(_('tags_for_model tag was given an invalid model: %s') % self.model)
+            raise TemplateSyntaxError(_('tags_for_model tag was given an '
+                'invalid model: %(model)s') % {'model': self.model})
         context[self.context_var] = Tag.objects.usage_for_model(model, counts=self.counts)
         return ''
 
@@ -27,9 +28,10 @@ class TagCloudForModelNode(Node):
         self.kwargs = kwargs
 
     def render(self, context):
-        model = get_model(*self.model.split('.'))
+        model = apps.get_model(*self.model.split('.'))
         if model is None:
-            raise TemplateSyntaxError(_('tag_cloud_for_model tag was given an invalid model: %s') % self.model)
+            raise TemplateSyntaxError(_('tag_cloud_for_model tag was given '
+                'an invalid model: %(model)s') % {'model': self.model})
         context[self.context_var] = \
             Tag.objects.cloud_for_model(model, **self.kwargs)
         return ''
@@ -51,9 +53,10 @@ class TaggedObjectsNode(Node):
         self.model = model
 
     def render(self, context):
-        model = get_model(*self.model.split('.'))
+        model = apps.get_model(*self.model.split('.'))
         if model is None:
-            raise TemplateSyntaxError(_('tagged_objects tag was given an invalid model: %s') % self.model)
+            raise TemplateSyntaxError(_(u'tagged_objects tag was given an '
+                'invalid model: %(model)s') % {'model':self.model})
         context[self.context_var] = \
             TaggedItem.objects.get_by_model(model, self.tag.resolve(context))
         return ''
@@ -86,7 +89,8 @@ def do_tags_for_model(parser, token):
     bits = token.contents.split()
     len_bits = len(bits)
     if len_bits not in (4, 6):
-        raise TemplateSyntaxError(_('%s tag requires either three or five arguments') % bits[0])
+        raise TemplateSyntaxError(_('%(tag)s tag requires either three or '
+            'five arguments') % {'tag':bits[0]})
     if bits[2] != 'as':
         raise TemplateSyntaxError(_("second argument to %s tag must be 'as'") % bits[0])
     if len_bits == 6:

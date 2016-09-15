@@ -7,10 +7,10 @@
 
     <h2>
         <a href="{% url "list_events_group_ical" group.id  %}">
-            <img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+            <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
 
         <a href="{% url "list_events_group_rss" group.id  %}">
-            <img alt="RSS" src="{{ MEDIA_URL }}rssicon.png" /></a>
+            <img alt="RSS" src="{{ STATIC_URL }}rssicon.png" /></a>
 
         <a href="{% url "group_view" group.id  %}"> {{ group.name }} </a>
     </h2>

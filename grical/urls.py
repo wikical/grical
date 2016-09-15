@@ -25,6 +25,7 @@
 from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls import * # pylint: disable-msg=W0401,W0614,W0614
 # previous pylint directive is needed because of a bug in Django:
 # http://code.djangoproject.com/ticket/5350
@@ -68,13 +69,5 @@ urlpatterns += patterns( '',
     ( r'', include( 'grical.events.urls' ) ),
  )
 
-# static files {{{1
-# see http://docs.djangoproject.com/en/1.0/howto/static-files/
-if settings.DEBUG:
-    urlpatterns += patterns( '',
-        (
-            '^' + settings.MEDIA_URL[1:] + '(?P<path>.*)$',
-            'django.views.static.serve',
-            {'document_root': settings.MEDIA_ROOT, 'show_indexes': True},
-        ),
-    )
+# see https://docs.djangoproject.com/en/dev/howto/static-files/#serving-static-files-in-development
+urlpatterns += staticfiles_urlpatterns()

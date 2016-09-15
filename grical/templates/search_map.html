@@ -7,7 +7,7 @@
 
 <div id="map" class="smallmap"></div>
 <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
-<!-- <script type="text/javascript" src="{{ MEDIA_URL }}js/OpenLayers.js"></script> -->
+<!-- <script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script> -->
 
 <script defer="defer" type="text/javascript">
 //<![CDATA[
@@ -37,7 +37,7 @@ var pois = new OpenLayers.Layer.Markers( "{% trans "Marker" %}" );
     {% if event.coordinates %}
         color_nr = {{ event.color_nr }}
         pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }},
-                    "{{ MEDIA_URL }}markers/color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}.png" ) );
+                    "{{ STATIC_URL }}markers/color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}.png" ) );
     {% endif %}
 {% endfor %}
 map.addLayer( pois );
@@ -58,7 +58,7 @@ map.setCenter (
         {% for event in page.object_list %}
             <li>
                 {% if event.coordinates %}
-                    <img class="marker" src="{{ MEDIA_URL }}markers/color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}.png"
+                    <img class="marker" src="{{ STATIC_URL }}markers/color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}.png"
                         alt="color_{{ event.color_nr }}_nr_{{ forloop.counter0 }}" />
                 {% endif %}
                 {% include "event_show_small.html" %}

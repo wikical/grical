@@ -108,12 +108,12 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
 # ^t tags urls {{{1
 urlpatterns += patterns( '',                 # pylint: disable-msg=C0103
     url( r'^t/(?P<tag>[\-\w]+)/$',
-        RedirectView.as_view(url='/s/?query=#%(tag)s/') ) )
+        RedirectView.as_view(url='/s/?query=#%(tag)s/', permanent=False) ) )
 
 # ^l locations urls {{{1
 urlpatterns += patterns('',                 # pylint: disable-msg=C0103
     url(r'^l/(?P<location>.+)/$' ,
-        RedirectView.as_view(url='/s/?query=@%(location)s/') ) )
+        RedirectView.as_view(url='/s/?query=@%(location)s/', permanent=False) ) )
 
 # ^g groups urls {{{1
 urlpatterns += patterns('', # pylint: disable-msg=C0103

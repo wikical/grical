@@ -17,12 +17,12 @@
         <div class="header">
             <div id="title">
                 <span class="ical_logo">
-                  <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" /></a>
+                  <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
                 </span>
                 {% if event.recurring %}
                     <span class="ical_logo">
                         <a href="{% url "event_show_recurrences_ical" event.id  %}">
-                            <img alt="ICAL recurrences" src="{{ MEDIA_URL }}icalrecurrencesicon.png" /></a>
+                            <img alt="ICAL recurrences" src="{{ STATIC_URL }}icalrecurrencesicon.png" /></a>
                     </span>
                 {% endif %}
                 {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
@@ -52,10 +52,10 @@
 
         <div class="item">
             <!--
-            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ MEDIA_URL }}icalicon.png" width="16" /></a>
+            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="16" /></a>
             &nbsp;|&nbsp;
             -->
-            <img class="icon" alt="ICAL" src="{{ MEDIA_URL }}dates-icon.png" />
+            <img class="icon" alt="ICAL" src="{{ STATIC_URL }}dates-icon.png" />
             <div class="data">
                 <span class="date"><a href='{% urlsearch query=start|date:"Y-m-d" %}'>{{ start }}</a></span>
                 {% if event.starttime %}
@@ -78,12 +78,12 @@
 
         {% if event.address or event.city or event.country or event.coordinates %}
             <div class="item">
-                <img class="icon" src="{{ MEDIA_URL }}venue-icon.png" alt="{% trans 'where' %}" />
+                <img class="icon" src="{{ STATIC_URL }}venue-icon.png" alt="{% trans 'where' %}" />
                 <div class="data">
                     {% if event.address %}
                         {{ event.address }}
                         {% if event.country %}
-                            <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></a>
+                            <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></a>
                         {% endif %}
                         {% if event.coordinates and event.exact %}
                             &nbsp; &#8212; &nbsp;
@@ -94,14 +94,14 @@
                             <span class="field_city"><a href="{% urlsearch city=event.city country=event.country %}">{{ event.city|capfirst }}</a></span>
                             {% if event.country %}
                                 &nbsp;, &nbsp;
-                                <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></a>
+                                <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></a>
                             {% endif %}
                         {% endif %}
                         {% if event.country %}
                             <span class="field_country">
                                 <a href="{% urlsearch country=event.country %}">{{ event.countryname }}</a>
                             </span>
-                            <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ MEDIA_URL }}flags/{{ event.country|lower }}.gif" /></a>
+                            <a href='{% urlsearch country=event.country %}'><img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></a>
                         {% endif %}
                         {% if event.coordinates and event.exact %}
                             &nbsp; &#8212; &nbsp;
@@ -117,7 +117,7 @@
 
         {% if event.get_tags %}
             <div class="item">
-                <img class="icon" src="{{ MEDIA_URL }}tags-icon.png" alt="{% trans 'tags' %}" />
+                <img class="icon" src="{{ STATIC_URL }}tags-icon.png" alt="{% trans 'tags' %}" />
                 <div class="tags data">
                     {% for tag in event.get_tags %}
                         <a href="{% urlsearch tag=tag %}">{{ tag }}</a>
@@ -128,7 +128,7 @@
 
         {% if event.urls.all %}
             <div class="item">
-                <img class="icon" src="{{ MEDIA_URL }}links-icon.png" alt="{% trans 'urls' %}" />
+                <img class="icon" src="{{ STATIC_URL }}links-icon.png" alt="{% trans 'urls' %}" />
                 <div class="data">
                     <ul class="urls">
                         {% for url in event.urls.all %}
@@ -155,7 +155,7 @@
         {% with dates=event.custom_dates %}
             {% if dates %}
                 <div class="item">
-                    <img class="icon" src="{{ MEDIA_URL }}deadlines-icon.png" alt="{% trans 'urls' %}" />
+                    <img class="icon" src="{{ STATIC_URL }}deadlines-icon.png" alt="{% trans 'urls' %}" />
                     <div class="data">
                         <table class='deadlines'>
                             {% for eventdate in dates %}
@@ -201,7 +201,7 @@
             <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
             <div id="map" class="smallmap"></div>
             <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
-            <!-- <script type="text/javascript" src="{{ MEDIA_URL }}js/OpenLayers.js"></script> -->
+            <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script> -->
             <script defer="defer" type="text/javascript">
             //<![CDATA[
 
@@ -226,7 +226,7 @@
                 map.addLayer( new OpenLayers.Layer.OSM() );
                 {% if event.exact %}
                     var pois = new OpenLayers.Layer.Markers( "{% trans "Marker" %}" );
-                    pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }}, "{{ MEDIA_URL }}marker_red.png" ) );
+                    pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }}, "{{ STATIC_URL }}marker_red.png" ) );
                     map.addLayer( pois );
                     mapArea = pois.getDataExtent().toArray();
                     // map.zoomToMaxExtent();

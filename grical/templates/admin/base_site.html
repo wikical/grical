@@ -4,7 +4,7 @@
 {% block title %}{{ title }} | {{ DOMAIN }} {% trans " site admin" %}{% endblock %}
 
 {% block branding %}
-<a href="{% url "main"  %}"><img src="{{ MEDIA_URL }}grical-logo-v4-317x90.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
+<a href="{% url "main"  %}"><img src="{{ STATIC_URL }}grical-logo-v4-317x90.png" alt="{{DOMAIN}}{% trans "logo" %}" /></a>
 <h1 id="site-name">{{ DOMAIN }}  -  {% trans "Administrative Interface" %}</h1>
 <h3> {{ VERSION }}</h3>
 {% endblock %}

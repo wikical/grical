@@ -16,25 +16,25 @@
         <meta name="keywords" content="{{ event.tags_separated_by_comma }}" />
     {% endif %}
     <title>{{ title }}</title>
-    <link href="{{ MEDIA_URL }}css/main.css" rel="stylesheet" type="text/css" />
+    <link href="{{ STATIC_URL }}css/main.css" rel="stylesheet" type="text/css" />
     <!--
-    <link href="{{ MEDIA_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
+    <link href="{{ STATIC_URL }}css/print.css" rel="stylesheet" type="text/css" media="print" />
     -->
-    <link rel="shortcut icon" href="{{ MEDIA_URL }}favicon.ico" />
+    <link rel="shortcut icon" href="{{ STATIC_URL }}favicon.ico" />
 
     <!-- see http://en.wikipedia.org/wiki/Favicon -->
-    <link rel="apple-touch-icon" href="{{ MEDIA_URL }}icon-apple-57x57.png" />
+    <link rel="apple-touch-icon" href="{{ STATIC_URL }}icon-apple-57x57.png" />
     {% if form.media %}{{ form.media }}{% endif %}
     {% block extraheaders %}{% endblock %}
     <!--
-    <script type="text/javascript" src="{{ MEDIA_URL }}javascript/external.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}javascript/external.js"></script>
     -->
 </head>
 
 <body>
 
 <div id="header">
-    <a href="/"><img id="logo" src="{{ MEDIA_URL }}grical-logo-v4-317x90.png" alt="{{ DOMAIN }} {% trans 'logo' %}" /></a>
+    <a href="/"><img id="logo" src="{{ STATIC_URL }}grical-logo-v4-317x90.png" alt="{{ DOMAIN }} {% trans 'logo' %}" /></a>
     {% if user.username %}
         {% blocktrans with user.username as username %}
             Logged&nbsp;in&nbsp;as&nbsp;{{ username }}
@@ -109,22 +109,22 @@
       <ul>
         <li>
             <a href="http://www.opendefinition.org/software-service/">
-                <img src="{{ MEDIA_URL }}os_80x15_blue.png" alt="{% trans 'OPEN SERVICE' %}" />
+                <img src="{{ STATIC_URL }}os_80x15_blue.png" alt="{% trans 'OPEN SERVICE' %}" />
             </a>
         </li>
         <li>
             <a href="http://www.opendefinition.org/okd/">
-                <img src="{{ MEDIA_URL }}open-data-80x15-blue.png" alt="{% trans 'OPEN DATA' %}" />
+                <img src="{{ STATIC_URL }}open-data-80x15-blue.png" alt="{% trans 'OPEN DATA' %}" />
             </a>
         </li>
         <li>
             <a href="http://creativecommons.org/licenses/by-sa/3.0/de/deed.en">
-                <img src="{{ MEDIA_URL }}cc-by-sa-germany.png" alt="{% trans 'CC-BY-SA' %}" />
+                <img src="{{ STATIC_URL }}cc-by-sa-germany.png" alt="{% trans 'CC-BY-SA' %}" />
             </a>
         </li>
         <li>
             <a href="http://www.gnu.org/licenses/agpl.html">
-                <img src="{{ MEDIA_URL }}agpl3.png" alt="{% trans 'AGPL3 LICENSED' %}" />
+                <img src="{{ STATIC_URL }}agpl3.png" alt="{% trans 'AGPL3 LICENSED' %}" />
             </a>
         </li>
       </ul>
@@ -134,7 +134,7 @@
       <ul>
         <li>
             <a href="http://flattr.com/thing/85499/GridCalendar-Community-Calendar">
-                <img src="{{ MEDIA_URL }}flattr-badge-large.png" alt="Flattr this" /></a>
+                <img src="{{ STATIC_URL }}flattr-badge-large.png" alt="Flattr this" /></a>
         </li>
         <li><a href="{% url 'contact_form' %}">{% trans "feedback" %}</a></li>
       </ul>
@@ -143,7 +143,7 @@
     <div class="info">
         <ul>
             <li>
-                <a href="{{ MEDIA_URL }}grical-source-code-0.9.573.tgz">
+                <a href="{{ STATIC_URL }}grical-source-code-0.9.573.tgz">
                     {% blocktrans with VERSION as VERSION %}
                         running the free software GridCalendar {{ VERSION }}
                     {% endblocktrans %}
