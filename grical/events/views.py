@@ -340,10 +340,10 @@ def event_edit( request, event_id = None ):
         event_recurring = False
     # callback to modify a field in the automated generated forms by
     # inlineformset_factory
-    def replace_date_with_date_extended( field, **kwargs):
-        if not isinstance( field, DateField ):
-            return field.formfield( **kwargs )
-        return DateExtendedField( **kwargs )
+    def replace_date_with_date_extended(field, **kwargs):
+        if not isinstance(field, DateField):
+            return field.formfield(**kwargs)
+        return DateExtendedField(**kwargs)
     # TODO: when removing all fields of a row the expected behaviour is to
     # delete the entry, but the inlineformset shows an error telling that the
     # fields are required, change it. Notice that the user can delete with the
