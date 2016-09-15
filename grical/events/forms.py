@@ -77,6 +77,7 @@ class DatePicker(forms.DateInput):
             )
         }
 
+COMPOUND_EMPTY_RESPONSE = {'startdate': None}
 
 class DatesTimesField(forms.Field): # {{{1
     """ processes one or two dates and optionally one or two times, returning a
@@ -270,8 +271,7 @@ class DatesTimesField(forms.Field): # {{{1
         if value:
             value = value.strip()    #removes the spaces
         else:
-            return { 'startdate':
-                    forms.DateField( required = self.required ).clean( value ) }
+            return COMPOUND_EMPTY_RESPONSE
         try:
             for regex in self.REGEX_LIST:
                 matcher = regex.match( value )
@@ -334,10 +334,16 @@ class DatesTimesField(forms.Field): # {{{1
     def validate(self, value):
         """ checks that dates and times are in order, i.e. startdate before
         enddate """
-        if value.has_key('enddate'):
+        if self.required and (not value or
+                    value == COMPOUND_EMPTY_RESPONSE):
+            raise forms.ValidationError(_(u'This field is required'))
+        if not hasattr(value, '__getitem__'):
+            # value should be a dictionary to proceed to next validation
+            return
+        if 'enddate' in value:
             if value['startdate'] > value['enddate']:
                 raise forms.ValidationError( _('end date is before start date') )
-        if value.has_key('starttime') and value.has_key('endtime'):
+        if ('starttime' in value) and ('endtime' in value):
             if (not value.has_key('enddate')) or \
                     value['enddate'] == value['startdate']:
                 if value['starttime'] > value['endtime']:
@@ -364,14 +370,13 @@ def parseDateTime(value): # {{{1
 class DateExtendedField(DatesTimesField): # {{{1
     def __init__(self, *args, **kwargs):
         kwargs['label'] = _('Date')
-        super( DateExtendedField, self ).__init__(
-                *args, widget = DatePicker, **kwargs )
-        #self.widget = DatePicker
+        if u'widget' not in kwargs:
+            kwargs[u'widget'] = DatePicker
+        super(DateExtendedField, self).__init__(*args, **kwargs)
+
     def to_python(self, value):
-        datestimes = super( DateExtendedField, self ).to_python( value )
+        datestimes = super(DateExtendedField, self).to_python(value)
         return datestimes['startdate']
-    def validate(self, value):
-        return
 
 class CoordinatesField( forms.CharField ): #{{{1
     default_error_messages = {
