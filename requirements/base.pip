@@ -15,7 +15,6 @@ django-tables2==1.2.6
 docutils==0.12
 icalendar==3.10
 kombu==3.0.33        # Required by celery
-psycopg2==2.6.2 # TODO: check timefyme configuration, possibly use Ubuntu package
 python-dateutil==2.4.2
 # FIXME: Upgrading dateutil from 2.4.2 to 2.5.3 made some ISO
 # datestring parsing to fail confusing month for day, maybe some
@@ -27,9 +26,3 @@ pyyaml==3.12
 simplejson # oembed requires it or else it fails
 six==1.10.0  # Required by django-simple-captcha, django-statici18n, and others
 vobject==0.9.3
-
-# Admin stuff, used on production
-celerymon==1.0.3
-django-statsd-mozilla==0.3.16
-psutil==4.3.1  # Used by uwsgi monitoring
-statsd==2.1.2
