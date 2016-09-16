@@ -37,7 +37,8 @@ from django.conf import settings
 from grical.events.models import ( Event, Group, add_upcoming )
 from grical.events.search import search_events
 
-SITE_DOMAIN = Site.objects.get(id = settings.SITE_ID).domain
+def site_domain():
+    return Site.objects.get_current()
 
 class EventsFeed(Feed): # {{{1
     """ rss feed for a list of events """
@@ -66,8 +67,9 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
     """ Feed with the next `settings.FEED_SIZE` number of events,
     ordered by upcoming. """
 
-    title = _(u"%(domain)s upcoming events feed") % \
-            {'domain': SITE_DOMAIN,}
+    def title():
+        return _(u"%(domain)s upcoming events feed") % \
+            {'domain': site_domain(),}
     link = "/r/upcoming"
     description = _("Next %(count)s upcoming events." \
             % {"count": settings.FEED_SIZE}, )
@@ -84,8 +86,9 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
 class LastAddedEventsFeed(EventsFeed): # {{{1
     """ Feed with the last `settings.FEED_SIZE` added events """
 
-    title = _(u"%(domain)s last added events feed") % \
-            {'domain': SITE_DOMAIN,}
+    def title():
+        return _(u"%(domain)s last added events feed") % \
+            {'domain': site_domain(),}
     link = "/r/upcoming"
     description = _("Last %(count)s added events." \
             % {"count": settings.FEED_SIZE}, )
@@ -104,7 +107,7 @@ class SearchEventsFeed(EventsFeed): # {{{1
     def title(self, obj):
         """ title """
         return _(u'%(domain)s search results for %(query)s') % \
-                {'domain': SITE_DOMAIN, 'query': obj}
+                {'domain': site_domain(), 'query': obj}
 
     def link(self, obj):
         """ return a link to a search with get http method """
@@ -113,7 +116,7 @@ class SearchEventsFeed(EventsFeed): # {{{1
     def description(self, obj):
         """ description """
         return _(u'%(domain)s search results for %(query)s') % \
-                {'domain': SITE_DOMAIN, 'query': obj,}
+                {'domain': site_domain(), 'query': obj,}
 
     def items(self, obj):
         """ items """
@@ -133,7 +136,7 @@ class GroupEventsFeed(EventsFeed): # {{{1
     def title(self, obj):
         """ title """
         return _(u'%(domain)s group %(group_name)s') % \
-                {'domain': SITE_DOMAIN, 'group_name': obj['group_name']}
+                {'domain': site_domain(), 'group_name': obj['group_name']}
 
     def link(self, obj):
         """ link """
@@ -142,7 +145,7 @@ class GroupEventsFeed(EventsFeed): # {{{1
     def description(self, obj):
         """ description """
         return _(u'events on %(domain)s for the group %(group_name)s')% \
-                {'domain': SITE_DOMAIN, 'group_name': obj['group_name'],}
+                {'domain': site_domain(), 'group_name': obj['group_name'],}
 
     def items(self, obj):
         """ items """

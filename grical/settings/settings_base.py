@@ -180,6 +180,9 @@ MIDDLEWARE_CLASSES = [
     # 'reversion.middleware.RevisionMiddleware',
 ]
 
+MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
+""" https://docs.djangoproject.com/en/1.8/ref/settings/#std:setting-MESSAGE_STORAGE """
+
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 """ https://docs.djangoproject.com/en/1.8/ref/settings/#std:setting-SESSION_ENGINE """
 
@@ -190,7 +193,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ["/wikical/templates",
+        'DIRS': ["/grical/templates",
                     os.path.join( PROGRAM_DIR, "templates"), ],
             # Put strings here, like "/home/html/django_templates" or
             # "C:/www/django/templates". Always use forward slashes,
