@@ -587,7 +587,7 @@ class SimplifiedEventForm( forms.ModelForm ): # {{{1
         }
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
-        fields = ('title', 'tags',)
+        fields = ('title', 'tags')
     def __init__(self, *args, **kwargs):
         super(SimplifiedEventForm, self).__init__(*args, **kwargs)
         self.fields['title'].label = _(u'Title')

@@ -36,8 +36,6 @@ Example of how to test tests in the shell::
 """
 
 # imports {{{1
-import unittest
-import doctest
 import datetime
 from datetime import timedelta
 import re
@@ -65,31 +63,10 @@ from django_webtest import WebTest
 from MultipartPostHandler import MultipartPostHandler
 import urllib2
 
-from grical.events import models, views, forms, utils
+from grical.events import utils
 from grical.events.models import ( Event, Group, Membership, TIMEZONES,
         Calendar, GroupInvitation, EventDate, EXAMPLE )
 from grical.events.search import search_events
-
-def suite(): #{{{1
-    """ returns a TestSuite naming the tests explicitly 
-    
-    This allows to include e.g. the doctests of views.py which are not included
-    by default.
-    """
-    tests = unittest.TestSuite()
-    tests.addTest(doctest.DocTestSuite( models ))
-    tests.addTest(doctest.DocTestSuite( views ))
-    tests.addTest(doctest.DocTestSuite( forms ))
-    tests.addTest(doctest.DocTestSuite( utils ))
-    tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
-        EventsTestCase ))
-    tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
-        EventsWebTestCase ))
-    tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
-        complete_geo_dataTestCase ))
-    tests.addTest(unittest.TestLoader().loadTestsFromTestCase(
-        geoapiTestCase ))
-    return tests
 
 # there is a bug in WebTest which have been solved by TestCase but not for
 # WebTest, see
@@ -103,14 +80,19 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
 
     def test_anon_event_submission( self ): # {{{2
         """ test adding and editing and event anonymously. """
-        self.client.logout()
-        event_form = self.app.get( reverse('main') ).forms[1]
-        title = 'event submission ' + str( datetime.datetime.now() )
+        event_form = self.app.get(reverse('main')).forms["gc-new-event-form"]
+        title = u'event submission ' + str(datetime.datetime.now())
         event_form['title'] = title
         event_form['when'] = datetime.date.today().isoformat()
-        event_form['tags'] = 'submission test'
-        event_form['web'] = 'http://example.com'
+        event_form['tags'] = u'submission test'
+        event_form['web'] = u'http://example.com'
         # submit and get extended form
+
+        # FIXME: Without the following patching, tests failing while trying to
+        # encode some stings, because reponse encoding is not set / parsed.
+        # Find why and remove the following line
+        event_form.response.content_type = 'text/html; charset=utf-8'
+
         response = event_form.submit().follow()
         event = Event.objects.get(title = title)
         event_form = response.forms[1]
@@ -627,17 +609,20 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     # TODO: test that a notification email is sent to all members of a group
     # when a new event is added to the group. See class Membership in
     # events/models.py
-    
+
 
 class complete_geo_dataTestCase(TestCase):           # {{{1
 
     def setUp(self):
         self.e1 = Event.objects.create(title="cgd1",
             address=u'Malmöer Str.  6, Berlin, Germany' )
+        self.e1.complete_geo_data('')
         self.e2 = Event.objects.create(title="cgd2",
             city='Berlin', country='DE')
+        self.e2.complete_geo_data('')
         self.e3 = Event.objects.create(title="cgd3",
                 coordinates=Point(13.40932, 52.548972))
+        self.e3.complete_geo_data('')
 
     def test_unconditionally(self):
         self.assertEquals(self.e1.city, 'Berlin')

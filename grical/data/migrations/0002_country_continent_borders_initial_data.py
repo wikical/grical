@@ -11,6 +11,12 @@ fixture_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
 fixture_filename = 'borders.json'
 
 def load_fixture(apps, schema_editor):
+    from django.conf import settings
+    if settings.TESTS_RUNNING:
+        # Currently we don't have any test relying to borders, we skip
+        # to accelerate tests
+        return
+
     fixture_file = os.path.join(fixture_dir, fixture_filename)
 
     with open(fixture_file) as fixture:

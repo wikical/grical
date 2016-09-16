@@ -11,7 +11,7 @@
     {% if not READ_ONLY %}
         <div id="simplified_container">
             <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
-                <form action="" method="post">{% csrf_token %}
+                <form action="" method="post" id="gc-new-event-form">{% csrf_token %}
                     <fieldset>
                         <legend>{% trans "Submit an event" %}</legend>
                         {{ form.non_field_errors }}
