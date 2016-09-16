@@ -11,7 +11,7 @@ This is the easiest setup for development
 Install some Ubuntu packages
 ----------------------------
 
-  sudo apt-get install python-geoip build-essential python-dev python-pip geoip-database-contrib mercurial famfamfam-flag-gif sqlite3 spatialite-bin
+  sudo apt-get install python-geoip build-essential python-dev python-pip geoip-database-contrib mercurial famfamfam-flag-gif sqlite3 spatialite-bin python-virtualenv
 
 Clone grical
 ------------
@@ -45,8 +45,6 @@ Install python requirements
 
 Migrate db
 ----------
-
-  ssh grical
 
   cd ~/grical
   python manage.py migrate
