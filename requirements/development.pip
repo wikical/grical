@@ -1,4 +1,6 @@
 -r base.pip
 django-debug-toolbar==1.5
+django-webtest==1.7.9
 ipdb
 ipython
+MultipartPostHandler

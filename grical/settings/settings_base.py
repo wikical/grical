@@ -149,7 +149,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'django.contrib.humanize',
-    'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.admindocs',
