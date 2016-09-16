@@ -1,18 +1,25 @@
-DEBUG = False
+DEBUG = True
 
 from settings_base import *
 
 SECRET_KEY = 'fiwj{34gj90gjdsg.s9t8t9sggejis0e94gjsd4#&bkd;k4lg$'
 
 DATABASES = {
+    # PostgreSQL settings
+    # 'default': {
+    #      'ENGINE': 'django.contrib.gis.db.backends.postgis',
+    #      'ATOMIC_REQUESTS': True,
+    #      'NAME': 'grical_db',
+    #      'USER': 'grical_user',
+    #      'PASSWORD': 'grical_password',
+    #      'HOST': 'localhost',
+    #      'PORT': 5432
+    #  }
+    #  sqlite3/spatialite settings
     'default': {
-         'ENGINE': 'django.contrib.gis.db.backends.postgis',
+         'ENGINE': 'django.contrib.gis.db.backends.spatialite',
          'ATOMIC_REQUESTS': True,
-         'NAME': 'grical_db',
-         'USER': 'grical_user',
-         'PASSWORD': 'grical_password',
-         'HOST': 'localhost',
-         'PORT': 5432
+         'NAME': os.path.join(os.path.dirname(PROGRAM_DIR), 'grical_db.sql'),
      }
 }
 

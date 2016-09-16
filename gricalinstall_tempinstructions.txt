@@ -1,5 +1,80 @@
+====================================
 Grical installation mini instructions
 =====================================
+
+
+virtualenv - sqlite3 instructions
+=================================
+
+This is the easiest setup for development
+
+Install some Ubuntu packages
+----------------------------
+
+  sudo apt-get install python-geoip build-essential python-dev python-pip geoip-database-contrib mercurial famfamfam-flag-gif sqlite3 spatialite-bin
+
+Clone grical
+------------
+
+  cd
+  hg clone ssh://hg@bitbucket.org/gridmind/grical
+
+Create a settings file:
+
+  cd ~/grical/grical/settings
+  cp settings-example.py settings.py
+
+Create a virtualenv to work
+---------------------------
+
+  cd
+  virtualenv virtualenvs/grical
+
+Assuming that you have a `virtualenvs` directory in your home where
+you store virtualenvs. That can be any dir.
+
+Activate the virtualenv:
+
+  source virtualenvs/grical/bin/activate
+
+Install python requirements
+---------------------------
+
+  cd ~/grical/requirements
+  pip install -r development.pip
+
+Migrate db
+----------
+
+  ssh grical
+
+  cd ~/grical
+  python manage.py migrate
+
+  sqlite3 grical_db.sql "UPDATE django_site SET domain='localhost:8000', name='Grical development';"
+
+  python manage.py createcachetable cache
+
+Work with grical
+----------------
+
+Start the dev server
+  python manage.py runserver 0.0.0.0:8000
+
+Now you can open the site in your browser, just visit:
+
+http://localhost:8000
+
+
+
+
+
+
+
+PostgreSQL / lxc instructions
+=============================
+
+More advanced setup, most probably you don't need this
 
 Create a container to work
 --------------------------
