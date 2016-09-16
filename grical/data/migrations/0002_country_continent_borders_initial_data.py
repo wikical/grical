@@ -8,7 +8,7 @@ from django.db import migrations
 
 fixture_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
         '../fixtures'))
-fixture_filename = 'initial_data.json'
+fixture_filename = 'borders.json'
 
 def load_fixture(apps, schema_editor):
     fixture_file = os.path.join(fixture_dir, fixture_filename)

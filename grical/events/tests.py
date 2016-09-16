@@ -48,13 +48,13 @@ import string
 from random import choice
 import vobject
 from time import time
+from unittest import skipIf, skip
 
 from django.contrib.auth.models import User
 from django.test import TestCase # WebTest is a subclass of TestCase
 from django.core.urlresolvers import reverse
 from django.core import mail
 from django.conf import settings
-from django.utils.unittest import skipIf
 from django.contrib.gis.geos import Point
 from registration.models import RegistrationProfile
 
@@ -219,7 +219,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                     self.assertEqual(key, matcher.group(1))
                     response = self.client.get( reverse('registration_activate',
                             kwargs={'activation_key': key,} ) )
-                    self.assertEqual( response.status_code, 200 )
+                    self.assertEqual( response.status_code, 302 )
                     break
             mail.outbox = []
         user = User.objects.get(username=name)
@@ -583,6 +583,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         event1.delete()
         event2.delete()
 
+    @skip('W3C validation tests deactivated')
     def test_valid_html( self ): # {{{2
         """ validates html with validator.w3.org """
         # test main page

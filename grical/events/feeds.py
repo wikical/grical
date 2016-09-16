@@ -67,7 +67,7 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
     """ Feed with the next `settings.FEED_SIZE` number of events,
     ordered by upcoming. """
 
-    def title():
+    def title(self, obj):
         return _(u"%(domain)s upcoming events feed") % \
             {'domain': site_domain(),}
     link = "/r/upcoming"
@@ -86,7 +86,7 @@ class UpcomingEventsFeed(EventsFeed): # {{{1
 class LastAddedEventsFeed(EventsFeed): # {{{1
     """ Feed with the last `settings.FEED_SIZE` added events """
 
-    def title():
+    def title(self, obj):
         return _(u"%(domain)s last added events feed") % \
             {'domain': site_domain(),}
     link = "/r/upcoming"
