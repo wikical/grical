@@ -23,6 +23,8 @@ DATABASES = {
      }
 }
 
+SPATIALITE_LIBRARY_PATH = 'mod_spatialite'
+
 if DEBUG:
     # Won't show if not INTERNAL_IPS defined
     INTERNAL_IPS = ["127.0.0.1", "10.0.2.2", "10.0.3.1", ]
