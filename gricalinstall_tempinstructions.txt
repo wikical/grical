@@ -13,6 +13,15 @@ Install some Ubuntu packages
 
   sudo apt-get install python-geoip build-essential python-dev python-pip geoip-database-contrib mercurial famfamfam-flag-gif sqlite3 spatialite-bin python-virtualenv
 
+Ubuntu 15.04+
+-------------
+
+  sudo apt-get install libsqlite3-mod-spatialite
+
+  also make sure that ~/grical/grical/settings/settings-example.py there is the following:
+
+    SPATIALITE_LIBRARY_PATH = 'mod_spatialite'
+
 Clone grical
 ------------
 
