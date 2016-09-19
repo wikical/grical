@@ -11,7 +11,7 @@ from django.test import TestCase
 
 from ..models import Calendar, Event, Filter, Group, Membership
 
-class EventViewsTestCase(TestCase):
+class ViewsTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
