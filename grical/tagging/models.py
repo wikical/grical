@@ -121,6 +121,7 @@ class TagManager(models.Manager):
             tags.append(t)
         return tags
 
+    # FIXME: It looks that fails if filters is specified, check tests
     def usage_for_model(self, model, counts=False, min_count=None, filters=None):
         """
         Obtain a list of tags associated with instances of the given
