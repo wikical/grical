@@ -90,11 +90,6 @@ views = [_('table'), _('map'), _('boxes'), _('calendars'),]
 def help_page( request ): # {{{1
     """ Just returns the usage page including the RST documentation in the file
     USAGE.TXT
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> Client().get(reverse('help')).status_code
-    200
     """
     usage_text = open(os.path.join(settings.PROGRAM_DIR, 'USAGE.TXT')).read()
     about_text = open(os.path.join(settings.PROGRAM_DIR, 'ABOUT.TXT')).read()
@@ -107,11 +102,6 @@ def help_page( request ): # {{{1
 @cache_page(60 * 15)
 def legal_notice( request ): # {{{1
     """Just returns the legal notice page.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> Client().get(reverse('legal_notice')).status_code
-    200
     """
     return render_to_response( 'legal_notice.html', {
             'title': Site.objects.get_current().name + \
@@ -310,22 +300,7 @@ def event_edit_recurrences( request, event_id ):
 @only_if_write_enabled
 def event_edit( request, event_id = None ):
     """ view to edit or create an event as a form
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from grical.events.models import Event
-    >>> import datetime
-    >>> e = Event.objects.create( title = 'ee_test', tags = 'berlin' )
-    >>> e.startdate = datetime.date.today()
-    >>> Client().get(reverse('event_edit',
-    ...         kwargs={'event_id': e.id,})).status_code
-    200
-    >>> Client().get(reverse('event_new')).status_code
-    200
-    >>> e.delete()
     """
-    # FIXME: create more tests above for e.g. trying to save a new event
-    # without a URL; and deleting some urls, deadlines and sessions
     if event_id and isinstance( event_id, int ):
         event_id = unicode( event_id )
     if event_id:
@@ -516,11 +491,6 @@ def event_new_raw( request, template_event_id = None ):
 
     If a ``template_event_id`` is given, the preliminary text is the text form
     of the event with that id.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> Client().get(reverse('event_new_raw')).status_code
-    200
     """
     if not request.method == 'POST':
         try:
@@ -593,18 +563,6 @@ def event_new_raw( request, template_event_id = None ):
 @only_if_write_enabled
 def event_edit_raw( request, event_id ):
     """ View to edit an event as text.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from grical.events.models import Event
-    >>> import datetime
-    >>> e = Event.objects.create(title = 'eer_test', tags = 'berlin')
-    >>> e.startdate = datetime.date.today()
-    >>> transaction.commit()
-    >>> Client().get(reverse('event_edit_raw',
-    ...         kwargs={'event_id': e.id,})).status_code
-    200
-    >>> e.delete()
     """
     if isinstance( event_id, str ) or isinstance( event_id, unicode ):
         event_id = int( event_id )
@@ -772,17 +730,6 @@ def event_show_all( request, event_id ): # {{{1
 
     It interprets the ``description`` field as ReStructuredText if there are
     not errors or warnings from docutils.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from grical.events.models import Event
-    >>> import datetime
-    >>> e = Event.objects.create( title = 'es_test', tags = 'berlin' )
-    >>> e.startdate = datetime.date.today()
-    >>> Client().get(reverse('event_show_all',
-    ...         kwargs={'event_id': e.id,})).status_code
-    200
-    >>> e.delete()
     """
     if isinstance(event_id, str) or isinstance(event_id, unicode):
         event_id = int(event_id)
@@ -879,17 +826,6 @@ def event_show_all( request, event_id ): # {{{1
 
 def event_show_raw( request, event_id ): # {{{1
     """ View that shows an event as text
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from grical.events.models import Event
-    >>> import datetime
-    >>> e = Event.objects.create( title = 'esr_test', tags = 'berlin' )
-    >>> e.startdate = datetime.date.today()
-    >>> Client().get(reverse('event_show_raw',
-    ...         kwargs={'event_id': e.id,})).status_code
-    200
-    >>> e.delete()
     """
     try:
         event = Event.objects.get( pk = event_id )
@@ -1146,42 +1082,6 @@ def search( request, query = None, view = 'boxes' ): # {{{1
     deactivates the inclusion of related events. Notice that some search
     options like '@' (for places) produces no related events. If the value
     cannot be converted to Boolean, or it is not present, we fall back to True.
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> e1 = Event.objects.create(
-    ...         title = 's1_test', tags = 'berlin', city = 'prag' )
-    >>> e1.startdate = datetime.date.today()
-    >>> e2 = Event.objects.create(
-    ...         title = 's2_test', tags = 'berlin', city = 'madrid' )
-    >>> e2.startdate = datetime.date.today()
-    >>> Client().get(reverse('search_query',
-    ...         kwargs={'query': 'test',})).status_code
-    200
-    >>> Client().get(reverse('search_query_view',
-    ...         kwargs={'query': 'test', 'view': 'table'})).status_code
-    200
-    >>> Client().get(reverse('search_query_view',
-    ...         kwargs={'query': 'test', 'view': 'map'})).status_code
-    200
-    >>> Client().get(reverse('search_query_view',
-    ...         kwargs={'query': 'test', 'view': 'calendars'})).status_code
-    200
-
-    >>> Client().get(reverse('search'), {'query': '#berlin',}).status_code
-    200
-    >>> response = Client().get(reverse('search'), {'query': '#berlinn',})
-    >>> response = response.content
-    >>> assert 'There are no events for this search currently' in response
-
-    >>> Client().get(reverse('search'), {'query': '@madrid',}).status_code
-    200
-    >>> response = Client().get(reverse('search'), {'query': '@madridd',})
-    >>> response = response.content
-    >>> assert 'There are no events for this search currently' in response
-
-    >>> e1.delete()
-    >>> e2.delete()
     """
     # function body {{{2
     # query, we prioritize /s/?query= in the url but if not present we accept
@@ -1378,22 +1278,11 @@ def search( request, query = None, view = 'boxes' ): # {{{1
 @only_if_write_enabled
 def filter_save( request ):
     """ Saves a new filter
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> u = User.objects.create_user('filter_save', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> client.get(reverse('filter_save'),
-    ...         kwargs={'q': 'abcdef',}).status_code
-    200
     """
     if 'q' in request.POST and request.POST['q']:
         query_lowercase = request.POST['q'].lower()
     else:
-        messages.error( request, 
+        messages.error( request,
             _( u"You are trying to save a search without any query text" ) )
         return main( request )
     if request.method == 'POST':
@@ -1425,20 +1314,6 @@ def filter_save( request ):
 @only_if_write_enabled
 def filter_edit( request, filter_id ):
     """ View to edit a filter
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Filter
-    >>> u = User.objects.create_user('filter_edit', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> f, c = Filter.objects.get_or_create( name="test", user = u,
-    ...         query="abcdef" )
-    >>> client.get(reverse('filter_edit',
-    ...         kwargs={'filter_id': f.id,})).status_code
-    200
     """
     if isinstance( filter_id, str ) or isinstance ( filter_id, unicode ):
         filter_id = int ( filter_id )
@@ -1477,20 +1352,6 @@ def filter_edit( request, filter_id ):
 @only_if_write_enabled
 def filter_drop( request, filter_id ):
     """ Delete a filter if the user is the owner
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Filter
-    >>> u = User.objects.create_user('filter_drop', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> f, c = Filter.objects.get_or_create( name="test", user = u,
-    ...         query="abcdef" )
-    >>> client.get( reverse ( 'filter_drop',
-    ...         kwargs={'filter_id': f.id,} ) ).status_code
-    302
     """
     if isinstance( filter_id, str ) or isinstance ( filter_id, unicode ):
         filter_id = int (filter_id )
@@ -1511,19 +1372,6 @@ def filter_drop( request, filter_id ):
 @login_required
 def list_filters_my( request ): # {{{1
     """ View that lists the filters of the logged-in user
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Filter
-    >>> u = User.objects.create_user('l_f_m', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> f, c = Filter.objects.get_or_create( name="test", user = u,
-    ...         query="abcdef" )
-    >>> client.get(reverse('list_filters_my')).status_code
-    200
     """
     list_of_filters = Filter.objects.filter( user = request.user )
     if list_of_filters is None or len( list_of_filters ) == 0:
@@ -1587,19 +1435,6 @@ def list_filters_my( request ): # {{{1
 @login_required
 def list_events_my( request ): # {{{1
     """ View that lists the events the logged-in user is the owner of
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> u = User.objects.create_user('l_e_m', '0@example.com', 'p')
-    >>> e = Event.objects.create( title='lem_test', tags='berlin', user=u )
-    >>> e.startdate = datetime.date.today()
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> client.get(reverse('list_events_my')).status_code
-    200
-    >>> e.delete()
     """
     events = get_list_or_404( Event, user = request.user )
     return render_to_response( 'list_events_my.html',
@@ -1608,12 +1443,6 @@ def list_events_my( request ): # {{{1
 
 def main( request, status_code=200 ):# {{{1
     """ main view
-
-    >>> from django.test import Client
-    >>> c = Client()
-    >>> r = c.get('/')
-    >>> r.status_code # /
-    200
     """
     # processes the event form, but not if status_code is 404 or 500 because
     # request can contain POST data coming from another form
@@ -1711,16 +1540,6 @@ def settings_page( request ): # {{{1
 @login_required
 def group_new(request): # {{{2
     """ View to create a new group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> u = User.objects.create_user('group_new', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> Client().get(reverse('group_new')).status_code
-    302
     """
     if not request.user.is_authenticated():
         return render_to_response('groups/no_authenticated.html',
@@ -1746,16 +1565,6 @@ def group_new(request): # {{{2
 @login_required
 def list_groups_my(request): # {{{2
     """ view that lists all groups of the logged-in user
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> u = User.objects.create_user('list_group_my', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> Client().get(reverse('list_groups_my')).status_code
-    302
     """
     # TODO: test also if the user has group(s)
     groups = Group.objects.filter(membership__user=request.user)
@@ -1772,26 +1581,6 @@ def list_groups_my(request): # {{{2
 def group_quit(request, group_id, sure = False ): # {{{2
     """ remove the logged-in user from a group asking for confirmation if the
     user is the last member of the group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Group, Membership
-    >>> u1 = User.objects.create_user('group_quit_1', '0@example.com', 'p')
-    >>> u2 = User.objects.create_user('group_quit_2', '0@example.com', 'p')
-    >>> g = Group.objects.create(name = 'group_quit')
-    >>> m = Membership.objects.create(user = u1, group = g)
-    >>> m = Membership.objects.create(user = u2, group = g)
-    >>> Membership.objects.filter(group = g).count()
-    2
-    >>> client = Client()
-    >>> client.login(username = u1.username, password = 'p')
-    True
-    >>> client.get(reverse('group_quit',
-    ...         kwargs={'group_id': g.id,})).status_code
-    302
-    >>> Membership.objects.filter(group = g).count()
-    1
     """
     # TODO: add a test for the case when the user is the last one.
     user = request.user
@@ -1823,27 +1612,6 @@ def group_quit(request, group_id, sure = False ): # {{{2
 @login_required
 def group_add_event(request, event_id): # {{{2
     """ view to add an event to a group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Group, Membership, Calendar
-    >>> u = User.objects.create_user('group_add_event', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m, c = Membership.objects.get_or_create(user = u, group = g)
-    >>> e = Event.objects.create( title='gae_test', tags='berlin', user=u )
-    >>> e.startdate = datetime.date.today()
-    >>> client.get(reverse('group_add_event',
-    ...         kwargs={'event_id': e.id,})).status_code
-    200
-    >>> m, c = Calendar.objects.get_or_create(group = g, event = e)
-    >>> client.get(reverse('group_add_event',
-    ...         kwargs={'event_id': e.id,})).status_code
-    302
-    >>> e.delete()
     """
     if isinstance(event_id, str) or isinstance(event_id, unicode):
         event_id = int(event_id)
@@ -1892,26 +1660,6 @@ def group_name_view(request, group_name): # {{{2
 def group_view(request, group_id): # {{{2
     """ lists everything about a group for members of the group, and the
     description and events for everyone else
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Group, Membership, Calendar
-    >>> u1g = User.objects.create_user('groupview1', '0@example.com', 'p')
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m, c = Membership.objects.get_or_create(user = u1g, group = g)
-    >>> e = Event.objects.create(
-    ...         title = 'event in group', tags = 'group-view', user =u1g )
-    >>> e.startdate = datetime.date.today()
-    >>> m, c = Calendar.objects.get_or_create(group = g, event = e)
-    >>> client = Client()
-    >>> response = client.get(reverse('group_view',
-    ...         kwargs={'group_id': g.id,}))
-    >>> response.status_code
-    200
-    >>> 'event in group' in response.content
-    True
-    >>> e.delete()
     """
     group = get_object_or_404( Group, id = group_id )
     if ( request.user.is_authenticated() and 
@@ -1937,20 +1685,6 @@ def group_view(request, group_id): # {{{2
 @login_required
 def group_invite(request, group_id): # {{{2
     """ view to invite a user to a group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Group, Membership, Calendar
-    >>> u = User.objects.create_user('group_invite', '0@example.com', 'p')
-    >>> client = Client()
-    >>> client.login(username = u.username, password = 'p')
-    True
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m, c = Membership.objects.get_or_create(user = u, group = g)
-    >>> client.get(reverse('group_invite',
-    ...         kwargs={'group_id': g.id,})).status_code
-    200
     """
     group = get_object_or_404(Group, id = group_id )
     if not Membership.objects.filter(
@@ -2001,15 +1735,6 @@ def group_invite_activate(request, activation_key): # {{{2
 # ical views {{{1
 def ICalForSearch( request, query ): # {{{2
     """ ical file for a search
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from grical.events.models import Event
-    >>> e = Event.objects.create( title = 'icfs_test', tags = 'berlin' )
-    >>> e.startdate = datetime.date.today()
-    >>> Client().get(reverse('search_ical',
-    ...         kwargs={'query': 'berlin',})).status_code
-    200
-    >>> e.delete()
     """
     # TODO: add test checking that an event with two dates is not a duplicate
     try:
@@ -2032,16 +1757,6 @@ def ICalForEventRecurrences( request, event_id ): # {{{2
 
 def ICalForEvent( request, event_id ): # {{{2
     """ ical file for an event
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from grical.events.models import Event
-    >>> e = Event( title = 'icfe_test', tags = 'berlin')
-    >>> e.save()
-    >>> e.startdate = datetime.date.today()
-    >>> Client().get( reverse( 'event_show_ical',
-    ...         kwargs={'event_id': e.id,})).status_code
-    200
-    >>> e.delete()
     """
     event = get_object_or_404( Event, id = event_id )
     elist = [event,]
@@ -2050,25 +1765,6 @@ def ICalForEvent( request, event_id ): # {{{2
 def ICalForGroup( request, group_id ): # {{{2
     """ return all events with a date in the future in icalendar format
     belonging to a group
-
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from django.contrib.auth.models import User
-    >>> from grical.events.models import Event
-    >>> from grical.events.models import Group, Membership, Calendar
-    >>> e = Event.objects.create( title = 'icfg_test', tags = 'berlin' )
-    >>> e.startdate = datetime.date.today()
-    >>> u = User.objects.create_user('ICalForGroup', '0@example.com', 'p')
-    >>> g, c = Group.objects.get_or_create(name = 'test')
-    >>> m, c = Membership.objects.get_or_create(user = u, group = g)
-    >>> ca, c = Calendar.objects.get_or_create(group = g, event = e)
-    >>> client = Client()
-    >>> client.login( username = u.username, password = 'p' )
-    True
-    >>> client.get(reverse('list_events_group_ical',
-    ...         kwargs={'group_id': g.id,})).status_code
-    200
-    >>> e.delete()
     """
     group = get_object_or_404(Group, pk = group_id)
     today = datetime.date.today()
