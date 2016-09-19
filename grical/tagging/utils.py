@@ -201,7 +201,7 @@ def get_tag(tag):
 
     If no matching tag can be found, ``None`` will be returned.
     """
-    from tagging.models import Tag
+    from grical.tagging.models import Tag
     if isinstance(tag, Tag):
         return tag
 

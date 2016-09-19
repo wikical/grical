@@ -227,7 +227,8 @@ if TESTS_RUNNING:
             'django.contrib.auth.hashers.MD5PasswordHasher',)
 
 if TESTS_RUNNING:
-    INSTALLED_APPS = INSTALLED_APPS + ['django.contrib.sessions',]
+    INSTALLED_APPS = INSTALLED_APPS + ['django.contrib.sessions',
+            'grical.tagging.tests']
 
 
 # =============================================================================
