@@ -1094,17 +1094,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
     def icalendar( self, ical = None ): #{{{3
         """ returns an iCalendar object of the event entry or add it to 'ical'
-
-        >>> events = Event.objects.filter( title='GridCalendar presentation',
-        ...     dates__eventdate_name = 'start',
-        ...     dates__eventdate_date = '2010-12-29' )
-        >>> if events: events.delete()
-        >>> event,l = Event.parse_text(EXAMPLE)
-        >>> ical = event.icalendar()
-        >>> ical = vobject.readOne(ical.serialize())
-        >>> assert (ical.vevent.categories.serialize() == \
-        ...  u'CATEGORIES:calendar,software,open-source,gridmind,gridcalendar\\r\\n')
-        >>> event.delete()
         """
         # NOTE: rfc5545 specifies CRLF for new lines
         if ical is None:
@@ -1208,25 +1197,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
 
         ``kwargs`` can contain field names and values to replace in the clone
         the original of ``self``, e.g. ``{"startdate": a_date}``
-
-        >>> from events.models import Event
-        >>> from django.utils.encoding import smart_str
-        >>> import datetime
-        >>> now_t = datetime.datetime.now().isoformat()
-        >>> today = datetime.date.today()
-        >>> today_t = today.isoformat()
-        >>> user, c = User.objects.get_or_create( username = unicode(now_t) )
-        >>> events = Event.objects.filter( title='GridCalendar presentation' )
-        >>> if events: events.delete()
-        >>> event,l = Event.parse_text(EXAMPLE)
-        >>> event.enddate = None
-        >>> clone = event.clone( user, startdate = today )
-        >>> clone_text = clone.as_text()
-        >>> clone_text = clone_text.replace(
-        ...     today_t, event.startdate.isoformat(), 1 )
-        >>> assert ( event.as_text() == clone_text )
-        >>> event.delete()
-        >>> clone.delete()
         """
         clone = Event()
         assert 'startdate' in self.get_simple_fields()
@@ -1555,13 +1525,6 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     @staticmethod # def example(): {{{3
     def example():
         """ returns an example of an event as unicode
-
-        >>> from django.utils.encoding import smart_str
-        >>> import time
-        >>> example = Event.example()
-        >>> event,l = Event.parse_text(example)
-        >>> assert smart_str(example) == event.as_text(), event.as_text()
-        >>> event.delete()
         """
         return EXAMPLE
 
@@ -2194,58 +2157,6 @@ class Recurrence( models.Model ): #{{{1
 
         event.recurring.master = new_master
         event.recurring.save()
-
-    >>> import datetime
-    >>> from datetime import timedelta
-    >>> today = datetime.date.today()
-    >>> tomorrow = timedelta(days=1) + today
-    >>> after_tomorrow = timedelta(days=2) + today
-    >>> e1 = Event.objects.create(title="Re1" )
-    >>> e1.startdate = today
-    >>> e2 = Event.objects.create(title="Re2" )
-    >>> e2.startdate = tomorrow
-    >>> e3 = Event.objects.create(title="Re3" )
-    >>> e3.startdate = after_tomorrow
-    >>> assert e1.recurring == None
-    >>> assert e2.recurring == None
-    >>> assert e3.recurring == None
-    >>> r = e1.recurrences.create(event = e2)
-    >>> r = e1.recurrences.create(event = e3)
-    >>> assert e1.recurring
-    >>> assert e2.recurring
-    >>> assert e3.recurring
-    >>> assert e1.recurring.master == e1
-    >>> assert e2.recurring.master == e1
-    >>> assert e3.recurring.master == e1
-    >>> event_list = [r.event for r in e1.recurrences.all()]
-    >>> assert e1 in event_list
-    >>> assert e2 in event_list
-    >>> assert e3 in event_list
-    >>> e1.recurrences.count()
-    3
-    >>> # we now put e2 start in the past and check that master is updated
-    >>> e2.startdate = timedelta(days=-1)+today
-    >>> e2.save()
-    >>> e1 = Event.objects.get( title="Re1" )
-    >>> e2 = Event.objects.get( title="Re2" )
-    >>> e3 = Event.objects.get( title="Re3" )
-    >>> assert e1.recurring.master == e2
-    >>> assert e2.recurring.master == e2
-    >>> assert e3.recurring.master == e2
-    >>> event_list = [r.event for r in e2.recurrences.all()]
-    >>> assert e1 in event_list
-    >>> assert e2 in event_list
-    >>> assert e3 in event_list
-    >>> e2.recurrences.count()
-    3
-    >>> # we now check that master is updated when master is deleted
-    >>> e2.delete()
-    >>> e1 = Event.objects.get( title="Re1" )
-    >>> e3 = Event.objects.get( title="Re3" )
-    >>> assert e1.recurring.master == e1
-    >>> assert e3.recurring.master == e1
-    >>> e3.delete()
-    >>> e1.delete()
     """
     # NOTE that it would be possible to just have an attribute ``master`` in
     # the class Event, but that would make impossible to use natural keys with
@@ -2318,27 +2229,6 @@ class ExtendedUser(User): # {{{1
 
     The variable ``USER`` (a ``ExtendedUser`` instance) is available in the
     ``context`` for all views and templates
-
-    >>> from events.models import Event, Group, Membership
-    >>> now = datetime.datetime.now().isoformat()
-    >>> user = User.objects.create(username = now)
-    >>> group1 = Group.objects.create(name="group1 " + now)
-    >>> m = Membership.objects.create(user=user, group=group1)
-    >>> group2 = Group.objects.create(name="group2 " + now)
-    >>> m = Membership.objects.create(user=user, group=group2)
-    >>> euser = ExtendedUser.objects.get(id = user.id)
-    >>> assert ( len( euser.get_groups() ) == 2 )
-    >>> assert euser.has_groups()
-    >>> f1 = Filter.objects.create(user = user, name = "f1", query = "query")
-    >>> f2 = Filter.objects.create(user = user, name = "f2", query = "query")
-    >>> assert ( len( euser.get_filters() ) == 2)
-    >>> assert euser.has_filters()
-    >>> event = Event(title="test for ExtendedUser " + now, tags = "test" )
-    >>> event.save()
-    >>> event.startdate = datetime.date.today()
-    >>> calendar = Calendar.objects.create(event = event, group = group2)
-    >>> assert euser.has_groups_with_coming_events()
-    >>> event.delete()
     """
     class Meta: # {{{2
         proxy = True
@@ -2379,11 +2269,7 @@ class ExtendedUser(User): # {{{1
 class EventUrl( models.Model ): # {{{1
     """ stores urls of events
 
-    Code example: getting all events with more than one url:
-    >>> from grical.events.models import Event
-    >>> from django.contrib.gis.db.models import Count
-    >>> urls_numbers = Event.objects.annotate(urls_nr=Count('urls'))
-    >>> events_with_more_than_1_url = urls_numbers.filter(urls_nr__gte=2)
+    Code example: getting all events with more than one url: see tests
     """
     event = models.ForeignKey( Event, related_name = 'urls' )
     url_name = models.CharField( _( u'URL Name' ), blank = False, null = False,
@@ -2902,39 +2788,6 @@ class Filter( models.Model ): # {{{1
     def query_matches_event( query, event ):
         # doc & doctests {{{3
         """ return True if the query matches the event, False otherwise.
-
-        >>> from events.models import *
-        >>> from datetime import timedelta
-        >>> from time import time
-        >>> time = str(time()).replace('.','')
-        >>> now = datetime.datetime.now().isoformat()
-        >>> today = datetime.date.today()
-        >>> group = Group.objects.create(name="matchesevent" + time)
-        >>> event = Event.objects.create(title="test for events " + now,
-        ...     tags = "test" )
-        >>> event.startdate = timedelta(days=-1)+today
-        >>> eventdate = EventDate(
-        ...         event = event, eventdate_name = "test",
-        ...         eventdate_date = today)
-        >>> eventdate.save()
-        >>> calendar = Calendar.objects.create( group = group,
-        ...     event = event )
-        >>> calendar.save()
-        >>> user = User.objects.create(username = now)
-        >>> fil = Filter.objects.create(user=user, name=now, query='test')
-        >>> assert fil.matches_event(event)
-        >>> fil.query = today.isoformat()
-        >>> assert fil.matches_event(event)
-        >>> fil.query = ( timedelta(days=-1) + today ).isoformat()
-        >>> assert fil.matches_event(event)
-        >>> fil.query = '!' + group.name
-        >>> assert fil.matches_event(event)
-        >>> fil.query = '#test'
-        >>> assert fil.matches_event(event)
-        >>> fil.query = 'abcdef'
-        >>> assert not fil.matches_event(event)
-        >>> event.delete()
-        >>> group.delete()
         """
         # body {{{3
         from grical.events.search import search_events
@@ -2961,30 +2814,6 @@ class GroupManager( models.Manager ): # {{{1
 
 class Group( models.Model ): # {{{1
     """ groups of users and events
-
-    >>> from django.contrib.auth.models import User
-    >>> from events.models import Event, Group, Membership
-    >>> from datetime import timedelta
-    >>> now = datetime.datetime.now().isoformat()
-    >>> today = datetime.date.today()
-    >>> group = Group.objects.create(name="group " + now)
-    >>> event = Event(title="test for events " + now,
-    ...     tags = "test" )
-    >>> event.save()
-    >>> event.startdate = timedelta(days=-1)+today
-    >>> eventdate = EventDate(
-    ...         event = event, eventdate_name = "test",
-    ...         eventdate_date = today)
-    >>> eventdate.save()
-    >>> calendar = Calendar.objects.create( group = group,
-    ...     event = event )
-    >>> assert ( len(group.get_coming_events()) == 1 )
-    >>> assert ( group.has_coming_events() )
-    >>> assert ( len(group.get_users()) == 0 )
-    >>> user = User.objects.create(username = now)
-    >>> membership = Membership.objects.create(group = group, user = user)
-    >>> assert ( len(group.get_users()) == 1 )
-    >>> event.delete()
     """
     # TODO test names with special characters including urls like grical.org/group_name
     name = models.CharField( _( u'Name' ), max_length = 80, unique = True,
@@ -3047,18 +2876,6 @@ class Group( models.Model ): # {{{1
 
         The parameters *user* and *group* can be an instance the classes User
         and Group or the id number.
-
-        >>> from django.contrib.auth.models import User
-        >>> from events.models import Event, Group, Membership
-        >>> now = datetime.datetime.now().isoformat()
-        >>> user1 = User.objects.create(username = "u1" + now)
-        >>> user2 = User.objects.create(username = "u2" + now)
-        >>> group1 = Group.objects.create(name="group1 " + now)
-        >>> m = Membership.objects.create(user=user1, group=group1)
-        >>> assert (Group.is_user_in_group(user1, group1))
-        >>> assert (not Group.is_user_in_group(user2, group1))
-        >>> assert (Group.is_user_in_group(user1.id, group1.id))
-        >>> assert (not Group.is_user_in_group(user2.id, group1.id))
         """
         if isinstance(user, User):
             user_id = user.id
@@ -3094,25 +2911,6 @@ class Group( models.Model ): # {{{1
 
         The parameter *user* can be an instance of User or the id number of a
         user.
-
-        >>> from django.contrib.auth.models import User
-        >>> from events.models import Event, Group, Membership
-        >>> now = datetime.datetime.now().isoformat()
-        >>> user1 = User.objects.create(username = "u1" + now)
-        >>> user2 = User.objects.create(username = "u2" + now)
-        >>> group12 = Group.objects.create(name="group12 " + now)
-        >>> group2 = Group.objects.create(name="group2 " + now)
-        >>> m1 = Membership.objects.create(user=user1, group=group12)
-        >>> m2 = Membership.objects.create(user=user2, group=group12)
-        >>> m3 = Membership.objects.create(user=user2, group=group2)
-        >>> groups_of_user_2 = Group.groups_of_user(user2)
-        >>> assert(len(groups_of_user_2) == 2)
-        >>> assert(isinstance(groups_of_user_2, list))
-        >>> assert(isinstance(groups_of_user_2[0], Group))
-        >>> assert(isinstance(groups_of_user_2[1], Group))
-        >>> groups_of_user_1 = Group.groups_of_user(user1)
-        >>> assert(len(groups_of_user_1) == 1)
-
         """
         if ( user is None or type( user ) == AnonymousUser ):
             return list()
