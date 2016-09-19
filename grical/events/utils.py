@@ -134,9 +134,6 @@ def search_coordinates( lat, lon ): # {{{1
                 "state":"Berlin",
                 "boundary":"10439",
                 "country_code":"de"}}
-
-    >>> r = search_coordinates( 52.548972, 13.40932 )['address']
-    >>> assert 'Kopenhagener' in r and 'Berlin' in r, r
     """
     # body {{{2
     response_text = ""
@@ -190,31 +187,6 @@ def search_address( data, ip = None ): # {{{1
     It returns a dictionary with long addresses (formatted addresses) as keys
     and a dictionary as values. The later dictionary has the keys:
     ``longitude``, ``latitude``, ``country`` and ``city``.
-
-    >>> import math
-    >>> import time
-    >>> time.sleep(1)
-    >>> result = search_address( u'c-base' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> time.sleep(1)
-    >>> result = search_address( u'Schivelbeiner Str. 22, Berlin, DE' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> time.sleep(1)
-    >>> result = search_address( u'Kantstr. 6', ip = '85.179.47.148' )
-    >>> len ( result )
-    1
     """
     # TODO the returned addresses must be sorted by relevance (the output of
     # the external APIs already provides a relevance number)
@@ -384,20 +356,6 @@ def search_address_google(data): # {{{1
           </geometry>
          </result>
         </GeocodeResponse>
-
-    >>> import math
-    >>> result = search_address_google( u'Malmöer Str. 6, Berlin, DE' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> result['country']
-    'DE'
-    >>> result['city']
-    'Berlin'
     """
     try:
         address = urllib.quote( data.encode('utf-8') )
@@ -676,18 +634,6 @@ def search_address_osm( data ): # {{{1
         </searchresults>
 
     See ``search_address``
-
-    >>> import math
-    >>> result = search_address_osm( u'c-base' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> result['country']
-    'DE'
     """
     # NOTE: unfortunately the API doesn't seem very consistent when looking up
     # cities. See the output of e.g.:
