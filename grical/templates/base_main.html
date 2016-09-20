@@ -9,10 +9,10 @@
 {% block container %}
 
     {% if not READ_ONLY %}
-        <div id="simplified_container" class="container-fluid">
-            <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
+        <div id="simplified_container">
+            <div id="simplified_event_form" class="container">{% comment %}FIXME: field labels can be long translations{% endcomment %}
                 <form action="" method="post" id="gc-new-event-form" class="form-horizontal m-t-3 clearfix">{% csrf_token %}
-                    <fieldset>
+                    <fieldset class="row">
                         <legend class="col-xs-12 col-sm-6 col-md-4">{% trans "Submit an event" %}</legend>
                         {{ form.non_field_errors }}
                         {# Include the hidden fields in the form #}
