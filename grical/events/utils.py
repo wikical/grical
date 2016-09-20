@@ -38,7 +38,7 @@ import urllib2
 from xml.etree.ElementTree import fromstring
 from xml.parsers.expat import ExpatError
 
-from django.core.cache import cache, get_cache
+from django.core.cache import cache, caches
 from django.core.mail import mail_admins
 from django.contrib.gis.geos import Point
 from django.contrib.gis.geoip import GeoIP
@@ -134,9 +134,6 @@ def search_coordinates( lat, lon ): # {{{1
                 "state":"Berlin",
                 "boundary":"10439",
                 "country_code":"de"}}
-
-    >>> r = search_coordinates( 52.548972, 13.40932 )['address']
-    >>> assert 'Kopenhagener' in r and 'Berlin' in r, r
     """
     # body {{{2
     response_text = ""
@@ -190,31 +187,6 @@ def search_address( data, ip = None ): # {{{1
     It returns a dictionary with long addresses (formatted addresses) as keys
     and a dictionary as values. The later dictionary has the keys:
     ``longitude``, ``latitude``, ``country`` and ``city``.
-
-    >>> import math
-    >>> import time
-    >>> time.sleep(1)
-    >>> result = search_address( u'c-base' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> time.sleep(1)
-    >>> result = search_address( u'Schivelbeiner Str. 22, Berlin, DE' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> time.sleep(1)
-    >>> result = search_address( u'Kantstr. 6', ip = '85.179.47.148' )
-    >>> len ( result )
-    1
     """
     # TODO the returned addresses must be sorted by relevance (the output of
     # the external APIs already provides a relevance number)
@@ -384,20 +356,6 @@ def search_address_google(data): # {{{1
           </geometry>
          </result>
         </GeocodeResponse>
-
-    >>> import math
-    >>> result = search_address_google( u'Malmöer Str. 6, Berlin, DE' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> result['country']
-    'DE'
-    >>> result['city']
-    'Berlin'
     """
     try:
         address = urllib.quote( data.encode('utf-8') )
@@ -456,7 +414,7 @@ def search_timezone( lat, lng, use_cache = True ): # {{{1
     if use_cache:
         cache_value = None
         cache_key =  'search_timezone__' + str(lat) + "_" + str(lng)
-        db_cache = get_cache('db')
+        db_cache = caches['db']
         # we try the memcached cache (see settings.CACHES)
         if cache.has_key( cache_key ):
             cache_value = cache.get( cache_key )
@@ -573,7 +531,7 @@ def search_name( name, use_cache = True ): # {{{1
     if use_cache:
         cache_value = None
         cache_key =  'search_name__' +  query
-        db_cache = get_cache('db')
+        db_cache = caches['db']
         # we try the memcached cache (see settings.CACHES)
         # there is however a limit of 250 chars for the memcached key
         if len(cache_key) <= 250 and cache.has_key(cache_key):
@@ -676,18 +634,6 @@ def search_address_osm( data ): # {{{1
         </searchresults>
 
     See ``search_address``
-
-    >>> import math
-    >>> result = search_address_osm( u'c-base' )
-    >>> len ( result )
-    1
-    >>> result = result.values()[0]
-    >>> math.floor( float(result['longitude']) )
-    13.0
-    >>> math.floor( float(result['latitude']) )
-    52.0
-    >>> result['country']
-    'DE'
     """
     # NOTE: unfortunately the API doesn't seem very consistent when looking up
     # cities. See the output of e.g.:
