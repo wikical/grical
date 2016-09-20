@@ -7,17 +7,17 @@
 # Ivan Villanueva <iv@gridmind.org>
 #
 # This file is part of GridCalendar.
-# 
+#
 # GridCalendar is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
-# 
+#
 # GridCalendar is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU Generevent.idal Public License
 # for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
@@ -43,13 +43,13 @@ from django.core.mail.message import EmailMessage
 from django.db import transaction, IntegrityError
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_str, smart_unicode
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
-from reversion import revision
+import reversion
 
-from grical.events.models import Event, RevisionInfo
+from grical.events.models import Event, RevisionInfo, EventDate, EventSession
 
 
 #TODO: set the Django language to the first possible language the email sender
@@ -57,7 +57,7 @@ from grical.events.models import Event, RevisionInfo
 # first possible value of the Content-Language header. If not present default
 # to English
 
-class Command(NoArgsCommand): # {{{1
+class Command(BaseCommand): # {{{1
     """ A management command which parses mails from imap server..
     """
 
@@ -88,7 +88,8 @@ class Command(NoArgsCommand): # {{{1
         else:
             return nr_list
 
-    def handle_noargs(self, **options): # {{{2
+    @transaction.atomic()
+    def handle(self, *args, **options): # {{{2
         """ Executes the action or do nothing if settings.READ_ONLY is True.
         """
         if settings.READ_ONLY == True:
@@ -111,7 +112,7 @@ class Command(NoArgsCommand): # {{{1
             for part in msgobj.walk():
                 if part.get_content_type() == "text/plain":
                     if part.get_content_charset():
-                        text += unicode( 
+                        text += unicode(
                                     part.get_payload( decode = True ),
                                     part.get_content_charset(),
                                     'replace' )
@@ -133,16 +134,16 @@ class Command(NoArgsCommand): # {{{1
             from_email = settings.DEFAULT_FROM_EMAIL
             try:
                 sid = transaction.savepoint()
-                with revision:
+                with reversion.create_revision():
                     event, dates_times_list = Event.parse_text( text )
-                    revision.add_meta( RevisionInfo,
+                    reversion.add_meta(RevisionInfo,
                             as_text = smart_unicode( event.as_text() ) )
                 for dates_times in dates_times_list:
-                    with revision:
-                        clone = event.clone( user = None,
+                    with reversion.create_revision():
+                        clone = event.clone(user = None,
                                 except_models = [EventDate, EventSession],
                                 **dates_times )
-                        revision.add_meta( RevisionInfo,
+                        reversion.add_meta(RevisionInfo,
                                 as_text = smart_unicode( clone.as_text() ) )
                 assert( type( event ) == Event )
                 self.mv_mail( number, 'saved' )
