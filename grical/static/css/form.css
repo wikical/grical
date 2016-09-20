@@ -27,9 +27,8 @@ textarea {
 
 /* errors produces by wrong entries in forms */
 .errorlist {
-    font-size:90%;
-    color:red;
-    margin: 1rem;
+    font-size: 1rem;
+    margin: 0;
     padding: 0;
 }
 
