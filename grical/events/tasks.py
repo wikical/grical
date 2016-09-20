@@ -29,7 +29,7 @@ from smtplib import SMTPConnectError
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
-from django.core.cache import cache, get_cache
+from django.core.cache import cache, caches
 from django.core.mail import send_mail, BadHeaderError
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
@@ -44,7 +44,7 @@ from django.conf import settings
 
 @task() # save_in_caches {{{1
 def save_in_caches( key, value, timeout = None ):
-    cache_db = get_cache('db')
+    cache_db = caches['db']
     if timeout:
         cache.set( key, value, timeout )
         cache_db.set( key, value, timeout )
