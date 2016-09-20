@@ -1,0 +1,33 @@
+/* footer */
+#footer {
+    background-color: #2C516D;
+    color: white;
+    padding: 1.2em 0.8em ;
+    margin-top: 2em;
+    clear: both;
+    font-size: 0.8em;
+    line-height: 2;
+    border: 5px solid black;
+    border-radius: 0.9em 0.9em 0 0;
+}
+#footer img {
+    vertical-align: middle;
+}
+#footer a[href] {
+    color: #8fc9ff;
+}
+#footer ul, #footer li {
+    display: inline ;
+    margin: 0 2em 0 0 ;
+    padding: 0;
+}
+#footer li:before {
+    content: "\00BB \0020";
+}
+#footer .title {
+    float:left ;
+    max-width:8em;
+}
+#footer .info {
+    margin-left:8em;
+}

@@ -1,0 +1,59 @@
+{% load i18n %}
+
+{% if user.username and groups %}
+    <ul>
+        {% for group in groups %}
+            <li>
+                <a href="{% url "list_events_group_ical" g.id  %}">
+                    <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="14"></a>&nbsp;
+                <a href="{% url "list_events_group_rss" g.id  %}">
+                    <img alt="RSS" src="{{ STATIC_URL }}rssicon.png" width="14"></a>&nbsp;
+                <a href="{% url "group_view" g.id  %}">{{ group.name }}</a> ({{ group.future_events_count }})
+                {% if not READ_ONLY %}
+                    | <a href="{% url "group_quit" g.id  %}">quit</a> |
+                    | <a href="{% url "group_invite" g.id  %}">invite</a> |
+                {% endif %}
+            </li>
+            <ul>
+                {% for event in group.future_events %}
+                    <li>{% include "event_show_one_line.html" %}</li>
+                {% empty %}
+                    <li>{% trans "No future events in this group" %}</li>
+                {% endfor %}
+            </ul>
+        {% empty %}
+            <li> {% trans "You are not a member of any group" %} </li>
+        {% endfor %}
+    </ul>
+{% endif %}            
+
+{% if user.username %}
+    {% if not READ_ONLY %}
+        <p align="right"><a href="{% url "group_new"  %}">{% trans "Create a new group" %}</a></p>
+    {% endif %}
+    <h2 align="center">{% trans "Coming events in my groups" %}</h2>
+    {% if group_events %}
+        {% for g in group_events %}
+            Group: {{g.group_name}}<br>
+            {% for event in g.el %}
+                <p>
+                    <div class="field">
+                        <a href="{% url "event_show_all" event.id  %}">{{ event.title }}</a><br />
+                        <span class="field_dates">{{ event.start }} {% if event.end %} : {{ event.end }} {% endif %}
+                        </span>
+                    </div>
+                </p>
+            {% endfor %}
+        <hr />
+        {% endfor %}
+    {% else %}
+        <!-- TODO: recommend some events -->
+        <p>{% trans "No events in your groups." %}</p>
+    {% endif %}
+{% else %}
+    <h2>{% trans "What is GridCalendar?" %}</h2>
+    {{ about_text|restructuredtext }}
+    {% if not READ_ONLY %}
+        <p><a href="{% url "registration_register"  %}">{% trans "Create an account now" %}</a></p>
+    {% endif %}
+{% endif %}

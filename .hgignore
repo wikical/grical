@@ -1,0 +1,16 @@
+node_modules
+grical_db.sql
+grical/settings/settings.py
+grical/static/bower_components
+docs/_build
+docs/html
+
+syntax: glob
+*.pyc
+.*.swp
+*.bak
+*.orig
+
+syntax: regexp
+(.*/)?\#[^/]*\#$
+.*\~

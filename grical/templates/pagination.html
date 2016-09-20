@@ -1,0 +1,21 @@
+{% load i18n %}
+
+<div class="container-fluid">
+    {% if page.has_previous %}
+        <span class="step_links">
+            <a href="?page={{ page.previous_page_number }}{% if query %}&amp;query={{ query|urlencode:"" }}{% endif %}{% if current_view %}&amp;view={{ current_view }} {% endif %}{% if sort %}&amp;sort={{ sort }}{% endif %}">{% trans "previous" %}</a>
+        </span>
+    {% endif %}
+
+    <span class="current">
+        {% blocktrans with page.number as number and page.paginator.num_pages as num_pages %}
+            Page {{ number }} of {{ num_pages }}.
+        {% endblocktrans %}
+    </span>
+
+    {% if page.has_next %}
+        <span class="step_right">
+            <a href="?page={{ page.next_page_number }}{% if query %}&amp;query={{ query|urlencode:"" }}{% endif %}{% if current_view %}&amp;view={{ current_view }}{% endif %}{% if sort %}&amp;sort={{ sort }}{% endif %}">{% trans "next" %}</a>
+        </span>
+    {% endif %}
+</div>

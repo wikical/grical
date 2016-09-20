@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<div class="container m-t-3 m-b-3">
+    <div class="row">
+        {% if form.errors %}
+        <div class="col-xs-12">
+            <div class="m-b-1 text-danger">{% trans "Your username and password didn't match. Please try again" %}.</div>
+        </div>
+        {% endif %}
+        <div class="col-xs-12">
+            <form method="post" action="{% url "auth_login"  %}">{% csrf_token %}
+                <legend><h1>{% trans "Login" %}</h1></legend>
+                <table>
+                    <tr>
+                        <td class="p-t-1">{{ form.username.label_tag }}</td>
+                        <td class="p-t-1">{{ form.username }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-t-1">{{ form.password.label_tag }}</td>
+                        <td class="p-t-1">{{ form.password }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-t-1 p-b-1">
+                            <div id="submit-button"><input type="submit" value="{% trans "login" %}" /></div>
+                            <div><input type="hidden" name="next" value="{{ next }}" /></div>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+
+            <ul>
+                <li><a href="{% url "auth_password_reset"  %}">{% trans "Forgot your password ?" %}</a></li>
+                <li><a href="{% url "registration_register"  %}">{% trans "Get a new account" %}</a></li>
+            </ul>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,96 @@
+/* complete event form */
+#event_form #title {
+    margin: 0.5em;
+}
+#event_form input#id_title {
+    font-size: 150%;
+    font-weight: bold;
+    padding: 0.2em;
+    width: 98%;
+    font-style: italic;
+}
+#event_form #id_description {
+    height: 30em;
+    width: 100%;
+}
+#event_form #id_address {
+    width: 30em;
+    height: 6em;
+}
+#event_form input#id_tags {
+    width: 30em;
+}
+#event_form input#id_coordinates {
+    width: 20em;
+}
+.left-fields label {
+    float: left;
+    font-weight: bold;
+    margin-right: 1em;
+    min-width: 8em;
+    text-align: right;
+}
+#event_form input:not([type="submit"]) {
+    margin: 0.1em 0 0.1em 0;
+}
+#event_form td {
+    font-size:0.8em;
+    color: gray;
+    padding-bottom:1em;
+}
+#event_form th {
+    vertical-align:top;
+}
+/* urls-form */
+#event_form #urls-form {
+    margin: 0.5em;
+}
+#event_form #url_table, #event_form #session_table, #event_form #deadline_table {
+    margin-top:1.5em;
+}
+#event_form #url_table th, #event_form #session_table th, #event_form #deadline_table th {
+    text-align:center;
+    color: #003a6b;
+    font-weight: bold;
+}
+#event_form #url_table td, #event_form #session_table td, #event_form #deadline_table td {
+    padding: 0.5em 0.5em 0.5em 0;
+    text-align:center;
+}
+#event_form #url_table input[name$="-url_name"] {
+    width: 10em;
+}
+#event_form #url_table input[name$="-url"] {
+    width: 40em;
+}
+#event_form #session_table th {
+    padding: 0 1em ;
+}
+#event_form #also_recurrences {
+    font-size: 1em;
+    font-weight:bold;
+    background: #AFC4D3;
+    padding: 0; /* otherwise horizontal scroll appears */
+    display: inline-block;
+    margin: 1em 0;
+    width: 100%;
+}
+#event_form #also_recurrences ul {
+    display: inline ;
+}
+#event_form #also_recurrences li {
+    padding: 0;
+}
+#event_form #also_recurrences label {
+    min-width: 0;
+}
+#event_form h2 {
+    margin-top: 2em;
+    margin-bottom: 0;
+}
+#event_form #sessions-form {
+    margin: 0.5em;
+}
+#event_form #deadlines-form {
+    margin: 0.5em;
+}
