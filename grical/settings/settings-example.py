@@ -62,6 +62,55 @@ IMAP_PASSWD = ''
 IMAP_PORT = 993
 IMAP_SSL = True
 
+# =============================================================================
+# celery
+# =============================================================================
+
+CELERY_APP = 'grical'
+
+CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+"""
+Read http://docs.celeryproject.org/en/latest/faq.html#isn-t-using-pickle-a-security-concern
+
+Because we are passing instances in celery tasks we cannot avoid using
+pickle. However we must ensure that our transporter (db / cache /
+broker) is securely isolated and potential attackers cannot access
+them.
+
+"""
+CELERY_TASK_SERIALIZER = 'pickle'
+"""
+See above
+"""
+
+CELERYD_TASK_TIME_LIMIT = 300
+""" Something long enough for the tasks to complete. """
+
+CELERY_IGNORE_RESULT = True
+""" http://celery.readthedocs.org/en/latest/configuration.html#celery-ignore-result"""
+
+CELERYD_TASK_SOFT_TIME_LIMIT = CELERYD_TASK_TIME_LIMIT * 0.9
+""" This should be something less than CELERYD_TASK_TIME_LIMIT. Importers use
+this value to stop importing and preparing next run. """
+assert CELERYD_TASK_SOFT_TIME_LIMIT < CELERYD_TASK_TIME_LIMIT
+
+# Following is useful for development, it can be totally omitted in production.
+
+if TESTS_RUNNING or DEBUG:
+    CELERY_ALWAYS_EAGER = True
+    CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+    BROKER_BACKEND = 'memory'
+    BROKER_URL = 'django://'
+
+# TODO: Confirm if these settings are useful for production / RabbitMQ as
+# broker, most probably the configuration is done in celery configuration /
+# daemon
+# BROKER_HOST = "localhost"
+# BROKER_PORT = 5672
+# BROKER_USER = "guest"
+# BROKER_PASSWORD = "guest"
+# BROKER_VHOST = "/"
+
 # ======================================================================
 # geonames settings
 # ======================================================================
