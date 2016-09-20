@@ -26,7 +26,6 @@
 # imports {{{1
 import os
 import sys
-#import djcelery
 
 PROGRAM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -159,7 +158,6 @@ INSTALLED_APPS = [
     'reversion',
     'markup_deprecated', # used for rendering ReStructuredText
     'grical.contact_form',
-    #'djcelery',
     'oembed',
 ]
 
@@ -271,20 +269,11 @@ STATICFILES_DIRS = [os.path.join(PROGRAM_DIR, "static"), ]
 # celery
 # =============================================================================
 
-# http://django-celery.readthedocs.org/en/latest/getting-started/first-steps-with-django.html
-# TODO: create a proper user for production
-#djcelery.setup_loader()
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
 BROKER_USER = "guest"
 BROKER_PASSWORD = "guest"
 BROKER_VHOST = "/"
-# TODO: documentation says that a Django DB can be used instead of RabbitMQ as
-# message-broker[1], but although tables are created for django-celery after
-# syncdb command, the connection-error [2] is fixed after installing RabiitMQ.
-# Ask in the ml or irc
-# [1] http://django-celery.readthedocs.org/en/latest/introduction.html
-# [2] http://stackoverflow.com/questions/7483728/django-celery-consumer-connection-error-111-when-running-python-manage-py-cel
 
 # =============================================================================
 # LOGGING {{{1
