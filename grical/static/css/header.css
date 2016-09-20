@@ -7,12 +7,12 @@
     background-color: black;
     border-bottom: 2px solid #546878;
     min-height: 110px;
-    line-height: 2em;
+    line-height: 2rem;
     margin: 0;
-    padding: 0.5em;
+    padding: 0.5rem;
     text-align: right;
-    border-radius: 0 0 0.9em 0;
-    padding: 0.5em ;
+    border-radius: 0 0 0.9rem 0;
+    padding: 0.5rem ;
     color: #546878;
     font-weight: bold;
 }
@@ -35,30 +35,30 @@
  */
 #views {
     display: inline-block;
-    font-size: 0.9em;
-    margin: 1em 0 0.2em;
+    font-size: 0.9rem;
+    margin: 1rem 0 0.2rem;
     text-align: right;
 }
 #views img {
     vertical-align:middle;
-    margin: 0.2em;
+    margin: 0.2rem;
 }
 #views a {
     text-decoration:none;
     color: #333;
 }
 .current_view {
-    margin-bottom: 1em;
+    margin-bottom: 1rem;
     border: 3px #5E7C93 solid;
 }
 #views div[id$="_view"] {
-    padding: 0.5em;
-    border-radius: 0.5em;
-    -webkit-border-radius: 0.5em;
-    -moz-border-radius: 0.5em;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    -webkit-border-radius: 0.5rem;
+    -moz-border-radius: 0.5rem;
     display: inline;
-    margin: 0 0.2em;
-    padding: 0.4em;
+    margin: 0 0.2rem;
+    padding: 0.4rem;
 }
 #views #table_view { background: #aaa; }
 #views #map_view { background: #e8cfe6; }

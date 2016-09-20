@@ -15,7 +15,7 @@
 div.olMap {
     z-index: 0;
     padding: 0px!important;
-    margin: 1em 0 !important;
+    margin: 1rem 0 !important;
     cursor: default;
 }
 
@@ -39,13 +39,13 @@ div.olLayerDiv {
 .olControlAttribution {
     font-size: smaller;
     right: 3px;
-    bottom: 4.5em;
+    bottom: 4.5rem;
     position: absolute;
     display: block;
 }
 .olControlScale {
     right: 3px;
-    bottom: 3em;
+    bottom: 3rem;
     display: block;
     position: absolute;
     font-size: smaller;
@@ -71,14 +71,14 @@ div.olLayerDiv {
 
 .olControlPermalink {
     right: 3px;
-    bottom: 1.5em;
+    bottom: 1.5rem;
     display: block;
     position: absolute;
     font-size: smaller;
 }
 
 div.olControlMousePosition {
-    bottom: 0em;
+    bottom: 0rem;
     right: 3px;
     display: block;
     position: absolute;
@@ -92,10 +92,10 @@ div.olControlMousePosition {
     right: 0px;
 }
 
-.olControlOverviewMapElement {
+.olControlOverviewMapElrement {
     padding: 10px 18px 10px 10px;
     background-color: #00008B;
-    -moz-border-radius: 1em 0 0 0;
+    -moz-border-radius: 1rem 0 0 0;
 }
 
 .olControlOverviewMapMinimizeButton {
@@ -126,17 +126,17 @@ div.olControlMousePosition {
     float:left;
     width:100%;
     overflow:auto;
-    font-size:1.0em;
+    font-size:1.0rem;
 }
 .olLayerGeoRSSClose {
     float:right;
     color:gray;
-    font-size:1.2em;
+    font-size:1.2rem;
     margin-right:6px;
     font-family:sans-serif;
 }
 .olLayerGeoRSSTitle {
-    float:left;font-size:1.2em;
+    float:left;font-size:1.2rem;
 }
 
 .olPopupContent {

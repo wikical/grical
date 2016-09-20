@@ -2,13 +2,13 @@
 #footer {
     background-color: #2C516D;
     color: white;
-    padding: 1.2em 0.8em ;
-    margin-top: 2em;
+    padding: 1.2rem 0.8rem ;
+    margin-top: 2rem;
     clear: both;
-    font-size: 0.8em;
+    font-size: 0.8rem;
     line-height: 2;
     border: 5px solid black;
-    border-radius: 0.9em 0.9em 0 0;
+    border-radius: 0.9rem 0.9rem 0 0;
 }
 #footer img {
     vertical-align: middle;
@@ -18,7 +18,7 @@
 }
 #footer ul, #footer li {
     display: inline ;
-    margin: 0 2em 0 0 ;
+    margin: 0 2rem 0 0 ;
     padding: 0;
 }
 #footer li:before {
@@ -26,8 +26,8 @@
 }
 #footer .title {
     float:left ;
-    max-width:8em;
+    max-width:8rem;
 }
 #footer .info {
-    margin-left:8em;
+    margin-left:8rem;
 }
