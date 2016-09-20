@@ -111,6 +111,38 @@ if TESTS_RUNNING or DEBUG:
 # BROKER_PASSWORD = "guest"
 # BROKER_VHOST = "/"
 
+# =============================================================================
+# CACHE {{{1
+# =============================================================================
+
+# Following settings suitable for development:
+CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        },
+        "db": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        },
+    }
+
+# Following settings suitable for production:
+# CACHES = {
+#         'default': {
+#             'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+#             'LOCATION': '127.0.0.1:11211',
+#             'TIMEOUT': 300, # 5 minutes
+#             'KEY_PREFIX': 'production',
+#         }, #TODO: use also the hot spare server
+#         'db': {
+#             'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+#             'LOCATION': 'cache',
+#             'TIMEOUT': 60*60*24*31, # 31 days
+#             'OPTIONS': {
+#                 'MAX_ENTRIES': 100000
+#             },
+#         },
+# }
+
 # ======================================================================
 # geonames settings
 # ======================================================================
