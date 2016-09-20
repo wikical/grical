@@ -1,14 +1,14 @@
 /* general form directives */
 form .helptext {
     color: #9DBCD3;
-    font-size: 0.8em;
+    font-size: 0.8rem;
 }
 
 form label {
     color: #2C516D;
     font-weight: bold;
     margin: 0;
-    margin-top: .5em;
+    margin-top: .5rem;
 }
 input[type="text"], textarea, input[type="checkbox"] {
     border: 1px solid #3176B9;
@@ -29,7 +29,7 @@ textarea {
 .errorlist {
     font-size:90%;
     color:red;
-    margin: 1em;
+    margin: 1rem;
     padding: 0;
 }
 
@@ -55,21 +55,21 @@ p.submit input:hover {
 
 
 #simplified_event_form form legend {
-    margin-top: -1.2em;
+    margin-top: -1.2rem;
     color: #AFC4D3;
     background: none repeat scroll 0 0 black;
     border: 1px solid #2C516D;
     font-weight: bold;
-    padding: 0.2em 0.5em;
+    padding: 0.2rem 0.5rem;
     text-align: center;
-    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
 }
 
 #simplified_event_form fieldset {
-    padding: 0.1em 0.2em 0.5em;
+    padding: 0.1rem 0.2rem 0.5rem;
     border:1px solid #2C516D;
     background: none repeat scroll 0 0 #9DBCD3;
-    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
 }
 
 
@@ -97,16 +97,16 @@ p.submit input:hover {
 #simplified_event_form input[type="checkbox"] {
 }
 #simplified_event_form .help_text {
-    font-size:0.8em;
+    font-size:0.8rem;
 }
 #simplified_event_form textarea {
-    height: 4em;
+    height: 4rem;
 }
 #simplified_submit {
     display: inline;
     padding: 5px;
 }*/
 #alternatives {
-    font-size: 0.8em;
+    font-size: 0.8rem;
 }
 

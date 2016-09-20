@@ -16,17 +16,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 h1 {
     font-size: 130%;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.5rem;
     /*border-bottom: 1px solid #2C516D;*/
 }
 h2 {
     font-size: 120%;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.5rem;
     /*border-bottom: 1px solid #5E7C93;*/
 }
 h3 {
     font-size: 110%;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.5rem;
     text-decoration: underline;
 }
 h4 {
@@ -43,18 +43,18 @@ h6 {
 }
 
 .datepicker td {
-    padding: .5em;
+    padding: .5rem;
 }
 .datepicker thead tr {
     background-color: #e9e9e9;
 }
 .datepicker thead th {
     vertical-align: middle;
-    line-height: 1.8em;
+    line-height: 1.8rem;
 }
 
 .event_options {
-    font-size: 0.8em;
+    font-size: 0.8rem;
     text-align: right;
 }
 
@@ -69,28 +69,28 @@ general forms and for event_form */
 
 .label {
     float: left;
-    margin-right: 1em;
+    margin-right: 1rem;
     text-align: right;
-    width: 8em;
+    width: 8rem;
 }
 .left-fields {
     float: left;
-    width: 40em;
-    margin-right: 1em;
+    width: 40rem;
+    margin-right: 1rem;
 }
 .right-fields {
     display: inline-block;
     width: 500px;
 }
 .left-fields .helptext {
-    margin-left: 11.2em;
+    margin-left: 11.2rem;
 }
 .label-field-helptext {
-    margin: 0 1em 1em 0;
+    margin: 0 1rem 1rem 0;
 }
 .description {
     clear: both;
-    margin-left: 0.5em;
+    margin-left: 0.5rem;
 }
 
 
@@ -99,22 +99,22 @@ general forms and for event_form */
     border-bottom: 0 none;
     clear: left;
     color: #5E7C93;
-    font: italic 1.2em 'Lucida Grande',Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif;
-    margin-bottom: 0.5em;
-    max-width: 10em;
-    padding-top: 1em;
+    font: italic 1.2rem 'Lucida Grande',Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif;
+    margin-bottom: 0.5rem;
+    max-width: 10rem;
+    padding-top: 1rem;
 }
 
 .tags {
-    margin: 0.5em 0 0.2em 0;
-    line-height: 2em;
+    margin: 0.5rem 0 0.2rem 0;
+    line-height: 2rem;
 }
 .tags a {
-    padding: 0.1em 0.3em 0.1em 0.3em;
-    margin: 0.1em 0.3em 0.1em 0em;
-    border-radius: 0.5em;
-    -webkit-border-radius: 0.5em;
-    -moz-border-radius: 0.5em;
+    padding: 0.1rem 0.3rem 0.1rem 0.3rem;
+    margin: 0.1rem 0.3rem 0.1rem 0rem;
+    border-radius: 0.5rem;
+    -webkit-border-radius: 0.5rem;
+    -moz-border-radius: 0.5rem;
     border: 1px #ccc solid;
     /* background-color: #cde; */
     background-color: transparent;
@@ -129,7 +129,7 @@ general forms and for event_form */
 }
 .messages ul li {
     display: inline ;
-    margin: 0 1em 0 0 ;
+    margin: 0 1rem 0 0 ;
 }
 .messages li:before {
     content: "\00BB \0020";
@@ -150,13 +150,13 @@ general forms and for event_form */
 }
 
 /* for tags cloud */
-.tag_1  { font-size:0.8em; }
-.tag_2  { font-size:1.0em; }
-.tag_3  { font-size:1.2em; }
-.tag_4  { font-size:1.4em; }
-.tag_5  { font-size:1.6em; }
-.tag_6  { font-size:1.8em; }
-.tag_7  { font-size:2.0em; }
-.tag_8  { font-size:2.2em; }
-.tag_9  { font-size:2.4em; }
-.tag_10 { font-size:2.6em; }
+.tag_1  { font-size:0.8rem; }
+.tag_2  { font-size:1.0rem; }
+.tag_3  { font-size:1.2rem; }
+.tag_4  { font-size:1.4rem; }
+.tag_5  { font-size:1.6rem; }
+.tag_6  { font-size:1.8rem; }
+.tag_7  { font-size:2.0rem; }
+.tag_8  { font-size:2.2rem; }
+.tag_9  { font-size:2.4rem; }
+.tag_10 { font-size:2.6rem; }
