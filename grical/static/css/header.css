@@ -1,0 +1,68 @@
+/* header */
+#logo {
+    float: left;
+}
+#header {
+    background-repeat:repeat-y;
+    background-color: black;
+    border-bottom: 2px solid #546878;
+    min-height: 110px;
+    line-height: 2em;
+    margin: 0;
+    padding: 0.5em;
+    text-align: right;
+    border-radius: 0 0 0.9em 0;
+    padding: 0.5em ;
+    color: #546878;
+    font-weight: bold;
+}
+#header a {
+    color: #AFC4D3;
+    text-decoration: none ;
+}
+#header img {
+    vertical-align: middle;
+}
+#header form {
+    display: inline;
+}
+#feedback {
+    display: inline;
+}
+
+/**
+ * search results
+ */
+#views {
+    display: inline-block;
+    font-size: 0.9em;
+    margin: 1em 0 0.2em;
+    text-align: right;
+}
+#views img {
+    vertical-align:middle;
+    margin: 0.2em;
+}
+#views a {
+    text-decoration:none;
+    color: #333;
+}
+.current_view {
+    margin-bottom: 1em;
+    border: 3px #5E7C93 solid;
+}
+#views div[id$="_view"] {
+    padding: 0.5em;
+    border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    display: inline;
+    margin: 0 0.2em;
+    padding: 0.4em;
+}
+#views #table_view { background: #aaa; }
+#views #map_view { background: #e8cfe6; }
+#views #boxes_view { background: #99c2e8; }
+#views #calendars_view { background: #b6b9ea; }
+#views #ical_view { background: #9dd49d; }
+#views #rss_view { background: #ff9e63; }

@@ -1,0 +1,110 @@
+/** event full **/
+
+.event_full .item-nr {
+    font-size: 0.8em;
+    text-align: right;
+}
+
+.event_full .header {
+    background: none repeat scroll 0 0 black;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    color: #9DBCD3;
+    display: inline-block;
+    font-size: 1.1em;
+    margin-bottom: 1em;
+    padding: 0;
+    width: 100%;
+}
+.event_full #title {
+    display: inline-block;
+    padding: 0.2em 0.5em;
+}
+.event_full .options {
+    background-color: transparent;
+    border: 3px solid white;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    color: #5E7C93;
+    display: inline-block;
+    float: right;
+    font-size: 0.8em;
+    margin: 0;
+    padding: 0.3em 0.5em;
+    text-align: right;
+}
+.event_full .options a {
+    text-decoration: none;
+    color: white;
+}
+.event_full .data {
+    display: inline-block;
+    margin-left: .5em;
+}
+
+.event_full .urls {
+    margin-bottom: 0;
+    padding-left: 0;
+}
+
+
+.event_full fieldset {
+    background: none repeat scroll 0 0 #9DBCD3;
+    border: 1px solid #2C516D;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    margin: 1.5em 0.5em;
+    padding: 0.5em 1em;
+}
+.event_full .item {
+    clear: both;
+    margin: 0.5em;
+}
+.event_full .icon {
+    width: 1.5em;
+    position: absolute;
+}
+.event_full .ical_logo {
+    margin: 0;
+    vertical-align: middle;
+}
+.event_full {
+    margin-top: 0em;
+}
+.event_full .item-nr {
+    font-size: 0.8em;
+    text-align: right;
+}
+.event_full .data {
+    display: inline-block;
+    margin-left: 2em;
+}
+.event_full .urls, .event_full .urls ul, .event_full .urls li {
+    display: inline ;
+    margin: 0em 1em 1em 0 ;
+    -moz-padding-start: 0;
+}
+.event_full .urls li:before {
+    content: "\00BB \0020";
+    font-size: 1.4em;
+}
+.event_full ul.urls li {
+    max-width: 320px;
+    display: block;
+    float: left;
+    font-size: 0.8em;
+    color: gray;
+}
+.event_full .url_name {
+    font-size: 1.4em;
+    color: #546878;
+}
+.event_full td {
+    border: 1px solid #aaa;
+    padding:0.5em;
+}
+.event_full table {
+    display: inline;
+    margin-top: 1em;
+    vertical-align: top;
+}
+.event_full #description {
+    font-size: 90%;
+}

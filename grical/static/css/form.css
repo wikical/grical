@@ -1,0 +1,112 @@
+/* general form directives */
+form .helptext {
+    color: #9DBCD3;
+    font-size: 0.8em;
+}
+
+form label {
+    color: #2C516D;
+    font-weight: bold;
+    margin: 0;
+    margin-top: .5em;
+}
+input[type="text"], textarea, input[type="checkbox"] {
+    border: 1px solid #3176B9;
+}
+form ul {
+    list-style: none;
+    padding: 0;
+}
+form li {
+    padding: 0 ;
+}
+
+textarea {
+    width: 100%;
+}
+
+/* errors produces by wrong entries in forms */
+.errorlist {
+    font-size:90%;
+    color:red;
+    margin: 1em;
+    padding: 0;
+}
+
+#submit-button input,
+.small-submit-button input,
+p.submit input{
+    background-color: black;
+    border: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 1.4rem;
+    color: white;
+}
+#submit-button input:hover,
+.small-submit-button input:hover,
+p.submit input:hover {
+    background-color: #5E7C93;
+}
+.small-submit-button input,
+#gc-comments p.submit input{
+    font-size: 1.2rem;
+}
+
+
+#simplified_event_form form legend {
+    margin-top: -1.2em;
+    color: #AFC4D3;
+    background: none repeat scroll 0 0 black;
+    border: 1px solid #2C516D;
+    font-weight: bold;
+    padding: 0.2em 0.5em;
+    text-align: center;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+}
+
+#simplified_event_form fieldset {
+    padding: 0.1em 0.2em 0.5em;
+    border:1px solid #2C516D;
+    background: none repeat scroll 0 0 #9DBCD3;
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+}
+
+
+#gc-event-recurrences td {
+    padding-right: .5rem;
+}
+#gc-event-recurrences .gc-month {
+    min-height: 14rem;
+}
+#gc-event-recurrences .cal-form-day-not-editable {
+    color: red;
+    text-align: right;
+}
+
+/*#simplified_event_form {
+    display: inline-block;
+}
+#simplified_event_form .field {
+    margin: 5px;
+    display: inline-block;
+}
+#simplified_event_form label {
+    position: relative;
+}
+#simplified_event_form input[type="checkbox"] {
+}
+#simplified_event_form .help_text {
+    font-size:0.8em;
+}
+#simplified_event_form textarea {
+    height: 4em;
+}
+#simplified_submit {
+    display: inline;
+    padding: 5px;
+}*/
+#alternatives {
+    font-size: 0.8em;
+}
+
