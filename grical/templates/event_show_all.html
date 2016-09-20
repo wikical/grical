@@ -20,15 +20,21 @@
 
             <div class="header col-xs-12 col-sm-6 col-md-4">
                 <div id="title">
-                    <span class="ical_logo">
-                      <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
-                    </span>
+
                     {% if event.recurring %}
                         <span class="ical_logo">
                             <a href="{% url "event_show_recurrences_ical" event.id  %}">
-                                <img alt="ICAL recurrences" src="{{ STATIC_URL }}icalrecurrencesicon.png" /></a>
+                                <img alt="ICAL recurrences" src="{{ STATIC_URL }}icalrecurrencesicon.png" />
+                            </a>
+                        </span>
+                    {% else %}
+                        <span class="ical_logo">
+                            <a href="{% url "event_show_ical" event.id  %}">
+                                <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png"/>
+                            </a>
                         </span>
                     {% endif %}
+
                     {% if event.acronym %}{{ event.acronym|escape }} - {% endif %}{{ event.title|escape }}
                 </div>
                 <div class="options">
