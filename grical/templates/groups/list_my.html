@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block container %}
+<h2> {% trans "My groups" %}:</h2>
+
+{% if groups %}
+<p><a href="{% url "group_new"  %}">{% trans "Create a new group." %}</a></p>
+<ul>
+    {% for group in groups %}
+        <li><a href="{% url "group_view" group.id  %}">{{ group.name }}</a></li>
+        <ul>
+            <li><a href="{% url "group_view" group.id  %}">{% trans "show all events in this group" %}</a></li>
+            <li><a href="{% url "group_invite" group.id  %}">{% trans "invite a user to this group" %}</a></li>
+            <li><a href="{% url "group_quit" group.id  %}">{% trans "leave this group" %}</a></li>
+        </ul>
+    {% endfor %}
+</ul>
+{% else %}
+    <p>{% trans "You are not a member of any group." %}</p>
+    <p><a href="{% url "group_new"  %}">{% trans "Create a new group." %}</a>.</p>
+{% endif %}
+
+{% endblock %}
+

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+{% if form.errors or form.non_field_errors or formset_url.errors or formset_url.non_form_errors or formset_session.errors or formset_session.non_form_errors or formset_deadline.errors or formset_deadline.non_form_errors %}
+    <p class="errorlist">
+        {% trans "The operation could not be performed because one or more error(s) occurred. Please resubmit the form after making the necessary changes. See the red remarks." %}
+    </p>
+{% endif %}
+
+<div id="event_form">
+    {{ form.non_field_errors.as_ul }}
+    <form action="" method="post">{% csrf_token %}
+        <div id="title">
+            <div class="helptext">{% trans "Title" %}</div>
+            <div> {{ form.title.as_widget }} </div>
+        </div>
+        <div id="non-table-fields">
+            <div class="left-fields">
+                {% for field in form.visible_fields %}
+                    {# Include the hidden fields in the form #}
+                    {% if forloop.first %}
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                    {% endif %}
+                    {% if not field.auto_id = "id_title" and not field.auto_id = "id_coordinates" and not field.auto_id = "id_description" %}
+                        <div class="label-field-helptext">
+                            {{ field.errors.as_ul }}
+                            {{ field.label_tag }}
+                            {{ field.as_widget }}<br />
+                            <div class="helptext">{{ field.help_text|safe }}</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="right-fields">
+                <div class="coordinates">
+                    {% with form.coordinates as field %}
+                        {{ field.errors.as_ul }}
+                        {{ field.label_tag }}
+                        {{ field }}
+                        <div class="helptext">
+                            {% if field.value %}
+                                {% trans "You can click on the map to change the coordinates" %}
+                            {% else %}
+                                {% trans "You zoom and can click on the map to set the coordinates" %}
+                            {% endif %}
+                        </div>
+                        <div id="map" class="smallmap"></div>
+                    {% endwith %}
+                </div>
+            </div>
+            <div class="description">
+                {% with form.description as field %}
+                    {{ field.label_tag }}<br />
+                    <div class="helptext">{{ field.help_text|safe }}</div>
+                    {{ field }}
+                    {{ field.errors.as_ul }}
+                {% endwith %}
+            </div>
+        </div>
+        <div id="urls-form">
+            <!-- urls -->
+            <h2>{% trans "Web addresses (URLs)" %}</h2>
+            {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
+            <div>{{ formset_url.management_form }}</div>
+            {{ formset_url.non_form_errors.as_ul }}
+            <table id="url_table">
+                {% for form in formset_url.forms %}
+                    {% if forloop.first %}
+                        <thead><tr>
+                            {% for field in form.visible_fields %}
+                                <th>{{ field.label|capfirst }}</th>
+                            {% endfor %}
+                        </tr></thead>
+                    {% endif %}
+                    <tr>
+                        {% for field in form.visible_fields %}
+                            <td>
+                                {# Include the hidden fields in the form #}
+                                {% if forloop.first %}
+                                    {% for hidden in form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                {% endif %}
+                                {{ field.errors.as_ul }}
+                                {{ field }}
+                            </td>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <td>
+                                {{ form.non_field_errors.as_ul }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div id="sessions-form">
+            <!-- sessions -->
+            <h2>{% trans "Sessions within the event" %}</h2>
+            <div>{{ formset_session.management_form }}</div>
+            {{ formset_session.non_form_errors.as_ul }}
+            <table id="session_table">
+                {% for form in formset_session.forms %}
+                    {% if forloop.first %}
+                        <thead><tr>
+                            {% for field in form.visible_fields %}
+                                <th>{{ field.label|capfirst }}</th>
+                            {% endfor %}
+                        </tr></thead>
+                    {% endif %}
+                    <tr>
+                        {% for field in form.visible_fields %}
+                            <td>
+                                {# Include the hidden fields in the form #}
+                                {% if forloop.first %}
+                                    {% for hidden in form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                {% endif %}
+                                {{ field.errors.as_ul }}
+                                {{ field }}
+                            </td>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <td>
+                                {{ form.non_field_errors.as_ul }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div id="deadlines-form">
+            <!-- deadlines -->
+            <h2>{% trans "Special dates / deadlines" %}</h2>
+            <div>{{ formset_deadline.management_form }}</div>
+            {{ formset_deadline.non_form_errors.as_ul }}
+            <table id="deadline_table">
+                {% for form in formset_deadline.forms %}
+                    {% if forloop.first %}
+                        <thead><tr>
+                            {% for field in form.visible_fields %}
+                                <th>{{ field.label|capfirst }}</th>
+                            {% endfor %}
+                        </tr></thead>
+                    {% endif %}
+                    <tr>
+                        {% for field in form.visible_fields %}
+                            <td>
+                                {# Include the hidden fields in the form #}
+                                {% if forloop.first %}
+                                    {% for hidden in form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                {% endif %}
+                                {{ field.errors.as_ul }}
+                                {{ field }}
+                            </td>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <td>
+                                {{ form.non_field_errors.as_ul }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% include "also_recurrences_form.html" %}
+        <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
+    </form>
+</div>
+{% comment %}
+<div class="info">
+    {% if event_id %}
+        <a href="{% url "event_edit_raw" event_id  %}">{% trans "edit as text" %}</a>
+    {% else %}
+        {# user is creating a new event, not editing a old event #}
+        <a href="{% url "event_new_raw"  %}">{% trans "edit as text" %}</a>
+    {% endif %}
+    ({% trans "Warning: unsaved changes in the form above will be lost" %})
+</div>
+{% endcomment %}
+
+<script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+<script type="text/javascript">
+//<![CDATA[
+
+window.onload=init;
+
+// we define the function 'trim' for Strings if not present:
+if(typeof(String.prototype.trim) === "undefined") {
+    String.prototype.trim = function() {
+        return String(this).replace(/^\s+|\s+$/g, '');
+    };
+}
+
+var map, pois, icon;
+OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {                
+    defaultHandlerOptions: {
+        'single': true,
+        'double': false,
+        'pixelTolerance': 0,
+        'stopSingle': false,
+        'stopDouble': false
+    },
+
+    initialize: function(options) {
+        this.handlerOptions = OpenLayers.Util.extend(
+            {}, this.defaultHandlerOptions
+        );
+        OpenLayers.Control.prototype.initialize.apply(
+            this, arguments
+        ); 
+        this.handler = new OpenLayers.Handler.Click(
+            this, {
+                'click': this.trigger
+            }, this.handlerOptions
+        );
+    }, 
+
+    trigger: function(e) {
+        // e.xy contains the point in pixels
+        var lonlat = map.getLonLatFromViewPortPx(e.xy);
+        // lonlat are in EPSG:900913 (meters)
+        pois.clearMarkers();
+        pois.addMarker(
+            new OpenLayers.Marker(
+                new OpenLayers.LonLat( lonlat.lon, lonlat.lat ),
+                icon
+            )
+        );
+        var proj = new OpenLayers.Projection("EPSG:4326");
+        lonlat.transform( map.getProjectionObject(), proj );
+        document.getElementById('id_coordinates').value = lonlat.lat + ", " + lonlat.lon;
+    }
+
+});
+function init() {
+    icon = new OpenLayers.Icon(
+        "{{ STATIC_URL }}marker_red.png",
+        new OpenLayers.Size( 40, 40 ),
+        new OpenLayers.Pixel( -20, -20 )
+    ) ;
+    map = new OpenLayers.Map(
+        "map",
+        {
+            controls:[
+                new OpenLayers.Control.Navigation(),
+                new OpenLayers.Control.PanZoomBar(),
+                new OpenLayers.Control.LayerSwitcher(),
+                new OpenLayers.Control.MousePosition(),
+                new OpenLayers.Control.Attribution()],
+            projection: new OpenLayers.Projection( "EPSG:900913" ), // meters mercator projection
+            displayProjection: new OpenLayers.Projection( "EPSG:4326" ) // lat/lon
+        }
+    ) ;
+    map.addLayer( new OpenLayers.Layer.OSM() );
+
+    pois = new OpenLayers.Layer.Markers( "Marker" );
+    map.addLayer( pois );
+
+    {% if form.instance.coordinates and form.instance.exact %}
+        mark( 
+                {{ form.instance.latitude }},
+                {{ form.instance.longitude }}
+        );
+    {% else %}
+        {% if form.instance.coordinates %}
+            map.setCenter(
+                new OpenLayers.LonLat({{ form.instance.longitude }}, {{ form.instance.latitude }}).transform(
+                        new OpenLayers.Projection( "EPSG:4326" ),
+                        map.getProjectionObject()),
+                10);
+        {% else %}
+            map.setCenter(new OpenLayers.LonLat(0, 0), 2, true, true);
+        {% endif %}
+    {% endif %}
+
+    var click = new OpenLayers.Control.Click();
+    map.addControl(click);
+    click.activate();
+}
+
+function mark( lat, lon ) {
+    var marker = new OpenLayers.Marker(
+        new OpenLayers.LonLat( lon, lat).transform(
+            new OpenLayers.Projection( "EPSG:4326" ),
+            map.getProjectionObject()
+        ),
+        icon
+    )
+    pois.addMarker( marker ) ;
+    var mapArea = pois.getDataExtent().toArray();
+    map.setCenter (
+        new OpenLayers.LonLat( ( mapArea[0] + mapArea[2]) /2, ( mapArea[1] + mapArea[3] ) /2 ),
+        map.getZoomForExtent( pois.getDataExtent(), true ) -1
+    );
+}
+
+function updateMap( value ) {
+    var latLon = value.trim().split(/\s*,\s*/) ;
+    var lat = latLon[0] ;
+    var lon = latLon[1] ;
+    pois.clearMarkers();
+    mark( lat, lon ) ;
+}
+
+//]]>
+</script>
+{% endblock %}
+
