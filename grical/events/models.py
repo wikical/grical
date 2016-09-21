@@ -1468,7 +1468,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             return
         if hasattr(event, "is_new") and not event.is_new:
             return
-        #notify_users_when_wanted.delay( event = event )
+        from .tasks import notify_users_when_wanted
+        notify_users_when_wanted.delay( event = event )
 
     @staticmethod # def save_startdate_enddate(event, startdate, enddate) {{{3
     def save_startdate_enddate( event, startdate, enddate ):
