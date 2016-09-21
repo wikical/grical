@@ -60,8 +60,6 @@ Migrate db
 
   sqlite3 grical_db.sql "UPDATE django_site SET domain='localhost:8000', name='Grical development';"
 
-  python manage.py createcachetable cache
-
 Work with grical
 ----------------
 

@@ -228,28 +228,6 @@ if TESTS_RUNNING:
     INSTALLED_APPS = INSTALLED_APPS + ['django.contrib.sessions',
             'grical.tagging.tests']
 
-
-# =============================================================================
-# CACHE {{{1
-# =============================================================================
-
-CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            'LOCATION': '127.0.0.1:11211',
-            'TIMEOUT': 300, # 5 minutes
-            'KEY_PREFIX': 'production',
-        }, #TODO: use also the hot spare server
-        'db': {
-            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-            'LOCATION': 'cache',
-            'TIMEOUT': 60*60*24*31, # 31 days
-            'OPTIONS': {
-                'MAX_ENTRIES': 100000
-            },
-        },
-}
-
 # =============================================================================
 # Static files {{{1
 # =============================================================================
