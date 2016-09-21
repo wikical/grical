@@ -11,16 +11,15 @@ This is the easiest setup for development
 Install some Ubuntu packages
 ----------------------------
 
-  sudo apt-get install python-geoip build-essential python-dev python-pip geoip-database-contrib mercurial famfamfam-flag-gif sqlite3 spatialite-bin python-virtualenv
+14.04
+~~~~~
 
-Ubuntu 15.04+
--------------
+  cat ~/grical/requirements/development.trusty.apt | tr '\n' ' '|xargs sudo apt-get install
 
-  sudo apt-get install libsqlite3-mod-spatialite
+15.04+
+~~~~~~
 
-  also make sure that ~/grical/grical/settings/settings-example.py there is the following:
-
-    SPATIALITE_LIBRARY_PATH = 'mod_spatialite'
+  cat ~/grical/requirements/development.xenial.apt | tr '\n' ' '|xargs sudo apt-get install
 
 Clone grical
 ------------
@@ -139,6 +138,9 @@ Exit psql with Ctrl+D
 logout as postgres
   exit
 
+NOTE: grical_user needs some additional roles in order to create test
+databases if this is desired
+
 # Install pip packages
 
 (always as grical root)
@@ -151,7 +153,9 @@ In host machine
   cd ~/grical/grical/settings
   cp settings-example.py settings.py
 
-edit settings.py, set `DEBUG = True`
+edit settings.py, set `DEBUG = True` for development.
+Modify DATABASES section to use postgresql. Review also other changes
+required to activate CACHES etc.
 
 Login as regular user to grical
 -------------------------------
@@ -164,6 +168,7 @@ Login as regular user to grical
 (password is "grical_password")
 
   python manage.py createcachetable cache
+(if db_cache is activated in CACHES section, requiring a database)
 
 Start the dev server
   python manage.py runserver 0.0.0.0:8000

@@ -1,3 +1,4 @@
+# Set to False for production
 DEBUG = True
 
 from settings_base import *
@@ -5,7 +6,7 @@ from settings_base import *
 SECRET_KEY = 'fiwj{34gj90gjdsg.s9t8t9sggejis0e94gjsd4#&bkd;k4lg$'
 
 DATABASES = {
-    # PostgreSQL settings
+    # PostgreSQL settings for production
     # 'default': {
     #      'ENGINE': 'django.contrib.gis.db.backends.postgis',
     #      'ATOMIC_REQUESTS': True,
@@ -15,7 +16,7 @@ DATABASES = {
     #      'HOST': 'localhost',
     #      'PORT': 5432
     #  }
-    #  sqlite3/spatialite settings
+    #  sqlite3/spatialite settings for development
     'default': {
          'ENGINE': 'django.contrib.gis.db.backends.spatialite',
          'ATOMIC_REQUESTS': True,
@@ -23,14 +24,21 @@ DATABASES = {
      }
 }
 
-SPATIALITE_LIBRARY_PATH = 'mod_spatialite'
+if 'spatialite' in DATABASES['default']['ENGINE']:
+    import platform
+    if platform.dist()[2] in ('yakkety', 'xenial', 'wily'):
+        # https://docs.djangoproject.com/en/1.10/ref/contrib/gis/install/spatialite/#installing-spatialite
+        # It looks that this also applies to Django 1.8. For Ubuntu 14.04 following
+        # line is not required
+        SPATIALITE_LIBRARY_PATH = 'mod_spatialite'
 
 if DEBUG:
-    # Won't show if not INTERNAL_IPS defined
+    # debug toolabr won't show if not INTERNAL_IPS defined
     INTERNAL_IPS = ["127.0.0.1", "10.0.2.2", "10.0.3.1", ]
     INSTALLED_APPS.insert(0, 'debug_toolbar')
 
 if not DEBUG:
+    # Set cached template loaders for production
     for TEMPLATE in TEMPLATES:
         # When setting custom loaders setting, APP_DIRS should be False
         # or else exception will raise. See:
@@ -47,14 +55,19 @@ if not DEBUG:
 
 # This is to not flood console with DEBUG and INFO messages while running tests
 # or in production
+LOG_LEVEL = 'DEBUG'
+if TESTS_RUNNING:
+    LOG_LEVEL = 'WARNING'
+elif not DEBUG:
+    LOG_LEVEL = 'INFO'
 if (not DEBUG or TESTS_RUNNING) and 'handlers' in LOGGING and 'console' in LOGGING['handlers']:
-    LOGGING['handlers']['console']['level'] = 'WARNING'
+    LOGGING['handlers']['console']['level'] = LOG_LEVEL
 if (not DEBUG or TESTS_RUNNING) and 'loggers' in LOGGING and '' in LOGGING['loggers']:
-    LOGGING['loggers']['']['level'] = 'WARNING'
+    LOGGING['loggers']['']['level'] = LOG_LEVEL
 
-# ======================================================================
-# imap settings for getting events as emails
-# ======================================================================
+# =============================================================================
+# imap settings for events submission by email
+# =============================================================================
 
 IMAP_SERVER = 'localhost'
 IMAP_LOGIN = ''
@@ -94,7 +107,7 @@ CELERYD_TASK_SOFT_TIME_LIMIT = CELERYD_TASK_TIME_LIMIT * 0.9
 this value to stop importing and preparing next run. """
 assert CELERYD_TASK_SOFT_TIME_LIMIT < CELERYD_TASK_TIME_LIMIT
 
-# Following is useful for development, it can be totally omitted in production.
+# Following is useful for development, it can be removed in production.
 
 if TESTS_RUNNING or DEBUG:
     CELERY_ALWAYS_EAGER = True
@@ -147,6 +160,8 @@ CACHES = {
 # geonames settings
 # ======================================================================
 
+# IMPORTANT FIXME
+# Commented this out, replace `ogai` with a dummy username
 # This is used for getting the coordinates from a location using the API of
 # GeoNames.org. You need to register here http://www.geonames.org/login and
 # then activate the use of the API in your account.
@@ -158,8 +173,8 @@ GEONAMES_URL = 'https://secure.geonames.net/'
 # ======================================================================
 
 # IMPORTANT FIXME
-# Bellow are production settings for grical.org, they should leave from
-# settings-example.py and kept elsewhere
+# Bellow are production settings for grical.org. Add some dummy values and
+# comment - out
 
 ADMINS = (
 	('stefanos', 'stefanos@gridmind.org'),
@@ -168,6 +183,9 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+# IMPORTANT FIXME
+# Bellow are production settings for grical.org. Add some dummy values and
+# comment - out
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to
 REPLY_TO = 'office@gridmind.org'
@@ -176,18 +194,14 @@ DEFAULT_FROM_EMAIL = 'noreply@grical.org'
 SERVER_EMAIL = 'noreply@grical.org'
 EMAIL_SUBJECT_PREFIX = '[GriCal.org]'
 
+# Set email backend to SMTP when in production:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
 # FIXME IMPORTANT
-# Following are production values for grical.org and prove to work, remove from
-# example
+# Following are production values for grical.org and prove to work, replace
+# with some dummy values and keep commented-out
 # EMAIL_HOST = '136.243.175.225'
 # EMAIL_HOST_USER = 'email_gridmind_org'
 # EMAIL_HOST_PASSWORD = 'veeWae4y'
 # EMAIL_USE_TLS = True
 # EMAIL_PORT = 587
-
-# old:
-#EMAIL_HOST = 'alpha.gridmind.org'
-#EMAIL_PORT = 25
-#EMAIL_HOST_USER = ''
-#EMAIL_HOST_PASSWORD = ''
-#EMAIL_USE_TLS = False
