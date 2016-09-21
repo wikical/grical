@@ -161,7 +161,8 @@ CACHES = {
 # ======================================================================
 
 # IMPORTANT FIXME
-# Commented this out, replace `ogai` with a dummy username
+# Commented this out, replace `ogai` with a dummy username. Or just remove
+# default settings from settings_base is `demo` that should work.
 # This is used for getting the coordinates from a location using the API of
 # GeoNames.org. You need to register here http://www.geonames.org/login and
 # then activate the use of the API in your account.

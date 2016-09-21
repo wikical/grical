@@ -35,6 +35,13 @@ PROGRAM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Stop using the write database. When True, users cannot enter/modify data
 READ_ONLY = os.path.exists(os.path.join(PROGRAM_DIR, "READ_ONLY"))
+"""
+If ``True``, GridCalendar works in read only mode, i.e. no new
+events can be added and existing events cannot be edited. This can
+be useful in emergencies, for example when your server is
+overloaded. By default, it is set to ``True`` if a file named
+READ_ONLY exists in the GridCalendar program directory.
+"""
 
 # limits for number of events/dates
 DEFAULT_LIMIT = 50
@@ -44,11 +51,44 @@ VIEWS_MAX_LIMITS = {
 }
 # for RSS feeds
 FEED_SIZE = DEFAULT_LIMIT
+"""
+When a user searches for events, results are paginated, and
+:data:`DEFAULT_LIMIT` events are shown on each page. The user can
+specify pagination with fewer (but not more) events on each page.
+The default for :data:`DEFAULT_LIMIT` is 50.
+
+Different limits can be specified for different view modes using
+:data:`VIEWS_MAX_LIMITS`. For example, to set a default limit of 40
+for table and 20 for map::
+
+  VIEWS_MAX_LIMITS = {
+     'table': 40,
+     'map': 20,
+  }
+
+For view modes for which :data:`VIEWS_MAX_LIMITS` does not specify
+anything, :data:`DEFAULT_LIMIT` is used. The default for
+:data:`VIEWS_MAX_LIMITS` is 10 for map, 100 for calendars.
+
+:data:`MAX_EVENTS_ON_ROOT_PAGE` is the same for the root page. The
+default is 20.
+
+Finally, FEED_SIZE is the limit for feeds. The default is 50.
+"""
 
 # dates thereafter from now are not allowed
 MAX_DAYS_IN_FUTURE = 1095 # 3 years: 365 * 3
+"""
+It is allowed to specify dates only up to this number of days in
+the future. The default is 1095, or 3 years.
+"""
 
 DEFAULT_RECURRING_DURATION_IN_DAYS = 365
+"""
+When defining recurrent events, the user selects the days on a
+calendar displayed. This setting specifies how long that calendar
+is, in days from the start of the event. The default is 365.
+"""
 assert ( DEFAULT_RECURRING_DURATION_IN_DAYS <= MAX_DAYS_IN_FUTURE )
 # TODO: inform the user who introduced the event that recurring events are
 # going to expire before it happens
@@ -71,16 +111,35 @@ VERSION = '.'.join((str(x) for x in GRICAL_VERSION)) + tip
 # used to generate the PROID field of iCalendars, see
 # http://tools.ietf.org/html/rfc5545
 PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
+"""
+When exporting to iCalendar format, this setting specifies the
+PRODID, the identifier of the product that created the object. See
+RFC5545_ for details. The default is
+:samp:`-//GridMind//NONSGML GridCalendar {XXXX}//EN`, where
+*XXXX* the GridCalendar version.
+"""
 
 # imap settings for getting events as emails
 IMAP_SERVER = ''
 IMAP_LOGIN = ''
 IMAP_PASSWD = ''
 IMAP_SSL = False
+"""
+In GridCalendar new events can be created by email. These emails
+must arrive at an IMAP account, to which GridCalendar logs on and
+reads the emails. These settings specify the IMAP account
+information. There is no default.
+"""
 
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to
 REPLY_TO = None
+"""
+When automatically sending emails, the Django DEFAULT_FROM_EMAIL_
+setting is used as the sender; :data:`REPLY_TO` can be used to
+specify a Reply-To address. The default is ``None``, which means no
+Reply-To header will be added.
+"""
 
 EMAIL_HOST = 'localhost'
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -91,15 +150,35 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # see # http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
 
 GEOIP_PATH = '/usr/share/GeoIP'
+"""
+The directory where the GeoIP databases are installed. The default
+is :file:`/usr/share/GeoIP`.
+"""
 GEONAMES_URL = 'http://api.geonames.org/'
 GEONAMES_USERNAME = 'demo'
+"""
+The Geonames_ database can find names of locations given their
+co-ordinates. You can create an account on Geonames and set these
+settings to access the database. In that case, you should also
+configure your Geonames account to accept a passwordless login from
+the IP of your GridCalendar server. GridCalendar will then use
+these settings to logon to Geonames. The default
+:data:`GEONAMES_URL` is http://api.geonames.org/, and the default
+:data:`GEONAMES_USERNAME` is "demo".
+"""
 
 # Default value for distance unit, possible values are: 'km' and 'mi'
 DISTANCE_UNIT_DEFAULT = 'km' # alternative: 'mi'
+"""The default unit of distance; can be km or mi. The default is km."""
 
 # events within this radius of the center of city are considered to be in the
 # city. DISTANCE_UNIT_DEFAULT is the unit.
 CITY_RADIUS = 50
+"""
+Events within this radius from the center of the city are
+considered to be in the city. The unit is
+:data:`DISTANCE_UNIT_DEFAULT`. The default is 50.
+"""
 
 # =============================================================================
 # auth settings {{{1
@@ -395,5 +474,13 @@ SYNONYMS = (
     ( u'repetition', u'recurrences' ),
     ( u'repetitions', u'recurrences' ),
 )
+"""
+A list of event model attribute synonyms that can be used when
+submitting events by email or in text format. For example, the
+title of the event can be specified as :samp:`title: {your event's
+title}`, but also "ti", "titl" and "`" can be used in place of
+"title". See the default definition of :data:`SYNONYMS` in
+:file:`settings_base.py` for more information.
+"""
 # (*) can have multi-lines and are not simple text fields
 # TODO: add all translations available
