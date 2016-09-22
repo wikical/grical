@@ -6,6 +6,11 @@ registration_complete.html | {{ block.super }}
 {% endblock %}
 
 {% block container %}
-<br />
-{% trans "Thank you for signing up. An email with instructions has been sent to you" %}.
+<div class="container m-t-1">
+    <div class="row">
+        <div class="col-xs-12">
+            {% trans "Thank you for signing up. An email with instructions has been sent to you" %}.
+        </div>
+    </div>
+</div>
 {% endblock %}

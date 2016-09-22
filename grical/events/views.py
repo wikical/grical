@@ -84,7 +84,7 @@ from grical.events.feeds import SearchEventsFeed
 from grical.events.search import search_events, GeoLookupError
 
 # TODO: check if this works with i18n
-views = [_('table'), _('map'), _('boxes'), _('calendars'),]
+views = [_('boxes'), _('map'),_('table'),_('calendars'),]
 
 @cache_page(60 * 15)
 def help_page( request ): # {{{1
@@ -532,7 +532,7 @@ def event_new_raw( request, template_event_id = None ):
                         as_text = smart_unicode( clone.as_text() ) )
         transaction.savepoint_commit(sid)
         messages.success( request, _( u'event saved' ) )
-        return HttpResponseRedirect( 
+        return HttpResponseRedirect(
             reverse( 'event_show_all', kwargs={'event_id': event.id} ))
     except ValidationError as err:
         transaction.savepoint_rollback(sid)
@@ -592,7 +592,7 @@ def event_edit_raw( request, event_id ):
     else:
         also_recurrences_form = None
     if not 'event_astext' in request.POST:
-        messages.error( request, 
+        messages.error( request,
                 _(u'You submitted an empty form, nothing was saved. ' \
                 'Click the back button in your browser and try again.') )
         return main( request )
@@ -697,7 +697,7 @@ def event_edit_raw( request, event_id ):
         # TODO: change messages to "eventS modified" if more than one was modified
         messages.success( request, _( u'event modifed' ) )
         transaction.savepoint_commit(sid)
-        return HttpResponseRedirect( 
+        return HttpResponseRedirect(
             reverse('event_show_all', kwargs = {'event_id': event_id}))
     else:
         transaction.savepoint_rollback(sid)
@@ -1304,7 +1304,7 @@ def filter_save( request ):
         return HttpResponseRedirect( reverse(
             'filter_edit', kwargs = {'filter_id': efilter.id} ) )
     elif request.method == 'GET':
-        messages.error( request, 
+        messages.error( request,
                 _(u'You have submitted a GET request which is not ' \
                 'a valid method for saving a filter') )
         return main( request )
@@ -1319,7 +1319,7 @@ def filter_edit( request, filter_id ):
         filter_id = int ( filter_id )
     efilter = get_object_or_404( Filter, pk = filter_id )
     if efilter.user.id != request.user.id:
-        messages.error( request, 
+        messages.error( request,
                 _(u'You are not allowed to edit the filter with the ' \
                 'number %(filter_id)d') % {'filter_id': filter_id,} )
         return main( request )
@@ -1662,7 +1662,7 @@ def group_view(request, group_id): # {{{2
     description and events for everyone else
     """
     group = get_object_or_404( Group, id = group_id )
-    if ( request.user.is_authenticated() and 
+    if ( request.user.is_authenticated() and
                     Group.is_user_in_group(request.user, group) ):
         events = group.get_coming_events( limit = -1 )
     else:
@@ -1789,7 +1789,7 @@ def _ical_http_response_from_event_list( elist, filename, calname = None ):#{{{2
         for event in elist:
             event.icalendar(ical)
         icalstream = ical.serialize()
-    response = HttpResponse( icalstream, 
+    response = HttpResponse( icalstream,
             content_type = 'text/calendar;charset=UTF-8' )
     filename = unicodedata.normalize('NFKD', filename).encode('ascii','ignore')
     filename = filename.replace(' ','_')

@@ -1,8 +1,50 @@
 /* header */
+.navbar {
+    padding: 0 15px;
+}
+.navbar-toggler{
+    font-size: 2.5rem;
+    line-height: 4rem;
+    color: #7A7A7A;
+}
+.navbar-brand {
+    margin: .5rem 0 .5rem .5rem;
+    padding: 0;
+}
+@media (min-width: 544px) {
+   /* sm-up */
+    .navbar-brand {
+        margin: 1rem 1rem 1rem 0;
+    }
+}
+.navbar .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+.nav-link {
+    font-size: 1rem;
+}
+
+.navbar .glyphicon-search{
+    font-size: .8rem;
+}
+
+
+#gc-header-search-form {
+    margin-top: 1.5rem;
+}
+
+.gc-user-info{
+    color: #C4C4C4;
+    font-size: .8rem;
+}
+
+
+
 #logo {
     float: left;
 }
-#header {
+/*#header {
     background-repeat:repeat-y;
     background-color: black;
     border-bottom: 2px solid #546878;
@@ -15,7 +57,7 @@
     padding: 0.5rem ;
     color: #546878;
     font-weight: bold;
-}
+}*/
 #header a {
     color: #AFC4D3;
     text-decoration: none ;
@@ -33,33 +75,45 @@
 /**
  * search results
  */
+#gc-search-views .nav-item {
+    margin-top: 2rem;
+}
+
 #views {
     display: inline-block;
-    font-size: 0.9rem;
-    margin: 1rem 0 0.2rem;
-    text-align: right;
+    text-align: center;
 }
 #views img {
     vertical-align:middle;
     margin: 0.2rem;
 }
-#views a {
-    text-decoration:none;
+#views .gc-search-view-name {
+    display: inline-block;
+    text-decoration: none;
     color: #333;
 }
-.current_view {
-    margin-bottom: 1rem;
-    border: 3px #5E7C93 solid;
-}
-#views div[id$="_view"] {
+#views .gc-search-view {
     padding: 0.5rem;
     border-radius: 0.5rem;
     -webkit-border-radius: 0.5rem;
     -moz-border-radius: 0.5rem;
-    display: inline;
+    display: inline-block;
     margin: 0 0.2rem;
     padding: 0.4rem;
+    border: 3px solid transparent;
 }
+#views.gc-search-views-small{
+    margin-top : 1rem;
+}
+#views.gc-search-views-small .gc-search-view {
+    margin-bottom: 1rem;
+}
+
+#views .current_view {
+    margin-bottom: 1rem;
+    border-color: #5E7C93;
+}
+
 #views #table_view { background: #aaa; }
 #views #map_view { background: #e8cfe6; }
 #views #boxes_view { background: #99c2e8; }

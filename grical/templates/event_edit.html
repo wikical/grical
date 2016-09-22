@@ -23,13 +23,12 @@
                 </div>
             {% endif %}
 
-            {% if form.non_field_errors|length %}
-            <div>
-                {{ form.non_field_errors.as_ul }}
-            </div>
-            {% endif %}
-
             <form action="" method="post">{% csrf_token %}
+                {% if form.non_field_errors|length %}
+                <div class="gc-form-field-errors">
+                    {{ form.non_field_errors.as_ul }}
+                </div>
+                {% endif %}
                 <div id="non-table-fields">
                     <div class="left-fields">
                         {% for field in form.visible_fields %}

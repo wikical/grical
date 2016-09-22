@@ -9,27 +9,22 @@
     margin: 0.5rem;
 }
 .event_medium .title {
-    font-size: 1.1rem;
-    /* background: black; */
     color: #546878;
     padding: 0.2rem;
     border-radius: 0.5rem 0.5rem 0 0;
 }
-/* .event_medium .title a[href] {
-    color: #AFC4D3;
-} */
 .event_medium .content {
-    border: 1px solid #2C516D;
+    border: 1px solid #DAE6F0;
     padding: 0.5rem;
     border-radius: 0 0 0.5rem 0.5rem;
 }
 .event_medium .tags {
-    font-size: 0.8rem;
     line-height: 2rem;
+    height: 4rem;
+    overflow: hidden;
 }
 
 .deadlines, .deadlines a[href]  {
-    color: #6D2E2C;
     text-decoration: none ;
 }
 
@@ -39,4 +34,40 @@
 .daybox {
     float: left;
     margin: .5rem .5rem .5rem 0;
+}
+.daybox .title a {
+    color: #FFF;
+}
+
+.daybox h1 {
+    font-size: 1.2rem;
+}
+
+/* xs */
+.event_medium {
+    width: 20rem;
+}
+.gc-event-ical{
+    display: inline-block;
+}
+.gc-event-ical img {
+    display: inline-block;
+    vertical-align: middle;
+}
+.gc-event-title {
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
+    max-width: 16rem;
+}
+
+@media (min-width: 992px) {
+   /* md-up */
+    .event_medium {
+        width: 30rem;
+    }
+    .gc-event-title {
+        width: 100%;
+        max-width: 26rem;
+    }
 }

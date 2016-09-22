@@ -1,0 +1,38 @@
+/**
+ * search table view
+ */
+.event_table {
+    font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+    width:100%;
+    border-collapse:collapse;
+    border:0;
+    margin: 1em 0;
+}
+.event_table td {
+    font-size:1em;
+    /*border:1px solid #55aacc;*/
+    border:0px;
+    text-align: center;
+    padding: 0.2em 1em;
+}
+.event_table th {
+    font-size:1.1em;
+    padding:3px 7px 2px 7px;
+    text-align:left;
+    padding-top:5px;
+    background-color: #f7f7f9;
+    border-radius: 0.5em 0.5em 0 0;
+    text-align: center;
+}
+.event_table tr.even td {
+    color:#000;
+    background-color: #f7f7f9;
+}
+/*.event_table .col_start {
+}
+.event_table .col_upcoming {
+}
+.event_table .col_city {
+}
+.event_table .col_country {
+}*/

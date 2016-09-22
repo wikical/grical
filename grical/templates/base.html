@@ -31,16 +31,22 @@
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css" />
 
 
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main.css" />
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/form.css" />
+    {% block css %}
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/glyphicons.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/form.css" />
 
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/header.css" />
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/footer.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/header.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/footer.css" />
 
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/daybox.css" />
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/map.css" />
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/event_edit.css" />
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/event_show.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/daybox.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/search_map.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/search_table.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/search_calendar.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/event_edit.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/event_show.css" />
+    {% endblock %}
+    {% block extracss %}{% endblock %}
 
     <!--
     <link href="{{ STATIC_URL }}css/print.css" media="print" />
@@ -58,38 +64,74 @@
 
 <body>
 
-<div id="header">
-    <a href="/"><img id="logo" src="{{ STATIC_URL }}grical-logo-v4-317x90.png" alt="{{ DOMAIN }} {% trans 'logo' %}" /></a>
-    {% if user.username %}
-        {% blocktrans with user.username as username %}
-            Logged&nbsp;in&nbsp;as&nbsp;{{ username }}
-        {% endblocktrans %}
-        |&nbsp;<a href="{% url 'settings' %}">{% trans "settings" %}</a>
-        |&nbsp;<a href="{% url 'auth_logout' %}">{% trans "logout" %}</a>
-    {% else %}
-        {% if not READ_ONLY %}
-            <a href="{% url 'registration_register' %}">{% trans "Sign&nbsp;up" %}</a>
-            |&nbsp;<a href="{% url 'auth_login' %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
-        {% else %}
-            <a href="{% url 'auth_login' %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a>
-        {% endif %}
-    {% endif %}
-    |&nbsp;<a href="{% url 'help' %}">{% trans "help" %}</a>
-    |&nbsp;<a href="{% url 'legal_notice' %}">{% trans "legal&nbsp;notice" %}</a>
-    <br />
-    <form id="search" action="{% url 'search' %}">
-        <div id="search_form">
-            <input maxlength="2048" size="40" name="query" value="{{ query }}" />&nbsp;<input type="submit" value="{% trans "Search" %}" />
-            {% if current_view %}
-                <input style="display:none" type="hidden" size="60" name="view" value="{{ current_view }}" />
+<nav class="navbar navbar-light bg-faded">
+    <div class="container-fluid">
+        <button class="navbar-toggler hidden-sm-up" type="button" data-toggle="collapse" data-target="#navbar-header" aria-controls="navbar-header">
+            &#9776;
+        </button>
+        <a class="1 navbar-brand hidden-sm-up pull-xs-right" href="/"><img src="{{ STATIC_URL }}grical-70.png" alt="project logo" class="project-logo"></a>
+        <div class="collapse navbar-toggleable-xs" id="navbar-header">
+            <a class="navbar-brand hidden-xs-down" href="/"><img src="{{ STATIC_URL }}grical-90.png" alt="project logo" class="project-logo"></a>
+            {% if views %}
+            <ul id="gc-search-views" class="nav navbar-nav hidden-md-down">
+                <li class="nav-item text-justify">
+                    {% block views %} {% endblock %}
+                </li>
+            </ul>
             {% endif %}
+            <ul id="gc-header-search-form" class="nav navbar-nav pull-xs-right">
+                <li>
+                    <form class="form-inline">
+                        <div class="form-group">
+                            <label class="sr-only" for="exampleInputAmount">Amount (in dollars)</label>
+                            <div class="input-group">
+                                {% if user.username %}
+                                    <input class="form-control" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
+                                {% else  %}
+                                    <input class="form-control" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
+                                {% endif %}
+                                <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                            </div>
+                        </div>
+                    </form>
+                </li>
+                {% if user.username %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'settings' %}">{% trans "settings" %}</a></li>
+                {% else  %}
+                    {% if not READ_ONLY %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'registration_register' %}">{% trans "Sign&nbsp;up" %}</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'auth_login' %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a></li>
+                {% endif %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'legal_notice' %}">{% trans "legal&nbsp;notice" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'help' %}">{% trans "help" %}</a></li>
+                {% if user.username %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'auth_logout' %}">{% trans "logout" %}</a></li>
+                {% endif %}
+            </ul>
         </div>
-    </form>
+    </div>
+</nav>
 
-    {% block views %} {% endblock %}
-
-    {# TODO: create a selectable list or link for changing the language, see http://docs.djangoproject.com/en/1.2/topics/i18n/internationalization/#the-set-language-redirect-view #}
+{% if user.username %}
+<div class="text-xs-right m-r-1 gc-user-info">
+    {% blocktrans with user.username as username %}
+        Logged&nbsp;in&nbsp;as&nbsp;{{ username }}
+    {% endblocktrans %}
 </div>
+{% endif %}
+
+{% if views %}
+<div id="views" class="container-fluid hidden-lg-up gc-search-views-small">
+    <div class="row">
+        <div class="col-xs-12">
+            {% block views_small %} {% endblock %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="clearfix">&nbsp;</div>
 
 <div class="gc_container">
     {% block search_info %} {% endblock %}
@@ -105,7 +147,7 @@
     {% block container %} {% endblock %}
 </div>
 
-<div id="footer">
+<div id="footer" class="bg-faded">
     <div class="title">{% trans "Social" %}</div>
     <div class="info">
       <ul>
@@ -212,6 +254,15 @@
     {% endcache %}
 </div>
 
+{% block js %}
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/jquery/dist/jquery.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/tether/dist/js/tether.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}js/datepicker.js'></script>
+{% endblock %}
+
+{% block extrajs %}{% endblock %}
 
 </body>
 </html>
