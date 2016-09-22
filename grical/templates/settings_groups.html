@@ -1,17 +1,23 @@
-<ul>
-    {% for group in USER.get_groups %}
-        <li>
-            <a href="{% url "group_view" group.id  %}">{{ group.name }}</a>
-            {% if not READ_ONLY %}
-                &nbsp;
-                <a href="{% url "group_quit" group.id  %}">quit</a>
-                &nbsp;
-                <a href="{% url "group_invite" group.id  %}">invite</a>
-            {% endif %}
-            &nbsp;
-            <a href="{% url "list_events_group_ical" group.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="14"></a>
-            &nbsp;
-            <a href="{% url "list_events_group_rss" group.id  %}"><img alt="RSS" src="{{ STATIC_URL }}rssicon.png" width="14"></a>
-        </li>
-    {% endfor %}
-</ul>
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12">
+            <ul>
+                {% for group in USER.get_groups %}
+                    <li>
+                        <a href="{% url "group_view" group.id  %}">{{ group.name }}</a>
+                        {% if not READ_ONLY %}
+                            &nbsp;
+                            <a href="{% url "group_quit" group.id  %}">quit</a>
+                            &nbsp;
+                            <a href="{% url "group_invite" group.id  %}">invite</a>
+                        {% endif %}
+                        &nbsp;
+                        <a href="{% url "list_events_group_ical" group.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="14"></a>
+                        &nbsp;
+                        <a href="{% url "list_events_group_rss" group.id  %}"><img alt="RSS" src="{{ STATIC_URL }}rssicon.png" width="14"></a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

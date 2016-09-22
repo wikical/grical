@@ -1,0 +1,26 @@
+/* footer */
+#footer {
+    padding: 1.2rem 0.8rem ;
+    margin-top: 2rem;
+    clear: both;
+    line-height: 2;
+    border-radius: 0.9rem 0.9rem 0 0;
+}
+#footer img {
+    vertical-align: middle;
+}
+#footer ul, #footer li {
+    display: inline ;
+    margin: 0 2rem 0 0 ;
+    padding: 0;
+}
+#footer li:before {
+    content: "\00BB \0020";
+}
+#footer .title {
+    float:left ;
+    max-width:8rem;
+}
+#footer .info {
+    margin-left:8rem;
+}

@@ -3,13 +3,24 @@
 
 {% block container %}
 
-<p>{% blocktrans with event.title as title %}
-<i>{{ title }}</i><br />
-can be added to:{% endblocktrans %}</p>
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+            <form action="" method="post">{% csrf_token %}
+                <legend>
+                    <h1>
+                        {% blocktrans with event.title as title %}
+                        <i>{{ title }}</i>
+                        can be added to:{% endblocktrans %}
+                    </h1>
+                </legend>
 
-<form action="" method="post">{% csrf_token %}
-    {{ form }}
-    <input type="submit" value={% trans "Add" %}>
-</form>
+                {{ form }}
+
+                <div id="submit-button"><input type="submit" value="{% trans "Add" %}" /></div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
