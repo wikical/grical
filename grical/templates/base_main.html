@@ -9,43 +9,53 @@
 {% block container %}
 
     {% if not READ_ONLY %}
-        <div id="simplified_container">
-            <div id="simplified_event_form">{% comment %}FIXME: field labels can be long translations{% endcomment %}
-                <form action="" method="post" id="gc-new-event-form">{% csrf_token %}
-                    <fieldset>
-                        <legend>{% trans "Submit an event" %}</legend>
-                        {{ form.non_field_errors }}
-                        {% for field in form.visible_fields %}
-                            {# Include the hidden fields in the form #}
-                            {% if forloop.first %}
-                                {% for hidden in form.hidden_fields %}
-                                    {{ hidden }}
-                                {% endfor %}
-                            {% endif %}
-                            <div class="field">
+        <div id="simplified_event_form" class="container">{% comment %}FIXME: field labels can be long translations{% endcomment %}
+            <form action="" method="post" id="gc-new-event-form" class="form-horizontal m-t-3 clearfix">{% csrf_token %}
+                <fieldset class="row">
+                    <legend class="col-xs-12 col-sm-6 col-md-4 bg-faded">{% trans "Submit an event" %}</legend>
+                    <div class="clearfix">&nbsp;</div>
+                    {{ form.non_field_errors }}
+                    {# Include the hidden fields in the form #}
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+
+                    {% for field in form.visible_fields %}
+                        <div class="form-group col-xs-12 col-sm-6 col-md-4{% if field.name = 'when' %} datePicker-outer{% endif %}">
+                            <label class="control-label" for="simplified_event_{{ field.name }}">{{ field.label_tag }}</label>
+                            <div>
+                                <input id="simplified_event_{{ field.name }}" name="{{ field.html_name }}" class="form-control input-md{% if field.name = 'when' %} datePicker{% endif %}" type="text">
+                                {% if field.help_text %}
+                                    <span class="help-block">{{ field.help_text }}</span>
+                                {% endif %}
                                 {% if field.errors %}
-                                    {{ field.label_tag }}<br />
-                                    {{ field.errors }}
-                                    {{ field }}
+                                    <div class="text-danger">{{ field.errors }}</div>
                                 {% else %}
-                                    {{ field.label_tag }}:&nbsp;{{ field }}{% if field.help_text %}&nbsp;<div class="help_text">{{ field.help_text }}</div>{% endif %}
+                                    {% if form.field_errors %}
+                                        <div class="no-error">&nbsp;</div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
-                        {% endfor %}
-                        <div id="simplified_submit">
-                            <input type="submit" value="{% trans "Submit" %}" />
                         </div>
-                    </fieldset>
-                </form>
+                    {% endfor %}
 
-                <div id="alternatives">
-                    {% trans "Alternatively:" %}
-                    <a href="{% url 'event_new' %}">{% trans "extended form" %}</a>, 
-                    <a href="{% url 'event_new_raw' %}">{% trans "textarea" %}</a>
-                    <br />
-                </div>
+                    <div class="clearfix">&nbsp;</div>
 
+                    <div class="form-group clearfix m-t-1 m-b-1">
+                        <div class="col-xs-12">
+                            <div id="submit-button"><input type="submit" value="{% trans "Submit" %}" /></div>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+
+            <div id="alternatives">
+                {% trans "Alternatively:" %}
+                <a href="{% url 'event_new' %}">{% trans "extended form" %}</a>,
+                <a href="{% url 'event_new_raw' %}">{% trans "textarea" %}</a>
+                <br />
             </div>
+
         </div>
     {% endif %}
 

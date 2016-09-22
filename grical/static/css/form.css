@@ -1,0 +1,108 @@
+/* general form directives */
+form .helptext {
+    color: #9DBCD3;
+}
+
+form label {
+    color: #2C516D;
+    font-weight: bold;
+    margin: 0;
+    margin-top: .5rem;
+}
+form ul {
+    list-style: none;
+    padding: 0;
+}
+form li {
+    padding: 0 ;
+}
+
+textarea {
+    width: 100%;
+}
+
+/* errors produces by wrong entries in forms */
+.errorlist {
+    margin: 0;
+    padding: 0;
+}
+
+#submit-button input,
+.small-submit-button input,
+p.submit input{
+    border: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    color: #1C83CC;
+}
+#submit-button input:hover,
+.small-submit-button input:hover,
+p.submit input:hover {
+    background-color: #5E7C93;
+    color: white;
+}
+
+#simplified_event_form form legend {
+    margin-top: -1.2rem;
+    color: #1C83CC;
+    border: 1px solid #2C516D;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    font-size: 1.2rem;
+    max-width: 16rem;
+}
+
+#simplified_event_form fieldset {
+    padding: 0.1rem 0.2rem 0.5rem;
+    border:1px solid #2C516D;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+
+#simplified_event_form .form-group {
+    margin-bottom: .5rem;
+}
+
+#simplified_event_form input[type="text"] {
+    padding: .2rem;
+}
+
+
+#gc-event-recurrences td {
+    text-align: right;
+    padding-right: .5rem;
+}
+#gc-event-recurrences .gc-month {
+    min-height: 14rem;
+}
+#gc-event-recurrences .cal-form-day-not-editable {
+    color: red;
+    text-align: right;
+}
+
+/*#simplified_event_form {
+    display: inline-block;
+}
+#simplified_event_form .field {
+    margin: 5px;
+    display: inline-block;
+}
+#simplified_event_form label {
+    position: relative;
+}
+#simplified_event_form input[type="checkbox"] {
+}
+#simplified_event_form .help_text {
+    font-size:0.8rem;
+}
+#simplified_event_form textarea {
+    height: 4rem;
+}
+#simplified_submit {
+    display: inline;
+    padding: 5px;
+}*/
+#alternatives {
+    font-size: 0.8rem;
+}
+

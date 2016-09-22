@@ -1,0 +1,73 @@
+/*
+ * event medium format (used in main page and box-search-results)
+ */
+.event_medium a[href] {
+    text-decoration: none;
+}
+.event_medium {
+    float:left;
+    margin: 0.5rem;
+}
+.event_medium .title {
+    color: #546878;
+    padding: 0.2rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+.event_medium .content {
+    border: 1px solid #DAE6F0;
+    padding: 0.5rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+.event_medium .tags {
+    line-height: 2rem;
+    height: 4rem;
+    overflow: hidden;
+}
+
+.deadlines, .deadlines a[href]  {
+    text-decoration: none ;
+}
+
+#search_form {
+    display: inline;
+}
+.daybox {
+    float: left;
+    margin: .5rem .5rem .5rem 0;
+}
+.daybox .title a {
+    color: #FFF;
+}
+
+.daybox h1 {
+    font-size: 1.2rem;
+}
+
+/* xs */
+.event_medium {
+    width: 20rem;
+}
+.gc-event-ical{
+    display: inline-block;
+}
+.gc-event-ical img {
+    display: inline-block;
+    vertical-align: middle;
+}
+.gc-event-title {
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
+    max-width: 16rem;
+}
+
+@media (min-width: 992px) {
+   /* md-up */
+    .event_medium {
+        width: 30rem;
+    }
+    .gc-event-title {
+        width: 100%;
+        max-width: 26rem;
+    }
+}
