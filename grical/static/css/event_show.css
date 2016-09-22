@@ -1,16 +1,12 @@
 /** event full **/
 
 .event_full .item-nr {
-    font-size: 0.8rem;
     text-align: right;
 }
 
 .event_full .header {
-    background: none repeat scroll 0 0 black;
     border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
-    color: #9DBCD3;
     display: inline-block;
-    font-size: 1.1rem;
     margin-bottom: 1rem;
     padding: 0;
     width: 100%;
@@ -26,14 +22,17 @@
     color: #5E7C93;
     display: inline-block;
     float: right;
-    font-size: 0.8rem;
     margin: 0;
     padding: 0.3rem 0.5rem;
     text-align: right;
 }
 .event_full .options a {
     text-decoration: none;
-    color: white;
+    color: rgba(0,0,0,.6);
+}
+.event_full .options a:focus,
+.event_full .options a:hover {
+    color: rgba(0,0,0,.9);
 }
 .event_full .data {
     display: inline-block;
@@ -83,17 +82,14 @@
 }
 .event_full .urls li:before {
     content: "\00BB \0020";
-    font-size: 1.4rem;
 }
 .event_full ul.urls li {
     max-width: 320px;
     display: block;
     float: left;
-    font-size: 0.8rem;
     color: gray;
 }
 .event_full .url_name {
-    font-size: 1.4rem;
     color: #546878;
 }
 .event_full td {
@@ -105,6 +101,4 @@
     margin-top: 1rem;
     vertical-align: top;
 }
-.event_full #description {
-    font-size: 90%;
-}
+

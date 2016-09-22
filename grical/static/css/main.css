@@ -58,6 +58,23 @@ h6 {
     text-align: right;
 }
 
+.gc-no-wrap {
+    display: inline-block;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.gc-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    -icab-text-overflow: ellipsis;
+    -khtml-text-overflow: ellipsis;
+    -moz-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+}
+
 
 /* TODO: simplify this file: there are some repeated directives like for
 general forms and for event_form */

@@ -65,22 +65,6 @@ class DatePicker(forms.DateInput):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__( *args, **kwargs )
         self.attrs.update({'class':'datePicker',})
-    class Media:
-        js = (
-            'bower_components/jquery/dist/jquery.min.js',
-            'bower_components/tether/dist/js/tether.min.js',
-            'bower_components/bootstrap/dist/js/bootstrap.min.js',
-            'bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js',
-            'js/datepicker.js',
-        )
-        css = {
-            'all': (
-                'bower_components/bootstrap/dist/css/bootstrap.min.css',
-                'bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css',
-            )
-        }
-
-
 
 
 COMPOUND_EMPTY_RESPONSE = {'startdate': None}
@@ -580,15 +564,6 @@ class SimplifiedEventForm( forms.ModelForm ): # {{{1
     when = DatesTimesField()
     web = forms.URLField(
             max_length = get_field_attr( 'EventURL', 'url', 'max_length' ) )
-    class Media:
-        js = (
-            'bower_components/jquery/dist/jquery.min.js',
-            'bower_components/tether/dist/js/tether.min.js',
-            'bower_components/bootstrap/dist/js/bootstrap.min.js',
-            'bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js',
-            'js/datepicker.js',
-        )
-        css = {}
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags')

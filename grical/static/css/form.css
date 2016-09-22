@@ -1,7 +1,6 @@
 /* general form directives */
 form .helptext {
     color: #9DBCD3;
-    font-size: 0.8rem;
 }
 
 form label {
@@ -9,9 +8,6 @@ form label {
     font-weight: bold;
     margin: 0;
     margin-top: .5rem;
-}
-input[type="text"], textarea, input[type="checkbox"] {
-    border: 1px solid #3176B9;
 }
 form ul {
     list-style: none;
@@ -27,7 +23,6 @@ textarea {
 
 /* errors produces by wrong entries in forms */
 .errorlist {
-    font-size: 1rem;
     margin: 0;
     padding: 0;
 }
@@ -35,44 +30,46 @@ textarea {
 #submit-button input,
 .small-submit-button input,
 p.submit input{
-    background-color: black;
     border: 0;
     padding-left: 1rem;
     padding-right: 1rem;
-    font-size: 1.4rem;
-    color: white;
+    color: #1C83CC;
 }
 #submit-button input:hover,
 .small-submit-button input:hover,
 p.submit input:hover {
     background-color: #5E7C93;
+    color: white;
 }
-.small-submit-button input,
-#gc-comments p.submit input{
-    font-size: 1.2rem;
-}
-
 
 #simplified_event_form form legend {
     margin-top: -1.2rem;
-    color: #AFC4D3;
-    background: none repeat scroll 0 0 black;
+    color: #1C83CC;
     border: 1px solid #2C516D;
     font-weight: bold;
-    padding: 0.2rem 0.5rem;
     text-align: center;
     border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    font-size: 1.2rem;
+    max-width: 16rem;
 }
 
 #simplified_event_form fieldset {
     padding: 0.1rem 0.2rem 0.5rem;
     border:1px solid #2C516D;
-    background: none repeat scroll 0 0 #9DBCD3;
     border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+
+#simplified_event_form .form-group {
+    margin-bottom: .5rem;
+}
+
+#simplified_event_form input[type="text"] {
+    padding: .2rem;
 }
 
 
 #gc-event-recurrences td {
+    text-align: right;
     padding-right: .5rem;
 }
 #gc-event-recurrences .gc-month {

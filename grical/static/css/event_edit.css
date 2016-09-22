@@ -3,7 +3,7 @@
     margin: 0.5rem;
 }
 #event_form input#id_title {
-    font-size: 150%;
+    /*font-size: 150%;*/
     font-weight: bold;
     padding: 0.2rem;
     width: 98%;
@@ -34,7 +34,6 @@
     margin: 0.1rem 0 0.1rem 0;
 }
 #event_form td {
-    font-size:0.8rem;
     color: gray;
     padding-bottom:1rem;
 }
@@ -67,7 +66,6 @@
     padding: 0 1rem ;
 }
 #event_form #also_recurrences {
-    font-size: 1rem;
     font-weight:bold;
     background: #AFC4D3;
     padding: 0; /* otherwise horizontal scroll appears */
