@@ -1182,8 +1182,14 @@ p.submit input:hover {
     font-size: 1rem;
 }
 
+
+.navbar .gc-header-search-button {
+  background: none;
+  border: 0;
+}
+
 .navbar .glyphicon-search{
-    font-size: .8rem;
+    font-size: 1rem;
 }
 
 
