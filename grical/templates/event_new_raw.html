@@ -3,22 +3,25 @@
 
 {% block container %}
 
-<p>{% trans "Create a new event" %}:</p>
-<div id="event_textarea_form">
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>{% trans "Create a new event" %}:</h1>
 
-    <form action="" method="post">{% csrf_token %}
-        <table>
-            {% if event_textarea %}
-                <TEXTAREA Name="event_astext" rows="25" cols="80">{{ event_textarea }}</TEXTAREA>
-            {% else %}
-                <TEXTAREA Name="event_astext" rows="25" cols="80">{{ template }}</TEXTAREA>
-            {% endif %}
-        <input type="submit" value={% trans "Save" %}>
-        </table>
-    </form>
-</div>
+            <div id="event_textarea_form">
+                <form action="" method="post">{% csrf_token %}
+                    <table>
+                        {% if event_textarea %}
+                            <textarea Name="event_astext" rows="25" cols="80">{{ event_textarea }}</textarea>
+                        {% else %}
+                            <textarea Name="event_astext" rows="25" cols="80">{{ template }}</textarea>
+                        {% endif %}
+                        <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
+                    </table>
+                </form>
+            </div>
 
-<br />
+            <br />
 
 <h3>{% trans "Example with minimal information:" %}</h3>
 <pre>
@@ -65,5 +68,9 @@ recurring:
     2011-06-05
     2011-07-05
 </pre>
+
+        </div>
+    </div>
+</div>
 
 {% endblock %}

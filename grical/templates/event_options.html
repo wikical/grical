@@ -1,0 +1,18 @@
+{% load i18n %}
+{% load event_tags %}
+
+{% if event  and event.id %}
+<div class="event_options">
+    <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="16" /></a>
+    &nbsp;|&nbsp;
+    <a href="{% url "event_show_all" event.id  %}">{% trans "show" %}</a>
+    {% if not READ_ONLY %}
+        &nbsp;|&nbsp;
+        <a href="{% url "event_edit" event.id  %}">{% trans "edit" %}</a>
+        &nbsp;|&nbsp;
+        <a href="{% url "event_edit_raw" event.id  %}"><span class="field_link">{% trans "edit as text" %}</span></a>
+        &nbsp;|&nbsp;
+        <a href="{% url "group_add_event" event.id  %}">{% trans "add to group" %}</a>
+    {% endif %}
+</div>
+{% endif %}

@@ -9,12 +9,24 @@
 
 {% if account %}
 
-    <p>{% trans "Account successfully activated" %}</p>
-    <p><a href="{% url "auth_login"  %}">{% trans "Log in" %}</a></p>
+<div class="container m-t-1">
+    <div class="row">
+        <div class="col-xs-12">
+            <p>{% trans "Account successfully activated" %}</p>
+            <p><a href="{% url "auth_login"  %}">{% trans "Log in" %}</a></p>
+        </div>
+    </div>
+</div>
 
 {% else %}
 
-    <p>{% trans "Account activation failed" %}</p>
+<div class="container m-t-1">
+    <div class="row">
+        <div class="col-xs-12">
+            <p>{% trans "Account activation failed" %}</p>
+        </div>
+    </div>
+</div>
 
 {% endif %}
 

@@ -65,17 +65,7 @@ class DatePicker(forms.DateInput):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__( *args, **kwargs )
         self.attrs.update({'class':'datePicker',})
-    class Media:
-        js = (
-            'js/jquery.min.js',
-            'js/jquery-ui.min.js',
-            'js/datepicker.js',
-        )
-        css = {
-            'all': (
-                'css/jquery-ui.css',
-            )
-        }
+
 
 COMPOUND_EMPTY_RESPONSE = {'startdate': None}
 
@@ -164,7 +154,7 @@ class DatesTimesField(forms.Field): # {{{1
     >>> assert d['startdate'] == datetime.date(2012,9,28)
     >>> assert d['enddate'] == datetime.date(2012,10,5)
     >>> assert d['starttime'] == datetime.time(13,00)
-    >>> assert d['endtime'] == datetime.time(15,00) 
+    >>> assert d['endtime'] == datetime.time(15,00)
     >>> d = dt.to_python('28.9.2011-13.10.2011 13:30 15:30')
     >>> assert d['startdate'] == datetime.date(2011,9,28)
     >>> assert d['enddate'] == datetime.date(2011,10,13)
@@ -574,17 +564,6 @@ class SimplifiedEventForm( forms.ModelForm ): # {{{1
     when = DatesTimesField()
     web = forms.URLField(
             max_length = get_field_attr( 'EventURL', 'url', 'max_length' ) )
-    class Media:
-        js = (
-            'js/jquery.min.js',
-            'js/jquery-ui.min.js',
-            'js/datepicker.js',
-        )
-        css = {
-            'all': (
-                'css/jquery-ui.css',
-            )
-        }
     class Meta:  # pylint: disable-msg=C0111,W0232,R0903
         model = Event
         fields = ('title', 'tags')
