@@ -65,7 +65,7 @@ Change directory to above location and run:
 
 .. code-block:: bash
 
-    perl postgis_restore.pl /location_to_dump/gridcalendar.pg_dump > /tmp/gridcalendar.pg_dump.sql
+    su postgres -c "perl postgis_restore.pl /location_to_dump/gridcalendar.pg_dump > /tmp/gridcalendar.pg_dump.sql"
 
 
 Restore data to the new database
