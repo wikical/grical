@@ -5,23 +5,23 @@
 
 <div class="container m-t-3 m-b-3">
     <div class="row">
-        {% if form.errors %}
-        <div class="col-xs-12">
-            <div class="m-b-1 text-danger">{% trans "Your username and password didn't match. Please try again" %}.</div>
-        </div>
-        {% endif %}
         <div class="col-xs-12 col-sm-8 offset-sm-2  col-md-6 offset-md-3">
             <form id="loginForm" action="{% url "auth_login"  %}" method="post" class="form">{% csrf_token %}
                 <legend><h1>{% trans "Login" %}</h1></legend>
-                <fieldset class="m-t-2">
+                {% if form.errors %}
+                <div class="m-t-2">
+                    <div class="text-danger">{% trans "Your username and password didn't match. Please try again" %}.</div>
+                </div>
+                {% endif %}
+                <fieldset class="{% if form.errors %}m-t-1{% else %}m-t-2{% endif %}">
                     <div class="input-group">
-                        <input class="form-control" name="{% trans "username" %}" placeholder="email" required>
+                        <input class="form-control" name="username" placeholder="username" {% if form.username.value %}value="{{ form.username.value }}"{% endif %} required>
                         <div class="input-group-addon"><i class="glyphicon glyphicon-envelope"></i></div>
                     </div>
                 </fieldset>
                 <fieldset class="m-t-1">
                     <div class="input-group">
-                        <input class="form-control" type="password" name="{% trans "password" %}" placeholder="password" required>
+                        <input class="form-control" type="password" name="password" placeholder="password" required>
                         <div class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></div>
                     </div>
                 </fieldset>
