@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load humanize %}
 
-<div>
+<div class="container-fluid m-t-1 clearfix">
     {% for eventdate in eventdates %}
         {% ifchanged eventdate.eventdate_date %}
             {% if forloop.first %}

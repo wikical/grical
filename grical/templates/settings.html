@@ -3,35 +3,45 @@
 
 {% block container %}
 
-<h1>{% blocktrans with user.username as name %} {{ name }}'s settings {% endblocktrans  %}</h1>
-<ul>
-    <li>{% trans "Personal data" %}</li>
-    <ul>
-        <li>{% trans "Username" %}: {{user.username}} </li>
-        {% comment %}
-        TODO: let the user introduce/change this date at user creation and here
-        see the end of http://code.google.com/p/django-registration/issues/detail?id=127
-        <li>{% trans "Firstname" %}: {{user.firstname}} </li>
-        <li>{% trans "Lastname" %}: {{user.lastname}} </li>
-        {% endcomment %}
-        <li>{% trans "Email" %}: {{user.email}}</li>
-        <li>{% trans "Last login:" %} {{user.last_login}}</li>
-    </ul>
-    {% if USER.has_filters %}
-        <li><a href="{% url "list_filters_my"  %}">{% trans "Filters" %}</a></li>
-        {% include "settings_filters.html" %}
-    {% endif %}
-    {% if USER.has_groups %}
-        <li><a href="{% url "list_groups_my"  %}">{% trans "Groups" %}</a></li>
-        {% include "settings_groups.html" %}
-    {% endif %}
-    {% if not READ_ONLY %}
-        <li>{% trans "Options" %}</li>
-        <ul>
-            <li><a href="{% url "auth_password_change"  %}">{% trans "Change password" %}</a></li>
-            <li><a href="{% url "group_new"  %}">{% trans "Create a new group" %}</a></li>
-        <ul>
-    {% endif %}
-</ul>
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>{% blocktrans with user.username as name %} {{ name }}'s settings {% endblocktrans  %}</h1>
+            <ul>
+                <li>{% trans "Personal data" %}</li>
+                <ul class="m-b-1">
+                    <li>{% trans "Username" %}: {{user.username}} </li>
+                    {% comment %}
+                    TODO: let the user introduce/change this date at user creation and here
+                    see the end of http://code.google.com/p/django-registration/issues/detail?id=127
+                    <li>{% trans "Firstname" %}: {{user.firstname}} </li>
+                    <li>{% trans "Lastname" %}: {{user.lastname}} </li>
+                    {% endcomment %}
+                    <li>{% trans "Email" %}: {{user.email}}</li>
+                    <li>{% trans "Last login:" %} {{user.last_login}}</li>
+                </ul>
+                {% if USER.has_filters %}
+                <ul class="m-b-1">
+                    <li><a href="{% url "list_filters_my"  %}">{% trans "Filters" %}</a></li>
+                    {% include "settings_filters.html" %}
+                </ul>
+                {% endif %}
+                {% if USER.has_groups %}
+                <ul class="m-b-1">
+                    <li><a href="{% url "list_groups_my"  %}">{% trans "Groups" %}</a></li>
+                    {% include "settings_groups.html" %}
+                </ul>
+                {% endif %}
+                {% if not READ_ONLY %}
+                <ul class="m-b-1">
+                    <li>{% trans "Options" %}</li>
+                    <li><a href="{% url "auth_password_change"  %}">{% trans "Change password" %}</a></li>
+                    <li><a href="{% url "group_new"  %}">{% trans "Create a new group" %}</a></li>
+                </ul>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

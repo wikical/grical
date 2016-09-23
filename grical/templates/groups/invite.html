@@ -3,19 +3,28 @@
 
 {% block container %}
 
-<p>{% trans "Invite a member to the group" %}.</p>
-<div id="invite_form">
-    {% if form.errors %}
-        <p style="color: red;">
-            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
-        </p>
-    {% endif %}
-    <form action="" method="post">{% csrf_token %}
-        <table>
-            {{ form.as_table }}
-        </table>
-        <input type="submit" value={% trans "Invite" %}>
-    </form>
+<div class="container m-t-3 m-b-3">
+    <div class="row">
+        <div class="col-xs-12">
+
+            <div id="invite_form">
+                <form action="" method="post">{% csrf_token %}
+                    <legend>
+                        <h1>{% trans "Invite a member to the group" %}.</h1>
+                    </legend>
+                    {% if form.errors %}
+                        <p style="color: red;">
+                            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+                        </p>
+                    {% endif %}
+                    <table class="m-b-1">
+                        {{ form.as_table }}
+                    </table>
+                    <div id="submit-button"><input type="submit" value="{% trans "Invite" %}" /></div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

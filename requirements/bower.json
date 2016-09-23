@@ -1,0 +1,22 @@
+{
+  "name": "grical",
+  "version": "0.0.1",
+  "authors": [
+    "George Vlachos <george@wikical.com>",
+    "Ivan F. Villanueva B. <ivan@wikical.com>",
+    "Stefanos Kozanis <stefanos@wikical.com>"
+  ],
+  "description": "Discover and share great events.",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "v4.0.0-alpha.4",
+    "bootstrap-datepicker": "1.6.4"
+  },
+  "private": true
+}
