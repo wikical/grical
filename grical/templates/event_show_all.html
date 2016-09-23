@@ -18,7 +18,7 @@
 
             <div class="item-nr col-xs-12">{{ event.id }}</div>
 
-            <div class="header col-xs-12 col-sm-6 col-md-4 bg-faded">
+            <div class="header col-xs-12 bg-faded">
                 <div id="title">
 
                     {% if event.recurring %}
@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <div class="item col-xs-12 col-sm-6 col-md-4">
+            <div class="item col-xs-12">
                 <!--
                 <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="16" /></a>
                 &nbsp;|&nbsp;
@@ -87,7 +87,7 @@
             </div>
 
             {% if event.address or event.city or event.country or event.coordinates %}
-                <div class="item col-xs-12 col-sm-6 col-md-4">
+                <div class="item col-xs-12">
                     <img class="icon" src="{{ STATIC_URL }}venue-icon.png" alt="{% trans 'where' %}" />
                     <div class="data">
                         {% if event.address %}
@@ -126,7 +126,7 @@
             {% endif %}
 
             {% if event.get_tags %}
-                <div class="item col-xs-12 col-sm-6 col-md-4">
+                <div class="item col-xs-12">
                     <img class="icon" src="{{ STATIC_URL }}tags-icon.png" alt="{% trans 'tags' %}" />
                     <div class="tags data">
                         {% for tag in event.get_tags %}
@@ -137,7 +137,7 @@
             {% endif %}
 
             {% if event.urls.all %}
-                <div class="item col-xs-12 col-sm-6 col-md-4">
+                <div class="item col-xs-12">
                     <img class="icon" src="{{ STATIC_URL }}links-icon.png" alt="{% trans 'urls' %}" />
                     <div class="data">
                         <ul class="urls">
@@ -154,7 +154,7 @@
             {% endif %}
 
             {% if recurrences %}{# is part of a serie as intermediate instance OR is master of a serie #}
-                <div class="item col-xs-12 col-sm-6 col-md-4">
+                <div class="item col-xs-12">
                     <h3>{% trans "Recurring dates" %}</h3>
                     <ul>
                         {% for event in recurrences %}
@@ -166,7 +166,7 @@
 
             {% with dates=event.custom_dates %}
                 {% if dates %}
-                    <div class="item col-xs-12 col-sm-6 col-md-4">
+                    <div class="item col-xs-12">
                         <img class="icon" src="{{ STATIC_URL }}deadlines-icon.png" alt="{% trans 'urls' %}" />
                         <div class="data">
                             <table class='deadlines'>
@@ -187,7 +187,7 @@
             {% endwith %}
 
             {% if event.sessions.all %}
-                <div class="item col-xs-12 col-sm-6 col-md-4">
+                <div class="item col-xs-12">
                     <table>
                         {% for session in event.sessions.all %}
                             <tr>
@@ -201,15 +201,15 @@
             {% endif %}
 
             {% if event.description %}
-                <div class="item col-xs-12 col-sm-6 col-md-4">
-                    <fieldset>
-                    <legend>{% trans "Description" %}</legend>
+                <div class="item col-xs-12">
+                    <h2>{% trans "Description" %}</h2>
+                    <div>{% spaceless %}
                         {% if rst2html %}
                             {{ rst2html|safe }}
                         {% else %}
                             {{ event.description|escape|linebreaksbr|urlize }}
                         {% endif %}
-                    </fieldset>
+                    {% endspaceless %}</div>
                 </div>
             {% endif %}
 
