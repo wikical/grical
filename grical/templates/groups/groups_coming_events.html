@@ -1,0 +1,30 @@
+{% load i18n %}
+
+<div id="groups">
+    <p>{% trans "Next coming dates for events in your groups:" %}</p>
+
+    {% for group in USER.get_groups %}
+
+    <h2>
+        <a href="{% url "list_events_group_ical" group.id  %}">
+            <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
+
+        <a href="{% url "list_events_group_rss" group.id  %}">
+            <img alt="RSS" src="{{ STATIC_URL }}rssicon.png" /></a>
+
+        <a href="{% url "group_view" group.id  %}"> {{ group.name }} </a>
+    </h2>
+
+
+        {% if group.has_coming_events %}
+            <ul>
+                {% for event in group.get_coming_events %}
+                    <li> {% include "event_show_small.html" %} </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>{% trans "No events with coming dates" %}</p>
+        {% endif %}
+
+    {% endfor %}
+</div>
