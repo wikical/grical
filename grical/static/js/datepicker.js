@@ -1,9 +1,12 @@
 $(document).ready( function() {
-    var options = {
-      dateFormat: 'yy-mm-dd',
-      changeYear: true,
-      constrainInput: false
-    };
-    // http://docs.jquery.com/UI/Datepicker    
-    $( ".datePicker" ).datepicker( options );
+    var datepicker = $( ".datePicker" );
+
+    datepicker.datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true
+    });
+    $(window).on("resize", function () {
+        datepicker.datepicker( 'hide' );
+    });
 });
