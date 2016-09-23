@@ -3,8 +3,13 @@ form .helptext {
     color: #9DBCD3;
 }
 
+form legend h1 {
+    color: #31AD9A; /* gc-labels-colors  */
+}
+
 form label {
-    color: #2C516D;
+    /*color: #2C516D;*/
+    color: #31AD9A; /* gc-labels-colors  */
     font-weight: bold;
     margin: 0;
     margin-top: .5rem;
@@ -30,10 +35,12 @@ textarea {
 #submit-button input,
 .small-submit-button input,
 p.submit input{
+    font-weight: bold;
     border: 0;
     padding-left: 1rem;
     padding-right: 1rem;
-    color: #1C83CC;
+    /*color: #1C83CC;*/
+    color: #4CA856; /* .gc-buttons-color */
 }
 #submit-button input:hover,
 .small-submit-button input:hover,
@@ -44,7 +51,8 @@ p.submit input:hover {
 
 #simplified_event_form form legend {
     margin-top: -1.2rem;
-    color: #1C83CC;
+    /*color: #1C83CC;*/
+    color: #31AD9A; /* gc-labels-colors  */
     border: 1px solid #2C516D;
     font-weight: bold;
     text-align: center;
