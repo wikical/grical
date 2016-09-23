@@ -4,82 +4,88 @@
 {% load cache %}
 
 {% with name=eventdate.eventdate_name date=eventdate.eventdate_date event=eventdate.event %}
-{% with start=eventdate.start end=eventdate.end %}
-<div class="event_medium">
+    {% with start=eventdate.start end=eventdate.end %}
+        <div class="event_medium">
 
-    <div class="title" style="color: {{ event.fg_color }}; background-color: {{ event.bg_color }}">
-        <span class="ical_logo">
-            <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" /></a>
-        </span>
-        <a href="{% url "event_show_all" event.id  %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
-    </div>
-
-    <div class="content">
-
-        <span class="date">
-            <a href='{% urlsearch query=start|date:"Y-m-d" %}'>{{ start }}</a>
-        </span>
-        {% if end and end != start %}
-            :
-            <span class="date">
-                <a href='{% urlsearch query=end|date:"Y-m-d" %}'>{{ end }}</a>
-            </span>
-        {% endif %}
-
-        {% if event.starttime %}
-          &nbsp;&nbsp;&nbsp;
-          {% if event.endtime and event.endtime != event.starttime %}
-              <span class="time">{{ event.starttime|time:"H:i" }}</span>
-              -
-              <span class="time">{{ event.endtime|time:"H:i" }}</span>
-          {% else %}
-              <span class="time">{{ event.starttime|time:"H:i" }}</span>
-          {% endif %}
-        {% endif %}
-
-        {% if event.city or event.country %}
-          &nbsp;&nbsp;&nbsp;
-        {% endif %}
-        {% if event.city %}
-            {% if event.country %}
-                <span class="city">
-                    {# NOTE: it must be all in one line to avoid breaking the line #}
-                    <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a></span>,&nbsp;<span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></span>
-            {% else %}
-                <span class="city">
-                    <a href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
+            <div class="title" style="color: {{ event.fg_color }}; background-color: {{ event.bg_color }}">
+                <span class="ical_logo">
+                    <a class="gc-event-ical" href="{% url "event_show_ical" event.id  %}">
+                        <img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" />
+                    </a>
                 </span>
-            {% endif %}
-        {% else %}
-            {% if event.country %}
-                {# NOTE: it must be all in one line to avoid breaking the line #}
-                <span class="country"><a href='{% urlsearch country=event.country %}'>{{ event.countryname }}</a>&nbsp;<img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" /></span>
-            {% endif %}
-        {% endif %}
+                <a class="gc-ellipsis gc-event-title" href="{% url "event_show_all" event.id  %}">{% if event.acronym %}{{ event.acronym }} | {% endif %}{{ event.title }}</a>
+            </div>
 
-        {% if name != "start" or end %}
-            <br />
-            <span class="deadlines">
-                <a href='{% urlsearch query=date|date:"Y-m-d" %}'>{{ date }}</a>
-            </span>
-            {{ name }}
-        {% endif %}
+            <div class="content">
+                    <span class="date">
+                        <a class="gc-no-wrap gc-event-start-date" href='{% urlsearch query=start|date:"Y-m-d" %}'>{{ start }}</a>
+                    </span>
+                {% if end and end != start %}
 
-        {# we use a cache here because getting the tags implies to query the db #}
-        {% cache 2592000 event_tags event.id event.version %}
-            {% if event.get_tags %}
-              <div class="tags">
-                  {% for tag in event.get_tags|slice:":100" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
-                      <span class="tag">
-                          <a href='{% urlsearch tag=tag %}'>{{ tag }}</a>&nbsp;
-                      </span>
-                  {% endfor %}
-              </div>
-            {% endif %}
-        {% endcache %}
+                    <span class="date">{% spaceless %}
+                        :&nbsp;<a class="gc-no-wrap gc-event-end-date" href='{% urlsearch query=end|date:"Y-m-d" %}'>{{ end }}</a>
+                    {% endspaceless %}</span>
+                {% endif %}
 
-    </div>
+                {% if event.starttime %}
+                  {% if event.endtime and event.endtime != event.starttime %}
+                      <span class="time gc-no-wrap gc-event-start-time">{{ event.starttime|time:"H:i" }}</span>{% spaceless %}
+                      -
+                      {% endspaceless %}<span class="time gc-no-wrap gc-event-end-time">{{ event.endtime|time:"H:i" }}</span>
+                  {% else %}
+                      <span class="time gc-no-wrap gc-event-start-time">{{ event.starttime|time:"H:i" }}</span>
+                  {% endif %}
+                {% endif %}
 
-</div>
-{% endwith %}
+                {% if name != "start" or end %}
+                    <div class="deadlines">
+                        <a class="gc-no-wrap gc-event-deadline-date" href='{% urlsearch query=date|date:"Y-m-d" %}'>{{ date }}</a>&nbsp;{{ name }}
+                    </div>
+                {% else %}
+                    {# no deadlines for this event #}
+                    <div class="no-deadlines">&nbsp;</div>
+                {% endif %}
+
+                {% if event.city %}
+                    {% if event.country %}
+                        <div class="gc-city-country">
+                            <span class="city">
+                                <a class="gc-no-wrap gc-event-city" href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }},&nbsp;</a>
+                            </span>
+                            <span class="country gc-no-wrap">
+                                <a class="gc-no-wrap gc-event-country" href='{% urlsearch country=event.country %}'>{{ event.countryname }}&nbsp;</a>
+                                <img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" />
+                            </span>
+                        </div>
+                    {% else %}
+                        <div class="city">
+                            <a class="gc-no-wrap gc-event-city" href='{% urlsearch city=event.city country=event.country %}'>{{ event.city|capfirst }}</a>
+                        </div>
+                    {% endif %}
+                {% elif event.country %}
+                        <div class="country">
+                            <a class="gc-no-wrap gc-event-country" href='{% urlsearch country=event.country %}'>{{ event.countryname }}&nbsp;</a>
+                            <img class="flag" src="{{ STATIC_URL }}flags/{{ event.country|lower }}.gif" />
+                        </div>
+                {% else %}
+                        <div class="no-city-country">&nbsp;</div>
+                {% endif %}
+
+                {# we use a cache here because getting the tags implies to query the db #}
+                {% cache 2592000 event_tags event.id event.version %}
+                    {% if event.get_tags %}
+                      <div class="tags">
+                          {% for tag in event.get_tags|slice:":100" %} {% comment %}TODO: show something when there are more tags {% endcomment %}
+                              <span class="tag">
+                                  <a class="gc-event-tag" href='{% urlsearch tag=tag %}'>{{ tag }}</a>&nbsp;
+                              </span>
+                          {% endfor %}
+                      </div>
+                    {% else %}
+                        <div class="tags">&nbsp;</div>
+                    {% endif %}
+                {% endcache %}
+            </div>
+        </div>
+    {% endwith %}
 {% endwith %}
