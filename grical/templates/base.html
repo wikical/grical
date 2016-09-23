@@ -68,15 +68,17 @@
             {% endif %}
             <ul id="gc-header-search-form" class="nav navbar-nav pull-xs-right">
                 <li>
-                    <form class="form-inline">
+                    <form class="form-inline" id="search" action="{% url 'search' %}">
                         <div class="form-group">
                             <div class="input-group">
                                 {% if user.username %}
-                                    <input class="form-control" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
+                                    <input class="form-control" type="text" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
                                 {% else  %}
-                                    <input class="form-control" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
+                                    <input class="form-control" type="text" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
                                 {% endif %}
-                                <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                <div class="input-group-addon">
+                                    <button class="gc-header-search-button" type="submit"><span class="glyphicon glyphicon-search"></span></button>
+                                </div>
                             </div>
                         </div>
                     </form>
