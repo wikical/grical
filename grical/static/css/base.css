@@ -1097,12 +1097,13 @@ textarea {
 #submit-button input,
 .small-submit-button input,
 p.submit input{
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     border: 0;
     padding-left: 1rem;
     padding-right: 1rem;
     /*color: #1C83CC;*/
     color: #4CA856; /* .gc-buttons-color */
+    background-color: #E3E3E6;
 }
 #submit-button input:hover,
 .small-submit-button input:hover,
