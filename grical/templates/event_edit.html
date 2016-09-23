@@ -12,11 +12,6 @@
 
         <div id="event_form" class="col-xs-12">
 
-            <div id="title">
-                <div class="helptext">{% trans "Title" %}</div>
-                <div>{{ form.title.as_widget }}</div>
-            </div>
-
             {% if form.errors or form.non_field_errors or formset_url.errors or formset_url.non_form_errors or formset_session.errors or formset_session.non_form_errors or formset_deadline.errors or formset_deadline.non_form_errors %}
                 <div class="errorlist">
                     {% trans "The operation could not be performed because one or more error(s) occurred. Please resubmit the form after making the necessary changes. See the red remarks." %}
@@ -29,6 +24,10 @@
                     {{ form.non_field_errors.as_ul }}
                 </div>
                 {% endif %}
+                <div id="title">
+                    <div class="helptext">{% trans "Title" %}</div>
+                    <div>{{ form.title.as_widget }}</div>
+                </div>
                 <div id="non-table-fields">
                     <div class="left-fields">
                         {% for field in form.visible_fields %}
