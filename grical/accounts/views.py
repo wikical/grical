@@ -3,7 +3,7 @@
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
-# Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2009-2016 Ivan F. Villanueva B. <ivan ät wikical.com>
 #
 # This file is part of GriCal.
 #

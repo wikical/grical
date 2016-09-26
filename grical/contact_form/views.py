@@ -1,3 +1,25 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
+# gpl {{{1
+#############################################################################
+# Copyright 2009-2012 Ivan F. Villanueva B. <ivan ät wikical.com>
+#
+# This file is part of GriCal.
+#
+# GriCal is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
+#############################################################################
 """
 View which can render and send email from a contact form.
 
@@ -55,7 +77,7 @@ def contact_form(request, form_class=ContactForm,
 
     ``form``
         The form instance.
-    
+
     **Template:**
 
     The value of the ``template_name`` keyword argument, or
@@ -70,7 +92,7 @@ def contact_form(request, form_class=ContactForm,
     # perform the reverse lookup we need access to contact_form/urls.py,
     # but contact_form/urls.py in turn imports from this module.
     #
-    
+
     if success_url is None:
         success_url = reverse('contact_form_sent')
     if request.method == 'POST':
@@ -86,7 +108,7 @@ def contact_form(request, form_class=ContactForm,
     context = RequestContext(request)
     for key, value in extra_context.items():
         context[key] = callable(value) and value() or value
-    
+
     return render_to_response(template_name,
                               { 'form': form },
                               context_instance=context)

@@ -1,27 +1,25 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
-
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
+# gpl {{{1
 #############################################################################
-# Copyright 2011, Ivan Villanueva <ivan ät gridmind.org>
-# Based on http://djangosnippets.org/snippets/1168/ by Adam Lofts (2008, GPLv2)
+# Copyright 2009-2011 Ivan F. Villanueva B. <ivan ät wikical.com>
 #
-# This file is part of GridCalendar.
+# This file is part of GriCal.
 #
-# GridCalendar is free software: you can redistribute it and/or modify it under
+# GriCal is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
 #
-# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
 # Set PYTHONPATH and DJANGO_SETTINGS_MODULE for your django app
 # Example:
 # export PYTHONPATH="/home/hg/gridcalendar:/home/hg/" ; export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
@@ -35,7 +33,7 @@ class Command( BaseCommand ): # {{{1
     """ management command that writes to stdout a
     `DOT<http://en.wikipedia.org/wiki/DOT_language>`_ text describing the
     structure of the database.
-    
+
     Usage example as management command::
 
             ./manage.py graph | dot -Tpng -o graph.png

@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
-# GPL {{{1
+# gpl {{{1
 #############################################################################
-# Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2009-2016 Stefanos Kozanis <stefanos ät wikical.com>
 #
-# This file is part of GridCalendar.
+# This file is part of GriCal.
 #
-# GridCalendar is free software: you can redistribute it and/or modify it under
+# GriCal is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
 #
-# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
 """ Models """
 
 # imports {{{1
@@ -2274,7 +2273,7 @@ class EventUrl( models.Model ): # {{{1
     """
     event = models.ForeignKey( Event, related_name = 'urls' )
     url_name = models.CharField( _( u'URL Name' ), blank = False, null = False,
-            max_length = 80, help_text = _( 
+            max_length = 80, help_text = _(
             u"Example: information about accomodation" ) )
     url = models.URLField( _( u'URL' ), blank = False, null = False )
 
@@ -2751,7 +2750,7 @@ class Filter( models.Model ): # {{{1
             editable = False, auto_now = True )
     query = models.CharField( _( u'Query' ), max_length = 500, blank = False,
             null = False )
-    name = models.CharField( 
+    name = models.CharField(
             _( u'Name' ), max_length = 40, blank = False, null = False )
     email = models.BooleanField( _( u'Email' ), default = False, help_text =
             _(u'If set it sends an email to a user when a new event matches'))
@@ -2894,7 +2893,7 @@ class Group( models.Model ): # {{{1
             group_id = int(group)
         else:
             return False
-        times_user_in_group = Membership.objects.filter( 
+        times_user_in_group = Membership.objects.filter(
                 user__id__exact = user_id,
                 group__id__exact = group_id )
         if times_user_in_group.count() > 0:

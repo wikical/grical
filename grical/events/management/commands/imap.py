@@ -1,27 +1,25 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# GPL {{{1
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
+# gpl {{{1
 #############################################################################
-# Copyright 2010,2011 Adam Beret Manczuk <beret@hipisi.org.pl>,
-# Ivan Villanueva <iv@gridmind.org>
+# Copyright 2009-2016 Stefanos Kozanis <stefanos ät wikical.com>
 #
-# This file is part of GridCalendar.
+# This file is part of GriCal.
 #
-# GridCalendar is free software: you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
+# GriCal is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
 #
-# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the Affero GNU Generevent.idal Public License
-# for more details.
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
+# details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
 """recive events from imap mailbox""" # {{{1
 
 # imports {{{1

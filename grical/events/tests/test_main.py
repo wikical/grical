@@ -1,30 +1,29 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
 #############################################################################
-# Copyright 2010,2011 Adam Beret Manczuk <beret@hipisi.org.pl>,
-# Ivan Villanueva <iv@gridmind.org>
+# Copyright 2009-2016 Stefanos Kozanis <stefanos ät wikical.com>
 #
-# This file is part of GridCalendar.
-# 
-# GridCalendar is free software: you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
-# 
-# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# This file is part of GriCal.
+#
+# GriCal is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the Affero GNU Generevent.idal Public License
-# for more details.
-# 
+# FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
+# details.
+#
 # You should have received a copy of the GNU Affero General Public License
-# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 # doc {{{1
 """ tests for events application.
 
-Some used ideas are from http://toastdriven.com/fresh/django-doctest-tips/ and 
+Some used ideas are from http://toastdriven.com/fresh/django-doctest-tips/ and
 http://stackoverflow.com/questions/1615406/configure-django-to-find-all-doctests-in-all-modules
 
 Example of how to test tests in the shell::
@@ -306,7 +305,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
     #            user = None, title = "test", country = 'DE',
     #            tags = "test", start=datetime.date.today() )
     #    for view in ['table', 'map', 'boxes', 'calendars']:
-    #        response = self.client.get( reverse( 
+    #        response = self.client.get( reverse(
     #            'search_query',
     #            kwargs = {'query': '1234',} ) )
     #    event.delete()
@@ -318,7 +317,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
                 user = user, title = "1234", tags = "test")
         event.startdate = datetime.date.today()
         self._login ( user )
-        response = self.client.get( reverse( 
+        response = self.client.get( reverse(
                 'search_query',
                 kwargs = {'query': '1234',} ) )
         self.assertTrue( event.title in [
@@ -586,7 +585,7 @@ class EventsTestCase( TestCase ):           # {{{1 pylint: disable-msg=R0904
         # TODO check also a clone of another clone
 
     # TODO {{{2
-    #This test can't work with sqlite, because sqlite not support multiusers. 
+    #This test can't work with sqlite, because sqlite not support multiusers.
     #It is recomended to use this in future
     # def test_visibility_in_thread(self):
     #     "testing visibility public and private events in thread"

@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# GPL {{{1
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
+# gpl {{{1
 #############################################################################
-# Copyright 2011 Ivan Villanueva <iv@gridmind.org>
+# Copyright 2009-2012 Antonis Christofides <anthony itia.ntua.gr>
 #
-# This file is part of GridCalendar.
-# 
-# GridCalendar is free software: you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
-# 
-# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# This file is part of GriCal.
+#
+# GriCal is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
-# for more details.
-# 
+# details.
+#
 # You should have received a copy of the GNU Affero General Public License
-# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
 import sys
 
 from django.core.management.base import NoArgsCommand

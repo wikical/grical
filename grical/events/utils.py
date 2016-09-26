@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# vi:expandtab:tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker
+# vim: set expandtab tabstop=4 shiftwidth=4 textwidth=79 foldmethod=marker:
 # gpl {{{1
 #############################################################################
-# Copyright 2009-2011 Ivan Villanueva <ivan ät gridmind.org>
+# Copyright 2009-2016 Stefanos Kozanis <stefanos ät wikical.com>
 #
-# This file is part of GridCalendar.
+# This file is part of GriCal.
 #
-# GridCalendar is free software: you can redistribute it and/or modify it under
+# GriCal is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
 #
-# GridCalendar is distributed in the hope that it will be useful, but WITHOUT
+# GriCal is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the Affero GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with GridCalendar. If not, see <http://www.gnu.org/licenses/>.
+# along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
-
 # docs {{{1
 """ utilities """
 
@@ -652,7 +651,7 @@ def search_address_osm( data ): # {{{1
                 timeout=10 )
         # see http://wiki.openstreetmap.org/wiki/Nominatim
         # TODO: include parameter accept-language according to user/browser
-        url_sufix = "/search?q=" + address + params 
+        url_sufix = "/search?q=" + address + params
         conn.request( "GET", url_sufix )
         conn.sock.settimeout( 10.0 )
         response = conn.getresponse()
