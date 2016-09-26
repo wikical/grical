@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+{% include "event_options.html" %}
+
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>{% trans "Edit the event" %}:</h1>
+
+            <div id="event_textarea_form">
+                <form action="" method="post">{% csrf_token %}
+                    <table>
+                        <textarea name="event_astext" rows="25" cols="80">{{ event_textarea }}</textarea>
+                    </table>
+                    {% include "also_recurrences_form.html" %}
+                    <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
+                </form>
+            </div>
+
+            {% comment %}
+            <div>
+                    <a href="{% url "event_edit" event_id  %}"><span class="field_title">{% trans "edit this event with a form" %}</span></a>
+                    <br />{% trans "Warning: clicking this link will make you lose any data changes done in the box above" %}
+            </div>
+            {% endcomment %}
+
+            <h3 class="m-t-3"> {% trans "Example:" %} </h3>
+            <pre>{{ example }}</pre>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+
+            <form id="gc-event-recurrences" action="" method="post">{% csrf_token %}
+
+                <legend>
+                    <h1>{% trans "Recurrences of:" %} {{ event }}</h1>
+                </legend>
+
+                <div class="clearfix m-b-1">
+                    {% for month in months %}
+                        <div class="pull-xs-left m-b-1 m-r-1 gc-month">{{ month }}</div>
+                    {% endfor %}
+                </div>
+
+                <div id="submit-button"><input type="submit" value="{% trans "Save" %}" />  </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

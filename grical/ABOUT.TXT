@@ -1,0 +1,12 @@
+.. This file is written in ReStructuredText, and is used for generating the web content
+
+**GridCalendar** (abbreviated as **grical**), is an open web where people store quickly a few information about interesting events, so that others can also easily know about them. Grical makes easy and fast for its users to get notified and store interesting events in its own external calendars.
+
+Grical also has groups. Once you have an account, you can create a group and invite others. You can also become a member of an already created group after you log in. Members of groups can add private events to their groups, which are seen only by the group members.
+
+This site offers its content as `Free content`_ except for events marked as private. This site is run by `Free Software`_ and respects the TIO_ guidelines of the FFII_
+
+.. _TIO:            http://tio.ffii.org/
+.. _FFII:           http://www.ffii.org
+.. _Free content:   http://en.wikipedia.org/wiki/Free_content
+.. _Free Software:  http://en.wikipedia.org/wiki/Free_software
