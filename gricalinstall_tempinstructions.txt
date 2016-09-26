@@ -59,6 +59,17 @@ Migrate db
 
   sqlite3 grical_db.sql "UPDATE django_site SET domain='localhost:8000', name='Grical development';"
 
+Install required js/css/bower packages
+--------------------------------------
+
+Install bower package manager as root:
+
+  sudo npm install bower -g
+
+Install required packages for grical with bower:
+
+  cd ~/grical/requirements && bower install --config.directory=../grical/static/bower_components
+
 Work with grical
 ----------------
 
@@ -112,6 +123,17 @@ Install several packages
   apt-get install python-geoip
   apt-get install build-essential python-dev python-pip
   apt-get install geoip-database-contrib mercurial famfamfam-flag-gif
+
+Install required js/css/bower packages
+--------------------------------------
+
+Install bower package manager as root, in container:
+
+  npm install bower -g
+
+Install required packages for grical with bower:
+
+  cd ~/grical/requirements && bower install --config.directory=../grical/static/bower_components
 
 Create database, db user, etc
 -----------------------------
