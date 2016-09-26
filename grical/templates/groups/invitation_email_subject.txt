@@ -1,0 +1,1 @@
+{% load i18n %}{{ site_name }} - {% blocktrans %}group invitation for {{ guest }} from {{ host }} to {{ group }}{% endblocktrans %}

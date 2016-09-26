@@ -1,0 +1,12 @@
+<div class="container m-t-1">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="calendars">
+                {% for year, cal in years_cals %}
+                    <h1> {{ year }} </h1>
+                    {{ cal }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
