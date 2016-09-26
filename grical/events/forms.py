@@ -44,7 +44,7 @@ from grical.events.utils import ( validate_year, validate_event_exists,
 
 def _date(string): # {{{1
     """ parse a date in the format ``yyyy-mm-dd`` using
-    ``gridcalendar.events.utils.validate_year """
+    ``grical.events.utils.validate_year """
     parsed_date = datetime.datetime.strptime(string.strip(), '%Y-%m-%d').date()
     validate_year( parsed_date )
     return parsed_date

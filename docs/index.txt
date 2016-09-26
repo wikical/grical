@@ -1,7 +1,7 @@
-GridCalendar documentation
+Grical documentation
 ==========================
 
-GridCalendar is free software for powering community websites where
+Grical is free software for powering community websites where
 users can share information about interesting events.
 
 Contents

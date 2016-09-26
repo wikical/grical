@@ -23,7 +23,7 @@
 
 # -*- coding: utf-8 -*-
 #
-# GridCalendar documentation build configuration file (copied from existing
+# Grical documentation build configuration file (copied from existing
 # project # Zadig, then edited; Zadig's had been created by sphinx-quickstart
 # on Sat Dec  6 14:27:15 2008.)
 #
@@ -108,7 +108,7 @@ html_style = 'default.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "GridCalendar documentation"
+html_title = "Grical documentation"
 
 # The name of an image file (within the static path) to place at the top of
 # the sidebar.
@@ -149,7 +149,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GridCalendarDoc'
+htmlhelp_basename = 'GricalDoc'
 
 
 # Options for LaTeX output
@@ -164,7 +164,7 @@ htmlhelp_basename = 'GridCalendarDoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'GridCalendar.tex', 'GridCalendar Documentation', 'Antonis Christofides and others', 'manual'),
+  ('index', 'Grical.tex', 'Grical Documentation', 'Antonis Christofides and others', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

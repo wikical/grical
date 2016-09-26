@@ -45,12 +45,12 @@ class ModelsTestCase(TestCase):
         ical = vobject.readOne(ical.serialize())
         self.assertEqual(ical.vevent.categories.serialize(),
                 u'CATEGORIES:calendar,software,open-source,'
-                'gridmind,gridcalendar\r\n')
+                'gridmind,grical\r\n')
 
     def test_clone(self):
         today = datetime.date.today()
         today_t = today.isoformat()
-        events = Event.objects.filter( title='GridCalendar presentation' )
+        events = Event.objects.filter( title='Grical presentation' )
         if events: events.delete()
         event,l = Event.parse_text(EXAMPLE)
         event.enddate = None

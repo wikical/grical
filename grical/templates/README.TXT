@@ -1,4 +1,4 @@
-This file is part of GridCalendar and describes the structure of its html templates. It uses the
+This file is part of Grical and describes the structure of its html templates. It uses the
 Django's template system which is well summarized on http://www.djangobook.com/en/2.0/chapter04/
 
 ---------
@@ -9,10 +9,10 @@ It holds the main look and feel and uses the variables:
 
 -------------     ---------------------------------------------------------------------
 LANGUAGE_CODE     is the current user's preferred language, as a string. Example: en-us
-DOMAIN            example: gridcalendar.net
-STATIC_URL         example: http://gridcalendar.net/media/
+DOMAIN            example: grical.net
+STATIC_URL         example: http://grical.net/media/
 PROTOCOL          example: https
-title             the title of the page, example: GridCalendar - home
+title             the title of the page, example: Grical - home
 VERSION           the version of the software, example: 1.0
 -------------     ---------------------------------------------------------------------
 

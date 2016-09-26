@@ -22,7 +22,7 @@
 #############################################################################
 # Set PYTHONPATH and DJANGO_SETTINGS_MODULE for your django app
 # Example:
-# export PYTHONPATH="/home/hg/gridcalendar:/home/hg/" ; export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+# export PYTHONPATH="/home/hg/grical:/home/hg/" ; export DJANGO_SETTINGS_MODULE="grical.settings"
 # ./graph.py <django_app_name> | dot -Tpng -o graph.png
 
 import sys
@@ -45,8 +45,8 @@ class Command( BaseCommand ): # {{{1
 
     Usage example as script::
 
-        export PYTHONPATH="/home/hg/gridcalendar:/home/hg/"
-        export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+        export PYTHONPATH="/home/hg/grical:/home/hg/"
+        export DJANGO_SETTINGS_MODULE="grical.settings"
         ./graph.py <django_app_name> | dot -Tpng -o graph.png
 
     """
