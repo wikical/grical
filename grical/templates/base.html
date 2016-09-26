@@ -35,18 +35,35 @@
     {% endblock %}
     {% block extracss %}{% endblock %}
 
-    <!--
-    <link href="{{ STATIC_URL }}css/print.css" media="print" />
-    -->
-    <link rel="shortcut icon" href="{{ STATIC_URL }}favicon.ico" />
+    {# <link href="{{ STATIC_URL }}css/print.css" media="print" /> #}
 
-    <!-- see http://en.wikipedia.org/wiki/Favicon -->
-    <link rel="apple-touch-icon" href="{{ STATIC_URL }}icon-apple-57x57.png" />
+    {# see http://en.wikipedia.org/wiki/Favicon #}
+    <link rel="shortcut icon" href="{{ STATIC_URL }}/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="{{ STATIC_URL }}/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ STATIC_URL }}/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ STATIC_URL }}/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ STATIC_URL }}/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ STATIC_URL }}/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ STATIC_URL }}/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ STATIC_URL }}/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ STATIC_URL }}/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ STATIC_URL }}/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ STATIC_URL }}/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="{{ STATIC_URL }}/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ STATIC_URL }}/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ STATIC_URL }}favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ STATIC_URL }}/favicon-16x16.png">
+    <link rel="manifest" href="{{ STATIC_URL }}/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="{{ STATIC_URL }}/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
     {% if form.media %}{{ form.media }}{% endif %}
     {% block extraheaders %}{% endblock %}
-    <!--
-    <script type="text/javascript" src="{{ STATIC_URL }}javascript/external.js"></script>
-    -->
+
+
+    {# <script type="text/javascript" src="{{ STATIC_URL }}javascript/external.js"></script> #}
+
 </head>
 
 <body>
