@@ -19,13 +19,13 @@ Here are the steps:
 Dump legacy database to file
 ----------------------------
 
-Suppose the owner of the legacy database is the user `gridcalendar`
-and the name of the database is `gridcalendar` as well. Dump the
+Suppose the owner of the legacy database is the user `grical`
+and the name of the database is `grical` as well. Dump the
 database with a so-called "Custom format" (option `-Fc`).
 
 .. code-block:: bash
 
-    pg_dump -U gridcalendar -p 5432 -h localhost -Fc -b -v -f gridcalendar.pg_dump gridcalendar
+    pg_dump -U grical -p 5432 -h localhost -Fc -b -v -f grical.pg_dump grical
 
 
 Create the new production database
@@ -37,15 +37,15 @@ a new server.
 
 Create a db role (user) who will own the new database, let's call her
 `grical_user`. Create also a role with the username used for the
-legacy db owner, let's call her `gridcalendar`.
+legacy db owner, let's call her `grical`.
 
 Create a blank database. Let's suppose the database is called
-`grical_db`, we will first set the owner to `gridcalendar` to import
+`grical_db`, we will first set the owner to `grical` to import
 data. As root:
 
 .. code-block:: bash
 
-    su postgres -c "createdb --owner gridcalendar -T template1 grical_db"
+    su postgres -c "createdb --owner grical -T template1 grical_db"
 
 It is a good time to spatially enable the newly created db. As root:
 
@@ -65,7 +65,7 @@ Change directory to above location and run:
 
 .. code-block:: bash
 
-    su postgres -c "perl postgis_restore.pl /location_to_dump/gridcalendar.pg_dump > /tmp/gridcalendar.pg_dump.sql"
+    su postgres -c "perl postgis_restore.pl /location_to_dump/grical.pg_dump > /tmp/grical.pg_dump.sql"
 
 
 Restore data to the new database
@@ -78,7 +78,7 @@ production database. As root:
 
 .. code-block:: bash
 
-    su postgres -c "psql -d grical_db -f /tmp/gridcalendar.pg_dump.sql"
+    su postgres -c "psql -d grical_db -f /tmp/grical.pg_dump.sql"
 
     su postgres -c "psql -d grical_db -c 'ALTER DATABASE grical_db OWNER TO grical_user'"
 
@@ -156,4 +156,4 @@ Django `settings.SECRET_KEY` should match the new site, or else user
 passwords, sessions etc won't work.
 
 If everything goes well you may drop the `old_public` schema as well
-the `gridcalendar` role from the production server.
+the `grical` role from the production server.

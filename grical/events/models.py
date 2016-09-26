@@ -786,7 +786,7 @@ TIMEZONES = (
 
 # EXAMPLE {{{1
 EXAMPLE = u"""acronym: GriCal
-title: GridCalendar presentation
+title: Grical presentation
 startdate: 2010-12-29
 starttime: 10:00
 enddate: 2010-12-30
@@ -797,7 +797,7 @@ country: DE
 address: Gleimstr. 6, Berlin 10439, Germany
 exact: True
 coordinates: 52.55247, 13.40364
-tags: calendar software open-source gridmind gridcalendar
+tags: calendar software open-source gridmind grical
 urls:
     code    http://example.com
     web    http://example.org
@@ -809,7 +809,7 @@ sessions:
     2010-12-29    15:00-16:00    second presentation
     2010-12-30    15:00-16:00    third presentation
 description:
-GridCalendar will be presented"""
+Grical will be presented"""
 
 # TODO: add alters_data=True to all functions that do that.
 # see http://docs.djangoproject.com/en/1.2/ref/templates/api/
@@ -1659,11 +1659,11 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         >>> s[u'starttime']
         u'10:00'
         >>> s[u'tags']
-        u'calendar software open-source gridmind gridcalendar'
+        u'calendar software open-source gridmind grical'
         >>> s[u'title']
-        u'GridCalendar presentation'
+        u'Grical presentation'
         >>> c[u'description'][1]
-        u'GridCalendar will be presented'
+        u'Grical will be presented'
         >>> c[u'dates'][1].replace(' ','')
         u'2009-11-01visitortickets'
         >>> c[u'dates'][2].replace(' ','')
@@ -2057,8 +2057,8 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             dictionary[key] = value
 
         # NOTE: if you modify the following dictionary, update
-        # http://code.gridcalendar.net/wiki/DataFormats
-        # and the online documentation under e.g. gridcalendar.net/h/
+        # http://code.grical.net/wiki/DataFormats
+        # and the online documentation under e.g. grical.net/h/
         # TODO: implement a system for using translations for tags (maybe
         # related to a preferred language user-based)
         synonyms = {} # TODO: think of using translations instead of synonyms

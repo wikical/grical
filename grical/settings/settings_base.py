@@ -30,17 +30,17 @@ import sys
 PROGRAM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # =============================================================================
-# specific GridCalendar settings {{{1
+# specific Grical settings {{{1
 # =============================================================================
 
 # Stop using the write database. When True, users cannot enter/modify data
 READ_ONLY = os.path.exists(os.path.join(PROGRAM_DIR, "READ_ONLY"))
 """
-If ``True``, GridCalendar works in read only mode, i.e. no new
+If ``True``, Grical works in read only mode, i.e. no new
 events can be added and existing events cannot be edited. This can
 be useful in emergencies, for example when your server is
 overloaded. By default, it is set to ``True`` if a file named
-READ_ONLY exists in the GridCalendar program directory.
+READ_ONLY exists in the Grical program directory.
 """
 
 # limits for number of events/dates
@@ -110,13 +110,13 @@ VERSION = '.'.join((str(x) for x in GRICAL_VERSION)) + tip
 
 # used to generate the PROID field of iCalendars, see
 # http://tools.ietf.org/html/rfc5545
-PRODID = '-//GridMind//NONSGML GridCalendar ' + VERSION + '//EN'
+PRODID = '-//GridMind//NONSGML Grical ' + VERSION + '//EN'
 """
 When exporting to iCalendar format, this setting specifies the
 PRODID, the identifier of the product that created the object. See
 RFC5545_ for details. The default is
-:samp:`-//GridMind//NONSGML GridCalendar {XXXX}//EN`, where
-*XXXX* the GridCalendar version.
+:samp:`-//GridMind//NONSGML Grical {XXXX}//EN`, where
+*XXXX* the Grical version.
 """
 
 # imap settings for getting events as emails
@@ -125,8 +125,8 @@ IMAP_LOGIN = ''
 IMAP_PASSWD = ''
 IMAP_SSL = False
 """
-In GridCalendar new events can be created by email. These emails
-must arrive at an IMAP account, to which GridCalendar logs on and
+In Grical new events can be created by email. These emails
+must arrive at an IMAP account, to which Grical logs on and
 reads the emails. These settings specify the IMAP account
 information. There is no default.
 """
@@ -161,7 +161,7 @@ The Geonames_ database can find names of locations given their
 co-ordinates. You can create an account on Geonames and set these
 settings to access the database. In that case, you should also
 configure your Geonames account to accept a passwordless login from
-the IP of your GridCalendar server. GridCalendar will then use
+the IP of your Grical server. Grical will then use
 these settings to logon to Geonames. The default
 :data:`GEONAMES_URL` is http://api.geonames.org/, and the default
 :data:`GEONAMES_USERNAME` is "demo".

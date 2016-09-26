@@ -9,7 +9,7 @@ Copyright and license
 (The authors can be determined by looking into individual source files
 or examining the history in the version control system.)
 
-Permission is granted to redistribute and/or modify GridCalendar under
+Permission is granted to redistribute and/or modify Grical under
 the terms of the GNU Affero General Public License (AGPL) as published
 by the Free Software Foundation; either version 3 of the License, or,
 at your option, any later version.
@@ -71,7 +71,7 @@ Contact
 | Malmöer Str. 6
 | 10439 Berlin
 | Germany
-| 
+|
 | Tel. +49 3039820596
 | E-Mail: info ät gridmind.org
 

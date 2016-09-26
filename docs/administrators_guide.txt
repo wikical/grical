@@ -47,17 +47,17 @@ Mercurial [11]
    These prerequisites are for development installations. For
    production installations you also need a web server.
 
-[1] We currently develop, test and deploy GridCalendar on Debian-based
+[1] We currently develop, test and deploy Grical on Debian-based
 distributions.  You should not have any trouble running it on other
 GNU/Linux distributions.  We do not support it on Windows at the time,
 but it should not be too hard to get it to run there. Installing
 64-bit versions on Windows may be difficult because of lack of
 dependencies compiled for 64-bit Windows. If you need help, email us.
 
-[2] GridCalendar runs on Python 2.6 or any later 2.x version. It does
+[2] Grical runs on Python 2.6 or any later 2.x version. It does
 not run on Python 3.
 
-[3] GridCalendar is known to run on PostgreSQL 8.4. It is also likely
+[3] Grical is known to run on PostgreSQL 8.4. It is also likely
 to run without problems on 8.3 and on 9.0. In order to avoid possible
 incompatibilities with psycopg2 and PostGIS, it is better to use the
 version prepackaged by your operating system.
@@ -65,7 +65,7 @@ version prepackaged by your operating system.
 [4] Except for PostGIS, more libraries could be needed, such as geos
 and proj; however, you probably not need to worry about that, because
 in most GNU/Linux distributions PostGIS has a dependency on them and
-therefore they will be installed automatically. GridCalendar is known
+therefore they will be installed automatically. Grical is known
 to run on PostGIS 1.5. It can probably run on later versions as well.
 It is not known whether it can run on earlier versions.
 
@@ -77,16 +77,16 @@ you should either use Django 1.4 or later, or psycopg2 no later than
 .. _Django bug: https://code.djangoproject.com/ticket/16250
 
 [6] pip or setuptools are useful in order to install the rest of the
-Python modules; GridCalendar does not actually need it.
+Python modules; Grical does not actually need it.
 
 [7] The table indicates the versions of various Python and Django
-modules on which GridCalendar is known to run. Usually it can run on
+modules on which Grical is known to run. Usually it can run on
 later versions as well.
 
 [8] irclib is needed only if you want to use the IRC logging features
-of GridCalendar.
+of Grical.
 
-[9] GridCalendar is known to run on JQuery 1.4 and JQuery UI 1.8. It
+[9] Grical is known to run on JQuery 1.4 and JQuery UI 1.8. It
 can probably run on later versions as well (and maybe also on earlier
 versions).
 
@@ -146,11 +146,11 @@ django-webtest
 Getting the software
 --------------------
 
-Clone the Mercurial repository http://gridcalendar.net:8001/::
+Clone the Mercurial repository http://grical.net:8001/::
 
-   hg clone http://dev.grical.org:8001/ gridcalendar
+   hg clone http://dev.grical.org:8001/ grical
 
-This will create a :file:`gridcalendar` directory inside the current
+This will create a :file:`grical` directory inside the current
 directory, which should be somewhere inside your home directory for
 a development instance, or :file:`/usr/local` for a production
 instance.
@@ -174,8 +174,8 @@ consult your PostgreSQL and PostGIS documentation.
       exit
 
 Then you need to create a database user and a database (we use
-``gridcalendar_user`` and ``gridcalendar_db`` in the examples below).
-GridCalendar will be connecting to the database as that user. The user
+``grical_user`` and ``grical_db`` in the examples below).
+Grical will be connecting to the database as that user. The user
 should not be a super user, not be allowed to create databases, and
 not be allowed to create more users.
 
@@ -195,8 +195,8 @@ not be allowed to create more users.
    ::
 
       sudo -u postgres -s
-      createuser --pwprompt --no-createdb --no-createrole --no-superuser gridcalendar_user
-      createdb --owner gridcalendar_user -T template_postgis gridcalendar_db
+      createuser --pwprompt --no-createdb --no-createrole --no-superuser grical_user
+      createdb --owner grical_user -T template_postgis grical_db
       exit
 
    You may also need to edit your ``pg_hba.conf`` file as needed
@@ -237,7 +237,7 @@ download the cities database. Debian has an automatic downloader::
 
 If your operating system does not have such a downloader, download it
 yourself, like this::
-    
+
    cd /usr/share/GeoIP
    wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
    gunzip GeoLiteCity.dat.gz
@@ -247,7 +247,7 @@ Make certain you read the license_ for the database.
 .. _bug 331: http://code.grical.org/ticket/331
 .. _license: http://geolite.maxmind.com/download/geoip/database/LICENSE.txt
 
-Setting up GridCalendar
+Setting up Grical
 -----------------------
 
 Copy the file :file:`settings.py.example` to :file:`settings.py`, then
@@ -262,7 +262,7 @@ open the new file in an editor and make the following changes:
   user created above.
 
 Run the following to initialize the database and create the necessary
-database tables for GridCalendar::
+database tables for Grical::
 
     python manage.py syncdb
     python manage.py createcachetable cache
@@ -301,7 +301,7 @@ it executable, then, as root, run::
 and create the file ``/etc/default/celeryd`` with the content::
 
    DJANGO_SETTINGS_MODULE="settings"
-   DAEMON="/usr/local/gridcalendar/manage.py celeryd"
+   DAEMON="/usr/local/grical/manage.py celeryd"
    CELERYD_USER="www-data"
    CELERYD_GROUP="www-data"
    DAEMON_ARGS="--time-limit=300 --concurrency=8"
@@ -312,7 +312,7 @@ http://mattsnider.com/python/using-celery-to-handle-asynchronous-processes/
 __ http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
 
 
-Running GridCalendar
+Running Grical
 --------------------
 
 Run the following command::
@@ -321,26 +321,26 @@ Run the following command::
 
 The above command will start the Django development server and set it
 to listen to port 8088. If you then start your browser and point it to
-``http://localhost:8088/``, you should see GridCalendar in action. Note
+``http://localhost:8088/``, you should see Grical in action. Note
 that this only listens to the localhost; if you want it to listen on
 all interfaces, use ``0.0.0.0:8088`` instead.
 
-To use GridCalendar in production, you need to setup a web server such
+To use Grical in production, you need to setup a web server such
 as Apache_. This is described in detail in `Deploying Django`_.
 
 .. _deploying django: http://docs.djangoproject.com/en/1.1/howto/deployment/
 
-Advanced GridCalendar configuration
+Advanced Grical configuration
 -----------------------------------
 
 IRC
 ^^^
 
-GridCalendar can log into an IRC channel. To use the IRC logger,
+Grical can log into an IRC channel. To use the IRC logger,
 configure the :data:`IRC_NETWORK`, :data:`IRC_PORT`, :data:`IRC_NICK`,
 :data:`IRC_NAME`, :data:`IRC_CHANNEL`, :data:`LOG_PIPE` and
 :data:`LOG_PIPE_GID` configuration settings; :data:`LOG_PIPE` is a
-pipe where GridCalendar writes information and which is read by the
+pipe where Grical writes information and which is read by the
 IRC logger; :data:`LOG_PIPE_GID` is the group id as which the pipe
 should be written. Start the IRC logger with::
 
@@ -349,8 +349,8 @@ should be written. Start the IRC logger with::
 IMAP
 ^^^^
 
-Events can be submitted by sending email to GridCalendar. To activate
-this, GridCalendar must periodically process emails on an IMAP server.
+Events can be submitted by sending email to Grical. To activate
+this, Grical must periodically process emails on an IMAP server.
 To activate this functionality, set the :data:`IMAP_SERVER`,
 :data:`IMAP_LOGIN`, :data:`IMAP_PASSWD` and :data:`IMAP_SSL`
 configuration settings and set the following command to be run
@@ -361,7 +361,7 @@ periodically (e.g. with cron)::
 memcached
 ^^^^^^^^^
 
-memcached_ is recommended on production environments; GridCalendar
+memcached_ is recommended on production environments; Grical
 will automatically use it for performance. For example, in Debian
 6.0::
 
@@ -433,7 +433,7 @@ file (usually :file:`settings.py`):
    co-ordinates. You can create an account on Geonames and set these
    settings to access the database. In that case, you should also
    configure your Geonames account to accept a passwordless login from
-   the IP of your GridCalendar server. GridCalendar will then use
+   the IP of your Grical server. Grical will then use
    these settings to logon to Geonames. The default
    :data:`GEONAMES_URL` is http://api.geonames.org/, and the default
    :data:`GEONAMES_USERNAME` is "demo".
@@ -443,8 +443,8 @@ file (usually :file:`settings.py`):
           IMAP_PASSWD
           IMAP_SSL
 
-   In GridCalendar new events can be created by email. These emails
-   must arrive at an IMAP account, to which GridCalendar logs on and
+   In Grical new events can be created by email. These emails
+   must arrive at an IMAP account, to which Grical logs on and
    reads the emails. These settings specify the IMAP account
    information. There is no default.
 
@@ -458,16 +458,16 @@ file (usually :file:`settings.py`):
    When exporting to iCalendar format, this setting specifies the
    PRODID, the identifier of the product that created the object. See
    RFC5545_ for details. The default is
-   :samp:`-//GridMind//NONSGML GridCalendar {XXXX}//EN`, where
-   *XXXX* the GridCalendar version.
+   :samp:`-//GridMind//NONSGML Grical {XXXX}//EN`, where
+   *XXXX* the Grical version.
 
 .. data:: READ_ONLY
 
-   If ``True``, GridCalendar works in read only mode, i.e. no new
+   If ``True``, Grical works in read only mode, i.e. no new
    events can be added and existing events cannot be edited. This can
    be useful in emergencies, for example when your server is
    overloaded. By default, it is set to ``True`` if a file named
-   READ_ONLY exists in the GridCalendar program directory.
+   READ_ONLY exists in the Grical program directory.
 
 .. data:: REPLY_TO
 
@@ -508,37 +508,37 @@ Miscellaneous
         ./manage.py createrevisioninfo
 
 
-   #. To run the tests, issue ``python manage.py test --failfast --settings=gridcalendar.settings_for_tests events``.
+   #. To run the tests, issue ``python manage.py test --failfast --settings=grical.settings_for_tests events``.
 
 #. For Apache_ as the webserver
-   
+
     #. Install Apache_ and the package ``libapache2-mod-wsgi``
-      
-    #. For an Apache_ Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/gridcalendar.net``::
+
+    #. For an Apache_ Virtual Server, you need to use something like the following as ``/etc/apache2/sites-available/grical.net``::
 
         <VirtualHost *:80>
-            ServerName gridcalendar.net
-            ServerAlias www.gridcalendar.net
-            DocumentRoot /var/www/gridcalendar.net
+            ServerName grical.net
+            ServerAlias www.grical.net
+            DocumentRoot /var/www/grical.net
             ServerAdmin admin@example.com
-        
-            # Logfiles:
-            CustomLog /var/log/apache2/gridcalendar.net.log combined
-            ErrorLog /var/log/apache2/gridcalendar.net.error.log
-            LogLevel warn
-         
-            Alias /robots.txt /var/www/gridcalendar.net/robots.txt
-            Alias /m/ /var/www/gridcalendar.net/m/
-            Alias /favicon.ico /var/www/gridcalendar.net/m/favicon.ico
 
-            WSGIScriptAlias / /usr/local/gridcalendar/apache/django.wsgi
-        
+            # Logfiles:
+            CustomLog /var/log/apache2/grical.net.log combined
+            ErrorLog /var/log/apache2/grical.net.error.log
+            LogLevel warn
+
+            Alias /robots.txt /var/www/grical.net/robots.txt
+            Alias /m/ /var/www/grical.net/m/
+            Alias /favicon.ico /var/www/grical.net/m/favicon.ico
+
+            WSGIScriptAlias / /usr/local/grical/apache/django.wsgi
+
         </VirtualHost>
 
-#. Make ``/var/www/gridcalendar.net/m/`` a symbolic link to ``/usr/local/gridcalendar/media`` and
+#. Make ``/var/www/grical.net/m/`` a symbolic link to ``/usr/local/grical/media`` and
 make sure the web server can read it::
 
-        ln -s /usr/local/gridcalendar/media /var/www/gridcalendar.net/m/
+        ln -s /usr/local/grical/media /var/www/grical.net/m/
 
 #. Install `famfamfam-flag-gif`_ and make a symbokic link named ``flags`` to the directory
 containing the flags. Example::
@@ -548,21 +548,21 @@ containing the flags. Example::
 
 #. The same for ``favicon.ico``::
 
-        ln -s /usr/local/gridcalendar/media/favicon.ico /var/www/gridcalendar.net/favicon.ico
+        ln -s /usr/local/grical/media/favicon.ico /var/www/grical.net/favicon.ico
 
-#. Don't forgett to create a file ``/var/www/gridcalendar/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
+#. Don't forgett to create a file ``/var/www/grical/robots.txt`` for the search engines, see http://en.wikipedia.org/wiki/Robots.txt
 
 #. If Apache_ is used, for development it is recommended to include the following line in ``/etc/apache2/apache2.conf``. It makes the server start a new proccess for every request, in order to read the source code for each request. Remove this in the production server for performance reasons::
 
         MaxRequestsPerChild 1
-   
+
 #. Configure the ``django_site`` table. **Important note**: the first entry in this table is
    used when sending emails, e.g. by ``events/management/commands/imap.py``
    which can be used by a cronjob to read and reply emails (see above). As root you can update the table with::
 
     su postgre
-    psql gridcalendar
-    update django_site set domain='gridcalendar.net' where id=1 ;
+    psql grical
+    update django_site set domain='grical.net' where id=1 ;
     update django_site set name='Grid Calendar' where id=1 ;
 
 #. **Emails**: the system gets and sends emails. See the settings files for the settings
@@ -570,14 +570,14 @@ containing the flags. Example::
 
     #. Group invitations are sent with the sender (``from`` header) set to the user
        ``group-invitation`` and the host provided by the setting ``DEFAULT_FROM_EMAIL``
- 
+
 #. **Graph of the data base**: To generate a graph of the data base::
 
-    cd /usr/local/gridcalendar/
+    cd /usr/local/grical/
     aptitude install graphviz ttf-liberation
     wget http://djangosnippets.org/snippets/1168/download/
-    export PYTHONPATH="/home/hg/gridcalendar:/home/hg/"
-    export DJANGO_SETTINGS_MODULE="gridcalendar.settings"
+    export PYTHONPATH="/home/hg/grical:/home/hg/"
+    export DJANGO_SETTINGS_MODULE="grical.settings"
     python graph_db.py events | dot -Tpng -o media/graph_db.png
 
 #. Dates and times with **leading and/or trailing spaces in web forms**. At this time (Tue May 3
@@ -596,7 +596,7 @@ containing the flags. Example::
    `clearing the session table in the Django documentation`__).
    Add to a cron file something like::
 
-        00 02 * * * cd /usr/local/gridcalendar ; python manage.py cleanup
+        00 02 * * * cd /usr/local/grical ; python manage.py cleanup
 
 __ https://docs.djangoproject.com/en/dev/topics/http/sessions/#clearing-the-session-table
 
@@ -604,24 +604,24 @@ __ https://docs.djangoproject.com/en/dev/topics/http/sessions/#clearing-the-sess
 
    ./manage.py createcachetable cache
 
-#. Some notes on installing GridCalendar with nginx_ and uwsgi_
+#. Some notes on installing Grical with nginx_ and uwsgi_
 
     - If you have problems uwsgi_ using ``python2.6`` instead of ``python2.7``::
 
         update-alternatives --config uwsgi
 
-    - ``/etc/uwsgi/apps-available/gridcalendar.ini`` example::
+    - ``/etc/uwsgi/apps-available/grical.ini`` example::
 
         [uwsgi]
         uid = www-data
         gid = www-data
-        socket = /tmp/uwsgi-gridcalendar.sock
+        socket = /tmp/uwsgi-grical.sock
         processes = 4
         plugins = http python
         module = django.core.handlers.wsgi:WSGIHandler()
         pythonpath = /usr/local/lib
-        chdir = /usr/local/lib/gridcalendar
-        env = DJANGO_SETTINGS_MODULE=gridcalendar.settings
+        chdir = /usr/local/lib/grical
+        env = DJANGO_SETTINGS_MODULE=grical.settings
         env = CELERY_LOADER=django
 
     - ``/etc/nginx/sites-available/grical.org`` example::
@@ -632,7 +632,7 @@ __ https://docs.djangoproject.com/en/dev/topics/http/sessions/#clearing-the-sess
           # balancing fair but consistent per-client. In this instance we're
           # only using one uWGSI worker anyway.
           ip_hash;
-          server unix:///tmp/uwsgi-gridcalendar.sock;
+          server unix:///tmp/uwsgi-grical.sock;
         }
 
         server {
@@ -647,19 +647,19 @@ __ https://docs.djangoproject.com/en/dev/topics/http/sessions/#clearing-the-sess
           }
 
           location /m/ {
-            alias /usr/local/lib/gridcalendar/media/;
+            alias /usr/local/lib/grical/media/;
             access_log off;
             expires 7d;
           }
 
           location /favicon.ico {
-            alias /usr/local/lib/gridcalendar/media/favicon.ico;
+            alias /usr/local/lib/grical/media/favicon.ico;
             access_log off;
             expires 7d;
           }
 
           location /robots.txt {
-            alias /usr/local/lib/gridcalendar/media/robots.txt;
+            alias /usr/local/lib/grical/media/robots.txt;
             access_log off;
             expires 7d;
           }
