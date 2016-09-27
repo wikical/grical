@@ -19,9 +19,9 @@ Here are the steps:
 Dump legacy database to file
 ----------------------------
 
-Suppose the owner of the legacy database is the user `grical`
-and the name of the database is `grical` as well. Dump the
-database with a so-called "Custom format" (option `-Fc`).
+Suppose the owner of the legacy database is the user ``grical``
+and the name of the database is ``grical`` as well. Dump the
+database with a so-called "Custom format" (option ``-Fc``).
 
 .. code-block:: bash
 
@@ -36,11 +36,11 @@ to PostgreSQL 9.5. We suppose that new production db is installed in
 a new server.
 
 Create a db role (user) who will own the new database, let's call her
-`grical_user`. Create also a role with the username used for the
-legacy db owner, let's call her `grical`.
+``grical_user``. Create also a role with the username used for the
+legacy db owner, let's call her ``grical``.
 
 Create a blank database. Let's suppose the database is called
-`grical_db`, we will first set the owner to `grical` to import
+``grical_db``, we will first set the owner to ``grical`` to import
 data. As root:
 
 .. code-block:: bash
@@ -73,8 +73,8 @@ Restore data to the new database
 
 su to user postgres (should be superuser because of some posgis
 objects ownership) and restore from database dump. Then change
-ownership of the database to `grical_user` the user that will hold the
-production database. As root:
+ownership of the database to ``grical_user`` the user that will hold
+the production database. As root:
 
 .. code-block:: bash
 
@@ -86,8 +86,8 @@ production database. As root:
 Move the schema
 ---------------
 
-We move the `public` schema that holds a copy of the legacy database
-to a schema called `old_public`. Use the script `move_schema.sql`
+We move the ``public`` schema that holds a copy of the legacy database
+to a schema called ``old_public``. Use the script ``move_schema.sql``
 from the current directory. As root:
 
 .. code-block:: bash
@@ -113,7 +113,7 @@ the user running the django application:
 Check auth_permission / oembed_providerrule
 -------------------------------------------
 
-Normally `auth_permission` is created on database migration. Records
+Normally ``auth_permission`` is created on database migration. Records
 will differ from the legacy database. Most likely you have not added
 custom permissions for specific grical users, as also grical does not
 use permissions nor admin interface usage is encouraged. If however
@@ -126,7 +126,7 @@ The oembed application creates some initial data with fixtures. We
 don't migrate these initial data. Most likely there are no any
 differences from legacy to new db and it is considered safe to skip
 checking. However if you want to check run the following SQL in
-`grical_db` and check id numbers are same in both schemas:
+``grical_db`` and check id numbers are same in both schemas:
 
 .. code-block:: sql
 
@@ -136,8 +136,8 @@ checking. However if you want to check run the following SQL in
 Migrate data
 ------------
 
-Use the `migrate.sql` script we provide in this directory to migrate
-data from `old_public` schema to `public`. As root:
+Use the ``migrate.sql`` script we provide in this directory to migrate
+data from ``old_public`` schema to ``public``. As root:
 
 .. code-block:: bash
 
@@ -152,8 +152,8 @@ Conclusions
 Start web server. You should normally see the grical site working
 serving the migrated data.
 
-Django `settings.SECRET_KEY` should match the new site, or else user
+Django ``settings.SECRET_KEY`` should match the new site, or else user
 passwords, sessions etc won't work.
 
-If everything goes well you may drop the `old_public` schema as well
-the `grical` role from the production server.
+If everything goes well you may drop the ``old_public`` schema as well
+the ``grical`` role from the production server.

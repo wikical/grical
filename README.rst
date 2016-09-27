@@ -1,8 +1,10 @@
 **grical** is a platform for events web sites. It is the software
 running behind `grical.org`__. Main coding language used is
-`Python/Django`.
+`Python`__/`Django`__.
 
 __ http://grical.org/
+__ https://python.org/
+__ https://www.djangoproject.com/
 
 
 Setup a development environment
@@ -62,7 +64,7 @@ Create a settings file
 ~~~~~~~~~~~~~~~~~~~~~~
 
 You need a Django settings file. You just need to copy
-`settings-example.py` which is ready for development. You may use it
+``settings-example.py`` which is ready for development. You may use it
 instead by specifying ``--settings grical.settings.settings-example``
 while running management commands, however making a copy of the file
 is better for convenience.
@@ -81,7 +83,7 @@ And then activate the virtualenv:
   virtualenv ~/virtualenvs/grical
   source ~/virtualenvs/grical/bin/activate
 
-Assuming that you have a `virtualenvs` directory in your home where
+Assuming that you have a ``virtualenvs`` directory in your home where
 you store virtualenvs.
 
 Install python requirements
@@ -97,7 +99,7 @@ Migrate db
 ~~~~~~~~~~
 
 While using virtualenv, migrate db to create database. Then initialize
-`django_site` table:
+``django_site`` table:
 
 .. code-block:: bash
 
