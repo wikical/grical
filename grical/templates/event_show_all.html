@@ -9,16 +9,16 @@
 
 {% block container %}
 
-<div class="event_full container">
+<div class="event_full container-fluid">
 
     {% cache 2592000 event_show_all READ_ONLY user.is_authenticated event.id event.version %}
     {% with start=event.startdate end=event.enddate %}
 
         <div class="row">
 
-            <div class="item-nr col-xs-12">{{ event.id }}</div>
+            <div class="item-nr col-xs-12 col-lg-10 offset-lg-1">{{ event.id }}</div>
 
-            <div class="header col-xs-12 bg-faded">
+            <div class="header col-xs-12 col-lg-10 offset-lg-1 bg-faded">
                 <div id="title">
 
                     {% if event.recurring %}
@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <div class="item col-xs-12">
+            <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
                 <!--
                 <a href="{% url "event_show_ical" event.id  %}"><img alt="ICAL" src="{{ STATIC_URL }}icalicon.png" width="16" /></a>
                 &nbsp;|&nbsp;
@@ -87,7 +87,7 @@
             </div>
 
             {% if event.address or event.city or event.country or event.coordinates %}
-                <div class="item col-xs-12">
+                <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
                     <img class="icon" src="{{ STATIC_URL }}venue-icon.png" alt="{% trans 'where' %}" />
                     <div class="data">
                         {% if event.address %}
@@ -126,7 +126,7 @@
             {% endif %}
 
             {% if event.get_tags %}
-                <div class="item col-xs-12">
+                <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
                     <img class="icon" src="{{ STATIC_URL }}tags-icon.png" alt="{% trans 'tags' %}" />
                     <div class="tags data">
                         {% for tag in event.get_tags %}
@@ -136,8 +136,19 @@
                 </div>
             {% endif %}
 
+            {% if recurrences %}{# is part of a serie as intermediate instance OR is master of a serie #}
+                <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
+                    <h3>{% trans "Recurring dates" %}</h3>
+                    <ul>
+                        {% for event in recurrences %}
+                            <li>{% include "event_show_small_start.html" %}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
             {% if event.urls.all %}
-                <div class="item col-xs-12">
+                <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
                     <img class="icon" src="{{ STATIC_URL }}links-icon.png" alt="{% trans 'urls' %}" />
                     <div class="data">
                         <ul class="urls">
@@ -153,23 +164,12 @@
                 </div>
             {% endif %}
 
-            {% if recurrences %}{# is part of a serie as intermediate instance OR is master of a serie #}
-                <div class="item col-xs-12">
-                    <h3>{% trans "Recurring dates" %}</h3>
-                    <ul>
-                        {% for event in recurrences %}
-                            <li>{% include "event_show_small_start.html" %}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-
             {% with dates=event.custom_dates %}
                 {% if dates %}
-                    <div class="item col-xs-12">
-                        <img class="icon" src="{{ STATIC_URL }}deadlines-icon.png" alt="{% trans 'urls' %}" />
+                    <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
+                        <img class="icon" src="{{ STATIC_URL }}deadlines-icon.png" alt="{% trans 'deadlines' %}" />
                         <div class="data">
-                            <table class='deadlines'>
+                            <table class='table table-hover deadlines'>
                                 {% for eventdate in dates %}
                                     <tr>
                                         <td>
@@ -187,21 +187,24 @@
             {% endwith %}
 
             {% if event.sessions.all %}
-                <div class="item col-xs-12">
-                    <table>
-                        {% for session in event.sessions.all %}
-                            <tr>
-                                <td><a href='{% urlsearch query=session.session_date|date:"Y-m-d" %}'>{{ session.session_date }}</a></td>
-                                <td>{{ session.session_starttime|time:"H:i" }} - {{ session.session_endtime|time:"H:i" }}</td>
-                                <td>{{ session.session_name|escape }}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
+                <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
+                    <img class="icon" src="{{ STATIC_URL }}deadlines-icon.png" alt="{% trans 'sessions' %}" />
+                    <div class="data">
+                        <table class="table table-hover sessions">
+                            {% for session in event.sessions.all %}
+                                <tr>
+                                    <td><a href='{% urlsearch query=session.session_date|date:"Y-m-d" %}'>{{ session.session_date }}</a></td>
+                                    <td>{{ session.session_starttime|time:"H:i" }} - {{ session.session_endtime|time:"H:i" }}</td>
+                                    <td>{{ session.session_name|escape }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
                 </div>
             {% endif %}
 
             {% if event.description %}
-                <div class="item col-xs-12">
+                <div class="m-t-1 item col-xs-12 col-lg-10 offset-lg-1">
                     <h2>{% trans "Description" %}</h2>
                     <div>{% spaceless %}
                         {% if rst2html %}
@@ -214,7 +217,7 @@
             {% endif %}
 
             {% if event.coordinates %}
-                <div class="item clearfix col-xs-12">
+                <div class="item clearfix col-xs-12 col-lg-10 offset-lg-1">
                     <!-- see example http://openlayers.org/dev/examples/xhtml.html -->
                     <div id="map" class="smallmap"></div>
                     <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
@@ -268,24 +271,26 @@
     {% endcache %}
 
     {# comments #} {# TODO: make comment form available for non-logged-in users but with a captcha #}
-    <div id="gc-comments">
-        {% get_comment_count for event as comment_count %}
-        <h2>{% trans "Comments" %}</h2>
-        {% if comment_count > 0 %}
-            {% render_comment_list for event %}
-        {% else %}
-            {% if READ_ONLY or not user.is_authenticated %}
-                <p>{% trans "There are so far no comments about this event." %}</p>
-            {% endif %}
-        {% endif %}
-        {% if not READ_ONLY %}
-            {% if user.is_authenticated %}
-                {% render_comment_form for event %}
+    <div id="gc-comments" class="m-t-1 row">
+        <div class="col-xs-12 col-lg-10 offset-lg-1">
+            {% get_comment_count for event as comment_count %}
+            <h2>{% trans "Comments" %}</h2>
+            {% if comment_count > 0 %}
+                {% render_comment_list for event %}
             {% else %}
-                <p><a href="{% url "auth_login"  %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>
-                {# TODO: redirect user to the position to add a comment to this event after logging in #}
+                {% if READ_ONLY or not user.is_authenticated %}
+                    <p>{% trans "There are so far no comments about this event." %}</p>
+                {% endif %}
             {% endif %}
-        {% endif %}
+            {% if not READ_ONLY %}
+                {% if user.is_authenticated %}
+                    {% render_comment_form for event %}
+                {% else %}
+                    <p><a href="{% url "auth_login"  %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>
+                    {# TODO: redirect user to the position to add a comment to this event after logging in #}
+                {% endif %}
+            {% endif %}
+        </div>
     </div>
 
 </div>
