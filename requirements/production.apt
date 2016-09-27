@@ -1,0 +1,14 @@
+build-essential
+famfamfam-flag-gif
+geoip-database-contrib
+libsqlite3-mod-spatialite
+mercurial
+npm
+postgis
+postgresql
+postgresql-contrib
+postgresql-server-dev-9.5
+python-dev
+python-geoip
+python-pip
+python-virtualenv

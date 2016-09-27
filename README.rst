@@ -134,47 +134,36 @@ Now you can open the site in your browser, just visit:
 http://localhost:8000
 
 
+Setup grical server
+===================
 
-Administrators instructions, work in progress
-=============================================
+Instructions assume installation to a Linux host and PostgreSQL 9.5.
+Different setup may need some modifications to these instructions.
 
-PostgreSQL / lxc instructions
-=============================
 
-More advanced setup, most probably you don't need this
+Setup PostgreSQL
+----------------
 
-Create a container to work
---------------------------
+To setup PostgreSQL 9.5, e.g. following
+http://tecadmin.net/install-postgresql-server-on-ubuntu/ instructions:
 
-  cd ~/wikical/provisionize
-  ./provisionize.sh --only-create grical
+.. code-block:: bash
 
-  echo "/home/$USER/grical home/$USER/grical none bind,create=dir 0 0" >~/.local/share/lxc/grical/fstab
-  echo "lxc.mount = /home/$USER/.local/share/lxc/grical/fstab" >> ~/.local/share/lxc/grical/config
+    sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+    wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
+    apt-get update
 
-# Restart container
-  lxc-stop -n grical
-  lxc-start -n grical -d
+Then follow next paragraph to install postgresql packages alongside
+with other system packages.
 
-# Login to container
 
-  ssh root@grical
+Install system packages
+-----------------------
 
-Install postgresql 9.5
-----------------------
+.. code-block:: bash
 
-  sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
-  wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
-  apt-get update
-  apt-get install postgresql postgresql-contrib postgis
-  apt-get install postgresql-server-dev-9.5
+    cat ~/grical/requirements/production.apt | tr '\n' ' '|xargs sudo apt-get install
 
-Install several packages
-------------------------
-
-  apt-get install python-geoip
-  apt-get install build-essential python-dev python-pip
-  apt-get install geoip-database-contrib mercurial famfamfam-flag-gif
 
 Install required js/css/bower packages
 --------------------------------------
@@ -186,6 +175,7 @@ Install bower package manager as root, in container:
 Install required packages for grical with bower:
 
   cd ~/grical/requirements && bower install --config.directory=../grical/static/bower_components
+
 
 Create database, db user, etc
 -----------------------------
