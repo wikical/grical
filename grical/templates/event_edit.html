@@ -1,192 +1,338 @@
+{# TODO: consider using https://silviomoreto.github.io/bootstrap-select #}
 {% extends "base.html" %}
 {% load i18n %}
 
 {% block container %}
 
-{% comment %}{% endcomment %}
-
 {% include "event_options.html" %}
 
-<div class="container-fluid">
-    <div class="row">
+{% block messages %}{% endblock %}
 
-        <div id="event_form" class="col-xs-12">
-
-            {% if form.errors or form.non_field_errors or formset_url.errors or formset_url.non_form_errors or formset_session.errors or formset_session.non_form_errors or formset_deadline.errors or formset_deadline.non_form_errors %}
-                <div class="errorlist">
-                    {% trans "The operation could not be performed because one or more error(s) occurred. Please resubmit the form after making the necessary changes. See the red remarks." %}
-                </div>
-            {% endif %}
-
-            <form action="" method="post">{% csrf_token %}
-                {% if form.non_field_errors|length %}
-                <div class="gc-form-field-errors">
-                    {{ form.non_field_errors.as_ul }}
-                </div>
-                {% endif %}
-                <div id="title">
-                    <div class="helptext">{% trans "Title" %}</div>
-                    <div>{{ form.title.as_widget }}</div>
-                </div>
-                <div id="non-table-fields">
-                    <div class="left-fields">
-                        {% for field in form.visible_fields %}
-                            {# Include the hidden fields in the form #}
-                            {% if forloop.first %}
-                                {% for hidden in form.hidden_fields %}
-                                    {{ hidden }}
-                                {% endfor %}
-                            {% endif %}
-                            {% if not field.auto_id = "id_title" and not field.auto_id = "id_coordinates" and not field.auto_id = "id_description" %}
-                                <div class="label-field-helptext">
-                                    {{ field.errors.as_ul }}
-                                    {{ field.label_tag }}
-                                    {{ field.as_widget }}<br />
-                                    <div class="helptext">{{ field.help_text|safe }}</div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="right-fields">
-                        <div class="coordinates">
-                            {% with form.coordinates as field %}
-                                {{ field.errors.as_ul }}
-                                {{ field.label_tag }}
-                                {{ field }}
-                                <div class="helptext">
-                                    {% if field.value %}
-                                        {% trans "You can click on the map to change the coordinates" %}
-                                    {% else %}
-                                        {% trans "You zoom and can click on the map to set the coordinates" %}
-                                    {% endif %}
-                                </div>
-                                <div id="map" class="smallmap"></div>
-                            {% endwith %}
-                        </div>
-                    </div>
-                    <div class="description">
-                        {% with form.description as field %}
-                            {{ field.label_tag }}<br />
-                            <div class="helptext">{{ field.help_text|safe }}</div>
-                            {{ field }}
-                            {{ field.errors.as_ul }}
-                        {% endwith %}
-                    </div>
-                </div>
-                <div id="urls-form">
-                    <!-- urls -->
-                    <h2>{% trans "Web addresses (URLs)" %}</h2>
-                    {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
-                    <div>{{ formset_url.management_form }}</div>
-                    {{ formset_url.non_form_errors.as_ul }}
-                    <table id="url_table">
-                        {% for form in formset_url.forms %}
-                            {% if forloop.first %}
-                                <thead><tr>
-                                    {% for field in form.visible_fields %}
-                                        <th>{{ field.label|capfirst }}</th>
-                                    {% endfor %}
-                                </tr></thead>
-                            {% endif %}
-                            <tr>
-                                {% for field in form.visible_fields %}
-                                    <td>
-                                        {# Include the hidden fields in the form #}
-                                        {% if forloop.first %}
-                                            {% for hidden in form.hidden_fields %}
-                                                {{ hidden }}
-                                            {% endfor %}
-                                        {% endif %}
-                                        {{ field.errors.as_ul }}
-                                        {{ field }}
-                                    </td>
-                                {% endfor %}
-                                {% if form.non_field_errors %}
-                                    <td>
-                                        {{ form.non_field_errors.as_ul }}
-                                    </td>
-                                {% endif %}
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-                <div id="sessions-form">
-                    <!-- sessions -->
-                    <h2>{% trans "Sessions within the event" %}</h2>
-                    <div>{{ formset_session.management_form }}</div>
-                    {{ formset_session.non_form_errors.as_ul }}
-                    <table id="session_table">
-                        {% for form in formset_session.forms %}
-                            {% if forloop.first %}
-                                <thead><tr>
-                                    {% for field in form.visible_fields %}
-                                        <th>{{ field.label|capfirst }}</th>
-                                    {% endfor %}
-                                </tr></thead>
-                            {% endif %}
-                            <tr>
-                                {% for field in form.visible_fields %}
-                                    <td>
-                                        {# Include the hidden fields in the form #}
-                                        {% if forloop.first %}
-                                            {% for hidden in form.hidden_fields %}
-                                                {{ hidden }}
-                                            {% endfor %}
-                                        {% endif %}
-                                        {{ field.errors.as_ul }}
-                                        {{ field }}
-                                    </td>
-                                {% endfor %}
-                                {% if form.non_field_errors %}
-                                    <td>
-                                        {{ form.non_field_errors.as_ul }}
-                                    </td>
-                                {% endif %}
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-                <div id="deadlines-form">
-                    <!-- deadlines -->
-                    <h2>{% trans "Special dates / deadlines" %}</h2>
-                    <div>{{ formset_deadline.management_form }}</div>
-                    {{ formset_deadline.non_form_errors.as_ul }}
-                    <table id="deadline_table">
-                        {% for form in formset_deadline.forms %}
-                            {% if forloop.first %}
-                                <thead><tr>
-                                    {% for field in form.visible_fields %}
-                                        <th>{{ field.label|capfirst }}</th>
-                                    {% endfor %}
-                                </tr></thead>
-                            {% endif %}
-                            <tr>
-                                {% for field in form.visible_fields %}
-                                    <td>
-                                        {# Include the hidden fields in the form #}
-                                        {% if forloop.first %}
-                                            {% for hidden in form.hidden_fields %}
-                                                {{ hidden }}
-                                            {% endfor %}
-                                        {% endif %}
-                                        {{ field.errors.as_ul }}
-                                        {{ field }}
-                                    </td>
-                                {% endfor %}
-                                {% if form.non_field_errors %}
-                                    <td>
-                                        {{ form.non_field_errors.as_ul }}
-                                    </td>
-                                {% endif %}
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-                {% include "also_recurrences_form.html" %}
-                <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
-            </form>
+{% if messages %}
+    {# see http://docs.djangoproject.com/en/1.3/ref/contrib/messages/ #}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-lg-10 offset-lg-1">
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
+{% endif %}
+
+<div id="event_form" class="container-fluid">
+    <form action="" method="post">{% csrf_token %}
+        {% if form.errors or form.non_field_errors or formset_url.errors or formset_url.non_form_errors or formset_session.errors or formset_session.non_form_errors or formset_deadline.errors or formset_deadline.non_form_errors %}
+            <div class="row">
+                <div class="text-danger col-xs-12 col-lg-10 offset-lg-1">
+                    {% trans "The operation could not be performed because one or more error(s) occurred. Please resubmit the form after making the necessary changes. See the red remarks." %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if form.non_field_errors|length %}
+            <div class="row">
+                <div class="text-danger col-xs-12  col-lg-10 offset-lg-1">
+                    {{ form.non_field_errors.as_ul }}
+                </div>
+            </div>
+        {% endif %}
+
+        {% with field=form.title maxlength="200" %}
+            <div class="form-group row">
+                <label for="id_{{ field.name }}" class="col-xs-12 col-lg-10 offset-lg-1 col-form-label">{% trans "Title" %}</label>
+                <div class="col-xs-12 col-lg-10 offset-lg-1">
+                    <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="form-control"
+                        {% if field.value %}value="{{ field.value }}"{% endif %}
+                        {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                    {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                    {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                </div>
+            </div>
+        {% endwith %}
+
+        {% with label_class="col-xs-12 col-lg-2 field_label" input_class="col-xs-12 col-lg-10" %}
+        <div class="row">
+            <div class="col-xs-12 col-lg-5 offset-lg-1">
+                {% with field=form.acronym maxlength="20" %}
+                    <div class="form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }}">{% trans "Acronym" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.startdate %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class}}">{% trans "Start date" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input datePicker"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.starttime %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }}">{% trans "Start time" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.enddate %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} datePicker">{% trans "End date" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input datePicker"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.endtime %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "End time" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.timezone %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "Timezone" %}</label>
+                        <div class="{{ input_class }} select_field">
+                            {{ field.as_widget }}
+                        </div>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.tags maxlength="255" %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "Tags" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.city maxlength="50" %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "City" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.country %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "Country" %}</label>
+                        <div class="{{ input_class }} select_field">
+                            {{ field.as_widget }}
+                        </div>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.address %}
+                    <div class="clearfix form-group">
+                        <label for="id_{{ field.name }}" class="col-form-label">{% trans "Location" %}</label>
+                        <textarea id="id_{{ field.name }}" rows="10" cols="40" name="{{ field.name }}">{% if field.value %}{{ field.value }}{% endif %}</textarea>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+            </div>
+            {% endwith %}
+
+            {% with label_class="col-xs-12 col-lg-3 field_label" input_class="col-xs-12 col-lg-9" %}
+            <div class="col-xs-12 col-lg-5">
+                {% with field=form.exact %}
+                    <div class="form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }}">{% trans "Exact coordinates" %}</label>
+                        <div class="{{ input_class }} select_field">
+                            {{ field.as_widget }}
+                        </div>
+                        <div class="clearfix"></div>
+                        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                        {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                    </div>
+                {% endwith %}
+                {% with field=form.coordinates maxlength="50" %}
+                    <div class="form-group">
+                        <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "Coordinates" %}</label>
+                        <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
+                            onblur="updateMap(this.value)"
+                            {% if field.value %}value="{{ field.value }}"{% endif %}
+                            {% if field.maxlength %}maxlength="{{ maxlength }}"{% endif %}/>
+                            <div class="clearfix"></div>
+                            {% if field.errors|length %}<div class="text-danger m-t-1">{{ field.errors.as_ul }}</div>{% endif %}
+                            <div class="helptext m-t-1">{% trans "You can click on the map to change the coordinates" %}</div>
+                        <div id="map" class="smallmap"></div>
+                    </div>
+                {% endwith %}
+            </div>
+        </div>
+        {% endwith %}
+
+        {% with field=form.description maxlength="200" %}
+            <div class="form-group row">
+                <label for="id_{{ field.name }}" class="col-xs-12 col-lg-10 offset-lg-1 col-form-label">{% trans "Description" %}</label>
+                <div class="col-xs-12 col-lg-10 offset-lg-1">
+                    {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                    <textarea id="id_{{ field.name }}" rows="10" cols="40" name="description">{% if field.value %}{{ field.value }}{% endif %}</textarea>
+                    {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
+                </div>
+            </div>
+        {% endwith %}
+
+        {% trans "Web addresses (URLs)" as url_field_title %}
+        {% with field=formset_url field_title=url_field_title %}
+            <div id="urls-form"  class="formset form-group row">
+                <h2 class="col-xs-12 col-lg-10 offset-lg-1">{{ field_title }}</h2>
+                {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
+                <div class="col-xs-12 col-lg-10 offset-lg-1">{{ field.management_form }}</div>
+                {{ field.non_form_errors.as_ul }}
+                <table id="url_table" class="col-xs-12 col-lg-10 offset-lg-1">
+                    {% for form in field.forms %}
+                        {% if forloop.first %}
+                            <thead><tr>
+                                {% for field in form.visible_fields %}
+                                    <th>{{ field.label|capfirst }}</th>
+                                {% endfor %}
+                            </tr></thead>
+                        {% endif %}
+                        <tr>
+                            {% for field in form.visible_fields %}
+                                <td>
+                                    {# Include the hidden fields in the form #}
+                                    {% if forloop.first %}
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {{ field }}
+                                    {{ field.errors.as_ul }}
+                                </td>
+                            {% endfor %}
+                            {% if form.non_field_errors %}
+                                <td>
+                                    {{ form.non_field_errors.as_ul }}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endwith %}
+
+        {% trans "Sessions within the event" as sessions_field_title %}
+        {% with field=formset_session field_title=sessions_field_title %}
+            <div id="urls-form"  class="formset form-group row">
+                <h2 class="col-xs-12 col-lg-10 offset-lg-1">{{ field_title }}</h2>
+                {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
+                <div class="col-xs-12 col-lg-10 offset-lg-1">{{ field.management_form }}</div>
+                {{ field.non_form_errors.as_ul }}
+                <table id="session_table" class="col-xs-12 col-lg-10 offset-lg-1">
+                    {% for form in formset_session.forms %}
+                        {% if forloop.first %}
+                            <thead><tr>
+                                {% for field in form.visible_fields %}
+                                    <th>{{ field.label|capfirst }}</th>
+                                {% endfor %}
+                            </tr></thead>
+                        {% endif %}
+                        <tr>
+                            {% for field in form.visible_fields %}
+                                <td>
+                                    {# Include the hidden fields in the form #}
+                                    {% if forloop.first %}
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {{ field }}
+                                    {{ field.errors.as_ul }}
+                                </td>
+                            {% endfor %}
+                            {% if form.non_field_errors %}
+                                <td>
+                                    {{ form.non_field_errors.as_ul }}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endwith %}
+
+        {% trans "Special dates / deadlines" as deadlines_field_title %}
+        {% with field=formset_deadline field_title=deadlines_field_title %}
+            <div id="urls-form"  class="formset form-group row">
+                <h2 class="col-xs-12 col-lg-10 offset-lg-1">{{ field_title }}</h2>
+                {# the next code is inspired on http://djangosnippets.org/snippets/1442/ #}
+                <div class="col-xs-12 col-lg-10 offset-lg-1">{{ field.management_form }}</div>
+                {{ field.non_form_errors.as_ul }}
+                <table id="deadline_table"  class="col-xs-12 col-lg-10 offset-lg-1">
+                    {% for form in formset_deadline.forms %}
+                        {% if forloop.first %}
+                            <thead><tr>
+                                {% for field in form.visible_fields %}
+                                    <th>{{ field.label|capfirst }}</th>
+                                {% endfor %}
+                            </tr></thead>
+                        {% endif %}
+                        <tr>
+                            {% for field in form.visible_fields %}
+                                <td>
+                                    {# Include the hidden fields in the form #}
+                                    {% if forloop.first %}
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {{ field }}
+                                    {{ field.errors.as_ul }}
+                                </td>
+                            {% endfor %}
+                            {% if form.non_field_errors %}
+                                <td>
+                                    {{ form.non_field_errors.as_ul }}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endwith %}
+
+
+        <div class="form-group row">
+            <div class="col-xs-12 col-lg-10 offset-lg-1">
+                {% include "also_recurrences_form.html" %}
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-xs-12 col-lg-10 offset-lg-1">
+                <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
+            </div>
+        </div>
+
+    </form>
 </div>
 
 {% comment %}
@@ -327,5 +473,6 @@ function updateMap( value ) {
 
 //]]>
 </script>
+
 {% endblock %}
 

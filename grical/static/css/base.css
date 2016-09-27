@@ -1088,12 +1088,6 @@ textarea {
     width: 100%;
 }
 
-/* errors produces by wrong entries in forms */
-.errorlist {
-    margin: 0;
-    padding: 0;
-}
-
 #submit-button input,
 .small-submit-button input,
 p.submit input{
@@ -1917,99 +1911,50 @@ div.olControlSaveFeaturesItemInactive {
 /*--------------------------------------------------------*/
 /* 11. event edit                                         */
 /*--------------------------------------------------------*/
-/* complete event form */
-#event_form #title {
-    margin: 0.5rem;
+#event_form .field_label{
+    padding-left: 0;
 }
-#event_form input#id_title {
-    /*font-size: 150%;*/
-    font-weight: bold;
-    padding: 0.2rem;
-    width: 98%;
-    font-style: italic;
+#event_form .field_input{
+    display: block;
+    padding: .5rem .75rem;
+    font-size: 1rem;
+    line-height: 1.25;
+    color: #55595c;
+    background-image: none;
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: .25rem;
 }
-#event_form #id_description {
-    height: 30rem;
+#event_form .field_input:focus {
+    background-color: #fff;
+    border-color: #66afe9;
+    outline: 0;
+}
+#event_form .helptext {
+    font-size: .8rem;
+}
+#event_form .select_field {
+    padding-left: 0;
+    padding-right: 0;
+}
+#event_form .smallmap{
+    height: 44rem;
+}
+#event_form .formset{
+    margin-left: 0;
+    margin-right: 0;
+}
+#event_form .formset h2 {
+    padding-left: 0;
+    padding-right: 0;
+}
+#event_form .formset input{
     width: 100%;
 }
-#event_form #id_address {
-    width: 30rem;
-    height: 6rem;
-}
-#event_form input#id_tags {
-    width: 30rem;
-}
-#event_form input#id_coordinates {
-    width: 20rem;
-}
-.left-fields label {
-    float: left;
-    font-weight: bold;
-    margin-right: 1rem;
-    min-width: 8rem;
-    text-align: right;
-}
-#event_form input:not([type="submit"]) {
-    margin: 0.1rem 0 0.1rem 0;
-}
-#event_form td {
-    color: gray;
-    padding-bottom:1rem;
-}
-#event_form th {
-    vertical-align:top;
-}
-/* urls-form */
-#event_form #urls-form {
-    margin: 0.5rem;
-}
-#event_form #url_table, #event_form #session_table, #event_form #deadline_table {
-    margin-top:1.5rem;
-}
-#event_form #url_table th, #event_form #session_table th, #event_form #deadline_table th {
-    text-align:center;
-    color: #003a6b;
-    font-weight: bold;
-}
-#event_form #url_table td, #event_form #session_table td, #event_form #deadline_table td {
-    padding: 0.5rem 0.5rem 0.5rem 0;
-    text-align:center;
-}
-#event_form #url_table input[name$="-url_name"] {
-    width: 10rem;
-}
-#event_form #url_table input[name$="-url"] {
-    width: 40rem;
-}
-#event_form #session_table th {
-    padding: 0 1rem ;
-}
-#event_form #also_recurrences {
-    font-weight:bold;
-    background: #AFC4D3;
-    padding: 0; /* otherwise horizontal scroll appears */
-    display: inline-block;
-    margin: 1rem 0;
+#event_form select {
     width: 100%;
-}
-#event_form #also_recurrences ul {
-    display: inline ;
-}
-#event_form #also_recurrences li {
-    padding: 0;
-}
-#event_form #also_recurrences label {
-    min-width: 0;
-}
-#event_form h2 {
-    margin-top: 2rem;
-    margin-bottom: 0;
-}
-#event_form #sessions-form {
-    margin: 0.5rem;
-}
-#event_form #deadlines-form {
-    margin: 0.5rem;
+    margin-top: .5rem;
 }
 
 /*--------------------------------------------------------*/
@@ -2023,8 +1968,6 @@ div.olControlSaveFeaturesItemInactive {
     border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
     display: inline-block;
     margin-bottom: 1rem;
-    padding: 0;
-    width: 100%;
 }
 .event_full #title {
     display: inline-block;
@@ -2066,10 +2009,6 @@ div.olControlSaveFeaturesItemInactive {
     border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
     margin: 1.5rem 0.5rem;
     padding: 0.5rem 1rem;
-}
-.event_full .item {
-    clear: both;
-    margin: 0.5rem;
 }
 .event_full .icon {
     width: 1.5rem;
