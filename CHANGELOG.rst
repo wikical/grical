@@ -9,7 +9,7 @@ Incompatible changes
 --------------------
 
 * Capability to output to a Unix pipe was removed, by removing the
-  related custom setting: `LOG_PIPE`.
-* `irclogger.py` script removed, intended to be used in conjunction
-  the `LOG_PIPE` setting.
+  related custom setting: ``LOG_PIPE``.
+* ``irclogger.py`` script removed, intended to be used in conjunction
+  the ``LOG_PIPE`` setting.
 
