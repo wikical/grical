@@ -1,80 +1,131 @@
-====================================
-Grical installation mini instructions
-=====================================
+**grical** is a platform for events web sites. It is the software
+running behind `grical.org`__. Main coding language used is
+`Python/Django`.
+
+__ http://grical.org/
 
 
-virtualenv - sqlite3 instructions
-=================================
+Setup a development environment
+===============================
 
-This is the easiest setup for development
+The following setup uses sqlite3 as database back end, virtualenv as
+isolated Python environment and Linux host system. Other combinations
+are possible e.g. linux container and PostgreSQL.
 
-Install some Ubuntu packages
+Clone repository
+----------------
+
+.. FIXME migrate to github link when it is known
+
+.. code-block:: bash
+
+    cd && hg clone ssh://hg@bitbucket.org/gridmind/grical
+
+
+System packages requirements
 ----------------------------
 
-14.04
-~~~~~
+Either to run tests or to setup a full working development environment
+you need to install some system packages. For Ubuntu systems:
 
-  cat ~/grical/requirements/development.trusty.apt | tr '\n' ' '|xargs sudo apt-get install
+For 14.04LTS:
 
-15.04+
-~~~~~~
+.. code-block:: bash
 
-  cat ~/grical/requirements/development.xenial.apt | tr '\n' ' '|xargs sudo apt-get install
+    cat ~/grical/requirements/development.trusty.apt | tr '\n' ' '|xargs sudo apt-get install
 
-Clone grical
-------------
+For 15.04+:
 
-  cd
-  hg clone ssh://hg@bitbucket.org/gridmind/grical
+.. code-block:: bash
 
-Create a settings file:
+    cat ~/grical/requirements/development.xenial.apt | tr '\n' ' '|xargs sudo apt-get install
 
-  cd ~/grical/grical/settings
-  cp settings-example.py settings.py
 
-Create a virtualenv to work
----------------------------
+Run tests
+---------
 
-  cd
-  virtualenv virtualenvs/grical
+Setup `tox`_ either using system packages or with pip.
+
+.. _tox: https://tox.readthedocs.io/
+
+Running tests by issuing the `tox` command:
+
+.. code-block:: bash
+
+    cd ~/grical && tox
+
+
+Setup development
+-----------------
+
+Create a settings file
+~~~~~~~~~~~~~~~~~~~~~~
+
+You need a Django settings file. You just need to copy
+`settings-example.py` which is ready for development. You may use it
+instead by specifying ``--settings grical.settings.settings-example``
+while running management commands, however making a copy of the file
+is better for convenience.
+
+.. code-block:: bash
+
+  cd ~/grical/grical/settings && cp settings-example.py settings.py
+
+Create a virtualenv
+~~~~~~~~~~~~~~~~~~~
+
+And then activate the virtualenv:
+
+.. code-block:: bash
+
+  virtualenv ~/virtualenvs/grical
+  source ~/virtualenvs/grical/bin/activate
 
 Assuming that you have a `virtualenvs` directory in your home where
-you store virtualenvs. That can be any dir.
-
-Activate the virtualenv:
-
-  source virtualenvs/grical/bin/activate
+you store virtualenvs.
 
 Install python requirements
----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  cd ~/grical/requirements
-  pip install -r development.pip
+While using virtualenv:
+
+.. code-block:: bash
+
+    cd ~/grical/requirements && pip install -r development.pip
 
 Migrate db
-----------
+~~~~~~~~~~
 
-  cd ~/grical
-  python manage.py migrate
+While using virtualenv, migrate db to create database. Then initialize
+`django_site` table:
 
-  sqlite3 grical_db.sql "UPDATE django_site SET domain='localhost:8000', name='Grical development';"
+.. code-block:: bash
+
+    cd ~/grical && python manage.py migrate
+
+    sqlite3 grical_db.sql "UPDATE django_site SET domain='localhost:8000', name='Grical development';"
 
 Install required js/css/bower packages
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install bower package manager as root:
 
-  sudo npm install bower -g
+.. code-block:: bash
+
+    sudo npm install bower -g
 
 Install required packages for grical with bower:
 
-  cd ~/grical/requirements && bower install --config.directory=../grical/static/bower_components
+.. code-block:: bash
 
-Work with grical
-----------------
+    cd ~/grical/requirements && bower install --config.directory=../grical/static/bower_components
 
-Start the dev server
-  python manage.py runserver 0.0.0.0:8000
+Start /access development server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    cd ~/grical && python manage.py runserver 0.0.0.0:8000
 
 Now you can open the site in your browser, just visit:
 
@@ -82,9 +133,8 @@ http://localhost:8000
 
 
 
-
-
-
+Administrators instructions, work in progress
+=============================================
 
 PostgreSQL / lxc instructions
 =============================
