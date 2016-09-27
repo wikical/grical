@@ -60,7 +60,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'Grical'
-copyright = '2010-2012 Ivan F. Villanueva B. and others'
+copyright = '2010-2016 Ivan F. Villanueva B. and others'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.

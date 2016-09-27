@@ -86,9 +86,10 @@ later versions as well.
 [8] irclib is needed only if you want to use the IRC logging features
 of Grical.
 
-[9] Grical is known to run on JQuery 1.4 and JQuery UI 1.8. It
-can probably run on later versions as well (and maybe also on earlier
-versions).
+[9] Grical is known to run on JQuery 3.1.0 and Bootstrap 4.0.0-alpha.4
+(note: we only use very minimal functionality from Bootstrap and hence
+the use of an alpha version). It can probably run on later versions as
+well.
 
 [10] Another AMQP server might also work; however, we have only ever
 tested it with RabbitMQ 1.8. Later versions should also work.
@@ -266,16 +267,6 @@ database tables for Grical::
 
     python manage.py syncdb
     python manage.py createcachetable cache
-
-Also copy or symlink the jQuery and jQuery UI files to the
-:file:`media/js` and :file:`media/css` directories. For example, in
-Debian 6.0::
-
-   cd media
-   ln -s /usr/share/javascript/jquery/jquery.min.js js/
-   ln -s /usr/share/javascript/jquery-ui/jquery-ui.min.js js/
-   ln -s /usr/share/javascript/jquery-ui/css/smoothness/jquery-ui.css css/
-   ln -s /usr/share/javascript/jquery-ui/css/smoothness/images css/
 
 .. _bug 337: http://code.grical.org/ticket/337
 
