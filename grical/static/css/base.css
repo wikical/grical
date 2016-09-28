@@ -1064,6 +1064,33 @@ general forms and for event_form */
 /*--------------------------------------------------------*/
 /* general form directives */
 
+form .helptext {
+    color: #9DBCD3;
+}
+
+form legend h1 {
+    color: #31AD9A; /* gc-labels-colors  */
+}
+
+form label {
+    /*color: #2C516D;*/
+    color: #31AD9A; /* gc-labels-colors  */
+    font-weight: bold;
+    margin: 0;
+    margin-top: .5rem;
+}
+form ul {
+    list-style: none;
+    padding: 0;
+}
+form li {
+    padding: 0 ;
+}
+
+textarea {
+    width: 100%;
+}
+
 .bootstrap-select:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
   width: 100%;
 }
@@ -1117,34 +1144,6 @@ general forms and for event_form */
 }
 .bootstrap-select.btn-group .dropdown-menu li a.opt {
   padding-left: 1rem;
-}
-
-
-form .helptext {
-    color: #9DBCD3;
-}
-
-form legend h1 {
-    color: #31AD9A; /* gc-labels-colors  */
-}
-
-form label {
-    /*color: #2C516D;*/
-    color: #31AD9A; /* gc-labels-colors  */
-    font-weight: bold;
-    margin: 0;
-    margin-top: .5rem;
-}
-form ul {
-    list-style: none;
-    padding: 0;
-}
-form li {
-    padding: 0 ;
-}
-
-textarea {
-    width: 100%;
 }
 
 #submit-button input,
@@ -2008,8 +2007,13 @@ div.olControlSaveFeaturesItemInactive {
     padding-left: 0;
     padding-right: 0;
 }
+#event_form .formset .formset-field-error-list ul {
+  margin-bottom: 0;
+  font-size: .9rem;
+}
 #event_form .formset input{
     width: 100%;
+    color: inherit;
 }
 #event_form select {
     width: 100%;

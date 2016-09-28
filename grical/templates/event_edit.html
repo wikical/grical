@@ -209,15 +209,22 @@
                 <table id="url_table" class="col-xs-12 col-lg-10 offset-lg-1">
                     {% for form in field.forms %}
                         {% if forloop.first %}
-                            <thead><tr>
+                            <thead>
+                                <tr>
                                 {% for field in form.visible_fields %}
                                     <th>{{ field.label|capfirst }}</th>
                                 {% endfor %}
-                            </tr></thead>
+                                </tr>
+                                <tr class="formset-field-error-list">
+                                {% for field in form.visible_fields %}
+                                    <td class="text-danger">{{ field.errors.as_ul }}</td>
+                                {% endfor %}
+                                </tr>
+                            </thead>
                         {% endif %}
                         <tr>
                             {% for field in form.visible_fields %}
-                                <td>
+                                <td {% if field.errors %}class="text-danger"{% endif %}>
                                     {# Include the hidden fields in the form #}
                                     {% if forloop.first %}
                                         {% for hidden in form.hidden_fields %}
@@ -225,7 +232,6 @@
                                         {% endfor %}
                                     {% endif %}
                                     {{ field }}
-                                    {{ field.errors.as_ul }}
                                 </td>
                             {% endfor %}
                             {% if form.non_field_errors %}
@@ -249,15 +255,22 @@
                 <table id="session_table" class="col-xs-12 col-lg-10 offset-lg-1">
                     {% for form in formset_session.forms %}
                         {% if forloop.first %}
-                            <thead><tr>
+                            <thead>
+                                <tr>
                                 {% for field in form.visible_fields %}
                                     <th>{{ field.label|capfirst }}</th>
                                 {% endfor %}
-                            </tr></thead>
+                                </tr>
+                                <tr class="formset-field-error-list">
+                                {% for field in form.visible_fields %}
+                                    <td class="text-danger">{{ field.errors.as_ul }}</td>
+                                {% endfor %}
+                                </tr>
+                            </thead>
                         {% endif %}
                         <tr>
                             {% for field in form.visible_fields %}
-                                <td>
+                                <td {% if field.errors %}class="text-danger"{% endif %}>
                                     {# Include the hidden fields in the form #}
                                     {% if forloop.first %}
                                         {% for hidden in form.hidden_fields %}
@@ -265,7 +278,6 @@
                                         {% endfor %}
                                     {% endif %}
                                     {{ field }}
-                                    {{ field.errors.as_ul }}
                                 </td>
                             {% endfor %}
                             {% if form.non_field_errors %}
@@ -274,6 +286,14 @@
                                 </td>
                             {% endif %}
                         </tr>
+                        {% if form.non_field_errors %}
+                        <tr>
+                            <td colspan="{{ form.visible_fields|length }}">
+                                {{ form.non_field_errors.as_ul }}
+                            </td>
+                        </tr>
+                        {% endif %}
+
                     {% endfor %}
                 </table>
             </div>
@@ -289,15 +309,22 @@
                 <table id="deadline_table"  class="col-xs-12 col-lg-10 offset-lg-1">
                     {% for form in formset_deadline.forms %}
                         {% if forloop.first %}
-                            <thead><tr>
+                            <thead>
+                                <tr>
                                 {% for field in form.visible_fields %}
                                     <th>{{ field.label|capfirst }}</th>
                                 {% endfor %}
-                            </tr></thead>
+                                </tr>
+                                <tr class="formset-field-error-list">
+                                {% for field in form.visible_fields %}
+                                    <td class="text-danger">{{ field.errors.as_ul }}</td>
+                                {% endfor %}
+                                </tr>
+                            </thead>
                         {% endif %}
                         <tr>
                             {% for field in form.visible_fields %}
-                                <td>
+                                <td {% if field.errors %}class="text-danger"{% endif %}>
                                     {# Include the hidden fields in the form #}
                                     {% if forloop.first %}
                                         {% for hidden in form.hidden_fields %}
@@ -305,15 +332,16 @@
                                         {% endfor %}
                                     {% endif %}
                                     {{ field }}
-                                    {{ field.errors.as_ul }}
                                 </td>
                             {% endfor %}
-                            {% if form.non_field_errors %}
-                                <td>
-                                    {{ form.non_field_errors.as_ul }}
-                                </td>
-                            {% endif %}
                         </tr>
+                        {% if form.non_field_errors %}
+                        <tr>
+                            <td colspan="{{ form.visible_fields|length }}">
+                                {{ form.non_field_errors.as_ul }}
+                            </td>
+                        </tr>
+                        {% endif %}
                     {% endfor %}
                 </table>
             </div>
