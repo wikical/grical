@@ -235,7 +235,7 @@
                                 </td>
                             {% endfor %}
                             {% if form.non_field_errors %}
-                                <td>
+                                <td colspan="{{ form.visible_fields|length }}">
                                     {{ form.non_field_errors.as_ul }}
                                 </td>
                             {% endif %}
