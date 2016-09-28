@@ -1,0 +1,12 @@
+{# Copyright: 2011 Ivan F. Villanueva B. <ivan ät wikical dot com> #}
+{% load i18n %}
+
+{% if events %}
+    {% for event in events %}
+        <br />
+    {% include "event_show_small.html" %}
+    {% endfor %}
+{% else %}
+        <p>{% trans "No events found" %}!</p>
+{% endif %}
+

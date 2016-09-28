@@ -1,0 +1,27 @@
+{# Copyright: 2016 George Vlachos <george ät wikical dot com> #}
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+<p>{% trans "My filters" %}:</p>
+<ul>
+    {% for fil in filters %}
+        <li>
+            <a href="{% url "search_query" fil.query|urlencode|iriencode  %}"> {{ fil.name }} </a>
+            {# TODO: cache #}
+            &nbsp; ({{ fil.matches_count }})
+            {% if not READ_ONLY %}
+                &nbsp; <a href="{% url "filter_edit" fil.id  %}">edit</a>
+                &nbsp; <a href="{% url "filter_drop" fil.id  %}">delete</a>
+            {% endif %}
+        </li>
+
+        <ul>
+            <li>{% trans "Query:" %} {{ fil.query }}</li>
+            {% for event in fil.upcoming_events %}
+                <li> {% include "event_show_small.html" %} </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</ul>
+{% endblock %}

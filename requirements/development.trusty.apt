@@ -1,0 +1,11 @@
+build-essential
+famfamfam-flag-gif
+geoip-database-contrib
+mercurial
+npm
+python-dev
+python-geoip
+python-pip
+python-virtualenv
+spatialite-bin
+sqlite3

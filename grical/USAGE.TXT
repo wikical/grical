@@ -1,0 +1,217 @@
+.. Topic:: Help.
+
+    This page summarizes how to use this site.
+
+.. contents:: Contents:
+
+
+Introduction
+------------
+
+**GriCal** (which is a short form for **Grid Calendar**) is an open web where
+people store quickly a few information about interesting events, so that others
+can also easily know about them. GriCal also makes easy and fast to
+get notified and store interesting events in its own external calendars.
+
+GriCal offers its **content as free content**  allowing its reuse by any party under the
+conditions of the `CC-BY-SA license`_. Its source code is `Free Software`_ and
+thus respects the `Open Knowledge Definition`_ and the
+`Open Software Service Definition`_ of the `Open Knowledge Foundation`_.
+
+Events in GriCal can be edited by anyone like pages of the Wikipedia_. The
+description of an event is rendered using ReStructuredText_ syntax.
+
+You can *subscribe* to an event (or to the result of filters) to get notified
+of any change, comment, or new event matching a filter.
+
+.. _Wikipedia: http://en.wikipedia.org/wiki/Help:About
+.. _CC-BY-SA license: http://creativecommons.org/licenses/by-sa/3.0/
+.. _Free Software: http://en.wikipedia.org/wiki/Free_software
+.. _Open Knowledge Definition: http://www.opendefinition.org/okd
+.. _Open Software Service Definition: http://www.opendefinition.org/ossd
+.. _Open Knowledge Foundation: http://okfn.org/
+
+
+Groups
+------
+
+GriCal has groups. A group consist of some users and events. Groups allows its
+users to create lists of events to monitor them or to offer them on another
+platform.
+
+
+Searches and filters
+--------------------
+
+- Searches are done by default on the fields ``title``, ``acronym``, ``tags``, ``city`` and
+  ``country``.
+- All given words must appear in at least one of the fields.
+- Search results contain also related events (with similar tags), unless one or more of the special
+  search restrictions are used (like # for tags, see bellow)
+- Dates in ISO-format ( ``yyyy-mm-dd`` ) restrict the query to events with dates from the
+  oldest to the newest, including events with a deadline in the range and events taking place during
+  the range. If only one date is provided (instead of two or more) only events with a matching
+  date (start, end or a dateline) are shown. Example: `2011-01-01 2011-12-31`_
+- If there is no date in the query and the broad operator is not used, only future events are showed.
+- Tags ( ``#tag_name`` ) restricts the query to events with these tags. Example: `#linux`_
+- Groups ( ``!group_name`` ) restricts the query to events of the group. Example:`!ffii`_
+- Words starting with a ``+`` restrict the query to events matching the word in the fields
+  ``title``, ``acronym``, ``city`` and ``country`` without related events. Example: `+software`_
+- The string `` | `` (space pipe space) can be used to concatenate results of different searches
+  (logical or). For example `#linux | #foss`_ will search for all future events with the tag
+  ``linux`` or ``foss`` or both.
+- Searches starting with `` * `` (asterisk space) makes the search broader, including past events
+  (if no dates are specified), text in the description, URLs (name and URL), sessions (name) and
+  deadlines (name). Example: `* http://events.linuxfoundation.org/`__
+- Locations (``@location``) restricts the query to events within the given location. **Location terms
+  must be added at the end of the query** (spaces in the name of locations are possible like
+  ``@Los Angeles``). When given a distance, ``km`` (kilometers) and ``mi`` (miles) are allowed as
+  units. There are **four possibilities**:
+
+__ http://grical.org/s/?query=*+http%3A%2F%2Fevents.linuxfoundation.org%2F
+
+  - Giving a simple word ( ``@word`` ) which is looked up in the fields ``city`` or ``country``.
+    Example: `@berlin`_
+  - Giving the name of a place and a distance. `@london+100`_ would look 100
+    kilometers around the center of the most relevant place with the name ``london`` (being it
+    London in Great Britain). The country can be specified with e.g. `@london,ca`_ (the most
+    relevant city with the name London in Canada).
+  - Giving a coordinate and a distance ( `@52.55247,13.40364+500km`_ ).
+  - Giving four coordinates defining a rectangle: longitude_west,
+    longitude_east, latitude_north, latitude_south. Example: `@13.324,13.463,52.5503,52.4701`_.
+
+- The operator ``=`` restrict the search to one single event, the one having the number which
+  follows the operator (example ``=123``). This can be used for e.g. sending a list of some events
+  as a URL and showing them on a map, example: http://grical.org/s/?query=%3D123+%7C+%3D789&view=map
+
+- Any search can be saved as a filter by logged-in users. To be able to log-in
+  you need to register. An email will be sent in the process with a URL that you need to click.
+
+- You can select to get notified of new events matching one of your filters.
+
+- The result of searches also have a `RSS feed`_ which can be subscribed even
+  by non-logged-in users.
+
+- The result of searches also have an `iCalendar file`_ which can be imported in
+  external calendars.
+
+- Both the `RSS feed`_ and the `iCalendar file`_ will contain in the future new
+  events.
+
+.. _RSS feed: http://en.wikipedia.org/wiki/Rss
+.. _iCalendar File: http://en.wikipedia.org/wiki/ICalendar
+.. _2011-01-01 2011-12-31: http://grical.org/s/?query=2011-01-01+2011-12-31
+.. _#linux: http://grical.org/s/?query=%23linux
+.. _!ffii: http://grical.org/s/?query=%21ffii
+.. _#linux | #foss: http://grical.org/s/?query=%23linux+%7C+%23foss
+.. _@berlin: http://grical.org/s/?query=%40berlin
+.. _@london+100: http://grical.org/s/?query=%40london%2B100
+.. _@london,ca: http://grical.org/s/?query=%40london%2Cca
+.. _@52.55247,13.40364+500km: http://grical.org/s/?query=%4052.55247%2C13.40364%2B500km
+.. _@13.324,13.463,52.5503,52.4701: http://grical.org/s/?query=%4013.324%2C13.463%2C52.5503%2C52.4701
+.. _+software:  http://grical.org/s/?query=%2Bsoftware
+
+Events as text
+--------------
+
+Events can be submitted per email to ``event ät gridmind.org``. The subject of the email is ignored.
+Example of the body of an email::
+
+    title: Grical presentation
+    start: 2010-12-29
+    tags: calendar software open-source gridmind grical
+    web: http://example.com
+
+You can optionally include more data in the submission. Example::
+
+    acronym: GriCal
+    title: Grical presentation
+    start: 2010-12-29
+    starttime: 10:00
+    end: 2010-12-30
+    endtime: 18:00
+    tags: calendar software open-source gridmind grical
+    urls:
+        code    http://example.com
+        web    http://example.com
+    address: Gleimstr. 6, Berlin 10439, DE
+    coordinates: 52.55247, 13.40364
+    deadlines:
+        2009-11-01    visitor tickets
+        2010-10-01    call for papers
+    timezone: 60
+    sessions:
+        2010-12-29    10:00-11:00    first presentation
+        2010-12-29    15:00-16:00    second presentation
+        2010-12-30    15:00-16:00    third presentation
+    description:
+
+    Grical will be presented
+
+The field ``description`` must be the last one and its content can contain multiple lines. The
+content is rendered as ReStructuredText_.
+
+
+Recurring events
+----------------
+
+A recurring event is one that happens again after a period of time. For
+instance a weekly or monthly meeting.
+
+It is possible to create and edit recurrences of an event in GriCal by using
+the web interface: edit the event and select *recurrences*
+
+It is also possible to **add** recurrences in GriCal by editing an event as
+text, but it is not possible to edit its recurrences. Example of adding two
+recurrences::
+
+    title: Grical presentation
+    start: 2010-12-29
+    tags: calendar software open-source gridmind grical
+    web: http://example.com
+    dates:
+        2011-01-01
+        2011-01-02
+
+Notice that the recurrences will have the same data except for the start date,
+the deadlines and the sessions.
+
+
+Event history and event deletions
+---------------------------------
+
+Since events can be modified by anyone, including anonymous (not logged-in)
+users, GriCal stores (remembers) all revisions (states) of events. All
+revisions of an event is called history, like the history of an entry in the
+Wikipedia.
+
+Only logged-in users can delete or revert an event to a previous revision.
+
+When an event is deleted, it is possible to indicate another event containing
+the information of the deleted event. Users trying to access the deleted event
+will be then redirected to the other one.
+
+
+API
+---
+
+GriCal content can be integrated in external pages. See `the wiki page about our API`__
+
+__ http://code.grical.org/wiki/OnAPI
+
+
+GriCalDroid (Android App)
+-------------------------
+
+We have an Android__ app that allows to search and displays the result as a
+list, on a map or in a calendar.
+
+__ http://en.wikipedia.org/wiki/Android_(operating_system)
+
+To use GriCalDroid, `Download GriCalDroid`__ to your phone and install it.
+
+.. image:: /m/GriCalDroid_url_qrcode.png
+
+__ /m/GriCalDroid.apk
+
+.. _ReStructuredText: http://en.wikipedia.org/wiki/ReStructuredText

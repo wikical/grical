@@ -1,0 +1,24 @@
+{# Copyright: 2016 Stefanos Kozanis <stefanos ät wikical dot com> #}
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<p>
+    {% trans "You have tried to undelete the event below." %}
+    {% trans "Unfortunately it cannot be undeleted because there is another event with the same title and start date:" %}
+    <a href={% url "event_show_all" equal.id  %}>{{ equal.start }} : {{ equal.title }}</a>
+</p>
+<p>
+    {% trans "To undelete the event below change or delete first the event with the same title and start date:" %}
+    <a href={% url "event_show_all" equal.id  %}>{{ equal.start }} : {{ equal.title }}</a>
+</p>
+
+<h2>{% trans "Not undeleted event" %}</h2>
+
+<pre>
+{{ as_text }}
+</pre>
+
+{% endblock %}
+

@@ -1,0 +1,11 @@
+{# Copyright: 2016 George Vlachos <george ät wikical dot com> #}
+{% extends "base.html" %}
+{% load markup %}
+
+{% block container %}
+
+<div class="container m-t-1"><div class="row"><div class="col-xs-12">
+{{ usage_text|restructuredtext }}
+</div></div></div>
+
+{% endblock %}

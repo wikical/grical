@@ -1,0 +1,109 @@
+{# Copyright: 2016 George Vlachos <george ät wikical dot com> #}
+{% load i18n %}
+
+{% comment %}
+<div class="pagination">
+    {% if events_table.page.has_previous %}
+        <span class="step_left">
+            <a href="?query={{ query|urlencode:"" }}&view=table&sort={{sort_param}}&page={{ events_table.page.previous_page_number }}">{% trans "previous" %}</a>
+        </span>
+    {% endif %}
+    <span class="current">
+        {% blocktrans with events_table.page.number as number and events_table.paginator.num_pages as num_pages %}
+            Page {{ number }} of {{ num_pages }}.
+        {% endblocktrans %}
+    </span>
+    {% if events_table.page.has_next %}
+        <span class="step_right">
+            <a href="?query={{ query|urlencode:"" }}&view=table&sort={{ sort }}&page={{ events_table.page.next_page_number }}">{% trans "next" %}</a>
+        </span>
+    {% endif %}
+</div>
+{% endcomment %}
+
+<div class="container-fluid m-t-1">
+    <div class="row">
+        <div class="col-xs-12">
+            <table class="event_table">
+                <colgroup class="hidden-md-down"> {# see http://www.w3.org/TR/html4/struct/tables.html#h-11.2.4 #}
+                    {% for column in events_table.columns %}
+                        <col class="col_{{ column.name }}" />
+                    {% endfor %}
+                </colgroup>
+                <tr class="hidden-md-down">
+                    {% for column in events_table.columns %}
+                        <th class="header_for_{{ column.name }}">
+                            {% comment %}
+                            {% if column.sortable %}
+                                {{ column }}
+                                {# TODO: sorting on start or end produces a database error #}
+                                {# <a href="?sort={{ column.name_toggled }}&query={{ query|urlencode:"" }}&view=table"> {{ column }} </a> #}
+                                {# {% if column.is_ordered_straight %}<img src="/media/img/up.gif" />{% endif %} #}
+                                {# {% if column.is_ordered_reverse %}<img src="/media/img/down.gif" />{% endif %} #}
+                             {% else %}
+                             {% endcomment %}
+                                {{ column }}
+                             {% comment %}
+                             {% endif %}
+                             {% endcomment %}
+                        </th>
+                    {% endfor %}
+                </tr>
+                {% for row in events_table.rows %}
+                    {% with event=row.record %}
+                        <tr class="hidden-lg-up gc-search-table-small">
+                            <td>
+                                <table>
+                                    <tbody>
+                                        <tr>
+                                            <th class="header_for_title text-xs-left">{% trans 'title' %}</th>
+                                            <td class="text-xs-left">{% spaceless %}
+                                                <a href="{% url "event_show_all" event.id  %}">{{ event.title }}</a>
+                                            {% endspaceless %}</td>
+                                        </tr>
+                                        {% for column in events_table.columns %}
+                                        {% if column.name != 'title' %}
+                                        <tr>
+                                            <th class="header_for_{{ column.name }} text-xs-left">{{ column }}</th>
+                                            <td class="text-xs-left">{% spaceless %}
+                                                {% if column.name == 'upcoming' %}
+                                                    {{ event.upcoming }}
+                                                {% elif column.name == 'start' %}
+                                                    {{ event.start }}
+                                                {% elif column.name == 'end' %}
+                                                    {{ event.end }}
+                                                {% elif column.name == 'city' %}
+                                                    {{ event.city }}
+                                                {% elif column.name == 'start' %}
+                                                    {{ event.start }}
+                                                {% elif column.name == 'country' %}
+                                                    {{ event.country }}
+                                                {% elif column.name == 'tags' %}
+                                                    {{ event.tags }}
+                                                {% else %}
+                                                    &nbsp;
+                                                {% endif %}
+                                            {% endspaceless %}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr class="hidden-lg-up"><td>&nbsp;</td></tr>
+                        <tr class="hidden-md-down {% cycle 'odd' 'even' %} gc-search-table-large">
+                            <td class="hidden-md-down"><span class="gc-no-wrap">{{ event.upcoming }}</span></td>
+                            <td class="hidden-md-down"><span class="gc-no-wrap">{{ event.start }}</span></td>
+                            <td class="hidden-md-down"><span class="gc-no-wrap">{{ event.end }}</span></td>
+                            <td class="hidden-md-down">{% if event.city %}{{ event.city }}{% endif %}</td>
+                            <td class="hidden-md-down">{% if event.country %}{{ event.country }}{% endif %}</td>
+                            <td class="hidden-md-down"><a href="{% url "event_show_all" event.id  %}">{{ event.title }}</a></td>
+                            <td class="hidden-md-down">{% if event.tags %} {{ event.tags }}{% endif %}</td>
+                        </tr>
+                    {% endwith %}
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+{# Copyright: 2016 George Vlachos <george ät wikical dot com> #}
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+            <form action="" method="post">{% csrf_token %}
+                <legend>
+                    <h1>
+                        {% blocktrans with event.title as title %}
+                        <i>{{ title }}</i>
+                        can be added to:{% endblocktrans %}
+                    </h1>
+                </legend>
+
+                {{ form }}
+
+                <div id="submit-button"><input type="submit" value="{% trans "Add" %}" /></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

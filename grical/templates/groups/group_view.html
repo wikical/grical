@@ -1,0 +1,51 @@
+{# Copyright: 2016 George Vlachos <george ät wikical dot com> #}
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+<div class="container m-t-3">
+    <div class="row">
+        <div class="col-xs-12">
+
+            {% block extraheaders %}
+                <link rel="alternate" type="application/rss+xml" title="Group Feed" href="{% url "list_events_group_rss" group.id  %}" />
+            {%endblock extraheaders %}
+
+            <h1>
+                {% blocktrans with group.name as group_name %}
+                    Group {{ group_name }}
+                {% endblocktrans %}
+            </h1>
+            <p>
+                <a href="{% url "list_events_group_rss" group.id  %}">
+                    <img alt="RSS" src="{{STATIC_URL}}rssicon.png" />{% blocktrans with group.name as group_name %}
+                    Subscribe to the "{{ group_name }}" group's feed{% endblocktrans %}</a>
+            </p>
+            <p>
+                <a href="{% url "list_events_group_ical" group.id  %}">
+                    <img alt="ICAL" width="16" src="{{STATIC_URL}}icalicon.png" />{% blocktrans with group.name as group_name %}
+                    Get the upcoming events in the group "{{ group_name }}" as iCalendar{% endblocktrans %}</a>
+            </p>
+            <p> {{ group.description|urlize }} </p>
+            <h2> {% trans "Members" %} </h2>
+            <ul>
+                {% for user in group.get_users %}
+                    <li> {{ user.username }} </li>
+                {% endfor %}
+            </ul>
+            {% if group.has_coming_events %}
+                <h2> {% trans "Next upcoming events" %} </h2>
+                {% for event in events %}
+                    <p> {% include "event_show_small.html" %} </p>
+                {% endfor %}
+            {% else %}
+                <p>{% trans "There is no upcoming events." %}</p>
+                {% comment %}TODO: show option to see past events {% endcomment %}
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

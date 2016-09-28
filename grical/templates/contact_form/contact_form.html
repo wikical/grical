@@ -1,0 +1,18 @@
+{# Copyright: 2011 Ivan F. Villanueva B. <ivan ät wikical dot com> #}
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block container %}
+
+    <h1>{% trans "Feedback" %}</h1>
+
+    {{ form.non_field_errors.as_ul }}
+
+    <form action="" method="post">{% csrf_token %}
+        <table>
+            {{ form.as_table }}
+        </table>
+        <div><input type="submit" value="{% trans "Submit" %}" /></div>
+    </form>
+
+{% endblock %}

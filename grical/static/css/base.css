@@ -1,0 +1,2116 @@
+/* Copyright: 2016 George Vlachos <george ät wikical dot com> */
+
+/*--------------------------------------------------------*/
+/* Contents:                                              */
+/* 1. glyphicons                                          */
+/* 2. colors                                              */
+/* 3. general styles                                      */
+/* 4. forms                                               */
+/* 5. header                                              */
+/* 6. footer                                              */
+/* 7. daybox                                              */
+/* 8. search map                                          */
+/* 9. search table                                        */
+/* 10. search calendar                                    */
+/* 11. event edit                                         */
+/* 12. event show                                         */
+/*--------------------------------------------------------*/
+
+
+/*--------------------------------------------------------*/
+/* 1. glyphicons                                          */
+/*--------------------------------------------------------*/
+@font-face {
+  font-family: 'Glyphicons Halflings';
+
+  src: url('../fonts/glyphicons-halflings-regular.eot');
+  src: url('../fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('../fonts/glyphicons-halflings-regular.woff2') format('woff2'), url('../fonts/glyphicons-halflings-regular.woff') format('woff'), url('../fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('../fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+.glyphicon {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.glyphicon-asterisk:before {
+  content: "\002a";
+}
+.glyphicon-plus:before {
+  content: "\002b";
+}
+.glyphicon-euro:before,
+.glyphicon-eur:before {
+  content: "\20ac";
+}
+.glyphicon-minus:before {
+  content: "\2212";
+}
+.glyphicon-cloud:before {
+  content: "\2601";
+}
+.glyphicon-envelope:before {
+  content: "\2709";
+}
+.glyphicon-pencil:before {
+  content: "\270f";
+}
+.glyphicon-glass:before {
+  content: "\e001";
+}
+.glyphicon-music:before {
+  content: "\e002";
+}
+.glyphicon-search:before {
+  content: "\e003";
+}
+.glyphicon-heart:before {
+  content: "\e005";
+}
+.glyphicon-star:before {
+  content: "\e006";
+}
+.glyphicon-star-empty:before {
+  content: "\e007";
+}
+.glyphicon-user:before {
+  content: "\e008";
+}
+.glyphicon-film:before {
+  content: "\e009";
+}
+.glyphicon-th-large:before {
+  content: "\e010";
+}
+.glyphicon-th:before {
+  content: "\e011";
+}
+.glyphicon-th-list:before {
+  content: "\e012";
+}
+.glyphicon-ok:before {
+  content: "\e013";
+}
+.glyphicon-remove:before {
+  content: "\e014";
+}
+.glyphicon-zoom-in:before {
+  content: "\e015";
+}
+.glyphicon-zoom-out:before {
+  content: "\e016";
+}
+.glyphicon-off:before {
+  content: "\e017";
+}
+.glyphicon-signal:before {
+  content: "\e018";
+}
+.glyphicon-cog:before {
+  content: "\e019";
+}
+.glyphicon-trash:before {
+  content: "\e020";
+}
+.glyphicon-home:before {
+  content: "\e021";
+}
+.glyphicon-file:before {
+  content: "\e022";
+}
+.glyphicon-time:before {
+  content: "\e023";
+}
+.glyphicon-road:before {
+  content: "\e024";
+}
+.glyphicon-download-alt:before {
+  content: "\e025";
+}
+.glyphicon-download:before {
+  content: "\e026";
+}
+.glyphicon-upload:before {
+  content: "\e027";
+}
+.glyphicon-inbox:before {
+  content: "\e028";
+}
+.glyphicon-play-circle:before {
+  content: "\e029";
+}
+.glyphicon-repeat:before {
+  content: "\e030";
+}
+.glyphicon-refresh:before {
+  content: "\e031";
+}
+.glyphicon-list-alt:before {
+  content: "\e032";
+}
+.glyphicon-lock:before {
+  content: "\e033";
+}
+.glyphicon-flag:before {
+  content: "\e034";
+}
+.glyphicon-headphones:before {
+  content: "\e035";
+}
+.glyphicon-volume-off:before {
+  content: "\e036";
+}
+.glyphicon-volume-down:before {
+  content: "\e037";
+}
+.glyphicon-volume-up:before {
+  content: "\e038";
+}
+.glyphicon-qrcode:before {
+  content: "\e039";
+}
+.glyphicon-barcode:before {
+  content: "\e040";
+}
+.glyphicon-tag:before {
+  content: "\e041";
+}
+.glyphicon-tags:before {
+  content: "\e042";
+}
+.glyphicon-book:before {
+  content: "\e043";
+}
+.glyphicon-bookmark:before {
+  content: "\e044";
+}
+.glyphicon-print:before {
+  content: "\e045";
+}
+.glyphicon-camera:before {
+  content: "\e046";
+}
+.glyphicon-font:before {
+  content: "\e047";
+}
+.glyphicon-bold:before {
+  content: "\e048";
+}
+.glyphicon-italic:before {
+  content: "\e049";
+}
+.glyphicon-text-height:before {
+  content: "\e050";
+}
+.glyphicon-text-width:before {
+  content: "\e051";
+}
+.glyphicon-align-left:before {
+  content: "\e052";
+}
+.glyphicon-align-center:before {
+  content: "\e053";
+}
+.glyphicon-align-right:before {
+  content: "\e054";
+}
+.glyphicon-align-justify:before {
+  content: "\e055";
+}
+.glyphicon-list:before {
+  content: "\e056";
+}
+.glyphicon-indent-left:before {
+  content: "\e057";
+}
+.glyphicon-indent-right:before {
+  content: "\e058";
+}
+.glyphicon-facetime-video:before {
+  content: "\e059";
+}
+.glyphicon-picture:before {
+  content: "\e060";
+}
+.glyphicon-map-marker:before {
+  content: "\e062";
+}
+.glyphicon-adjust:before {
+  content: "\e063";
+}
+.glyphicon-tint:before {
+  content: "\e064";
+}
+.glyphicon-edit:before {
+  content: "\e065";
+}
+.glyphicon-share:before {
+  content: "\e066";
+}
+.glyphicon-check:before {
+  content: "\e067";
+}
+.glyphicon-move:before {
+  content: "\e068";
+}
+.glyphicon-step-backward:before {
+  content: "\e069";
+}
+.glyphicon-fast-backward:before {
+  content: "\e070";
+}
+.glyphicon-backward:before {
+  content: "\e071";
+}
+.glyphicon-play:before {
+  content: "\e072";
+}
+.glyphicon-pause:before {
+  content: "\e073";
+}
+.glyphicon-stop:before {
+  content: "\e074";
+}
+.glyphicon-forward:before {
+  content: "\e075";
+}
+.glyphicon-fast-forward:before {
+  content: "\e076";
+}
+.glyphicon-step-forward:before {
+  content: "\e077";
+}
+.glyphicon-eject:before {
+  content: "\e078";
+}
+.glyphicon-chevron-left:before {
+  content: "\e079";
+}
+.glyphicon-chevron-right:before {
+  content: "\e080";
+}
+.glyphicon-plus-sign:before {
+  content: "\e081";
+}
+.glyphicon-minus-sign:before {
+  content: "\e082";
+}
+.glyphicon-remove-sign:before {
+  content: "\e083";
+}
+.glyphicon-ok-sign:before {
+  content: "\e084";
+}
+.glyphicon-question-sign:before {
+  content: "\e085";
+}
+.glyphicon-info-sign:before {
+  content: "\e086";
+}
+.glyphicon-screenshot:before {
+  content: "\e087";
+}
+.glyphicon-remove-circle:before {
+  content: "\e088";
+}
+.glyphicon-ok-circle:before {
+  content: "\e089";
+}
+.glyphicon-ban-circle:before {
+  content: "\e090";
+}
+.glyphicon-arrow-left:before {
+  content: "\e091";
+}
+.glyphicon-arrow-right:before {
+  content: "\e092";
+}
+.glyphicon-arrow-up:before {
+  content: "\e093";
+}
+.glyphicon-arrow-down:before {
+  content: "\e094";
+}
+.glyphicon-share-alt:before {
+  content: "\e095";
+}
+.glyphicon-resize-full:before {
+  content: "\e096";
+}
+.glyphicon-resize-small:before {
+  content: "\e097";
+}
+.glyphicon-exclamation-sign:before {
+  content: "\e101";
+}
+.glyphicon-gift:before {
+  content: "\e102";
+}
+.glyphicon-leaf:before {
+  content: "\e103";
+}
+.glyphicon-fire:before {
+  content: "\e104";
+}
+.glyphicon-eye-open:before {
+  content: "\e105";
+}
+.glyphicon-eye-close:before {
+  content: "\e106";
+}
+.glyphicon-warning-sign:before {
+  content: "\e107";
+}
+.glyphicon-plane:before {
+  content: "\e108";
+}
+.glyphicon-calendar:before {
+  content: "\e109";
+}
+.glyphicon-random:before {
+  content: "\e110";
+}
+.glyphicon-comment:before {
+  content: "\e111";
+}
+.glyphicon-magnet:before {
+  content: "\e112";
+}
+.glyphicon-chevron-up:before {
+  content: "\e113";
+}
+.glyphicon-chevron-down:before {
+  content: "\e114";
+}
+.glyphicon-retweet:before {
+  content: "\e115";
+}
+.glyphicon-shopping-cart:before {
+  content: "\e116";
+}
+.glyphicon-folder-close:before {
+  content: "\e117";
+}
+.glyphicon-folder-open:before {
+  content: "\e118";
+}
+.glyphicon-resize-vertical:before {
+  content: "\e119";
+}
+.glyphicon-resize-horizontal:before {
+  content: "\e120";
+}
+.glyphicon-hdd:before {
+  content: "\e121";
+}
+.glyphicon-bullhorn:before {
+  content: "\e122";
+}
+.glyphicon-bell:before {
+  content: "\e123";
+}
+.glyphicon-certificate:before {
+  content: "\e124";
+}
+.glyphicon-thumbs-up:before {
+  content: "\e125";
+}
+.glyphicon-thumbs-down:before {
+  content: "\e126";
+}
+.glyphicon-hand-right:before {
+  content: "\e127";
+}
+.glyphicon-hand-left:before {
+  content: "\e128";
+}
+.glyphicon-hand-up:before {
+  content: "\e129";
+}
+.glyphicon-hand-down:before {
+  content: "\e130";
+}
+.glyphicon-circle-arrow-right:before {
+  content: "\e131";
+}
+.glyphicon-circle-arrow-left:before {
+  content: "\e132";
+}
+.glyphicon-circle-arrow-up:before {
+  content: "\e133";
+}
+.glyphicon-circle-arrow-down:before {
+  content: "\e134";
+}
+.glyphicon-globe:before {
+  content: "\e135";
+}
+.glyphicon-wrench:before {
+  content: "\e136";
+}
+.glyphicon-tasks:before {
+  content: "\e137";
+}
+.glyphicon-filter:before {
+  content: "\e138";
+}
+.glyphicon-briefcase:before {
+  content: "\e139";
+}
+.glyphicon-fullscreen:before {
+  content: "\e140";
+}
+.glyphicon-dashboard:before {
+  content: "\e141";
+}
+.glyphicon-paperclip:before {
+  content: "\e142";
+}
+.glyphicon-heart-empty:before {
+  content: "\e143";
+}
+.glyphicon-link:before {
+  content: "\e144";
+}
+.glyphicon-phone:before {
+  content: "\e145";
+}
+.glyphicon-pushpin:before {
+  content: "\e146";
+}
+.glyphicon-usd:before {
+  content: "\e148";
+}
+.glyphicon-gbp:before {
+  content: "\e149";
+}
+.glyphicon-sort:before {
+  content: "\e150";
+}
+.glyphicon-sort-by-alphabet:before {
+  content: "\e151";
+}
+.glyphicon-sort-by-alphabet-alt:before {
+  content: "\e152";
+}
+.glyphicon-sort-by-order:before {
+  content: "\e153";
+}
+.glyphicon-sort-by-order-alt:before {
+  content: "\e154";
+}
+.glyphicon-sort-by-attributes:before {
+  content: "\e155";
+}
+.glyphicon-sort-by-attributes-alt:before {
+  content: "\e156";
+}
+.glyphicon-unchecked:before {
+  content: "\e157";
+}
+.glyphicon-expand:before {
+  content: "\e158";
+}
+.glyphicon-collapse-down:before {
+  content: "\e159";
+}
+.glyphicon-collapse-up:before {
+  content: "\e160";
+}
+.glyphicon-log-in:before {
+  content: "\e161";
+}
+.glyphicon-flash:before {
+  content: "\e162";
+}
+.glyphicon-log-out:before {
+  content: "\e163";
+}
+.glyphicon-new-window:before {
+  content: "\e164";
+}
+.glyphicon-record:before {
+  content: "\e165";
+}
+.glyphicon-save:before {
+  content: "\e166";
+}
+.glyphicon-open:before {
+  content: "\e167";
+}
+.glyphicon-saved:before {
+  content: "\e168";
+}
+.glyphicon-import:before {
+  content: "\e169";
+}
+.glyphicon-export:before {
+  content: "\e170";
+}
+.glyphicon-send:before {
+  content: "\e171";
+}
+.glyphicon-floppy-disk:before {
+  content: "\e172";
+}
+.glyphicon-floppy-saved:before {
+  content: "\e173";
+}
+.glyphicon-floppy-remove:before {
+  content: "\e174";
+}
+.glyphicon-floppy-save:before {
+  content: "\e175";
+}
+.glyphicon-floppy-open:before {
+  content: "\e176";
+}
+.glyphicon-credit-card:before {
+  content: "\e177";
+}
+.glyphicon-transfer:before {
+  content: "\e178";
+}
+.glyphicon-cutlery:before {
+  content: "\e179";
+}
+.glyphicon-header:before {
+  content: "\e180";
+}
+.glyphicon-compressed:before {
+  content: "\e181";
+}
+.glyphicon-earphone:before {
+  content: "\e182";
+}
+.glyphicon-phone-alt:before {
+  content: "\e183";
+}
+.glyphicon-tower:before {
+  content: "\e184";
+}
+.glyphicon-stats:before {
+  content: "\e185";
+}
+.glyphicon-sd-video:before {
+  content: "\e186";
+}
+.glyphicon-hd-video:before {
+  content: "\e187";
+}
+.glyphicon-subtitles:before {
+  content: "\e188";
+}
+.glyphicon-sound-stereo:before {
+  content: "\e189";
+}
+.glyphicon-sound-dolby:before {
+  content: "\e190";
+}
+.glyphicon-sound-5-1:before {
+  content: "\e191";
+}
+.glyphicon-sound-6-1:before {
+  content: "\e192";
+}
+.glyphicon-sound-7-1:before {
+  content: "\e193";
+}
+.glyphicon-copyright-mark:before {
+  content: "\e194";
+}
+.glyphicon-registration-mark:before {
+  content: "\e195";
+}
+.glyphicon-cloud-download:before {
+  content: "\e197";
+}
+.glyphicon-cloud-upload:before {
+  content: "\e198";
+}
+.glyphicon-tree-conifer:before {
+  content: "\e199";
+}
+.glyphicon-tree-deciduous:before {
+  content: "\e200";
+}
+.glyphicon-cd:before {
+  content: "\e201";
+}
+.glyphicon-save-file:before {
+  content: "\e202";
+}
+.glyphicon-open-file:before {
+  content: "\e203";
+}
+.glyphicon-level-up:before {
+  content: "\e204";
+}
+.glyphicon-copy:before {
+  content: "\e205";
+}
+.glyphicon-paste:before {
+  content: "\e206";
+}
+.glyphicon-alert:before {
+  content: "\e209";
+}
+.glyphicon-equalizer:before {
+  content: "\e210";
+}
+.glyphicon-king:before {
+  content: "\e211";
+}
+.glyphicon-queen:before {
+  content: "\e212";
+}
+.glyphicon-pawn:before {
+  content: "\e213";
+}
+.glyphicon-bishop:before {
+  content: "\e214";
+}
+.glyphicon-knight:before {
+  content: "\e215";
+}
+.glyphicon-baby-formula:before {
+  content: "\e216";
+}
+.glyphicon-tent:before {
+  content: "\26fa";
+}
+.glyphicon-blackboard:before {
+  content: "\e218";
+}
+.glyphicon-bed:before {
+  content: "\e219";
+}
+.glyphicon-apple:before {
+  content: "\f8ff";
+}
+.glyphicon-erase:before {
+  content: "\e221";
+}
+.glyphicon-hourglass:before {
+  content: "\231b";
+}
+.glyphicon-lamp:before {
+  content: "\e223";
+}
+.glyphicon-duplicate:before {
+  content: "\e224";
+}
+.glyphicon-piggy-bank:before {
+  content: "\e225";
+}
+.glyphicon-scissors:before {
+  content: "\e226";
+}
+.glyphicon-bitcoin:before {
+  content: "\e227";
+}
+.glyphicon-btc:before {
+  content: "\e227";
+}
+.glyphicon-xbt:before {
+  content: "\e227";
+}
+.glyphicon-yen:before {
+  content: "\00a5";
+}
+.glyphicon-jpy:before {
+  content: "\00a5";
+}
+.glyphicon-ruble:before {
+  content: "\20bd";
+}
+.glyphicon-rub:before {
+  content: "\20bd";
+}
+.glyphicon-scale:before {
+  content: "\e230";
+}
+.glyphicon-ice-lolly:before {
+  content: "\e231";
+}
+.glyphicon-ice-lolly-tasted:before {
+  content: "\e232";
+}
+.glyphicon-education:before {
+  content: "\e233";
+}
+.glyphicon-option-horizontal:before {
+  content: "\e234";
+}
+.glyphicon-option-vertical:before {
+  content: "\e235";
+}
+.glyphicon-menu-hamburger:before {
+  content: "\e236";
+}
+.glyphicon-modal-window:before {
+  content: "\e237";
+}
+.glyphicon-oil:before {
+  content: "\e238";
+}
+.glyphicon-grain:before {
+  content: "\e239";
+}
+.glyphicon-sunglasses:before {
+  content: "\e240";
+}
+.glyphicon-text-size:before {
+  content: "\e241";
+}
+.glyphicon-text-color:before {
+  content: "\e242";
+}
+.glyphicon-text-background:before {
+  content: "\e243";
+}
+.glyphicon-object-align-top:before {
+  content: "\e244";
+}
+.glyphicon-object-align-bottom:before {
+  content: "\e245";
+}
+.glyphicon-object-align-horizontal:before {
+  content: "\e246";
+}
+.glyphicon-object-align-left:before {
+  content: "\e247";
+}
+.glyphicon-object-align-vertical:before {
+  content: "\e248";
+}
+.glyphicon-object-align-right:before {
+  content: "\e249";
+}
+.glyphicon-triangle-right:before {
+  content: "\e250";
+}
+.glyphicon-triangle-left:before {
+  content: "\e251";
+}
+.glyphicon-triangle-bottom:before {
+  content: "\e252";
+}
+.glyphicon-triangle-top:before {
+  content: "\e253";
+}
+.glyphicon-console:before {
+  content: "\e254";
+}
+.glyphicon-superscript:before {
+  content: "\e255";
+}
+.glyphicon-subscript:before {
+  content: "\e256";
+}
+.glyphicon-menu-left:before {
+  content: "\e257";
+}
+.glyphicon-menu-right:before {
+  content: "\e258";
+}
+.glyphicon-menu-down:before {
+  content: "\e259";
+}
+.glyphicon-menu-up:before {
+  content: "\e260";
+}
+
+/*--------------------------------------------------------*/
+/* 2. colors                                              */
+/*--------------------------------------------------------*/
+/* color values specified here are
+    either used directly in html
+    or in css with a comment referring to class name here */
+
+.gc-colors-logo-green {
+    color: #6BCE76;
+}
+.gc-colors-logo-red {
+    color: #FF4C9A;
+}
+.gc-colors-logo-brown{
+    color: #FF803C;
+}
+.gc-colors-logo-blue{
+    color: #2DC1AB;
+}
+
+.gc-colors-bg-logo-green {
+    background-color: #6BCE76;
+}
+.gc-colors-bg-logo-red {
+    background-color: #FF4C9A;
+}
+.gc-colors-bg-logo-brown{
+    background-color: #FF803C;
+}
+.gc-colors-bg-logo-blue{
+    background-color: #2DC1AB;
+}
+
+
+.gc-labels-colors {
+    color: #31AD9A;
+}
+
+.gc-buttons-color {
+    color: #4CA856;
+}
+
+.gc-links-color {
+    color: #31AD9A;
+}
+
+/*--------------------------------------------------------*/
+/* 3. general styles                                      */
+/*--------------------------------------------------------*/
+body {
+    margin: 0;
+}
+
+ul {
+    list-style-type: none;
+    outline: none;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #2C516D;
+    background-color: transparent;
+    font: italic 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+    margin: 0;
+}
+h1 {
+    font-size: 130%;
+    margin-bottom: 0.5rem;
+    /*border-bottom: 1px solid #2C516D;*/
+}
+h2 {
+    font-size: 120%;
+    margin-bottom: 0.5rem;
+    /*border-bottom: 1px solid #5E7C93;*/
+}
+h3 {
+    font-size: 110%;
+    margin-bottom: 0.5rem;
+    text-decoration: underline;
+}
+h4 {
+    font-size: 100%;
+    font-weight: bold;
+}
+h5 {
+    font-size: 100%;
+    font-weight: bold;
+}
+h6 {
+    font-size: 80%;
+    font-weight: bold;
+}
+
+a {
+    color: #31AD9A; /* gc-links-color */
+}
+
+.datepicker td {
+    padding: .5rem;
+}
+.datepicker thead tr {
+    background-color: #e9e9e9;
+}
+.datepicker thead th {
+    vertical-align: middle;
+    line-height: 1.8rem;
+}
+
+.event_options {
+    font-size: 0.8rem;
+    text-align: right;
+}
+
+.gc-no-wrap {
+    display: inline-block;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.gc-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    -icab-text-overflow: ellipsis;
+    -khtml-text-overflow: ellipsis;
+    -moz-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+}
+
+
+/* TODO: simplify this file: there are some repeated directives like for
+general forms and for event_form */
+/* TODO: find where fields left here are used. */
+
+.flag {
+    vertical-align: baseline ;
+}
+
+.label {
+    float: left;
+    margin-right: 1rem;
+    text-align: right;
+    width: 8rem;
+}
+.left-fields {
+    float: left;
+    width: 40rem;
+    margin-right: 1rem;
+}
+.right-fields {
+    display: inline-block;
+    width: 500px;
+}
+.left-fields .helptext {
+    margin-left: 11.2rem;
+}
+.label-field-helptext {
+    margin: 0 1rem 1rem 0;
+}
+.description {
+    clear: both;
+    margin-left: 0.5rem;
+}
+
+
+
+.daytitle {
+    border-bottom: 0 none;
+    clear: left;
+    color: #5E7C93;
+    font: italic 1.2rem 'Lucida Grande',Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif;
+    margin-bottom: 0.5rem;
+    max-width: 10rem;
+    padding-top: 1rem;
+}
+
+.tags {
+    margin: 0.5rem 0 0.2rem 0;
+    line-height: 2rem;
+}
+.tags a {
+    padding: 0.1rem 0.3rem 0.1rem 0.3rem;
+    margin: 0.1rem 0.3rem 0.1rem 0rem;
+    border-radius: 0.5rem;
+    -webkit-border-radius: 0.5rem;
+    -moz-border-radius: 0.5rem;
+    border: 1px #ccc solid;
+    /* background-color: #cde; */
+    background-color: transparent;
+    color: black;
+    text-decoration: none;
+}
+
+/* messages and error_messages */
+.messages {
+    font-size:90%;
+    list-style-type: none;
+}
+.messages ul li {
+    display: inline ;
+    margin: 0 1rem 0 0 ;
+}
+.messages li:before {
+    content: "\00BB \0020";
+}
+.messages .info { color:blue; }
+.messages .warning { color:green; }
+.messages .error { color:red; }
+
+/* list of groups and some events */
+#groups ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#groups ul li:before {
+    color: red;
+    content: "\00BB \0020";
+}
+
+/* for tags cloud */
+.tag_1  { font-size:0.8rem; }
+.tag_2  { font-size:1.0rem; }
+.tag_3  { font-size:1.1rem; }
+.tag_4  { font-size:1.2rem; }
+.tag_5  { font-size:1.3rem; }
+.tag_6  { font-size:1.4rem; }
+.tag_7  { font-size:1.5rem; }
+.tag_8  { font-size:1.6rem; }
+.tag_9  { font-size:1.8rem; }
+.tag_10 { font-size:2.0rem; }
+
+/*--------------------------------------------------------*/
+/* 4. forms                                               */
+/*--------------------------------------------------------*/
+/* general form directives */
+
+.bootstrap-select:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
+  width: 100%;
+}
+.bootstrap-select li a,
+.bootstrap-select li a:focus,
+.bootstrap-select li a:hover {
+  display: inline-block;
+  padding-left: 1rem;
+  width: 100%;
+}
+.select-button {
+  color: #373a3c;
+  border-color: transparent;
+  border-color: rgba(0,0,0,.15);
+  outline: none !important;
+}
+.select-button:focus,
+.select-button:hover,
+.select-button:active {
+  color: #55595c;
+  background: none;
+  border-color: #66afe9;
+  outline: none !important;
+}
+.select-button .dropdown-toggle:focus,
+.select-button .dropdown-toggle:hover,
+.select-button .dropdown-toggle:active {
+  outline: none !important;
+}
+.bootstrap-select .btn-outline-primary,
+.bootstrap-select .btn-outline-primary:hover,
+.bootstrap-select .btn-outline-primary:focus,
+.bootstrap-select .btn-outline-primary.focus,
+.bootstrap-select .btn-outline-primary:active,
+.bootstrap-select .btn-outline-primary.active,
+.bootstrap-select .btn-outline-primary:active:hover,
+.bootstrap-select .btn-outline-primary:active:focus,
+.bootstrap-select .btn-outline-primary:active.focus,
+.bootstrap-select .btn-outline-primary.active:hover,
+.bootstrap-select .btn-outline-primary.active:focus,
+.bootstrap-select .btn-outline-primary.active.focus,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle:hover,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle:focus,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle.focus {
+  color: #373a3c;
+  background: none;
+}
+.bootstrap-select.btn-group .dropdown-toggle .filter-option{
+  vertical-align: middle;
+}
+.bootstrap-select.btn-group .dropdown-menu li a.opt {
+  padding-left: 1rem;
+}
+
+
+form .helptext {
+    color: #9DBCD3;
+}
+
+form legend h1 {
+    color: #31AD9A; /* gc-labels-colors  */
+}
+
+form label {
+    /*color: #2C516D;*/
+    color: #31AD9A; /* gc-labels-colors  */
+    font-weight: bold;
+    margin: 0;
+    margin-top: .5rem;
+}
+form ul {
+    list-style: none;
+    padding: 0;
+}
+form li {
+    padding: 0 ;
+}
+
+textarea {
+    width: 100%;
+}
+
+#submit-button input,
+.small-submit-button input,
+p.submit input{
+    font-size: 1.3rem;
+    border: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    /*color: #1C83CC;*/
+    color: #4CA856; /* .gc-buttons-color */
+    background-color: #E3E3E6;
+}
+#submit-button input:hover,
+.small-submit-button input:hover,
+p.submit input:hover {
+    background-color: #5E7C93;
+    color: white;
+}
+
+#simplified_event_form form legend {
+    margin-top: -1.2rem;
+    /*color: #1C83CC;*/
+    color: #31AD9A; /* gc-labels-colors  */
+    border: 1px solid #2C516D;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    font-size: 1.2rem;
+    max-width: 16rem;
+}
+
+#simplified_event_form fieldset {
+    padding: 0.1rem 0.2rem 0.5rem;
+    border:1px solid #2C516D;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+
+#simplified_event_form .form-group {
+    margin-bottom: .5rem;
+}
+
+#simplified_event_form input[type="text"] {
+    padding: .2rem;
+}
+
+
+#gc-event-recurrences td {
+    text-align: right;
+    padding-right: .5rem;
+}
+#gc-event-recurrences .gc-month {
+    min-height: 14rem;
+}
+#gc-event-recurrences .cal-form-day-not-editable {
+    color: red;
+    text-align: right;
+}
+#alternatives {
+    font-size: 0.8rem;
+}
+
+/*--------------------------------------------------------*/
+/* 5. header                                              */
+/*--------------------------------------------------------*/
+.navbar {
+    padding: 0 15px;
+}
+.navbar-toggler{
+    font-size: 2.5rem;
+    line-height: 4rem;
+    color: #7A7A7A;
+}
+.navbar-brand {
+    margin: .5rem 0 .5rem .5rem;
+    padding: 0;
+}
+@media (min-width: 544px) {
+   /* sm-up */
+    .navbar-brand {
+        margin: 1rem 1rem 1rem 0;
+    }
+}
+.navbar .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+.nav-link {
+    font-size: 1rem;
+}
+
+
+.navbar .gc-header-search-button {
+  background: none;
+  border: 0;
+}
+
+.navbar .glyphicon-search{
+    font-size: 1rem;
+}
+
+
+#gc-header-search-form {
+    margin-top: 1.5rem;
+}
+
+.gc-user-info{
+    color: #C4C4C4;
+    font-size: .8rem;
+}
+
+
+
+#logo {
+    float: left;
+}
+/*#header {
+    background-repeat:repeat-y;
+    background-color: black;
+    border-bottom: 2px solid #546878;
+    min-height: 110px;
+    line-height: 2rem;
+    margin: 0;
+    padding: 0.5rem;
+    text-align: right;
+    border-radius: 0 0 0.9rem 0;
+    padding: 0.5rem ;
+    color: #546878;
+    font-weight: bold;
+}*/
+#header a {
+    color: #AFC4D3;
+    text-decoration: none ;
+}
+#header img {
+    vertical-align: middle;
+}
+#header form {
+    display: inline;
+}
+#feedback {
+    display: inline;
+}
+
+/**
+ * search results
+ */
+#gc-search-views .nav-item {
+    margin-top: 2rem;
+}
+
+#views {
+    display: inline-block;
+    text-align: center;
+}
+#views img {
+    vertical-align:middle;
+    margin: 0.2rem;
+}
+#views .gc-search-view-name {
+    display: inline-block;
+    text-decoration: none;
+    color: #333;
+}
+#views .gc-search-view {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    -webkit-border-radius: 0.5rem;
+    -moz-border-radius: 0.5rem;
+    display: inline-block;
+    margin: 0 0.2rem;
+    padding: 0.4rem;
+    border: 3px solid transparent;
+}
+#views.gc-search-views-small{
+    margin-top : 1rem;
+}
+#views.gc-search-views-small .gc-search-view {
+    margin-bottom: 1rem;
+}
+
+#views .current_view {
+    margin-bottom: 1rem;
+    border-color: #5E7C93;
+}
+
+#views #table_view { background: #aaa; }
+#views #map_view { background: #e8cfe6; }
+#views #boxes_view { background: #99c2e8; }
+#views #calendars_view { background: #b6b9ea; }
+#views #ical_view { background: #9dd49d; }
+#views #rss_view { background: #ff9e63; }
+
+/*--------------------------------------------------------*/
+/* 6. footer                                              */
+/*--------------------------------------------------------*/
+#footer {
+    padding: 1.2rem 0.8rem ;
+    margin-top: 2rem;
+    clear: both;
+    line-height: 2;
+    border-radius: 0.9rem 0.9rem 0 0;
+}
+#footer img {
+    vertical-align: middle;
+}
+#footer ul, #footer li {
+    display: inline ;
+    margin: 0 2rem 0 0 ;
+    padding: 0;
+}
+#footer li:before {
+    content: "\00BB \0020";
+}
+#footer .title {
+    float:left ;
+    max-width:8rem;
+}
+#footer .info {
+    margin-left:8rem;
+}
+
+/*--------------------------------------------------------*/
+/* 7. daybox                                              */
+/*--------------------------------------------------------*/
+/*
+ * event medium format (used in main page and box-search-results)
+ */
+.daybox {
+    height: 245px;
+    overflow: hidden;
+}
+.event_medium a[href] {
+    text-decoration: none;
+}
+.event_medium {
+    float:left;
+    margin: 0.5rem;
+}
+.event_medium .title {
+    color: #546878;
+    padding: 0.2rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+.event_medium .content {
+    border: 1px solid #DAE6F0;
+    padding: 0.5rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+.event_medium .tags {
+    line-height: 2rem;
+    height: 4rem;
+    overflow: hidden;
+}
+
+.deadlines, .deadlines a[href]  {
+    text-decoration: none ;
+}
+
+#search_form {
+    display: inline;
+}
+.daybox {
+    float: left;
+    margin: .5rem .5rem .5rem 0;
+}
+.daybox .title a {
+    color: #FFF;
+}
+
+.daybox h1 {
+    font-size: 1.2rem;
+}
+
+/* xs */
+.event_medium {
+    width: 20rem;
+}
+.gc-event-ical{
+    display: inline-block;
+}
+.gc-event-ical img {
+    display: inline-block;
+    vertical-align: middle;
+}
+.gc-event-title {
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
+    max-width: 16rem;
+}
+
+@media (min-width: 992px) {
+   /* md-up */
+    .event_medium {
+        width: 30rem;
+    }
+    .gc-event-title {
+        width: 100%;
+        max-width: 26rem;
+    }
+}
+
+/*--------------------------------------------------------*/
+/* 8. search map                                          */
+/*--------------------------------------------------------*/
+/**
+ * Map Specific
+ */
+.smallmap {
+    width: 100%;
+    height: 512px;
+    border: 3px solid black;
+}
+
+
+/**
+ * osm map view specific ( from http://openlayers.org/dev/examples/xhtml.html )
+ */
+
+div.olMap {
+    z-index: 0;
+    padding: 0px!important;
+    margin: 1rem 0 !important;
+    cursor: default;
+}
+
+div.olMapViewport {
+    text-align: left;
+}
+
+div.olLayerDiv {
+   -moz-user-select: none;
+   -khtml-user-select: none;
+}
+
+.olLayerGoogleCopyright {
+    left: 2px;
+    bottom: 2px;
+}
+.olLayerGooglePoweredBy {
+    left: 2px;
+    bottom: 15px;
+}
+.olControlAttribution {
+    font-size: smaller;
+    right: 3px;
+    bottom: 4.5rem;
+    position: absolute;
+    display: block;
+}
+.olControlScale {
+    right: 3px;
+    bottom: 3rem;
+    display: block;
+    position: absolute;
+    font-size: smaller;
+}
+.olControlScaleLine {
+   display: block;
+   position: absolute;
+   left: 10px;
+   bottom: 15px;
+   font-size: xx-small;
+}
+.olControlScaleLineBottom {
+   border: solid 2px black;
+   border-bottom: none;
+   margin-top:-2px;
+   text-align: center;
+}
+.olControlScaleLineTop {
+   border: solid 2px black;
+   border-top: none;
+   text-align: center;
+}
+
+.olControlPermalink {
+    right: 3px;
+    bottom: 1.5rem;
+    display: block;
+    position: absolute;
+    font-size: smaller;
+}
+
+div.olControlMousePosition {
+    bottom: 0rem;
+    right: 3px;
+    display: block;
+    position: absolute;
+    font-family: Arial;
+    font-size: smaller;
+}
+
+.olControlOverviewMapContainer {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+.olControlOverviewMapElrement {
+    padding: 10px 18px 10px 10px;
+    background-color: #00008B;
+    -moz-border-radius: 1rem 0 0 0;
+}
+
+.olControlOverviewMapMinimizeButton {
+    right: 0px;
+    bottom: 80px;
+}
+
+.olControlOverviewMapMaximizeButton {
+    right: 0px;
+    bottom: 80px;
+}
+
+.olControlOverviewMapExtentRectangle {
+    overflow: hidden;
+    background-image: url("img/blank.gif");
+    cursor: move;
+    border: 2px dotted red;
+}
+.olControlOverviewMapRectReplacement {
+    overflow: hidden;
+    cursor: move;
+    background-image: url("img/overview_replacement.gif");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.olLayerGeoRSSDescription {
+    float:left;
+    width:100%;
+    overflow:auto;
+    font-size:1.0rem;
+}
+.olLayerGeoRSSClose {
+    float:right;
+    color:gray;
+    font-size:1.2rem;
+    margin-right:6px;
+    font-family:sans-serif;
+}
+.olLayerGeoRSSTitle {
+    float:left;font-size:1.2rem;
+}
+
+.olPopupContent {
+    padding:5px;
+    overflow: auto;
+}
+.olControlNavToolbar {
+    width:0px;
+    height:0px;
+}
+.olControlNavToolbar div {
+  display:block;
+  width:  28px;
+  height: 28px;
+  top: 300px;
+  left: 6px;
+  position: relative;
+}
+
+.olControlNavigationHistory {
+   background-image: url("img/navigation_history.png");
+   background-repeat: no-repeat;
+   width:  24px;
+   height: 24px;
+
+}
+.olControlNavigationHistoryPreviousItemActive {
+  background-position: 0px 0px;
+}
+.olControlNavigationHistoryPreviousItemInactive {
+   background-position: 0px -24px;
+}
+.olControlNavigationHistoryNextItemActive {
+   background-position: -24px 0px;
+}
+.olControlNavigationHistoryNextItemInactive {
+   background-position: -24px -24px;
+}
+
+.olControlNavToolbar .olControlNavigationItemActive {
+  background-image: url("img/panning-hand-on.png");
+  background-repeat: no-repeat;
+}
+.olControlNavToolbar .olControlNavigationItemInactive {
+  background-image: url("img/panning-hand-off.png");
+  background-repeat: no-repeat;
+}
+.olControlNavToolbar .olControlZoomBoxItemActive {
+  background-image: url("img/drag-rectangle-on.png");
+  background-color: orange;
+  background-repeat: no-repeat;
+}
+.olControlNavToolbar .olControlZoomBoxItemInactive {
+  background-image: url("img/drag-rectangle-off.png");
+  background-repeat: no-repeat;
+}
+.olControlEditingToolbar  {
+    float:right;
+    right: 0px;
+    height: 30px;
+    width: 200px;
+}
+.olControlEditingToolbar div {
+  background-image: url("img/editing_tool_bar.png");
+  background-repeat: no-repeat;
+  float:right;
+  width:  24px;
+  height: 24px;
+  margin: 5px;
+}
+.olControlEditingToolbar .olControlNavigationItemActive {
+  background-position: -103px -23px;
+}
+.olControlEditingToolbar .olControlNavigationItemInactive {
+  background-position: -103px -0px;
+}
+.olControlEditingToolbar .olControlDrawFeaturePointItemActive {
+  background-position: -77px -23px;
+}
+.olControlEditingToolbar .olControlDrawFeaturePointItemInactive {
+  background-position: -77px -0px;
+}
+.olControlEditingToolbar .olControlDrawFeaturePathItemInactive {
+  background-position: -51px 0px;
+}
+.olControlEditingToolbar .olControlDrawFeaturePathItemActive {
+  background-position: -51px -23px;
+}
+.olControlEditingToolbar .olControlDrawFeaturePolygonItemInactive {
+  background-position: -26px 0px;
+}
+.olControlEditingToolbar .olControlDrawFeaturePolygonItemActive {
+  background-position: -26px -23px ;
+}
+div.olControlSaveFeaturesItemActive {
+    background-image: url(img/save_features_on.png);
+    background-repeat: no-repeat;
+    background-position: 0px 1px;
+}
+div.olControlSaveFeaturesItemInactive {
+    background-image: url(img/save_features_off.png);
+    background-repeat: no-repeat;
+    background-position: 0px 1px;
+}
+
+.olHandlerBoxZoomBox {
+    border: 2px solid red;
+    position: absolute;
+    background-color: white;
+    opacity: 0.50;
+    font-size: 1px;
+    filter: alpha(opacity=50);
+}
+.olHandlerBoxSelectFeature {
+    border: 2px solid blue;
+    position: absolute;
+    background-color: white;
+    opacity: 0.50;
+    font-size: 1px;
+    filter: alpha(opacity=50);
+}
+
+.olControlPanPanel {
+    top: 10px;
+    left: 5px;
+}
+
+.olControlPanPanel div {
+    background-image: url(img/pan-panel.png);
+    height: 18px;
+    width: 18px;
+    cursor: pointer;
+    position: absolute;
+}
+
+.olControlPanPanel .olControlPanNorthItemInactive {
+    top: 0px;
+    left: 9px;
+    background-position: 0px 0px;
+}
+.olControlPanPanel .olControlPanSouthItemInactive {
+    top: 36px;
+    left: 9px;
+    background-position: 18px 0px;
+}
+.olControlPanPanel .olControlPanWestItemInactive {
+    position: absolute;
+    top: 18px;
+    left: 0px;
+    background-position: 0px 18px;
+}
+.olControlPanPanel .olControlPanEastItemInactive {
+    top: 18px;
+    left: 18px;
+    background-position: 18px 18px;
+}
+
+.olControlZoomPanel {
+    top: 71px;
+    left: 14px;
+}
+
+.olControlZoomPanel div {
+    background-image: url(img/zoom-panel.png);
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    cursor: pointer;
+}
+
+.olControlZoomPanel .olControlZoomInItemInactive {
+    top: 0px;
+    left: 0px;
+    background-position: 0px 0px;
+}
+
+.olControlZoomPanel .olControlZoomToMaxExtentItemInactive {
+    top: 18px;
+    left: 0px;
+    background-position: 0px -18px;
+}
+
+.olControlZoomPanel .olControlZoomOutItemInactive {
+    top: 36px;
+    left: 0px;
+    background-position: 0px 18px;
+}
+
+.olPopupCloseBox {
+  background: url("img/close.gif") no-repeat;
+  cursor: pointer;
+}
+
+.olFramedCloudPopupContent {
+    padding: 5px;
+    overflow: auto;
+}
+
+.olControlNoSelect {
+ -moz-user-select: none;
+ -khtml-user-select: none;
+}
+
+.olImageLoadError {
+    background-color: pink;
+    opacity: 0.5;
+    filter: alpha(opacity=50); /* IE */
+}
+
+/**
+ * Cursor styles
+ */
+
+.olCursorWait {
+    cursor: wait;
+}
+.olDragDown {
+    cursor: move;
+}
+.olDrawBox {
+    cursor: crosshair;
+}
+.olControlDragFeatureOver {
+    cursor: move;
+}
+.olControlDragFeatureActive.olControlDragFeatureOver.olDragDown {
+    cursor: -moz-grabbing;
+}
+
+/**
+ * Layer switcher
+ */
+.olControlLayerSwitcher {
+    position: absolute;
+    top: 25px;
+    right: 0px;
+    width: 20em;
+    font-family: sans-serif;
+    font-weight: bold;
+    margin-top: 3px;
+    margin-left: 3px;
+    margin-bottom: 3px;
+    font-size: smaller;
+    color: white;
+    background-color: transparent;
+}
+
+.olControlLayerSwitcher .layersDiv {
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-bottom: 5px;
+    padding-right: 75px;
+    background-color: darkblue;
+    width: 100%;
+    height: 100%;
+}
+
+.olControlLayerSwitcher .layersDiv .baseLbl,
+.olControlLayerSwitcher .layersDiv .dataLbl {
+    margin-top: 3px;
+    margin-left: 3px;
+    margin-bottom: 3px;
+}
+
+.olControlLayerSwitcher .layersDiv .baseLayersDiv,
+.olControlLayerSwitcher .layersDiv .dataLayersDiv {
+    padding-left: 10px;
+}
+
+.olControlLayerSwitcher .maximizeDiv,
+.olControlLayerSwitcher .minimizeDiv {
+    top: 5px;
+    right: 0px;
+}
+
+/*--------------------------------------------------------*/
+/* 9. search table                                        */
+/*--------------------------------------------------------*/
+.event_table {
+    font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+    width:100%;
+    border-collapse:collapse;
+    border:0;
+    margin: 1em 0;
+}
+.event_table td {
+    font-size:1em;
+    /*border:1px solid #55aacc;*/
+    border:0px;
+    text-align: center;
+    padding: 0.2em 1em;
+}
+.event_table th {
+    font-size:1.1em;
+    padding:3px 7px 2px 7px;
+    text-align:left;
+    padding-top:5px;
+    background-color: #f7f7f9;
+    border-radius: 0.5em 0.5em 0 0;
+    text-align: center;
+}
+.event_table tr.even td {
+    color:#000;
+    background-color: #f7f7f9;
+}
+/*.event_table .col_start {
+}
+.event_table .col_upcoming {
+}
+.event_table .col_city {
+}
+.event_table .col_country {
+}*/
+
+/*--------------------------------------------------------*/
+/* 10. search calendar                                    */
+/*--------------------------------------------------------*/
+.calendars table {
+    border: none;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #f7f7f9;
+    margin-bottom: 4rem;
+}
+.calendars table tbody{
+    /*margin: 1rem;*/
+}
+.calendars th {
+    border-radius: 0.5em 0.5em 0.5em 0.5em;
+    font-weight: bold;
+    padding: 0.2em;
+    text-align: center;
+}
+.calendars td.today {
+    color: red;
+    font-weight: bold;
+    border-right: 2px solid red;
+    border-left: 2px solid red;
+    border-top: 2px solid red;
+}
+.calendars tr:not(.event-row) {
+    display: table-row;
+}
+.calendars tr.empty-row {
+    border-top: 0px;
+    height: 1em;
+}
+.calendars .event-rectangle {
+    padding: 0.2em;
+    border: medium none;
+}
+/*.calendars .noday {
+    background-color: #AFC4D3;
+}*/
+.calendars a[href] {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    -icab-text-overflow: ellipsis;
+    -khtml-text-overflow: ellipsis;
+    -moz-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+}
+.calendars a:hover {
+    text-decoration: underline;
+}
+
+.calendars th,
+.calendars td,
+.calendars a {
+    width: 15rem;
+}
+
+/*--------------------------------------------------------*/
+/* 11. event edit                                         */
+/*--------------------------------------------------------*/
+#event_form .field_label{
+    padding-left: 0;
+}
+#event_form .field_input{
+    display: block;
+    padding: .5rem .75rem;
+    font-size: 1rem;
+    line-height: 1.25;
+    color: #55595c;
+    background-image: none;
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: .25rem;
+}
+#event_form .field_input:focus {
+    background-color: #fff;
+    border-color: #66afe9;
+    outline: 0;
+}
+#event_form .helptext {
+    font-size: .8rem;
+}
+#event_form .select_field {
+    padding-left: 0;
+    padding-right: 0;
+}
+#event_form .smallmap{
+    height: 44rem;
+}
+#event_form .formset{
+    margin-left: 0;
+    margin-right: 0;
+}
+#event_form .formset h2 {
+    padding-left: 0;
+    padding-right: 0;
+}
+#event_form .formset input{
+    width: 100%;
+}
+#event_form select {
+    width: 100%;
+    margin-top: .5rem;
+}
+
+/*--------------------------------------------------------*/
+/* 12. event show                                         */
+/*--------------------------------------------------------*/
+.event_full .item-nr {
+    text-align: right;
+}
+
+.event_full .header {
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+.event_full #title {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+}
+.event_full .options {
+    background-color: transparent;
+    border: 3px solid white;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    color: #5E7C93;
+    display: inline-block;
+    float: right;
+    margin: 0;
+    padding: 0.3rem 0.5rem;
+    text-align: right;
+}
+.event_full .options a {
+    text-decoration: none;
+    color: rgba(0,0,0,.6);
+}
+.event_full .options a:focus,
+.event_full .options a:hover {
+    color: rgba(0,0,0,.9);
+}
+.event_full .data {
+    display: inline-block;
+    margin-left: .5rem;
+}
+
+.event_full .urls {
+    margin-bottom: 0;
+    padding-left: 0;
+}
+
+
+.event_full fieldset {
+    background: none repeat scroll 0 0 #9DBCD3;
+    border: 1px solid #2C516D;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    margin: 1.5rem 0.5rem;
+    padding: 0.5rem 1rem;
+}
+.event_full .icon {
+    width: 1.5rem;
+    position: absolute;
+}
+.event_full .ical_logo {
+    margin: 0;
+    vertical-align: middle;
+}
+.event_full {
+    margin-top: 0rem;
+}
+.event_full .item-nr {
+    font-size: 0.8rem;
+    text-align: right;
+}
+.event_full .data {
+    display: inline-block;
+    margin-left: 2rem;
+}
+.event_full .urls, .event_full .urls ul, .event_full .urls li {
+    display: inline ;
+    margin: 0rem 1rem 1rem 0 ;
+    -moz-padding-start: 0;
+}
+.event_full .urls li:before {
+    content: "\00BB \0020";
+}
+.event_full ul.urls li {
+    max-width: 320px;
+    display: block;
+    float: left;
+    color: gray;
+}
+.event_full .url_name {
+    color: #546878;
+}
+.event_full td {
+    border: 1px solid #aaa;
+    padding:0.5rem;
+}
+.event_full table {
+    display: inline;
+    margin-top: 1rem;
+    vertical-align: top;
+}

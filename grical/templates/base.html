@@ -1,0 +1,279 @@
+{# Copyright: 2016 George Vlachos <george ät wikical dot com> #}
+<!DOCTYPE html>
+<html lang="en">
+
+{% comment %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
+{% endcomment %}
+
+{% load i18n %}
+{% load tagging_tags %}
+{% load urlsearch %}
+{% load cache %}
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Language" content="{{ LANGUAGE_CODE }}" />
+    <meta name="language" content="{{ LANGUAGE_CODE }}" />
+    {% if not event %}
+        <meta name="description" content="{% trans "an open community driven calendar, tagged and localized events" %}" />
+        <meta name="keywords" content="{% trans 'events' %}, {% trans 'calendar' %}, {% trans 'community' %}, {% trans 'open' %}, {% trans 'social' %} {% trans 'free' %}" />
+    {% else %}
+        <meta name="description" content="{{ event.title }}" />
+        <meta name="keywords" content="{{ event.tags_separated_by_comma }}" />
+    {% endif %}
+    <title>{{ title }}</title>
+
+    {% block css %}
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bower_components/bootstrap-select/dist/css/bootstrap-select.min.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/base.css" />
+    {% endblock %}
+    {% block extracss %}{% endblock %}
+
+    {# <link href="{{ STATIC_URL }}css/print.css" media="print" /> #}
+
+    {# see http://en.wikipedia.org/wiki/Favicon #}
+    <link rel="shortcut icon" href="{{ STATIC_URL }}/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="{{ STATIC_URL }}/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ STATIC_URL }}/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ STATIC_URL }}/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ STATIC_URL }}/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ STATIC_URL }}/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ STATIC_URL }}/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ STATIC_URL }}/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ STATIC_URL }}/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ STATIC_URL }}/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ STATIC_URL }}/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="{{ STATIC_URL }}/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ STATIC_URL }}/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ STATIC_URL }}favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ STATIC_URL }}/favicon-16x16.png">
+    <link rel="manifest" href="{{ STATIC_URL }}/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="{{ STATIC_URL }}/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
+    {% if form.media %}{{ form.media }}{% endif %}
+    {% block extraheaders %}{% endblock %}
+
+
+    {# <script type="text/javascript" src="{{ STATIC_URL }}javascript/external.js"></script> #}
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-light bg-faded">
+    <div class="container-fluid">
+        <button class="navbar-toggler hidden-sm-up" type="button" data-toggle="collapse" data-target="#navbar-header" aria-controls="navbar-header">
+            &#9776;
+        </button>
+        <a class="1 navbar-brand hidden-sm-up pull-xs-right" href="/"><img src="{{ STATIC_URL }}grical-70.png" alt="project logo" class="project-logo"></a>
+        <div class="collapse navbar-toggleable-xs" id="navbar-header">
+            <a class="navbar-brand hidden-xs-down" href="/"><img src="{{ STATIC_URL }}grical-90.png" alt="project logo" class="project-logo"></a>
+            {% if views %}
+            <ul id="gc-search-views" class="nav navbar-nav hidden-md-down">
+                <li class="nav-item text-justify">
+                    {% block views %} {% endblock %}
+                </li>
+            </ul>
+            {% endif %}
+            <ul id="gc-header-search-form" class="nav navbar-nav pull-xs-right">
+                <li>
+                    <form class="form-inline" id="search" action="{% url 'search' %}">
+                        <div class="form-group">
+                            <div class="input-group">
+                                {% if user.username %}
+                                    <input class="form-control" type="text" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
+                                {% else  %}
+                                    <input class="form-control" type="text" maxlength="2048" size="25" name="query" value="{{ query }}" placeholder="{% trans "search for..." %}" />
+                                {% endif %}
+                                <div class="input-group-addon">
+                                    <button class="gc-header-search-button" type="submit"><span class="glyphicon glyphicon-search"></span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </li>
+                {% if user.username %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'settings' %}">{% trans "settings" %}</a></li>
+                {% else  %}
+                    {% if not READ_ONLY %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'registration_register' %}">{% trans "Sign&nbsp;up" %}</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'auth_login' %}?next={% firstof request.path '/' %}">{% trans "log&nbsp;in" %}</a></li>
+                {% endif %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'legal_notice' %}">{% trans "legal&nbsp;notice" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'help' %}">{% trans "help" %}</a></li>
+                {% if user.username %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'auth_logout' %}">{% trans "logout" %}</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+{% if user.username %}
+<div class="text-xs-right m-r-1 gc-user-info">
+    {% blocktrans with user.username as username %}
+        Logged&nbsp;in&nbsp;as&nbsp;{{ username }}
+    {% endblocktrans %}
+</div>
+{% endif %}
+
+{% if views %}
+<div id="views" class="container-fluid hidden-lg-up gc-search-views-small">
+    <div class="row">
+        <div class="col-xs-12">
+            {% block views_small %} {% endblock %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="clearfix">&nbsp;</div>
+
+<div class="gc_container">
+    {% block search_info %} {% endblock %}
+    {% block messages %}
+        {% if messages %}{# see http://docs.djangoproject.com/en/1.3/ref/contrib/messages/ #}
+        <div class="container m-t-1">
+            <div class="row">
+                <div class="col-xs-12">
+                    <ul class="messages">
+                        {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endblock %}
+    {% block container %} {% endblock %}
+</div>
+
+<div id="footer" class="bg-faded">
+    <div class="title">{% trans "Social" %}</div>
+    <div class="info">
+      <ul>
+        <li>
+            <!-- AddToAny BEGIN -->
+            {# TODO: Cache it. Provider allows to Cache it for 24 hours automatically. See provider's FAQ #}
+            <a class="a2a_dd" href="{{ PROTOCOL }}://www.addtoany.com/share_save"><img src="{{ PROTOCOL }}://static.addtoany.com/buttons/share_save_171_16.png" width="171" height="16" alt="Share" /></a>
+            <script type="text/javascript">
+            var a2a_config = a2a_config || {};
+            a2a_config.linkname = "GriCal";
+            a2a_config.onclick = 1;
+            a2a_config.color_main = "9DBCD3";
+            a2a_config.color_border = "2C516D";
+            a2a_config.color_link_text = "AFC4D3";
+            a2a_config.color_link_text_hover = "333333";
+            a2a_config.color_bg = "000000";
+            a2a_config.color_arrow = "fff";
+            </script>
+            <script type="text/javascript" src="{{ PROTOCOL }}://static.addtoany.com/menu/page.js"></script>
+            <!-- AddToAny END -->
+        </li>
+      </ul>
+    </div>
+    <div class="title">{% trans "Openness" %}</div>
+    <div class="info">
+      <ul>
+        <li>
+            <a href="http://www.opendefinition.org/software-service/">
+                <img src="{{ STATIC_URL }}os_80x15_blue.png" alt="{% trans 'OPEN SERVICE' %}" />
+            </a>
+        </li>
+        <li>
+            <a href="http://www.opendefinition.org/okd/">
+                <img src="{{ STATIC_URL }}open-data-80x15-blue.png" alt="{% trans 'OPEN DATA' %}" />
+            </a>
+        </li>
+        <li>
+            <a href="http://creativecommons.org/licenses/by-sa/3.0/de/deed.en">
+                <img src="{{ STATIC_URL }}cc-by-sa-germany.png" alt="{% trans 'CC-BY-SA' %}" />
+            </a>
+        </li>
+        <li>
+            <a href="http://www.gnu.org/licenses/agpl.html">
+                <img src="{{ STATIC_URL }}agpl3.png" alt="{% trans 'AGPL3 LICENSED' %}" />
+            </a>
+        </li>
+      </ul>
+    </div>
+    <div class="title">{% trans "Support" %}</div>
+    <div class="info">
+      <ul>
+        <li><a href="{% url 'contact_form' %}">{% trans "feedback" %}</a></li>
+      </ul>
+    </div>
+    <div class="title">{% trans "Software" %}</div>
+    <div class="info">
+        <ul>
+            <li>
+                <a href="{{ STATIC_URL }}grical-source-code-0.9.573.tgz">
+                    {% blocktrans with VERSION as VERSION %}
+                        running the free software Grical {{ VERSION }}
+                    {% endblocktrans %}
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="title">{% trans "Statistics" %}</div>
+    <div class="info">
+        <ul>
+            <li> {% trans "events:" %} {{ EVENTS_NR }} </li>
+            <li> {% trans "users:" %} {{ USERS_NR }} </li>
+            <li> {% trans "groups:" %}{{ GROUPS_NR }} </li>
+        </ul>
+    </div>
+    <div class="title">{% trans "RSS feeds" %}</div>
+    <div class="info">
+        <ul>
+            <li> <a href="{% url 'upcoming_events_rss' %}">{% trans "upcoming RSS feed" %}</a></li>
+            <li> <a href="{% url 'lastadded_events_rss' %}">{% trans "last added RSS feed" %}</a></li>
+        </ul>
+    </div>
+    <div class="title">{% trans "Using" %}</div>
+    <div class="info">
+        <ul>
+            <li> <a href="http://www.openstreetmap.org/">OpenStreetMap</a></li>
+            <li> <a href="http://www.geonames.org/">GeoNames</a></li>{# GeoNames asks for it #}
+            <li> <a href="http://thematicmapping.org/downloads/world_borders.php">thematicmapping.org</a></li>{# thematicmapping asks for it #}
+        </ul>
+    </div>
+    {% cache 3600 tags_cloud %}
+        <div class="title">{% trans "Tags cloud" %}</div>
+        <div class="info">
+            {# TODO: generate this is views.py #}
+            {% tag_cloud_for_model events.Event as tags with steps=10 min_count=10 distribution=log %}
+            {% for tag in tags %}
+                <span class="tag_{{ tag.font_size }}"><a href="{% urlsearch tag=tag.name|slugify %}">
+                    {{ tag.name }}</a></span>
+            {% endfor %}
+        </div>
+    {% endcache %}
+</div>
+
+{% block js %}
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/jquery/dist/jquery.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/tether/dist/js/tether.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}bower_components/bootstrap-select/dist/js/bootstrap-select.min.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}js/datepicker.js'></script>
+    <script type='text/javascript' src='{{ STATIC_URL }}js/selectpicker.js'></script>
+{% endblock %}
+
+{% block extrajs %}{% endblock %}
+
+</body>
+</html>

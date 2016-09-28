@@ -1,0 +1,21 @@
+Grical documentation
+==========================
+
+Grical is free software for powering community websites where
+users can share information about interesting events.
+
+Contents
+========
+
+.. toctree::
+   :maxdepth: 1
+
+   administrators_guide
+   copyright
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
