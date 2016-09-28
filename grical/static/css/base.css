@@ -1063,6 +1063,63 @@ general forms and for event_form */
 /* 4. forms                                               */
 /*--------------------------------------------------------*/
 /* general form directives */
+
+.bootstrap-select:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
+  width: 100%;
+}
+.bootstrap-select li a,
+.bootstrap-select li a:focus,
+.bootstrap-select li a:hover {
+  display: inline-block;
+  padding-left: 1rem;
+  width: 100%;
+}
+.select-button {
+  color: #373a3c;
+  border-color: transparent;
+  border-color: rgba(0,0,0,.15);
+  outline: none !important;
+}
+.select-button:focus,
+.select-button:hover,
+.select-button:active {
+  color: #55595c;
+  background: none;
+  border-color: #66afe9;
+  outline: none !important;
+}
+.select-button .dropdown-toggle:focus,
+.select-button .dropdown-toggle:hover,
+.select-button .dropdown-toggle:active {
+  outline: none !important;
+}
+.bootstrap-select .btn-outline-primary,
+.bootstrap-select .btn-outline-primary:hover,
+.bootstrap-select .btn-outline-primary:focus,
+.bootstrap-select .btn-outline-primary.focus,
+.bootstrap-select .btn-outline-primary:active,
+.bootstrap-select .btn-outline-primary.active,
+.bootstrap-select .btn-outline-primary:active:hover,
+.bootstrap-select .btn-outline-primary:active:focus,
+.bootstrap-select .btn-outline-primary:active.focus,
+.bootstrap-select .btn-outline-primary.active:hover,
+.bootstrap-select .btn-outline-primary.active:focus,
+.bootstrap-select .btn-outline-primary.active.focus,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle:hover,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle:focus,
+.bootstrap-select.open > .btn-outline-primary.dropdown-toggle.focus {
+  color: #373a3c;
+  background: none;
+}
+.bootstrap-select.btn-group .dropdown-toggle .filter-option{
+  vertical-align: middle;
+}
+.bootstrap-select.btn-group .dropdown-menu li a.opt {
+  padding-left: 1rem;
+}
+
+
 form .helptext {
     color: #9DBCD3;
 }

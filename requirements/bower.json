@@ -16,7 +16,8 @@
   ],
   "dependencies": {
     "bootstrap": "v4.0.0-alpha.4",
-    "bootstrap-datepicker": "1.6.4"
+    "bootstrap-datepicker": "1.6.4",
+    "bootstrap-select": "^1.11.2"
   },
   "private": true
 }
