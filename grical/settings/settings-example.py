@@ -20,6 +20,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
+
 # Set to False for production
 DEBUG = True
 
@@ -32,8 +33,8 @@ DATABASES = {
     # 'default': {
     #      'ENGINE': 'django.contrib.gis.db.backends.postgis',
     #      'ATOMIC_REQUESTS': True,
-    #      'NAME': 'grical_db',
-    #      'USER': 'grical_user',
+    #      'NAME': 'grical',
+    #      'USER': 'grical',
     #      'PASSWORD': 'grical_password',
     #      'HOST': 'localhost',
     #      'PORT': 5432
@@ -97,6 +98,7 @@ IMAP_PASSWD = ''
 IMAP_PORT = 993
 IMAP_SSL = True
 
+
 # =============================================================================
 # celery
 # =============================================================================
@@ -111,8 +113,8 @@ Because we are passing instances in celery tasks we cannot avoid using
 pickle. However we must ensure that our transporter (db / cache /
 broker) is securely isolated and potential attackers cannot access
 them.
-
 """
+
 CELERY_TASK_SERIALIZER = 'pickle'
 """
 See above
@@ -129,22 +131,12 @@ CELERYD_TASK_SOFT_TIME_LIMIT = CELERYD_TASK_TIME_LIMIT * 0.9
 this value to stop importing and preparing next run. """
 assert CELERYD_TASK_SOFT_TIME_LIMIT < CELERYD_TASK_TIME_LIMIT
 
-# Following is useful for development, it can be removed in production.
-
 if TESTS_RUNNING or DEBUG:
     CELERY_ALWAYS_EAGER = True
     CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
     BROKER_BACKEND = 'memory'
     BROKER_URL = 'django://'
 
-# TODO: Confirm if these settings are useful for production / RabbitMQ as
-# broker, most probably the configuration is done in celery configuration /
-# daemon
-# BROKER_HOST = "localhost"
-# BROKER_PORT = 5672
-# BROKER_USER = "guest"
-# BROKER_PASSWORD = "guest"
-# BROKER_VHOST = "/"
 
 # =============================================================================
 # CACHE {{{1
@@ -167,7 +159,7 @@ CACHES = {
 #             'LOCATION': '127.0.0.1:11211',
 #             'TIMEOUT': 300, # 5 minutes
 #             'KEY_PREFIX': 'production',
-#         }, #TODO: use also the hot spare server
+#         },
 #         'db': {
 #             'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
 #             'LOCATION': 'cache',
@@ -178,53 +170,42 @@ CACHES = {
 #         },
 # }
 
+
 # ======================================================================
 # geonames settings
 # ======================================================================
 
-# IMPORTANT FIXME
-# Commented this out, replace `ogai` with a dummy username. Or just remove
-# default settings from settings_base is `demo` that should work.
 # This is used for getting the coordinates from a location using the API of
 # GeoNames.org. You need to register here http://www.geonames.org/login and
 # then activate the use of the API in your account.
-GEONAMES_USERNAME = 'ogai'
+GEONAMES_USERNAME = 'demo'
 GEONAMES_URL = 'https://secure.geonames.net/'
 
 # ======================================================================
 # email and error-notify settings
 # ======================================================================
 
-# IMPORTANT FIXME
-# Bellow are production settings for grical.org. Add some dummy values and
-# comment - out
-
 ADMINS = (
-	('stefanos', 'stefanos@gridmind.org'),
-	('ivan', 'ivan@gridmind.org'),
+	('admin1', 'admin1@example.com'),
+	('admin2', 'admin2@example.com'),
 )
 
 MANAGERS = ADMINS
 
-# IMPORTANT FIXME
-# Bellow are production settings for grical.org. Add some dummy values and
-# comment - out
 # used for messages sent. You can set it to None to avoid emails having the
 # header reply-to
-REPLY_TO = 'office@gridmind.org'
+REPLY_TO = 'office@example.com'
 
-DEFAULT_FROM_EMAIL = 'noreply@grical.org'
-SERVER_EMAIL = 'noreply@grical.org'
-EMAIL_SUBJECT_PREFIX = '[GriCal.org]'
+DEFAULT_FROM_EMAIL = 'noreply@example.com'
+SERVER_EMAIL = 'noreply@example.com'
+EMAIL_SUBJECT_PREFIX = '[Example.com]'
 
 # Set email backend to SMTP when in production:
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-# FIXME IMPORTANT
-# Following are production values for grical.org and prove to work, replace
-# with some dummy values and keep commented-out
-# EMAIL_HOST = '136.243.175.225'
-# EMAIL_HOST_USER = 'email_gridmind_org'
-# EMAIL_HOST_PASSWORD = 'veeWae4y'
+# Set also SMTP settings for production
+# EMAIL_HOST = ''
+# EMAIL_HOST_USER = ''
+# EMAIL_HOST_PASSWORD = ''
 # EMAIL_USE_TLS = True
 # EMAIL_PORT = 587
