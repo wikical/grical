@@ -206,6 +206,9 @@ Set a ``SECRET_KEY``.
 For ``DATABASES`` use user name / db name / password created during
 database creation.
 
+Check ``settings_base.py`` for other customization options, documented
+in that file.
+
 
 Install python requirements
 ---------------------------
@@ -293,7 +296,7 @@ will automatically use it for performance. To install::
 
     apt-get install memcached
 
-Edit then :file:`/etc/memcached.conf` and restart memcached.
+Edit then ``/etc/memcached.conf`` and restart memcached.
 Set the Django settings as appropriate.
 
 
