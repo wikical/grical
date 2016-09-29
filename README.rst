@@ -141,6 +141,19 @@ Instructions assume installation to a Linux host and PostgreSQL 9.5.
 Different setup may need some modifications to these instructions.
 
 
+Clone repository
+----------------
+
+First of all create some ``grical`` user that will own the software
+directory.
+
+.. FIXME migrate to github link when it is known
+
+.. code-block:: bash
+
+    su grical -c "cd ~grical && hg clone ssh://hg@bitbucket.org/gridmind/grical"
+
+
 Setup PostgreSQL
 ----------------
 
@@ -165,85 +178,77 @@ Install system packages
     cat ~/grical/requirements/production.apt | tr '\n' ' '|xargs sudo apt-get install
 
 
-Install required js/css/bower packages
---------------------------------------
-
-Install bower package manager as root, in container:
-
-  npm install bower -g
-
-Install required packages for grical with bower:
-
-  cd ~/grical/requirements && bower install --config.directory=../grical/static/bower_components
-
 
 Create database, db user, etc
 -----------------------------
 
-  su postgres
-  psql
-then type in psql:
-  CREATE EXTENSION IF NOT EXISTS postgis;
-Exit psql with Ctrl+D
-(possibly this step is not needed, but the next CREATE EXTENSION is
-needed)
+Create user, database, then create postgis extension for database.
+As root run:
 
-Run:
-  createuser --pwprompt --no-createdb --no-createrole --no-superuser grical_user
-password: "grical_password"
-Run:
-  createdb --owner grical_user -T template1 grical_db
-We need also to create extension postgis for grical_db
-  psql -d grical_db
-then run in psql:
-  CREATE EXTENSION IF NOT EXISTS postgis
-Exit psql with Ctrl+D
+.. code-block:: bash
 
-logout as postgres
-  exit
+    su postgres -c "createuser --pwprompt --no-createdb --no-createrole --no-superuser grical"
+    su postgres -c "createdb --owner grical -T template1 grical"
+    su postgres -c "psql -d grical -c 'CREATE EXTENSION IF NOT EXISTS postgis;'"
 
-NOTE: grical_user needs some additional roles in order to create test
-databases if this is desired
+Keep ``grical`` password for next step
 
-# Install pip packages
 
-(always as grical root)
-  cd /home/yourusername/grical/requirements/
-  pip install -r development.pip
-
-In host machine
+Django settings
 ---------------
 
-  cd ~/grical/grical/settings
-  cp settings-example.py settings.py
+Copy ``settings-example.py`` to ``settings.py``. As a begin start
+setting ``DEBUG = False``. Review and set other values for production,
+e.g. ``CACHES``, ``DATABASES``, ``ADMINS``, ``IMAP_*``,
+``GEONAMES_*``, ``REPLY_TO``, ``DEFAULT_FROM_EMAIL``,
+``SERVER_EMAIL``, ``EMAIL_SUBJECT_PREFIX``, ``EMAIL_*``, etc
+Set a ``SECRET_KEY``.
 
-edit settings.py, set `DEBUG = True` for development.
-Modify DATABASES section to use postgresql. Review also other changes
-required to activate CACHES etc.
-
-Login as regular user to grical
--------------------------------
-  ssh grical
-
-  cd grical
-  python manage.py migrate
-
-  psql -d grical_db -U grical_user -h localhost -p 5432 -c "UPDATE django_site SET (domain, name) = ('grical', 'Grical development')"
-(password is "grical_password")
-
-  python manage.py createcachetable cache
-(if db_cache is activated in CACHES section, requiring a database)
-
-Start the dev server
-  python manage.py runserver 0.0.0.0:8000
-
-in your browser visit: http://grical:8000
+For ``DATABASES`` use user name / db name / password created during
+database creation.
 
 
+Install python requirements
+---------------------------
 
-Discussion
-----------
-<ogai> stefanos_, would be nice you just copy the travis-ci config of
-dsc for grical, and create an account in travis-ci if needed using
-admin@gridmind.org
+As root install python requirements in the host. If you wish better
+isolation, install them in some virtualenv and specify virtualenv in
+the proper python path. As root:
+
+.. code-block:: bash
+
+    cd ~grical/grical/requirements && pip install -r production.pip
+
+
+Install required js/css/bower packages
+--------------------------------------
+
+Install bower package manager as root:
+
+.. code-block:: bash
+
+    npm install bower -g
+
+Install required packages for grical with bower:
+
+.. code-block:: bash
+
+    su grical -c "cd ~grical/grical/requirements && bower install --config.directory=../grical/static/bower_components"
+
+
+Migrate db, create cache table
+------------------------------
+
+As root:
+
+.. code-block:: bash
+
+    su -grical -c "cd ~grical/grical && python manage.py migrate"
+
+    su -grical -c "cd ~grical/grical && python createcachetable cache"
+
+    psql -d grical_db -U grical_user -h localhost -p 5432 -c "UPDATE django_site SET (domain, name) = ('grical', 'Grical development')"
+
+(you may be asked for the correct grical db user password)
+
 
