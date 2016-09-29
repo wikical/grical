@@ -178,7 +178,6 @@ Install system packages
     cat ~/grical/requirements/production.apt | tr '\n' ' '|xargs sudo apt-get install
 
 
-
 Create database, db user, etc
 -----------------------------
 
@@ -236,6 +235,31 @@ Install required packages for grical with bower:
     su grical -c "cd ~grical/grical/requirements && bower install --config.directory=../grical/static/bower_components"
 
 
+Celery setup
+------------
+
+`Run celery worker as a daemon`_. This is the best option for
+production.
+
+.. _Run celery worker as a daemon: http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
+
+For broker we suggest `RabbitMQ`_. `Broker setup`_ for celery and
+RabbitMQ is minimal and requires no options.
+
+.. _RabbitMQ: http://www.rabbitmq.com/download.html
+.. _Broker setup: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html
+
+#. Install RabbitMQ::
+
+       aptitude install rabbitmq-server
+
+#. Add a user and a vhost::
+
+       rabbitmqctl add_user guest guest
+       rabbitmqctl add_vhost "/"
+       rabbitmqctl set_permissions -p "/" guest ".*" ".*" ".*"
+
+
 Migrate db, create cache table
 ------------------------------
 
@@ -252,3 +276,32 @@ As root:
 (you may be asked for the correct grical db user password)
 
 
+Setup cron jobs / email submission
+----------------------------------
+
+Setup a cronjob to dispatch the custom Django management command
+``imap`` which checks an email server for new event submissions. Setup
+the command to run every e.g one or two minutes. Set the ``IMAP_*``
+Django settings to an IMAP server.
+
+
+memcached
+---------
+
+memcached_ is recommended on production environments; Grical
+will automatically use it for performance. To install::
+
+    apt-get install memcached
+
+Edit then :file:`/etc/memcached.conf` and restart memcached.
+Set the Django settings as appropriate.
+
+
+Deployment
+----------
+
+Refer to: `Deploying Django`_ for general notes. Preferred way to
+deploy grical is by using `uWSGI and nginx`_.
+
+.. _Deploying Django: https://docs.djangoproject.com/en/1.8/howto/deployment/
+.. _uWSGI and nginx: http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html
