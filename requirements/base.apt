@@ -1,6 +1,7 @@
 build-essential
 famfamfam-flag-gif
 geoip-database-contrib
+git                                         # needed to fetch some git packages specified in base.pip
 postgresql-9.6-postgis-2.3                  # version must match PZ_PG_VERSION
 postgresql-9.6-postgis-2.3-scripts          # version must match PZ_PG_VERSION
 postgresql-contrib-9.6                      # includes pg_trgm; version must match PZ_PG_VERSION
