@@ -22,6 +22,7 @@
 #############################################################################
 import sys
 
+from django.conf import settings
 from django.core.management.base import NoArgsCommand
 from django.db import transaction
 from django.utils.encoding import smart_unicode

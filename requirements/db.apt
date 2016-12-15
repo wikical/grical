@@ -1,0 +1,4 @@
+postgresql-9.6-postgis-2.3          # required for the extension postgis
+postgresql-9.6-postgis-2.3-scripts  # required for the extension postgis_topology
+postgresql-contrib-9.6              # needed for GIN / GIST indexes
+postgresql-plpython-9.6
