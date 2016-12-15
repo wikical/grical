@@ -23,6 +23,7 @@
 """ A management command which deletes expired group invitations from the
     database. """
 
+from django.conf import settings
 from django.core.management.base import NoArgsCommand
 from grical.events.model import GroupInvitation
 

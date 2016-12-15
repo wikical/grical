@@ -1,9 +1,0 @@
--r base.pip
-
-psycopg2==2.6.2 # TODO: check timefyme configuration, possibly use Ubuntu package
-
-# Admin stuff, used on production
-celerymon==1.0.3
-django-statsd-mozilla==0.3.16
-psutil==4.3.1  # Used by uwsgi monitoring
-statsd==2.1.2
