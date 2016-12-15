@@ -30,7 +30,7 @@ System packages requirements
 Either to run tests or to setup a full working development environment
 you need to install some system packages. For Ubuntu systems:
 
-For 14.04LTS:
+For Ubuntu 14.04LTS:
 
 .. code-block:: bash
 
