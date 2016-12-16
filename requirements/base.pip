@@ -4,7 +4,6 @@
 
 celery==3.1.23 # Last stable 3.x
 django==1.8.14
-django-compressor==2.1
 django-contrib-comments==1.7.2
 django-celery==3.1.17
 django-markup-deprecated
