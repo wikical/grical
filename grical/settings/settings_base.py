@@ -218,7 +218,6 @@ ACCOUNT_ACTIVATION_DAYS = 10
 
 # at the end additional applications are conditionaly added
 INSTALLED_APPS = [
-    'compressor',
     'grical.accounts',
     'grical.data',
     'grical.events',
@@ -316,8 +315,7 @@ STATIC_URL = "/m/"
 STATIC_ROOT = ""
 STATICFILES_FINDERS = (
         'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-        'django.contrib.staticfiles.finders.FileSystemFinder',
-        'compressor.finders.CompressorFinder',)
+        'django.contrib.staticfiles.finders.FileSystemFinder',)
 
 # IMPORTANT: If more than one dir, set the main grica static dir first in
 # order for some development and testing functions to work properly
