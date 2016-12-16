@@ -20,7 +20,7 @@ python-dateutil==2.4.2
 # locale issue. Investigate and restore the newer version when
 # possible.
 pytz==2016.6.1
-python-memcached==1.58
+pylibmc==1.5.1 # a faster replacement of python-memcached
 pyyaml==3.12
 simplejson # oembed requires it or else it fails
 six==1.10.0  # Required by some django packages
