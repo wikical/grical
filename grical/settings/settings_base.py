@@ -218,6 +218,7 @@ ACCOUNT_ACTIVATION_DAYS = 10
 
 # at the end additional applications are conditionaly added
 INSTALLED_APPS = [
+    'compressor',
     'grical.accounts',
     'grical.data',
     'grical.events',
