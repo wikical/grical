@@ -84,7 +84,7 @@ And then activate the virtualenv:
   source ~/virtualenvs/grical/bin/activate
 
 Assuming that you have a ``virtualenvs`` directory in your home where
-you store virtualenvs.
+you store your virtual environments.
 
 Install python requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
