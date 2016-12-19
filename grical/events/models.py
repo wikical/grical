@@ -1429,10 +1429,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         """
         assert not settings.READ_ONLY
         if Event.objects.filter( id = self.id ).exists():
-            self.is_new = False # Event.post_save uses this
             self.version = self.version + 1
-        else:
-            self.is_new = True
         if self.recurring:
             if self.enddate:
                 raise RuntimeError(
@@ -1457,15 +1454,15 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
             delattr( self, 'upcomingdate_cache')
 
     @staticmethod # def post_save( sender, **kwargs ): {{{3
-    def post_save( sender, **kwargs ):
+    def post_save(sender, instance, created, **kwargs):
         """ notify users if a filter of a user matches an event but only for
         new events.
         """
-        event = kwargs['instance']
+        event = instance
+        if not created:
+            return
         if event.recurring:
             # this event is an instance of a serie of recurring events
-            return
-        if hasattr(event, "is_new") and not event.is_new:
             return
         from .tasks import notify_users_when_wanted
         notify_users_when_wanted.delay( event = event )
