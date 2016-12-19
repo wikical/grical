@@ -24,7 +24,9 @@
 
 # imports {{{1
 from celery.decorators import task
+import logging
 from smtplib import SMTPConnectError
+import traceback
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
@@ -33,6 +35,8 @@ from django.core.mail import send_mail, BadHeaderError
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 # NOTE: if tasks are supposed to use translations, you need to pass a language
 # parameter to the celery task and add to it:
@@ -88,13 +92,16 @@ def notify_users_when_wanted( event = None ):
             from_email = settings.DEFAULT_FROM_EMAIL
             if subject and message and from_email and user.email:
                 try:
-                    if ( not settings.DEBUG ) or user.uername in \
+                    if ( not settings.DEBUG ) or user.username in \
                             settings.USERNAMES_TO_MAIL_WHEN_DEBUGGING:
                         send_mail( subject, message, from_email,
                             [user.email,], fail_silently = False )
-                except (BadHeaderError, SMTPConnectError):
-                    # FIXME: do something meaningfull, e.g. error log
-                    pass
+                except (BadHeaderError, SMTPConnectError), err:
+                    logger.error(u'SMTP error while trying to send '
+                            'notificationsemail - %s'%err)
+                except:
+                    logger.error(u'Unexpected error while trying to send '
+                            'notifications - %s'%traceback.format_exc())
             else:
                 # FIXME: do something meaningfull, e.g. error log
                 pass
