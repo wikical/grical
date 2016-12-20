@@ -375,7 +375,9 @@
 </div>
 {% endcomment %}
 
-<script type="text/javascript" src="//www.openlayers.org/api/OpenLayers.js"></script>
+{# Using local OpenLayers.js because of Mixed content restrictions #}
+{# TODO: Replace with bower #}
+<script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script>
 <script type="text/javascript">
 //<![CDATA[
 
