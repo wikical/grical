@@ -7,8 +7,9 @@
             <div id="map" class="smallmap"></div>
             {# TODO: add info of events when clicking on them: http://openlayers.org/dev/examples/dynamic-text-layer.html #}
 
-            <script type="text/javascript" src="//www.openlayers.org/api/OpenLayers.js"></script>
-            <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script> -->
+            {# Using local OpenLayers.js because of Mixed content restrictions #}
+            {# TODO: Replace with bower #}
+            <script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script>
 
             <script defer="defer" type="text/javascript">
                 //<![CDATA[
