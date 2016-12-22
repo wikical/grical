@@ -1,0 +1,97 @@
+---
+
+- set_fact: rabbitmq_repo_key_url=https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+
+- name: RabbitMQ repo public GPG key
+  ignore_errors: True
+  apt_key: url={{ rabbitmq_repo_key_url }} state=present
+  register: rabbitmq_repo_key
+  until: rabbitmq_repo_key|success
+  retries: 6
+  delay: 10
+  # When the target node is using Python < 2.7.9, and the server is using SNI,
+  # apt_key fails. See fallback below.
+  # More info at https://github.com/ansible/ansible/issues/11579#issuecomment-121775819
+
+- name: RabbitMQ repo public GPG key wget fallback
+  when: rabbitmq_repo_key|failed
+  shell: wget --quiet -O - '{{ rabbitmq_repo_key_url }}' | apt-key add -
+  register: result
+  until: result|success
+  retries: 30
+  delay: 10
+
+- name: RabbitMQ repo
+  apt_repository: repo='deb http://www.rabbitmq.com/debian/ testing main' update_cache=no state=present
+
+- name: RabbitMQ server
+  apt: name=rabbitmq-server state=present
+
+- name: RabbitMQ running
+  service: name=rabbitmq-server state=started enabled=yes
+
+- name: validate django
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  django_manage: command=validate app_path=/home/{{ lookup('env', 'USER') }}/grical pythonpath=/home/{{ lookup('env', 'USER') }}/grical
+
+- name: migrate
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  shell: cd /home/{{ lookup('env', 'USER') }}/grical ; python manage.py migrate --noinput
+
+- name: django_site
+  #sudo_user: "{{ lookup('env', 'USER') }}"
+  sudo_user: postgres
+  shell: psql -d {{ DATABASES.default.NAME }} -c "UPDATE django_site SET domain='localhost:8000', name='{{ PZ_SITE_NAME }}'"
+
+- name: tmux script
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  copy:
+      src=../requirements/development/tmux.sh
+      dest=/home/{{ lookup('env', 'USER') }}/tmux.sh
+      mode=755
+
+- name: tmux.conf
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  copy:
+      src=../requirements/development/tmux.conf
+      dest=/home/{{ lookup('env', 'USER') }}/.tmux.conf
+      mode=644
+
+- name: vimrc
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  copy:
+      src=../requirements/development/vimrc
+      dest=/home/{{ lookup('env', 'USER') }}/.vimrc
+      mode=644
+
+- name: Makefile
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  copy:
+      src=../requirements/development/Makefile
+      dest=/home/{{ lookup('env', 'USER') }}/Makefile
+      mode=644
+
+- name: .bashrc
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  copy:
+      src=../requirements/development/bashrc
+      dest=/home/{{ lookup('env', 'USER') }}/.bashrc
+      mode=644
+
+- name: motd
+  copy:
+      src=../requirements/development/motd
+      dest=/etc/update-motd.d/99-grical-help
+      mode=755
+
+- name: install bower
+  npm: name=bower global=yes
+
+- name: install bower packages
+  sudo_user: "{{ lookup('env', 'USER') }}"
+  command: bower install --config.directory=../grical/static/bower_components chdir=/home/{{ lookup('env', 'USER') }}/grical/requirements
+  register: result
+  until: result|success
+
+- name: cached packages removal
+  command: apt-get clean

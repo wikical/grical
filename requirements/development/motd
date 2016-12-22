@@ -1,0 +1,9 @@
+#!/bin/sh
+
+message="
+
+$(tput bold)Welcome to Wikical Development Environment$(tput sgr0)
+
+"
+
+echo "$message"

@@ -39,7 +39,7 @@ Create a db role (user) who will own the new database, let's call her
 ``grical_user``. Create also a role with the username used for the
 legacy db owner, let's call her ``grical``.
 
-Create a blank database. Let's suppose the database is called
+Create a blank database. Let's assume the database is called
 ``grical_db``, we will first set the owner to ``grical`` to import
 data. As root:
 
