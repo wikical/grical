@@ -17,7 +17,7 @@ are possible e.g. linux container and PostgreSQL.
 Clone repository
 ----------------
 
-.. FIXME migrate to github link when it is known
+.. FIXME migrate to github link when it is known .
 
 .. code-block:: bash
 
