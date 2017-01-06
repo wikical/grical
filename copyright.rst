@@ -6,10 +6,10 @@ Copyright and license
 
 | Copyright (C) 2010-2016 The authors
 
-(The authors can be determined by looking into individual source files
-or examining the history in the version control system.)
+The authors can be determined by looking into individual source files
+or examining the history in the version control system.
 
-Permission is granted to redistribute and/or modify Grical under
+Permission is granted to redistribute and/or modify GriCal under
 the terms of the GNU Affero General Public License (AGPL) as published
 by the Free Software Foundation; either version 3 of the License, or,
 at your option, any later version.
@@ -58,7 +58,7 @@ The calendar small icon is
 | Copyright (C) Mark James
 
 Permission is granted to reproduce and/or modify the icon under the
-terms of the `Creative Commons Attribution 3.0 License`_. Mark James'
+terms of the `Creative Commons Attribution 3.0 License`__. Mark James'
 icons are available at http://www.famfamfam.com/lab/icons/silk/.
 
 __ Creative Commons Attribution 3.0 License: http://creativecommons.org/licenses/by/3.0/
