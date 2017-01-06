@@ -55,7 +55,7 @@ are possible like using PostgreSQL.
   virtualenv ~/virtualenvs/grical
   source ~/virtualenvs/grical/bin/activate
   pip install -r ~/grical/requirements/development.pip
-  python manage.py migrate
+  python manage_development.py migrate
   sqlite3 grical_db.sql "UPDATE django_site SET domain='localhost:8000', name='Grical development';"
 
 Install bower:
@@ -76,7 +76,7 @@ Install the required packages for grical with bower:
 
 .. code-block:: bash
 
-    cd ~/grical && python manage.py runserver 0.0.0.0:8000
+    cd ~/grical && python manage_development.py runserver 0.0.0.0:8000
 
 Now you can open the site in your browser by just visiting
 http://localhost:8000 and edit the source code.
@@ -132,7 +132,7 @@ Create a DB user, a database, and the postgis extension for the database:
 
 Keep the ``grical`` user password (you have been asked for) for the next step.
 
-Copy ``settings-example.py`` to ``settings.py``, and in it:
+Copy ``grical/settings/development.py`` to ``grical/settings/settings.py``, and in it:
 
 - Set ``DEBUG = False``
 - Review and set ``CACHES``, ``DATABASES``, ``ADMINS``, ``IMAP_*``, ``GEONAMES_*``, ``REPLY_TO``, ``DEFAULT_FROM_EMAIL``, ``SERVER_EMAIL``, ``EMAIL_SUBJECT_PREFIX`` and ``EMAIL_*``.
@@ -142,6 +142,8 @@ For ``DATABASES`` use user name, db name and password created above.
 
 Optionally, have a look at ``settings_base.py`` for other customization
 options, documented inline.
+
+Copy ``manage_development.py`` to ``manage.py`` and replace ``development`` in it with ``settings``.
 
 Install the Python requirements:
 
