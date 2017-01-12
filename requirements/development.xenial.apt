@@ -2,11 +2,11 @@ build-essential
 famfamfam-flag-gif
 geoip-database-contrib
 libsqlite3-mod-spatialite
-mercurial
-npm
 python-dev
 python-geoip
 python-pip
 python-virtualenv
 spatialite-bin
 sqlite3
+libmemcached-dev
+zlib1g-dev
