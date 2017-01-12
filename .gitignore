@@ -1,0 +1,17 @@
+grical_db.sql
+
+*.pyc
+.*.swp
+*.bak
+*.orig
+.tox
+
+.*\~
+
+local/
+node_modules/
+grical/static/bower_components/
+docs/_build/
+docs/html/
+
+(.*/)?\#[^/]*\#$
