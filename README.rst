@@ -17,37 +17,28 @@ The following setup uses sqlite3 as the database backend, virtualenv for the
 isolated Python environment and a GNU/Linux host system. Other combinations
 are possible like using PostgreSQL.
 
-- Clone the repository
+Clone the repository
 
 .. code-block:: bash
 
    cd ~
-   hg clone ssh://hg@bitbucket.org/gridmind/grical
+   git clone git@github.com:wikical/grical.git
 
-- Install the OS requirement packages. For Ubuntu 14.04LTS there is a list of
-  OS package requirements at
-  ``grical/requirements/development.trusty.apt``. You can install them with:
+Install the OS requirement packages. For Ubuntu 14.04LTS there is a list of
+OS package requirements at
+``grical/requirements/development.trusty.apt``. You can install them with:
 
 .. code-block:: bash
 
     cat ~/grical/requirements/development.trusty.apt | tr '\n' ' '|xargs sudo apt-get install
 
-  For Ubuntu 15.04+ use:
+For Ubuntu 15.04+ use:
 
 .. code-block:: bash
 
     cat ~/grical/requirements/development.xenial.apt | tr '\n' ' '|xargs sudo apt-get install
 
-- Rename ``settings-example.py`` as ``settings.py`` which is ready for
-  development. You may also use it directly by specifying ``--settings
-  grical.settings.settings-example`` while running management commands.
-
-.. code-block:: bash
-
-  cd ~/grical/grical/settings && cp settings-example.py settings.py
-
-
-- Create and activate a Python virtual environment, and setup Django:
+Create and activate a Python virtual environment, and setup Django:
 
 .. code-block:: bash
 
@@ -63,6 +54,7 @@ Install bower:
 .. code-block:: bash
 
     cd ~/grical
+    sudo apt-get instal nodejs npm
     sudo npm install bower -g
 
 Install the required packages for grical with bower:
@@ -72,7 +64,7 @@ Install the required packages for grical with bower:
     cd ~/grical/requirements
     bower install --config.directory=../grical/static/bower_components
 
-- Start the Django Development Server
+Start the Django Development Server
 
 .. code-block:: bash
 
@@ -156,6 +148,7 @@ Install the required JS and CSS packages with Bower:
 
 .. code-block:: bash
 
+    sudo apt-get instal nodejs npm
     sudo npm install bower -g
     su grical -c "cd ~grical/grical/requirements && bower install --config.directory=../grical/static/bower_components"
 
