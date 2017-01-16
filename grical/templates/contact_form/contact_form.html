@@ -4,15 +4,63 @@
 
 {% block container %}
 
-    <h1>{% trans "Feedback" %}</h1>
+<div class="container m-t-1">
+    <div class="row">
+        <div class="col-xs-12">
 
-    {{ form.non_field_errors.as_ul }}
+		    <form action="" method="post">{% csrf_token %}
+		        <div class="form-group row">
+		            <div class="col-lg-12">
+		                <legend>
+		                    <h1>{% trans "Feedback" %}</h1>
+		                </legend>
+		            </div>
+		        </div>
+                <div class="form-group row">
+                    <div class="col-lg-12">
+                        {% if form.errors or form.non_field_errors %}
+                            <p class="text-danger">
+                                {% trans "Please correct the following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+                            </p>
+                        {% endif %}
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+		        <div class="form-group row{% if form.name.errors %} text-danger{% endif %}">
+		            <label for="id_name" class="col-lg-3 col-form-label">{% trans 'Your name' %}</label>
+		            <div class="col-lg-9">
+		            	<input class="form-control required" id="id_name" maxlength="100" name="name" type="text">
+		                {% if form.name.errors %}{{ form.name.errors }}{% endif %}
+		            </div>
+		        </div>
+		        <div class="form-group row{% if form.email.errors %} text-danger{% endif %}">
+		            <label for="id_email" class="col-lg-3 col-form-label">{% trans 'Your email address' %}</label>
+		            <div class="col-lg-9">
+		            	<input class="form-control required" id="id_email" maxlength="200" name="email" type="text">
+		                {% if form.email.errors %}{{ form.email.errors }}{% endif %}
+		            </div>
+		        </div>
+		        <div class="form-group row{% if form.body.errors %} text-danger{% endif %}">
+		            <label for="id_body" class="col-lg-3 col-form-label">{% trans 'Your message' %}</label>
+		            <div class="col-lg-9">
+		            	<textarea class="required" cols="40" id="id_body" name="body" rows="10"></textarea>
+		                {% if form.body.errors %}{{ form.body.errors }}{% endif %}
+		            </div>
+		        </div>
+		        <div class="form-group row">
+		            <div class="col-xs-12">
+		                <div id="submit-button"><input type="submit" value="{% trans "Send feedback" %}" /></div>
+		            </div>
+		        </div>
+		    </form>
 
-    <form action="" method="post">{% csrf_token %}
-        <table>
-            {{ form.as_table }}
-        </table>
-        <div><input type="submit" value="{% trans "Submit" %}" /></div>
-    </form>
+		</div>
+	</div>
+</div>
+
 
 {% endblock %}

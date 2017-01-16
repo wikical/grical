@@ -860,15 +860,20 @@
 }
 
 
-.gc-labels-colors {
+.gc-label-color {
     color: #31AD9A;
 }
 
-.gc-buttons-color {
+.gc-button-color {
     color: #4CA856;
 }
 
-.gc-links-color {
+.gc-link-color {
+    color: #31AD9A;
+}
+
+.gc-section {
+    font-weight: bold;
     color: #31AD9A;
 }
 
@@ -920,7 +925,11 @@ h6 {
 }
 
 a {
-    color: #31AD9A; /* gc-links-color */
+    color: #31AD9A; /* gc-link-color */
+}
+
+.gc_container {
+  min-height: 45vh;
 }
 
 .datepicker td {
@@ -954,6 +963,10 @@ a {
     -khtml-text-overflow: ellipsis;
     -moz-text-overflow: ellipsis;
     -webkit-text-overflow: ellipsis;
+}
+
+.gc-hidden {
+  display: none;
 }
 
 
@@ -1069,12 +1082,12 @@ form .helptext {
 }
 
 form legend h1 {
-    color: #31AD9A; /* gc-labels-colors  */
+    color: #31AD9A; /* gc-label-color  */
 }
 
 form label {
     /*color: #2C516D;*/
-    color: #31AD9A; /* gc-labels-colors  */
+    color: #31AD9A; /* gc-label-color  */
     font-weight: bold;
     margin: 0;
     margin-top: .5rem;
@@ -1151,10 +1164,11 @@ textarea {
 p.submit input{
     font-size: 1.3rem;
     border: 0;
+    margin-top: 1.4rem;
     padding-left: 1rem;
     padding-right: 1rem;
     /*color: #1C83CC;*/
-    color: #4CA856; /* .gc-buttons-color */
+    color: #4CA856; /* .gc-button-color */
     background-color: #E3E3E6;
 }
 #submit-button input:hover,
@@ -1167,13 +1181,14 @@ p.submit input:hover {
 #simplified_event_form form legend {
     margin-top: -1.2rem;
     /*color: #1C83CC;*/
-    color: #31AD9A; /* gc-labels-colors  */
+    color: #31AD9A; /* gc-label-color  */
     border: 1px solid #2C516D;
     font-weight: bold;
     text-align: center;
     border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
     font-size: 1.2rem;
     max-width: 16rem;
+    max-height: 2rem;
 }
 
 #simplified_event_form fieldset {
@@ -1210,7 +1225,7 @@ p.submit input:hover {
 /* 5. header                                              */
 /*--------------------------------------------------------*/
 .navbar {
-    padding: 0 15px;
+  padding: 0 1rem;
 }
 .navbar-toggler{
     font-size: 2.5rem;
@@ -1246,8 +1261,19 @@ p.submit input:hover {
 }
 
 
-#gc-header-search-form {
-    margin-top: 1.5rem;
+.navbar-nav .input-group .form-control {
+  padding: .6rem;
+}
+
+.navbar-nav .input-group-addon:hover,
+.navbar-nav .input-group-addon:focus {
+  background: #D9D8D6;
+}
+
+.navbar-nav .glyphicon-search {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 1.2rem;
 }
 
 .gc-user-info{
@@ -1260,20 +1286,7 @@ p.submit input:hover {
 #logo {
     float: left;
 }
-/*#header {
-    background-repeat:repeat-y;
-    background-color: black;
-    border-bottom: 2px solid #546878;
-    min-height: 110px;
-    line-height: 2rem;
-    margin: 0;
-    padding: 0.5rem;
-    text-align: right;
-    border-radius: 0 0 0.9rem 0;
-    padding: 0.5rem ;
-    color: #546878;
-    font-weight: bold;
-}*/
+
 #header a {
     color: #AFC4D3;
     text-decoration: none ;
@@ -1291,6 +1304,7 @@ p.submit input:hover {
 /**
  * search results
  */
+#gc-header-search-form,
 #gc-search-views .nav-item {
     margin-top: 2rem;
 }
@@ -1342,7 +1356,7 @@ p.submit input:hover {
 /*--------------------------------------------------------*/
 #footer {
     padding: 1.2rem 0.8rem ;
-    margin-top: 2rem;
+    margin-top: 5rem;
     clear: both;
     line-height: 2;
     border-radius: 0.9rem 0.9rem 0 0;
@@ -1394,11 +1408,18 @@ p.submit input:hover {
     border-radius: 0 0 0.5rem 0.5rem;
 }
 .event_medium .tags {
-    line-height: 2rem;
     height: 4rem;
     overflow: hidden;
 }
-
+.event_medium .tag {
+  padding-left: 0;
+}
+.event_medium .gc-event-tag {
+  display: inline-block;
+  font-weight: initial;
+  font-size: .8rem;
+  line-height: 1.2rem;
+}
 .deadlines, .deadlines a[href]  {
     text-decoration: none ;
 }
@@ -1970,6 +1991,7 @@ div.olControlSaveFeaturesItemInactive {
 /* 11. event edit                                         */
 /*--------------------------------------------------------*/
 #event_form .field_label{
+    min-width: 5rem;
     padding-left: 0;
 }
 #event_form .field_input{
@@ -1991,6 +2013,7 @@ div.olControlSaveFeaturesItemInactive {
 }
 #event_form .helptext {
     font-size: .8rem;
+    padding-left: 0;
 }
 #event_form .select_field {
     padding-left: 0;

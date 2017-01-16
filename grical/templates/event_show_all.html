@@ -218,12 +218,11 @@
             {% endif %}
 
             {% if event.coordinates %}
-                <div class="item clearfix col-xs-12 col-lg-10 offset-lg-1">
+                <div class="m-t-1 item clearfix col-xs-12 col-lg-10 offset-lg-1">
                     {# see example http://openlayers.org/dev/examples/xhtml.html #}
                     <div id="map" class="smallmap"></div>
                     {# Using local OpenLayers.js because of Mixed content restrictions #}
-                    {# TODO: Replace with bower #}
-                    <script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script>
+                    <script type="text/javascript" src="{{ STATIC_URL }}bower_components/openlayers/lib/OpenLayers.js"></script>
                     <script defer="defer" type="text/javascript">
                     //<![CDATA[
                         function marker( lon, lat, image ) {
@@ -249,12 +248,18 @@
                             var pois = new OpenLayers.Layer.Markers( "{% trans "Marker" %}" );
                             pois.addMarker( this.marker( {{ event.coordinates.x }}, {{ event.coordinates.y }}, "{{ STATIC_URL }}marker_red.png" ) );
                             map.addLayer( pois );
-                            mapArea = pois.getDataExtent().toArray();
-                            // map.zoomToMaxExtent();
-                            map.setCenter (
-                                new OpenLayers.LonLat( ( mapArea[0] + mapArea[2]) /2, ( mapArea[1] + mapArea[3] ) /2 ),
-                                map.getZoomForExtent( pois.getDataExtent(), true ) -1
-                            );
+                            if (pois.getDataExtent()) {
+                                mapArea = pois.getDataExtent().toArray();
+                                // map.zoomToMaxExtent();
+                                map.setCenter (
+                                    new OpenLayers.LonLat( ( mapArea[0] + mapArea[2]) /2, ( mapArea[1] + mapArea[3] ) /2 ),
+                                    map.getZoomForExtent( pois.getDataExtent(), true ) -1
+                                );
+                             } else {
+                                // a default center around Berlin, DE :-)
+                                var defaultCenter = new OpenLayers.LonLat(13.3833, 52.5167).transform('EPSG:4326', 'EPSG:3857');
+                                map.setCenter(defaultCenter, 3);
+                            }
                         {% else %}
                             map.setCenter(
                                 new OpenLayers.LonLat({{ event.longitude }}, {{ event.latitude }}).transform(
@@ -276,7 +281,7 @@
     <div id="gc-comments" class="m-t-1 row">
         <div class="col-xs-12 col-lg-10 offset-lg-1">
             {% get_comment_count for event as comment_count %}
-            <h2>{% trans "Comments" %}</h2>
+            <h2 class="m-t-1 gc-section">{% trans "Comments" %}</h2>
             {% if comment_count > 0 %}
                 {% render_comment_list for event %}
             {% else %}
@@ -286,6 +291,7 @@
             {% endif %}
             {% if not READ_ONLY %}
                 {% if user.is_authenticated %}
+                    <h2 class="m-t-3 gc-section">{% trans "Add a new comment" %}</h2>
                     {% render_comment_form for event %}
                 {% else %}
                     <p><a href="{% url "auth_login"  %}?next={% firstof request.path '/' %}">{% trans "Log in to add a comment." %}</a></p>

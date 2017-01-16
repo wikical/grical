@@ -7,22 +7,40 @@
 <div class="container m-t-3 m-b-3">
     <div class="row">
         <div class="col-xs-12">
-
             <div id="invite_form">
+
                 <form action="" method="post">{% csrf_token %}
-                    <legend>
-                        <h1>{% trans "Invite a member to the group" %}.</h1>
-                    </legend>
-                    {% if form.errors %}
-                        <p style="color: red;">
-                            {% trans "Please correct following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
-                        </p>
-                    {% endif %}
-                    <table class="m-b-1">
-                        {{ form.as_table }}
-                    </table>
-                    <div id="submit-button"><input type="submit" value="{% trans "Invite" %}" /></div>
+                    <div class="form-group row">
+                        <legend class="col-lg-12"><h1>{% trans "Invite a member to the group" %}</h1></legend>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-lg-12">
+                            {% if form.errors or form.non_field_errors %}
+                                <p class="text-danger">
+                                    {% trans "Please correct the following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+                                </p>
+                            {% endif %}
+                            {% if form.non_field_errors %}
+                                {% for error in form.non_field_errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group row{% if form.username.errors %} text-danger{% endif %}">
+                        <label for="id_username" class="col-lg-3 col-form-label">Username</label>
+                        <div class="col-lg-9">
+                            <input class="form-control" id="id_username" maxlength="30" name="username" type="text">
+                            {% if form.username.errors %}{{ form.username.errors }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-xs-12">
+                            <div id="submit-button"><input type="submit" value="{% trans "Invite" %}" /></div>
+                        </div>
+                    </div>
                 </form>
+
             </div>
         </div>
     </div>

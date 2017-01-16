@@ -12,12 +12,33 @@
             <h1>{% trans "Edit the event" %}:</h1>
 
             <div id="event_textarea_form">
+                {% if form.errors or form.non_field_errors %}
+                    <p class="text-danger">
+                        {% trans "Please correct the following" %} {% blocktrans count form.errors as counter %}error{% plural %}errors{% endblocktrans %}:
+                    </p>
+                {% endif %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
                 <form action="" method="post">{% csrf_token %}
-                    <table>
-                        <textarea name="event_astext" rows="25" cols="80">{{ event_textarea }}</textarea>
-                    </table>
-                    {% include "also_recurrences_form.html" %}
-                    <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
+                    <div class="form-group row{% if form.event_astext.errors %} text-danger{% endif %}">
+                        <div class="col-lg-12">
+                            <textarea class="form-control" name="event_astext" rows="25" cols="80">{{ event_textarea }}</textarea>
+                            {% if form.event_astext.errors %}{{ form.event_astext.errors }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-lg-12">
+                            {% include "also_recurrences_form.html" %}
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-lg-12">
+                            <div id="submit-button"><input type="submit" value="{% trans "Save" %}" /></div>
+                        </div>
+                    </div>
                 </form>
             </div>
 

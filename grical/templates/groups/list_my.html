@@ -7,11 +7,10 @@
 <div class="container m-t-3">
     <div class="row">
         <div class="col-xs-12">
-            <h1> {% trans "My groups" %}:</h1>
+            <h1 class="m-b-2"> {% trans "My groups" %}:</h1>
 
             {% if groups %}
-            <p><a href="{% url "group_new"  %}">{% trans "Create a new group." %}</a></p>
-            <ul>
+            <ul class="m-b-1">
                 {% for group in groups %}
                     <li><a href="{% url "group_view" group.id  %}">{{ group.name }}</a></li>
                     <ul>
@@ -21,6 +20,8 @@
                     </ul>
                 {% endfor %}
             </ul>
+
+            <p><a href="{% url "group_new"  %}">{% trans "Create a new group." %}</a></p>
             {% else %}
                 <p>{% trans "You are not a member of any group." %}</p>
                 <p><a href="{% url "group_new"  %}">{% trans "Create a new group." %}</a>.</p>

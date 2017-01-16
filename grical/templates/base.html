@@ -160,7 +160,7 @@
     {% block container %} {% endblock %}
 </div>
 
-<div id="footer" class="bg-faded">
+<div id="footer" class="bg-faded clearfix">
     <div class="title">{% trans "Social" %}</div>
     <div class="info">
       <ul>
@@ -219,7 +219,7 @@
     <div class="info">
         <ul>
             <li>
-                <a href="{{ STATIC_URL }}grical-source-code-0.9.573.tgz">
+                <a href="https://github.com/wikical/grical">
                     {% blocktrans with VERSION as VERSION %}
                         running the free software Grical {{ VERSION }}
                     {% endblocktrans %}
