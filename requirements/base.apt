@@ -3,7 +3,7 @@ famfamfam-flag-gif
 geoip-database-contrib
 git                                         # needed to fetch some git packages specified in base.pip
 libmemcached-dev                            # required by pylibmc to compile
-libmemcached10                              # required by pylibmc
+libmemcached11                              # required by pylibmc
 postgresql-9.6-postgis-2.3                  # version must match PZ_PG_VERSION
 postgresql-9.6-postgis-2.3-scripts          # version must match PZ_PG_VERSION
 postgresql-contrib-9.6                      # includes pg_trgm; version must match PZ_PG_VERSION
