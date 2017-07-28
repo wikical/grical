@@ -192,5 +192,5 @@ RabbitMQ is minimal and requires no options.
 
 Refer further to `Deploying Django`_. We recommend using `uWSGI and nginx`_.
 
-.. _Deploying Django: https://docs.djangoproject.com/en/1.8/howto/deployment/
+.. _Deploying Django: https://docs.djangoproject.com/en/1.11/howto/deployment/
 .. _uWSGI and nginx: http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html
