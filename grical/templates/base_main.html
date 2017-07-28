@@ -22,10 +22,10 @@
                     {% endfor %}
 
                     {% for field in form.visible_fields %}
-                        <div class="form-group col-xs-12 col-sm-6 col-md-4{% if field.name = 'when' %} datePicker-outer{% endif %}">
+                        <div class="form-group col-xs-12 col-sm-6 col-md-4{% if field.name == 'when' %} datePicker-outer{% endif %}">
                             <label class="control-label" for="simplified_event_{{ field.name }}">{{ field.label_tag }}</label>
                             <div>
-                                <input id="simplified_event_{{ field.name }}" name="{{ field.html_name }}" class="form-control input-md{% if field.name = 'when' %} datePicker{% endif %}" type="text">
+                                <input id="simplified_event_{{ field.name }}" name="{{ field.html_name }}" class="form-control input-md{% if field.name == 'when' %} datePicker{% endif %}" type="text">
                                 {% if field.help_text %}
                                     <span class="help-block">{{ field.help_text }}</span>
                                 {% endif %}

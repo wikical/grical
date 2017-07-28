@@ -114,7 +114,7 @@ def do_tags_for_model(parser, token):
         raise TemplateSyntaxError(_('%(tag)s tag requires either three or '
             'five arguments') % {'tag':bits[0]})
     if bits[2] != 'as':
-        raise TemplateSyntaxError(_("second argument to %s tag must be 'as'") % bits[0])
+        raise TemplateSyntaxError(_(u"second argument to %s tag must be 'as'") % bits[0])
     if len_bits == 6:
         if bits[4] != 'with':
             raise TemplateSyntaxError(_("if given, fourth argument to %s tag must be 'with'") % bits[0])

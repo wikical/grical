@@ -27,14 +27,12 @@
 # imports {{{1
 from django.contrib import messages
 from django.contrib.sites.models import Site
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.utils.translation import ugettext as _
 
 def csrf_failure(request, reason=""): # {{{1
     # TODO: log the reason (which is not intended to end users)
     messages.error( request, _('Error.') )
-    return render_to_response( 'accounts/cookies_not_enabled.html', {
+    return render(request, 'accounts/cookies_not_enabled.html', {
             'title': Site.objects.get_current().name + \
-                    ' - ' + _( 'cookies not enabled' ),
-            }, context_instance = RequestContext( request ) )
+                    ' - ' + _( 'cookies not enabled' )})

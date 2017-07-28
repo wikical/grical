@@ -33,11 +33,11 @@ from grical.events.feeds import (
         GroupEventsFeed, )
 
 # main url {{{1
-urlpatterns = patterns('',            # pylint: disable-msg=C0103
-    url(r'^$', views.main, name='main'), )
+urlpatterns = [
+    url(r'^$', views.main, name='main'), ]
 
 # ^e single event {{{1
-urlpatterns += patterns('',                 # pylint: disable-msg=C0103
+urlpatterns += [
     url(r'^e/new/$',
         views.event_edit,               name='event_new'),
 
@@ -84,10 +84,10 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.ICalForEventRecurrences,  name='event_show_recurrences_ical'),
 
     url(r'^e/group/(?P<event_id>\d+)/$',
-        views.group_add_event,          name='group_add_event'), )
+        views.group_add_event,          name='group_add_event'), ]
 
 # ^s searches urls {{{1
-urlpatterns += patterns('',                 # pylint: disable-msg=C0103
+urlpatterns += [
 
     url(r'^s/(?P<query>[^/]*)/ical/$',
         views.ICalForSearch,      name='search_ical'),
@@ -102,20 +102,20 @@ urlpatterns += patterns('',                 # pylint: disable-msg=C0103
         views.search,             name='search_query'),
 
     url(r'^s/$',
-        views.search,             name='search'), )
+        views.search,             name='search'), ]
 
 # ^t tags urls {{{1
-urlpatterns += patterns( '',                 # pylint: disable-msg=C0103
+urlpatterns += [
     url( r'^t/(?P<tag>[\-\w]+)/$',
-        RedirectView.as_view(url='/s/?query=#%(tag)s/', permanent=False) ) )
+        RedirectView.as_view(url='/s/?query=#%(tag)s/', permanent=False) ) ]
 
 # ^l locations urls {{{1
-urlpatterns += patterns('',                 # pylint: disable-msg=C0103
+urlpatterns += [
     url(r'^l/(?P<location>.+)/$' ,
-        RedirectView.as_view(url='/s/?query=@%(location)s/', permanent=False) ) )
+        RedirectView.as_view(url='/s/?query=@%(location)s/', permanent=False) ) ]
 
 # ^g groups urls {{{1
-urlpatterns += patterns('', # pylint: disable-msg=C0103
+urlpatterns += [
 
     url(r'^g/(?P<group_id>\d+)/$',
         views.group_view,             name='group_view'),
@@ -143,13 +143,13 @@ urlpatterns += patterns('', # pylint: disable-msg=C0103
 
     url(r'^g/quit/(?P<group_id>\d+)/confirm/$',
         views.group_quit,
-        kwargs = {'sure': True,},     name='group_quit_sure'), )
+        kwargs = {'sure': True,},     name='group_quit_sure'), ]
 
     # TODO: this should be a view with everything about the group for members
     # and not members; see also list_groups_my
 
 # ^u user related urls {{{1
-urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+urlpatterns += [
 
     url(r'^u/events/$',
         views.list_events_my,           name='list_events_my'),
@@ -161,14 +161,14 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.list_filters_my,          name='list_filters_my'),
 
     url(r'^u/groups/$',
-        views.list_groups_my,           name='list_groups_my'), )
+        views.list_groups_my,           name='list_groups_my'), ]
 
     # not used for now because of privacy concerns:
     #   url(r'^e/list/user/(?P<username>\w+)/$',
     #       views.list_events_of_user,      name='list_events_of_user'),
 
 # ^f filter management urls  {{{1
-urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+urlpatterns += [
 
     url(r'^f/new/$',
         views.filter_save,              name='filter_save'),
@@ -177,20 +177,20 @@ urlpatterns += patterns('',                     # pylint: disable-msg=C0103
         views.filter_edit,              name='filter_edit'),
 
     url(r'^f/delete/(?P<filter_id>\d+)/$',
-        views.filter_drop,              name='filter_drop'), )
+        views.filter_drop,              name='filter_drop'), ]
 
 
 # ^r main rss feeds urls {{{1
-urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+urlpatterns += [
 
      url(r'^r/upcoming/$',
          UpcomingEventsFeed(), name='upcoming_events_rss'),
 
      url(r'^r/lastadded/$',
-         LastAddedEventsFeed(), name='lastadded_events_rss'), )
+         LastAddedEventsFeed(), name='lastadded_events_rss'), ]
 
 # TODO: stream it
 # ^o output urls {{{1
-# urlpatterns += patterns('',                     # pylint: disable-msg=C0103
+# urlpatterns += [
 #      url(r'^o/all/text/$',
 #          views.all_events_text, name='all_events_text'), )

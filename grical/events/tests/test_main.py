@@ -79,7 +79,8 @@ class EventsWebTestCase( WebTest ):           # {{{1 pylint: disable-msg=R0904
 
     def test_anon_event_submission( self ): # {{{2
         """ test adding and editing and event anonymously. """
-        event_form = self.app.get(reverse('main')).forms["gc-new-event-form"]
+        response = self.app.get(reverse('main'))
+        event_form = response.forms["gc-new-event-form"]
         title = u'event submission ' + str(datetime.datetime.now())
         event_form['title'] = title
         event_form['when'] = datetime.date.today().isoformat()

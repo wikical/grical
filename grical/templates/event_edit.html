@@ -171,7 +171,7 @@
                         {% if field.errors|length %}<div class="text-danger">{{ field.errors.as_ul }}</div>{% endif %}
                     </div>
                 {% endwith %}
-                {% with field=form.coordinates maxlength="50" %}
+                {% with field=form.coordinates_field maxlength="50" %}
                     <div class="form-group">
                         <label for="id_{{ field.name }}" class="{{ label_class }} ">{% trans "Coordinates" %}</label>
                         <input id="id_{{ field.name }}" name="{{ field.name }}" type="text" class="{{ input_class }} field_input"
@@ -426,7 +426,7 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
         );
         var proj = new OpenLayers.Projection("EPSG:4326");
         lonlat.transform( map.getProjectionObject(), proj );
-        document.getElementById('id_coordinates').value = lonlat.lat + ", " + lonlat.lon;
+        document.getElementById('id_coordinates_field').value = lonlat.lat + ", " + lonlat.lon;
     }
 
 });

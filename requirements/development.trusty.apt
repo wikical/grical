@@ -1,7 +1,10 @@
 build-essential
 famfamfam-flag-gif
 geoip-database-contrib
+libgdal-dev
+libgeos-dev
 python-dev
+python-gdal
 python-geoip
 python-pip
 python-virtualenv

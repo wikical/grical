@@ -272,10 +272,10 @@ TEMPLATES = [
             'context_processors': [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.core.context_processors.i18n',
-                'django.core.context_processors.media',
-                'django.core.context_processors.request',
-                'django.core.context_processors.static',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
                 'grical.context_processors.global_template_vars',
             ],
         },
@@ -308,7 +308,7 @@ STATICFILES_FINDERS = (
         'django.contrib.staticfiles.finders.AppDirectoriesFinder',
         'django.contrib.staticfiles.finders.FileSystemFinder',)
 
-# IMPORTANT: If more than one dir, set the main grica static dir first in
+# IMPORTANT: If more than one dir, set the main grical static dir first in
 # order for some development and testing functions to work properly
 STATICFILES_DIRS = [os.path.join(PROGRAM_DIR, "static"), ]
 

@@ -3,12 +3,12 @@
 # (python-gdal is one of them).
 
 celery==3.1.23 # Last stable 3.x
-django==1.8.14
+django==1.11.3 # Current LTS Version
 django-contrib-comments==1.7.2
 django-celery==3.1.17
 django-markup-deprecated
 django-oembed==0.1.3
-django-registration-redux==1.4
+django-registration-redux==1.7
 django-reversion==2.0.6
 django-tables2==1.2.6
 docutils==0.12

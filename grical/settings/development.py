@@ -59,6 +59,8 @@ if DEBUG:
     # debug toolabr won't show if not INTERNAL_IPS defined
     INTERNAL_IPS = ["127.0.0.1", "10.0.2.2", "10.0.3.1", ]
     INSTALLED_APPS.insert(0, 'debug_toolbar')
+    MIDDLEWARE_CLASSES.append(
+            'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 if not DEBUG:
     # Set cached template loaders for production

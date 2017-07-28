@@ -31,7 +31,6 @@ from django import forms
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template import loader
-from django.template import RequestContext
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext_lazy as _
 
@@ -216,9 +215,7 @@ class ContactForm(forms.Form):
         """
         if not self.is_valid():
             raise ValueError("Cannot generate Context from invalid contact form")
-        return RequestContext(self.request,
-                              dict(self.cleaned_data,
-                                   site=Site.objects.get_current()))
+        return dict(self.cleaned_data, site=Site.objects.get_current())
 
     def get_message_dict(self):
         """

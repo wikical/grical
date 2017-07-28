@@ -447,13 +447,13 @@ class EventForm(forms.ModelForm): # {{{1
     field and fields for all days of two years from now """
     startdate = DateExtendedField( required = True )
     enddate = DateExtendedField( required = False )
-    coordinates = CoordinatesField( max_length = 26, required = False )
+    coordinates_field = CoordinatesField( max_length = 26, required = False )
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         # http://stackoverflow.com/questions/350799/how-does-django-know-the-order-to-render-form-fields
         self.fields.keyOrder = ['title', 'acronym', 'startdate', 'starttime',
             'enddate', 'endtime', 'timezone', 'tags', 'city', 'country',
-            'address', 'exact', 'coordinates', 'description']
+            'address', 'exact', 'coordinates_field', 'description']
         self.fields['startdate'].label = _(u'Start date')
         self.fields['enddate'].label = _(u'End date')
         self.fields['address'].widget = forms.Textarea()
@@ -474,7 +474,7 @@ class EventForm(forms.ModelForm): # {{{1
                 coordinates_value += str( instance.coordinates.y ) + u', ' + \
                         str( instance.coordinates.x )
             if coordinates_value:
-                self.fields['coordinates'].initial = coordinates_value
+                self.fields['coordinates_field'].initial = coordinates_value
             # we also populate start and end dates:
             self.fields['startdate'].initial = instance.startdate
             self.fields['enddate'].initial = instance.enddate
@@ -486,7 +486,7 @@ class EventForm(forms.ModelForm): # {{{1
 #        "coordinates" was excluded (maybe because it was model field?)
         fields = ('startdate', 'enddate', 'acronym', 'title', 'starttime',
                 'endtime', 'timezone', 'tags', 'country', 'address', 'city',
-                'exact', 'description', 'coordinates')
+                'exact', 'description', 'coordinates_field')
     def clean( self ):
         """ it adds the value of coordinates to the Event instance,
         checks that there is no other event with the same name and start
@@ -496,12 +496,12 @@ class EventForm(forms.ModelForm): # {{{1
         # see http://docs.djangoproject.com/en/1.3/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
         # coordinates
         self.cleaned_data = super(EventForm, self).clean()
-        if self.cleaned_data.has_key('coordinates'):
-            coordinates = self.cleaned_data['coordinates']
-            if coordinates:
+        if self.cleaned_data.has_key('coordinates_field'):
+            coordinates_field = self.cleaned_data['coordinates_field']
+            if coordinates_field:
                 self.instance.coordinates = Point(
-                        float(coordinates['longitude']),
-                        float(coordinates['latitude']) )
+                        float(coordinates_field['longitude']),
+                        float(coordinates_field['latitude']) )
             else:
                 self.instance.coordinates = None
         else:
@@ -551,8 +551,8 @@ def get_field_attr( model, field_name, field_attr ):
     field ``field_name`` """
     # from
     # http://stackoverflow.com/questions/2384436/how-to-introspect-django-model-fields
-    field = apps.get_model('events', model)._meta.get_field_by_name(
-            field_name )[0]
+    field = apps.get_model('events', model)._meta.get_field(
+            field_name )
     return getattr( field, field_attr )
 
 class SimplifiedEventForm( forms.ModelForm ): # {{{1

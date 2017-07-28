@@ -489,6 +489,7 @@ TIMEZONES = (
         ( 'America/Port_of_Spain', unicode(_( 'America' )) + u'/' + unicode(_( 'Port of Spain' )) ),
         ( 'America/Porto_Velho', unicode(_( 'America' )) + u'/' + unicode(_( 'Porto Velho' )) ),
         ( 'America/Puerto_Rico', unicode(_( 'America' )) + u'/' + unicode(_( 'Puerto Rico' )) ),
+        ( 'America/Punta_Arenas', unicode(_( 'America' )) + u'/' + unicode(_( 'Punta Arenas' )) ),
         ( 'America/Rainy_River', unicode(_( 'America' )) + u'/' + unicode(_( 'Rainy River' )) ),
         ( 'America/Rankin_Inlet', unicode(_( 'America' )) + u'/' + unicode(_( 'Rankin Inlet' )) ),
         ( 'America/Recife', unicode(_( 'America' )) + u'/' + unicode(_( 'Recife' )) ),
@@ -544,6 +545,7 @@ TIMEZONES = (
         ( 'Asia/Aqtau', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Aqtau' )) ),
         ( 'Asia/Aqtobe', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Aqtobe' )) ),
         ( 'Asia/Ashgabat', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Ashgabat' )) ),
+        ( 'Asia/Atyrau', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Atyrau' )) ),
         ( 'Asia/Baghdad', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Baghdad' )) ),
         ( 'Asia/Bahrain', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Bahrain' )) ),
         ( 'Asia/Baku', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Baku' )) ),
@@ -561,6 +563,7 @@ TIMEZONES = (
         ( 'Asia/Dubai', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Dubai' )) ),
         ( 'Asia/Dushanbe', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Dushanbe' )) ),
         ( 'Asia/Gaza', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Gaza' )) ),
+        ( 'Asia/Famagusta', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Famagusta' )) ),
         ( 'Asia/Hebron', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Hebron' )) ),
         ( 'Asia/Ho_Chi_Minh', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Ho Chi Minh' )) ),
         ( 'Asia/Hong_Kong', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Hong Kong' )) ),
@@ -594,7 +597,6 @@ TIMEZONES = (
         ( 'Asia/Pyongyang', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Pyongyang' )) ),
         ( 'Asia/Qatar', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Qatar' )) ),
         ( 'Asia/Qyzylorda', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Qyzylorda' )) ),
-        ( 'Asia/Rangoon', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Rangoon' )) ),
         ( 'Asia/Riyadh', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Riyadh' )) ),
         ( 'Asia/Sakhalin', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Sakhalin' )) ),
         ( 'Asia/Samarkand', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Samarkand' )) ),
@@ -615,6 +617,7 @@ TIMEZONES = (
         ( 'Asia/Vientiane', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Vientiane' )) ),
         ( 'Asia/Vladivostok', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Vladivostok' )) ),
         ( 'Asia/Yakutsk', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yakutsk' )) ),
+        ( 'Asia/Yangon', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yangon' )) ),
         ( 'Asia/Yekaterinburg', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yekaterinburg' )) ),
         ( 'Asia/Yerevan', unicode(_( 'Asia' )) + u'/' + unicode(_( 'Yerevan' )) ), )
     ),
@@ -695,6 +698,7 @@ TIMEZONES = (
         ( 'Europe/Samara', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Samara' )) ),
         ( 'Europe/San_Marino', unicode(_( 'Europe' )) + u'/' + unicode(_( 'San_Marino' )) ),
         ( 'Europe/Sarajevo', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Sarajevo' )) ),
+        ( 'Europe/Saratov', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Saratov' )) ),
         ( 'Europe/Simferopol', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Simferopol' )) ),
         ( 'Europe/Skopje', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Skopje' )) ),
         ( 'Europe/Sofia', unicode(_( 'Europe' )) + u'/' + unicode(_( 'Sofia' )) ),
@@ -746,7 +750,6 @@ TIMEZONES = (
         ( 'Pacific/Guadalcanal', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Guadalcanal' )) ),
         ( 'Pacific/Guam', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Guam' )) ),
         ( 'Pacific/Honolulu', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Honolulu' )) ),
-        ( 'Pacific/Johnston', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Johnston' )) ),
         ( 'Pacific/Kiritimati', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Kiritimati' )) ),
         ( 'Pacific/Kosrae', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Kosrae' )) ),
         ( 'Pacific/Kwajalein', unicode(_( 'Pacific' )) + u'/' + unicode(_( 'Kwajalein' )) ),
@@ -852,7 +855,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
     city = models.CharField( _( u'City' ),
             editable = True, blank = True, null = True, max_length = 50 )
     coordinates = models.PointField( _('Coordinates'),
-            editable = False, blank=True, null=True )
+            editable = True, blank=True, null=True )
     """ used for calculating events within a distance to a point """
     exact = models.NullBooleanField(_('exact coordinates'),
             editable = True, blank=True, null=True,
@@ -1215,7 +1218,7 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         else:
             clone.description = self.description
         clone.user = user
-        clone.save() # we need the id to be able to save related objects
+        clone.save(force_insert=True) # we need the id to be able to save related objects
         # we deal now with startdate and enddate
         for field in ('startdate', 'enddate'):
             if kwargs.has_key( field ):
@@ -1794,6 +1797,10 @@ class Event( models.Model ): # {{{1 pylint: disable-msg=R0904
         if simple_fields.has_key('country'):
             simple_fields['country'] = \
                     search_country_code( simple_fields['country'] )
+        # Set coordinates_field, known by form
+        if 'coordinates' in simple_fields:
+            simple_fields['coordinates_field'] = \
+                    simple_fields.pop('coordinates')
         # convert exact to the proper value
         if simple_fields.has_key('exact'):
             simple_fields['exact'] = exact_as_bool_str(simple_fields['exact'])
@@ -2328,10 +2335,10 @@ class EventUrl( models.Model ): # {{{1
                                     u'%(name)s') % {'name': name} )
                 urls[name] = field_m.group(2)
         errors = []
-        url_validators = EventUrl._meta.get_field_by_name('url')[0].validators
+        url_validators = EventUrl._meta.get_field('url').validators
         url_validators.append(URLValidator())
         url_name_validators = \
-                EventUrl._meta.get_field_by_name('url_name')[0].validators
+                EventUrl._meta.get_field('url_name').validators
         for url_name, url in urls.items():
             for val in url_name_validators:
                 try:
@@ -2537,10 +2544,10 @@ class EventDate( models.Model ): # {{{1
             raise ValidationError( errors )
         # we now check each date using django.core.validators for the
         # fields of this class
-        eventdate_date_validators = EventDate._meta.get_field_by_name(
-                'eventdate_date')[0].validators
-        eventdate_name_validators = EventDate._meta.get_field_by_name(
-                'eventdate_name')[0].validators
+        eventdate_date_validators = EventDate._meta.get_field(
+                'eventdate_date').validators
+        eventdate_name_validators = EventDate._meta.get_field(
+                'eventdate_name').validators
         for eventdate_name, eventdate_date in names_dates.items():
             for val in eventdate_name_validators:
                 try:
@@ -2678,14 +2685,14 @@ class EventSession( models.Model ): # {{{1
         # we now check each session using django.core.validators for the fields
         # of this class
         fvals = {} # validators
-        fvals['name'] = EventSession._meta.get_field_by_name(
-                'session_name')[0].validators
-        fvals['date'] = EventSession._meta.get_field_by_name(
-                'session_date')[0].validators
-        fvals['start'] = EventSession._meta.get_field_by_name(
-                'session_starttime')[0].validators
-        fvals['end'] = EventSession._meta.get_field_by_name(
-                'session_endtime')[0].validators
+        fvals['name'] = EventSession._meta.get_field(
+                'session_name').validators
+        fvals['date'] = EventSession._meta.get_field(
+                'session_date').validators
+        fvals['start'] = EventSession._meta.get_field(
+                'session_starttime').validators
+        fvals['end'] = EventSession._meta.get_field(
+                'session_endtime').validators
         for session in sessions.values():
             for field_name, vals in fvals.items():
                 for val in vals:

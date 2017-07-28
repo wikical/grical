@@ -59,9 +59,9 @@ from django.db import transaction, IntegrityError
 from django.forms import ValidationError
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from django.shortcuts import ( render_to_response, get_object_or_404,
+from django.shortcuts import ( render, get_object_or_404,
         get_list_or_404 )
-from django.template import RequestContext, loader
+from django.template import loader
 from django.utils.encoding import smart_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
@@ -94,20 +94,20 @@ def help_page( request ): # {{{1
     """
     usage_text = open(os.path.join(settings.PROGRAM_DIR, 'USAGE.TXT')).read()
     about_text = open(os.path.join(settings.PROGRAM_DIR, 'ABOUT.TXT')).read()
-    return render_to_response( 'help.html', {
+    return render(request, 'help.html', {
             'title': Site.objects.get_current().name + " - " + _( 'help' ),
             'usage_text': usage_text,
             'about_text': about_text,
-            }, context_instance = RequestContext( request ) )
+            })
 
 @cache_page(60 * 15)
 def legal_notice( request ): # {{{1
     """Just returns the legal notice page.
     """
-    return render_to_response( 'legal_notice.html', {
+    return render(request, 'legal_notice.html', {
             'title': Site.objects.get_current().name + \
                     ' - ' + _( 'legal notice' ),
-            }, context_instance = RequestContext( request ) )
+            })
 
 # def event_edit_recurrences( request, event_id ): # {{{1
 @login_required
@@ -173,8 +173,7 @@ def event_edit_recurrences( request, event_id ):
             templates = { 'months': months, 'event': master,
                 'title': _('editing recurrences of the event: %(master)s')% {
                     'master': unicode(master)} }
-        return render_to_response( 'event_edit_recurrences.html', templates,
-                context_instance = RequestContext( request ) )
+        return render(request, 'event_edit_recurrences.html', templates)
     # request.method = POST
     if not 'recurrences' in request.POST:
         messages.error( request,
@@ -432,8 +431,7 @@ def event_edit( request, event_id = None ):
     # a mistake
     if event_id and event.startdate < datetime.date.today():
         messages.warning(request, _('warning: the start date is in the past'))
-    return render_to_response( 'event_edit.html', templates,
-            context_instance = RequestContext( request ) )
+    return render(request, 'event_edit.html', templates)
 
 # private because it doesn't deal with transactions
 def _change_recurrences( user, event, events ): # {{{1
@@ -501,8 +499,7 @@ def event_new_raw( request, template_event_id = None ):
                     'template': smart_unicode( template_event.as_text() ) }
         except Event.DoesNotExist:
             templates = { 'title': _( "edit event as text" ), }
-        return render_to_response( 'event_new_raw.html', templates,
-                context_instance = RequestContext( request ) )
+        return render(request, 'event_new_raw.html', templates)
     if not 'event_astext' in request.POST:
         messages.error( request, _(u"You submitted an empty form, " \
                 "nothing has been saved. Click the back button in your " \
@@ -552,10 +549,7 @@ def event_new_raw( request, template_event_id = None ):
         templates = {
                 'title': _( "edit event as text" ),
                 'event_textarea': event_textarea, }
-        return render_to_response(
-                'event_new_raw.html',
-                templates,
-                context_instance = RequestContext( request ) )
+        return render(request, 'event_new_raw.html', templates)
     except:
         transaction.savepoint_rollback(sid)
         raise
@@ -585,8 +579,7 @@ def event_edit_raw( request, event_id ):
                 'also_recurrences_form': also_recurrences_form,
                 'event_id': event_id,
                 'example': Event.example() }
-        return render_to_response( 'event_edit_raw.html', templates,
-                context_instance = RequestContext( request ) )
+        return render(request, 'event_edit_raw.html', templates)
     # request.method is POST
     if event_recurring:
         also_recurrences_form = AlsoRecurrencesForm( request.POST )
@@ -689,8 +682,7 @@ def event_edit_raw( request, event_id ):
                 'also_recurrences_form': also_recurrences_form,
                 'event_id': event_id,
                 'example': Event.example() }
-        return render_to_response( 'event_edit_raw.html', templates,
-                context_instance = RequestContext( request ) )
+        return render(request, 'event_edit_raw.html', templates)
     except:
         transaction.savepoint_rollback(sid)
         raise
@@ -822,8 +814,7 @@ def event_show_all( request, event_id ): # {{{1
     # templates {{{2
     templates = { 'title': title, 'event': event, 'recurrences': recurrences,
             'rst2html': rst2html }
-    return render_to_response( 'event_show_all.html', templates,
-            context_instance = RequestContext( request ) )
+    return render(request, 'event_show_all.html', templates)
 
 def event_show_raw( request, event_id ): # {{{1
     """ View that shows an event as text
@@ -837,8 +828,7 @@ def event_show_raw( request, event_id ): # {{{1
             'title': _( "view as text" ),
             'event_textarea': event_textarea,
             'event': event }
-    return render_to_response( 'event_show_raw.html',
-            templates, context_instance = RequestContext( request ) )
+    return render(request, 'event_show_raw.html', templates)
 
 def revisions_diffs(revisions): # {{{1
     """ from a list of revisions create a list of tuples with a revision and a
@@ -887,8 +877,7 @@ def event_history( request, event_id ): # {{{1
             'event': event,
             'revisions_diffs': revs_diffs,
             'user_authenticated': request.user.is_authenticated(), }
-    return render_to_response( 'event_history.html',
-            templates, context_instance = RequestContext( request ) )
+    return render(request, 'event_history.html', templates)
 
 # def event_revert( request, revision_id, event_id ): {{{1
 @login_required
@@ -975,9 +964,8 @@ def event_delete( request, event_id ):
     context = dict()
     context['form'] = form
     context['event'] = event
-    return render_to_response('event_delete.html',
-            {'also_recurrences_form': also_recurrences_form,},
-            context_instance = RequestContext( request, context) )
+    return render(request, 'event_delete.html',
+                  {'also_recurrences_form': also_recurrences_form,})
 
 def event_deleted( request, event_id ): # {{{1
     """ inform the user the event has been deleted, show a link of a redirect
@@ -1018,8 +1006,7 @@ def event_deleted( request, event_id ): # {{{1
             'deleted_version': deleted_version,
             'event_id': event_id,
             'revisions_diffs': revs_diffs }
-    return render_to_response( 'event_deleted.html',
-            templates, context_instance = RequestContext( request ) )
+    return render(request, 'event_deleted.html', templates)
 
 # def event_undelete( request, event_id ): {{{1
 @login_required
@@ -1065,8 +1052,7 @@ def event_undelete(request, event_id):
             'title': title,
             'start': start,
             'equal': equal,}
-    return render_to_response( 'event_undelete_error.html',
-            templates, context_instance = RequestContext( request ) )
+    return render(request, 'event_undelete_error.html', templates)
 
 def search( request, query = None, view = 'boxes' ): # {{{1
     # doc {{{2
@@ -1248,9 +1234,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
         n_events = len( search_result )
     context['number_of_events_found'] = n_events
     if n_events == 0:
-        return render_to_response( 'search.html',
-                context,
-                context_instance = RequestContext( request ) )
+        return render(request, 'search.html', context)
     if view in ( 'boxes', 'map', 'calendars', 'table' ):
         paginator = Paginator( search_result, limit)
         try:
@@ -1270,9 +1254,7 @@ def search( request, query = None, view = 'boxes' ): # {{{1
                     EventsCalendar( page.object_list).years_cals()
     else:
         raise Http404
-    return render_to_response( 'search.html',
-            context,
-            context_instance = RequestContext( request ) )
+    return render(request, 'search.html', context)
 
 # def filter_save( request ): {{{1
 @login_required
@@ -1335,18 +1317,14 @@ def filter_edit( request, filter_id ):
                     'title': 'edit event',
                     'form': ssf,
                     'filter_id': filter_id }
-            return render_to_response(
-                    'filter_edit.html',
-                    templates,
-                    context_instance = RequestContext( request ) )
+            return render(request, 'filter_edit.html', templates)
     else:
         ssf = FilterForm( instance = efilter )
         templates = {
                 'title': 'edit filter',
                 'form': ssf,
                 'filter_id': filter_id }
-        return render_to_response( 'filter_edit.html',
-                templates, context_instance = RequestContext( request ) )
+        return render(request, 'filter_edit.html', templates)
 
 # def filter_drop( request, filter_id ): {{{1
 @login_required
@@ -1379,9 +1357,8 @@ def list_filters_my( request ): # {{{1
         messages.error( request, _( "You do not have any filters" ) )
         return main( request )
     else:
-        return render_to_response( 'list_filters_my.html',
-            {'title': _( u'list of my filters' ), 'filters': list_of_filters},
-            context_instance = RequestContext( request ) )
+        return render(request, 'list_filters_my.html',
+            {'title': _( u'list of my filters' ), 'filters': list_of_filters})
 
 # not used for now because of privacy concerns:
 #def list_events_of_user( request, username ): # {{{1
@@ -1412,9 +1389,8 @@ def list_filters_my( request ): # {{{1
 #                return _error( request,
 #                        _( "Your search didn't get any result" ) )
 #            else:
-#                return render_to_response( 'events/list_user.html',
-#                    {'events': events, 'username': username},
-#                    context_instance = RequestContext( request ) )
+#                return render(request, 'events/list_user.html',
+#                    {'events': events, 'username': username})
 #        except User.DoesNotExist:
 #            return _error( request, _( "User does not exist" ) )
 #    else:
@@ -1427,9 +1403,8 @@ def list_filters_my( request ): # {{{1
 #                        request,
 #                        _( "Your search didn't get any result" ) )
 #            else:
-#                return render_to_response( 'events/list_user.html',
-#                    {'events': events, 'username': username},
-#                    context_instance = RequestContext( request ) )
+#                return render(request, 'events/list_user.html',
+#                    {'events': events, 'username': username})
 #        except User.DoesNotExist:
 #            return _error( request, ( "User does not exist" ) )
 
@@ -1438,9 +1413,8 @@ def list_events_my( request ): # {{{1
     """ View that lists the events the logged-in user is the owner of
     """
     events = get_list_or_404( Event, user = request.user )
-    return render_to_response( 'list_events_my.html',
-            {'title': _( "my events" ), 'events': events},
-            context_instance = RequestContext( request ) )
+    return render(request, 'list_events_my.html',
+            {'title': _( "my events" ), 'events': events})
 
 def main( request, status_code=200 ):# {{{1
     """ main view
@@ -1512,16 +1486,15 @@ def main( request, status_code=200 ):# {{{1
     # handler404 and handler500 returns the main page with a custom error
     # message and we return also the proper html status code
     template = loader.get_template('base_main.html')
-    context = RequestContext( request,
-            {
+    context = {
                 'title': Site.objects.get_current().name,
                 'form': event_form,
                 'page': page,
                 'reserved_names': EventDate.reserved_names(),
                 'about_text': about_text,
-            } )
+            }
     return HttpResponse(
-            content = template.render( context ),
+            content = template.render(context=context, request=request),
             content_type="text/html",
             status = status_code )
 
@@ -1529,12 +1502,11 @@ def main( request, status_code=200 ):# {{{1
 def settings_page( request ): # {{{1
     """ View to show the settings of a user """
     # user is logged in because of decorator
-    return render_to_response( 'settings.html',
+    return render(request, 'settings.html',
             {
                 'title': _( "%(username)s settings" ) % {'username':
                     request.user.username,},
-            },
-            context_instance = RequestContext( request ) )
+            })
 
 # groups views {{{1
 
@@ -1543,8 +1515,7 @@ def group_new(request): # {{{2
     """ View to create a new group
     """
     if not request.user.is_authenticated():
-        return render_to_response('groups/no_authenticated.html',
-                {}, context_instance=RequestContext(request))
+        return render(request, 'groups/no_authenticated.html', {})
     if request.method == 'POST':
         form = NewGroupForm(request.POST)
         if form.is_valid():
@@ -1556,12 +1527,12 @@ def group_new(request): # {{{2
             # TODO: notify all invited members of the group
             return HttpResponseRedirect(reverse('list_groups_my'))
         else:
-            return render_to_response('groups/create.html',
-                    {'form': form}, context_instance=RequestContext(request))
+            return render(request, 'groups/create.html',
+                    {'form': form})
     else:
         form = NewGroupForm()
-        return render_to_response('groups/create.html',
-                {'form': form}, context_instance=RequestContext(request))
+        return render(request, 'groups/create.html',
+                {'form': form})
 
 @login_required
 def list_groups_my(request): # {{{2
@@ -1574,9 +1545,8 @@ def list_groups_my(request): # {{{2
             _("You are not a member of any group") )
         return HttpResponseRedirect(reverse('main'))
     else:
-        return render_to_response('groups/list_my.html',
-            {'title': 'list my groups', 'groups': groups},
-            context_instance=RequestContext(request))
+        return render(request, 'groups/list_my.html',
+            {'title': 'list my groups', 'groups': groups})
 
 @login_required
 def group_quit(request, group_id, sure = False ): # {{{2
@@ -1601,14 +1571,13 @@ def group_quit(request, group_id, sure = False ): # {{{2
         group.delete()
         return HttpResponseRedirect(reverse('list_groups_my'))
     else:
-        return render_to_response('groups/quit_group_confirm.html',
+        return render(request, 'groups/quit_group_confirm.html',
                 # TODO: show the user a list of all private events which will
                 # be lost for everyone
                 {
                     'group_id': group_id,
                     'group_name': group.name
-                },
-                context_instance=RequestContext(request))
+                })
 
 @login_required
 def group_add_event(request, event_id): # {{{2
@@ -1643,8 +1612,7 @@ def group_add_event(request, event_id): # {{{2
         context = dict()
         context['form'] = form
         context['event'] = event
-        return render_to_response('groups/add_event_to_group.html',
-                context_instance=RequestContext(request, context))
+        return render(request, 'groups/add_event_to_group.html', context)
     else:
         messages.info( request,
             _(u'You have tried to add this event to a group, however this ' \
@@ -1668,8 +1636,7 @@ def group_view(request, group_id): # {{{2
         events = group.get_coming_events( limit = -1 )
     else:
         events = group.get_coming_events( limit = -1 )
-    return render_to_response(
-            'groups/group_view.html',
+    return render(request, 'groups/group_view.html',
             {
                 'title': _( u'%(project_name)s - group %(group_name)s' ) % \
                         {
@@ -1680,8 +1647,7 @@ def group_view(request, group_id): # {{{2
                 'user_is_in_group': \
                     Group.is_user_in_group(request.user, group),
                 'events': events,
-            },
-            context_instance=RequestContext(request))
+            })
 
 @login_required
 def group_invite(request, group_id): # {{{2
@@ -1709,13 +1675,12 @@ def group_invite(request, group_id): # {{{2
             return HttpResponseRedirect(reverse('list_groups_my'))
     else:
         form = InviteToGroupForm()
-    return render_to_response('groups/invite.html',
+    return render(request, 'groups/invite.html',
             {
                 'title': 'invite to group',
                 'group_id': group_id,
                 'form': form,
-            },
-            context_instance=RequestContext(request))
+            })
 
 def group_invite_activate(request, activation_key): # {{{2
     """ A user clicks on activation link """
@@ -1725,13 +1690,11 @@ def group_invite_activate(request, activation_key): # {{{2
     activation = GroupInvitation.objects.activate_invitation( activation_key )
     group = get_object_or_404(Group, id = invitation.group.id )
     if activation:
-        return render_to_response('groups/invitation_activate.html',
-                {'title': _(u'invitation activated'), 'group': group},
-                context_instance=RequestContext(request))
+        return render(request, 'groups/invitation_activate.html',
+                {'title': _(u'invitation activated'), 'group': group})
     else:
-        return render_to_response('groups/invitation_activate_failed.html',
-                {'title': 'activate invitation failed', 'group': group},
-                context_instance=RequestContext(request))
+        return render(request, 'groups/invitation_activate_failed.html',
+                {'title': 'activate invitation failed', 'group': group})
 
 # ical views {{{1
 def ICalForSearch( request, query ): # {{{2

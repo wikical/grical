@@ -65,7 +65,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(result['city'], 'Berlin')
 
     def test_search_address_osm(self):
-        result = search_address_osm( u'c-base' )
+        result = search_address_osm( u'c-base, Germany' )
         self.assertEqual(len ( result ), 1)
         result = result.values()[0]
         self.assertEqual(math.floor( float(result['longitude']) ), 13.0)
