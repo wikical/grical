@@ -1,17 +1,20 @@
+gcc                 # needed by geoip and gem to compile some stuff
 build-essential
 famfamfam-flag-gif
-geoip-database-contrib
+libgeoip-dev        # needed by geoip to compile some stuff
 git                                         # needed to fetch some git packages specified in base.pip
 libgdal-dev
 libgeos-dev
 libmemcached-dev                            # required by pylibmc to compile
 libmemcached11                              # required by pylibmc
+libmaxminddb-dev    # accererates the use of the geolite database
+libmaxminddb0       # accererates the use of the geolite database
+mmdb-bin            # accererates the use of the geolite database
 postgresql-9.6-postgis-2.3                  # version must match PZ_PG_VERSION
 postgresql-9.6-postgis-2.3-scripts          # version must match PZ_PG_VERSION
 postgresql-contrib-9.6                      # includes pg_trgm; version must match PZ_PG_VERSION
 python-dev # needed by psycopg2
 python-gdal
 python-gdal
-python-geoip
 python-pip
 zlib1g-dev                                  # required by pylibmc to compile
