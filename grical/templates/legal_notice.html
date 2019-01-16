@@ -8,34 +8,7 @@
 
 <h1 id="legal">{% trans "Legal notice" %}</h1>
 
-<p>
-{% trans "GriCal is a project of the German-based start-up:" %}
-</p>
-
-<pre>
-    Vorgründungsgesellschaft GridMind Ivan Fernando Villanueva Barrio EU
-    Malmöer Str. 6
-    10439 Berlin
-    Germany
-
-    Tel:   +493039820596
-    Fax:   +493034060473
-    Email: office ät gridmind.org
-</pre>
-
-<p>{% blocktrans %}
-Value added tax identification number (in Germany called
-<tt>Umsatzsteuer-Identifikationsnummer</tt>) according to German law <tt>§ 27 a
-    Umsatzsteuergesetz</tt>: DE270095377
-{% endblocktrans %}
-</p>
-
-<p>
-{% blocktrans %}
-Responsible for the content according to German law <tt>§ 55 Abs. 2 RStV</tt>: Ivan Fernando
-Villanueva Barrio (address as before)
-{% endblocktrans %}
-</p>
+{% include "legal_entity.html" %}
 
 <p>
 {% blocktrans %}
