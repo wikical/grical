@@ -228,7 +228,7 @@ INSTALLED_APPS = [
     'reversion',
     'markup_deprecated', # used for rendering ReStructuredText
     'grical.contact_form',
-    'oembed',
+    # 'oembed', # TODO: taken out, it looks to have incompatibilities
 ]
 
 # at the end additional middleware are conditionaly added

@@ -2,9 +2,9 @@ Legacy database migration guide
 ===============================
 
 This is a guide on how to migrate legacy grical databases to version
-xxx, which uses Django database migrations. If you pulled a more
-recent version than xxx with Django>=1.8, it is suggested you update
-to xxx, import the data, then update to tip and run django migrations.
+1.0, which uses Django database migrations. If you pulled a more
+recent version than 1.0 with Django>=1.11, it is suggested you update
+to 1.11, import the data, then update to tip and run django migrations.
 
 By legacy database we mean the schema of grical version as of the year
 2012, Django version 1.3 and not any migration application used (such
@@ -19,39 +19,39 @@ Here are the steps:
 Dump legacy database to file
 ----------------------------
 
-Suppose the owner of the legacy database is the user ``grical``
-and the name of the database is ``grical`` as well. Dump the
+Suppose the owner of the legacy database is the user ``gridcalendar``
+and the name of the database is ``gridcalendar`` as well. Dump the
 database with a so-called "Custom format" (option ``-Fc``).
 
 .. code-block:: bash
 
-    pg_dump -U grical -p 5432 -h localhost -Fc -b -v -f grical.pg_dump grical
+    pg_dump -U gridcalendar -p 5432 -h localhost -Fc -b -v -f grical.pg_dump gridcalendar
 
 
 Create the new production database
 ----------------------------------
 
 Most likely you migrate data from an older PostgreSQL version (<9)
-to PostgreSQL 9.5. We suppose that new production db is installed in
+to PostgreSQL 9.6. We suppose that new production db is installed in
 a new server.
 
 Create a db role (user) who will own the new database, let's call her
-``grical_user``. Create also a role with the username used for the
-legacy db owner, let's call her ``grical``.
+``grical``. Create also a role with the username used for the
+legacy db owner, let's call her ``gridcalendar``.
 
 Create a blank database. Let's assume the database is called
-``grical_db``, we will first set the owner to ``grical`` to import
+``grical``, we will first set the owner to ``gridcalendar`` to import
 data. As root:
 
 .. code-block:: bash
 
-    su postgres -c "createdb --owner grical -T template1 grical_db"
+    su postgres -c "createdb --owner gridcalendar -T template1 grical"
 
 It is a good time to spatially enable the newly created db. As root:
 
 .. code-block:: bash
 
-    su postgres -c "psql -d grical_db -c 'CREATE EXTENSION IF NOT EXISTS postgis;'"
+    su postgres -c "psql -d grical -c 'CREATE EXTENSION IF NOT EXISTS postgis;'"
 
 
 Migrate PostGIS of the dump to the current version
@@ -73,14 +73,14 @@ Restore data to the new database
 
 su to user postgres (should be superuser because of some posgis
 objects ownership) and restore from database dump. Then change
-ownership of the database to ``grical_user`` the user that will hold
+ownership of the database to ``grical`` the user that will hold
 the production database. As root:
 
 .. code-block:: bash
 
-    su postgres -c "psql -d grical_db -f /tmp/grical.pg_dump.sql"
+    su postgres -c "psql -d grical -f /tmp/grical.pg_dump.sql"
 
-    su postgres -c "psql -d grical_db -c 'ALTER DATABASE grical_db OWNER TO grical_user'"
+    su postgres -c "psql -d grical -c 'ALTER DATABASE grical OWNER TO grical'"
 
 
 Move the schema
@@ -94,7 +94,7 @@ from the current directory. As root:
 
     cd to_the_current_directory_where_move_schema.sql_is_found
 
-    su postgres -c "psql -d grical_db -f move_schema.sql"
+    su postgres -c "psql -d grical -f move_schema.sql"
 
 
 Create the new tables in the new production db
@@ -122,11 +122,15 @@ replicate them in new database after data migration. Our migration
 script does not copy data for permissions / user permissions / group
 permissions.
 
+NOTE: following is deprecated, oembed is not installed in new
+production grical, nor migrated, since oembed is unmaintained for many
+years, and it is fully incompatible with Django 1.11.
+
 The oembed application creates some initial data with fixtures. We
 don't migrate these initial data. Most likely there are no any
 differences from legacy to new db and it is considered safe to skip
 checking. However if you want to check run the following SQL in
-``grical_db`` and check id numbers are same in both schemas:
+``grical`` and check id numbers are same in both schemas:
 
 .. code-block:: sql
 
@@ -143,7 +147,7 @@ data from ``old_public`` schema to ``public``. As root:
 
     cd to_the_current_directory_where_migrate.sql_is_found
 
-    su postgres -c "psql -d grical_db -f migrate.sql"
+    su postgres -c "psql -d grical -f migrate.sql"
 
 
 Conclusions

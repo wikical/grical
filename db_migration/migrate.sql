@@ -113,11 +113,15 @@ SELECT setval('events_revisioninfo_id_seq', COALESCE((SELECT MAX(id)+1 FROM even
 --    SELECT id, format, endpoint, regex, name FROM old_public.oembed_providerrule;
 -- SELECT setval('oembed_providerrule_id_seq', COALESCE((SELECT MAX(id)+1 FROM oembed_providerrule), 1), false);
 
+-- NOTE: oembed commented out, we remove for the moment oembed from
+-- production, since it is an unmaintained project, last commit is
+-- about 8 y.o. So no data transfer, no data migration
+
 -- oembed_storedoembed
 
-INSERT INTO oembed_storedoembed (id, date_added, html, max_height, max_width, match)
-    SELECT id, date_added, html, max_height, max_width, match FROM old_public.oembed_storedoembed;
-SELECT setval('oembed_storedoembed_id_seq', COALESCE((SELECT MAX(id)+1 FROM oembed_storedoembed), 1), false);
+-- INSERT INTO oembed_storedoembed (id, date_added, html, max_height, max_width, match)
+--    SELECT id, date_added, html, max_height, max_width, match FROM old_public.oembed_storedoembed;
+-- SELECT setval('oembed_storedoembed_id_seq', COALESCE((SELECT MAX(id)+1 FROM oembed_storedoembed), 1), false);
 
 -- registration_registrationprofile
 
