@@ -6,7 +6,7 @@
 {% load urlsearch %}
 {% load comments %}
 {% load cache %}
-{% load oembed_tags %}
+{# {% load oembed_tags %} #}
 
 {% block container %}
 
@@ -157,7 +157,7 @@
                                 <li>
                                     <a href="{{ url.url }}"><span class="url_name">{{ url.url_name|escape }}</span></a>
                                     <br />
-                                    {% oembed 320x240 %} {{ url.url }} {% endoembed %}
+                                    {# {% oembed 320x240 %} {{ url.url }} {% endoembed %} #}
                                 </li>
                             {% endfor %}
                         </ul>
