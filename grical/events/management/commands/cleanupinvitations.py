@@ -24,10 +24,10 @@
     database. """
 
 from django.conf import settings
-from django.core.management.base import NoArgsCommand
-from grical.events.model import GroupInvitation
+from django.core.management.base import BaseCommand
+from grical.events.models import GroupInvitation
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     """ A management command which deletes expired group invitations from the
     database.
 
@@ -37,7 +37,7 @@ class Command(NoArgsCommand):
 
     help = "Delete expired group invitations from the database"
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         """ Executes the action, or do nothing if settings.READ_ONLY is True.
         """
         if settings.READ_ONLY == True:
