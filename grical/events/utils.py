@@ -40,7 +40,7 @@ from xml.parsers.expat import ExpatError
 from django.core.cache import cache, caches
 from django.core.mail import mail_admins
 from django.contrib.gis.geos import Point
-from django.contrib.gis.geoip import GeoIP
+from django.contrib.gis.geoip2 import GeoIP2
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
@@ -199,7 +199,7 @@ def search_address( data, ip = None ): # {{{1
     # result_google is not good enough either, we try now using the IP of the
     # user for geo-location
     if ip:
-        geoip = GeoIP()
+        geoip = GeoIP2()
         # we try adding the country (from the IP) if not already given
         last_item = data[data.rfind(',')+1:].strip().upper()
         # TODO GEO: include translations, GeoNames.org
@@ -209,7 +209,7 @@ def search_address( data, ip = None ): # {{{1
         country_code = None
         if ( last_item not in country_codes ) and \
                 ( last_item not in country_names ):
-            country_code = geoip.country_code_by_addr( ip )
+            country_code = geoip.country(ip)['country_code']
             if country_code:
                 data_extended = data + u", " + country_code
                 # OpenStreetMap doesn't want more than one query per second
@@ -223,7 +223,7 @@ def search_address( data, ip = None ): # {{{1
                 if result_google and len( result_google ) == 1:
                     return result_google
         # the country didn't help. We try also the city.
-        region_data = geoip.region_by_addr( ip )
+        region_data = geoip.city(ip)
         if region_data:
             city = smart_unicode(region_data['city'], encoding='ISO-8859-1')
             if city.lower() not in data.lower():

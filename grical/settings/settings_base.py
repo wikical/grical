@@ -140,7 +140,7 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # =============================================================================
 # see # http://docs.djangoproject.com/en/dev/ref/contrib/gis/geoip/
 
-GEOIP_PATH = '/usr/share/GeoIP'
+GEOIP_PATH = '/usr/local/share/GeoIP'
 """
 The directory where the GeoIP databases are installed. The default
 is :file:`/usr/share/GeoIP`.
@@ -228,7 +228,7 @@ INSTALLED_APPS = [
     'reversion',
     'markup_deprecated', # used for rendering ReStructuredText
     'grical.contact_form',
-    # 'oembed', # TODO: taken out, it looks to have incompatibilities
+    # 'oembed', # TODO: taken out, it looks to have incompatibilies
 ]
 
 # at the end additional middleware are conditionaly added
@@ -292,7 +292,17 @@ if TESTS_RUNNING:
     # Speed up tests, inspired on:
     # http://www.daveoncode.com/2013/09/23/effective-tdd-tricks-to-speed-up-django-tests-up-to-10x-faster/
     PASSWORD_HASHERS = (
-            'django.contrib.auth.hashers.MD5PasswordHasher',)
+            'django.contrib.auth.hashers.SHA1PasswordHasher',
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+)
+else:
+    PASSWORD_HASHERS = (
+        'django.contrib.auth.hashers.SHA1PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+        'django.contrib.auth.hashers.Argon2PasswordHasher',
+        'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+        'django.contrib.auth.hashers.BCryptPasswordHasher',)
 
 if TESTS_RUNNING:
     INSTALLED_APPS = INSTALLED_APPS + ['django.contrib.sessions',
