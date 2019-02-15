@@ -1,4 +1,5 @@
 grical_db.sql
+manage.py
 
 *.pyc
 .*.swp

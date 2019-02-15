@@ -20,6 +20,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with GriCal. If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
+# code {{{1
 import os
 import sys
 if __name__ == "__main__":

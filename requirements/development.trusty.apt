@@ -1,8 +1,9 @@
 build-essential
 famfamfam-flag-gif
-geoip-database-contrib
 libgdal-dev
 libgeos-dev
+libmemcached-dev
+libsqlite3-mod-spatialite
 python-dev
 python-gdal
 python-geoip
@@ -10,5 +11,4 @@ python-pip
 python-virtualenv
 spatialite-bin
 sqlite3
-libmemcached-dev
 zlib1g-dev
