@@ -43,6 +43,12 @@ def load_fixture(apps, schema_editor):
     with open(fixture_file) as fixture:
         objects = serializers.deserialize('json', fixture, ignorenonexistent=True)
         for obj in objects:
+            if obj.object.code in (u'GB', u'EU'):
+                # FIXME: It looks some problem with GB/EU mpoly line that
+                # raises some "Not null constraint" error though mpoly
+                # has points and it is not null. It looks some sqlite
+                # bug.
+                continue
             obj.save()
 
 # Most probably we won't add some revertion code to go to 0001, so this code
