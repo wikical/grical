@@ -700,7 +700,7 @@ def event_does_not_exist( request, event_id, redirect_url ): # {{{1
     """ if event_id was deleted it shows event redirection or deleted page,
     otherwise raises 404 """
     try:
-        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
+        deleted_version = Version.objects.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     revision_meta = deleted_version.revision.revisioninfo_set.all()
@@ -964,16 +964,15 @@ def event_delete( request, event_id ):
     context = dict()
     context['form'] = form
     context['event'] = event
-    return render(request, 'event_delete.html',
-                  {'also_recurrences_form': also_recurrences_form,})
+    context['also_recurrences_form'] = also_recurrences_form
+    return render(request, 'event_delete.html', context)
 
 def event_deleted( request, event_id ): # {{{1
     """ inform the user the event has been deleted, show a link of a redirect
     if present and, if the user is authenticated, allow undeleting the event.
     """
-    import reversion
     try:
-        deleted_version = reversion.get_deleted(Event).get(object_id=event_id)
+        deleted_version = Version.objects.get_deleted(Event).get(object_id=event_id)
     except Version.DoesNotExist:
         raise Http404
     # checking if the event is realy deleted
@@ -1011,7 +1010,7 @@ def event_deleted( request, event_id ): # {{{1
 # def event_undelete( request, event_id ): {{{1
 @login_required
 @only_if_write_enabled
-@reversion.create_revision
+@reversion.create_revision()
 def event_undelete(request, event_id):
     request.user.is_authenticated() and reversion.set_user(request.user)
     try:
@@ -1029,12 +1028,13 @@ def event_undelete(request, event_id):
     # we check if there is an event with the same name and start date
     # TODO test when there is one
     as_text = revisioninfo.as_text
-    simple_fields = Event.get_fields( as_text )[0]
+    simple_fields = Event.get_fields(as_text)[0]
     title = simple_fields['title']
-    start = simple_fields['start']
+    start = simple_fields['startdate']
     try:
         equal = Event.objects.get( title = title,
-                dates__eventdate_name = start )
+                dates__eventdate_name = 'start',
+                dates__eventdate_date = start)
     except Event.DoesNotExist:
         deleted_revision.revert()
         reversion.add_meta( RevisionInfo, as_text = as_text )
